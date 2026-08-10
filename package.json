@@ -1,0 +1,54 @@
+{
+  "name": "kingsland-ai-crm",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "tsx watch server/index.ts",
+    "start": "node server.js",
+    "dev:ops": "npm --prefix operations-team-portal dev",
+    "dev:full": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm run server\" \"npm run dev\"",
+    "dev:all": "concurrently -n \"server,crm,ops\" -c \"cyan,magenta,yellow\" \"npm run server\" \"npm run dev\" \"npm run dev:ops\"",
+    "build": "tsc && vite build && npx esbuild server/index.ts --bundle --platform=node --format=esm --outfile=server.js --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "preview": "vite preview",
+    "db:seed": "tsx server/db/seed.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^1.34.0",
+    "@supabase/supabase-js": "^2.112.2",
+    "@types/pg": "^8.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "html2pdf.js": "^0.10.3",
+    "lucide-react": "^1.27.0",
+    "nodemailer": "^9.0.5",
+    "pg": "^8.23.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "recharts": "^2.12.7",
+    "sql.js": "^1.14.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.5.0",
+    "uuid": "^11.1.0"
+  },
+  "overrides": {
+    "jspdf": "^4.2.1",
+    "dompurify": "^3.2.4",
+    "nanoid": "^5.1.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.1.2",
+    "vite": "^5.4.15"
+  }
+}

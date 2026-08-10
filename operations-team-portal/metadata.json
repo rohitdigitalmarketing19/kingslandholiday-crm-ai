@@ -1,0 +1,6 @@
+{
+  "name": "Operations Team Portal",
+  "description": "Post-sales operations management for travel customers, hotel vouchers, trip itineraries, day-wise schedules, and trip logs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Kingsland AI CRM",
+  "description": "A high-performance travel CRM featuring AI-powered lead scoring, intelligent routing, generative itineraries, and sales co-pilot for Kingsland Holidays.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
