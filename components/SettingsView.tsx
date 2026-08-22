@@ -682,6 +682,99 @@ Cancellation Policy (Land Package):
           </div>
         </div>
 
+        {/* Box 5: Database Safety & Automated Backup Center */}
+        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-lime-400" />
+              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                Database Safety & Backup Center
+              </span>
+            </div>
+            <span className="text-[10px] text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-800/50 font-bold flex items-center gap-1">
+              <CheckCircle2 size={11} />
+              Auto-Recovery Active
+            </span>
+          </div>
+
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            Your CRM automatically creates timestamped backups on startup and whenever changes occur. You can download an offline database backup file to your computer at any time, or upload a backup file to restore all your leads, quotes, invoices, and settings.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+            {/* Download Backup */}
+            <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-lime-400 rotate-180" />
+                  <span>Download Full Database Backup</span>
+                </h4>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Save a full offline copy of your CRM database (<code className="text-lime-400 text-[10px]">kingsland.db</code>) directly to your computer.
+                </p>
+              </div>
+              <a
+                href="/api/settings/backup/download"
+                download
+                className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 text-center"
+              >
+                <Upload className="w-3.5 h-3.5 rotate-180" />
+                <span>Download Backup (.db)</span>
+              </a>
+            </div>
+
+            {/* Restore / Upload Backup */}
+            <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Restore from Backup File</span>
+                </h4>
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Upload a previously downloaded <code className="text-amber-400 text-[10px]">.db</code> file to instantly restore all records and settings.
+                </p>
+              </div>
+              <label className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 cursor-pointer text-center">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload & Restore Backup</span>
+                <input
+                  type="file"
+                  accept=".db,.sqlite"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (!confirm(`Are you sure you want to restore database from "${file.name}"? This will update your active CRM records.`)) {
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      try {
+                        const base64 = reader.result as string;
+                        const res = await fetch('/api/settings/backup/restore-upload', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ fileData: base64 })
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          alert('✅ Database restored successfully! Reloading...');
+                          window.location.reload();
+                        } else {
+                          alert(`⚠️ Restore failed: ${data.error || 'Invalid database file'}`);
+                        }
+                      } catch (err: any) {
+                        alert(`⚠️ Restore error: ${err.message}`);
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+
         {/* Box 5: Defaults for Documents */}
         <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
