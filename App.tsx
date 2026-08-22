@@ -72,7 +72,7 @@ interface NavItemProps {
   className?: string;
 }
 
-// NavItem component for sidebar — Executive Theme
+// NavItem component for sidebar — Executive Theme (High Contrast in Light & Dark Modes)
 const NavItem: React.FC<NavItemProps> = ({ 
   id, 
   icon, 
@@ -89,27 +89,34 @@ const NavItem: React.FC<NavItemProps> = ({
     onClick={() => onClick(id)}
     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
       active && !isSubItem && !isExpert
-        ? 'bg-lime-400/15 text-lime-400 dark:bg-lime-400/15 dark:text-lime-400 border border-lime-400/30 shadow-xs' 
+        ? 'bg-lime-400 text-slate-950 dark:bg-lime-400/20 dark:text-lime-300 dark:border dark:border-lime-400/30 shadow-xs font-bold' 
         : active && isSubItem
-        ? 'bg-zinc-800 text-lime-400 font-bold'
+        ? 'bg-slate-200 text-slate-900 dark:bg-zinc-800 dark:text-lime-400 font-bold'
         : isSubItem
-        ? 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 pl-9'
+        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800/40 pl-9'
         : isExpert
-        ? (active ? 'bg-lime-400/15 text-lime-400' : 'text-zinc-400 hover:bg-zinc-800/40 hover:text-zinc-200')
-        : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100'
+        ? (active ? 'bg-lime-400 text-slate-950 dark:bg-lime-400/20 dark:text-lime-300 font-bold' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-100')
+        : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100'
     } ${className}`}
   >
-    {icon && <span className={`flex-shrink-0 ${active && !isSubItem && !isExpert ? 'text-lime-400' : 'text-zinc-400'}`} style={{ width: '18px', height: '18px' }}>{icon}</span>}
+    {icon && (
+      <span 
+        className={`flex-shrink-0 ${active && !isSubItem && !isExpert ? 'text-slate-950 dark:text-lime-400' : 'text-slate-500 dark:text-zinc-400'}`} 
+        style={{ width: '18px', height: '18px' }}
+      >
+        {icon}
+      </span>
+    )}
     <span className="truncate flex-1 text-left">{id}</span>
     {count !== undefined && count >= 0 && (
-      <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums ${active && !isSubItem && !isExpert ? 'bg-lime-400 text-black' : 'bg-zinc-800 text-zinc-400'}`}>
+      <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums ${active && !isSubItem && !isExpert ? 'bg-slate-950 text-white dark:bg-lime-400 dark:text-black' : 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>
         {count}
       </span>
     )}
     {hasDropdown && (
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
-        className={`h-3.5 w-3.5 transition-transform ml-auto ${isOpen ? 'rotate-180' : ''} text-zinc-400`} 
+        className={`h-3.5 w-3.5 transition-transform ml-auto ${isOpen ? 'rotate-180' : ''} ${active ? 'text-slate-950 dark:text-lime-400' : 'text-slate-400 dark:text-zinc-500'}`} 
         fill="none" 
         viewBox="0 0 24 24" 
         stroke="currentColor"
@@ -1287,16 +1294,16 @@ const App: React.FC = () => {
         </div>
 
         {/* Sidebar Footer — User Profile, Theme Switcher & Collapse */}
-        <div className="mt-auto border-t border-zinc-800/80 p-3 bg-zinc-950/40 space-y-2">
+        <div className="mt-auto border-t border-slate-200 dark:border-zinc-800/80 p-3 bg-slate-100/80 dark:bg-zinc-950/80 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-lime-400/10 border border-lime-400/20 text-lime-400 flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-lime-400/20 dark:bg-lime-400/10 border border-lime-500/30 dark:border-lime-400/20 text-lime-800 dark:text-lime-400 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
                 {currentUser.name?.charAt(0) || 'A'}
               </div>
               {!sidebarCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-zinc-100 truncate">{currentUser.name}</p>
-                  <span className="text-[10px] text-zinc-400 font-medium block">{currentUser.role || 'Admin'}</span>
+                  <p className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate">{currentUser.name}</p>
+                  <span className="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold block">{currentUser.role || 'Admin'}</span>
                 </div>
               )}
             </div>
@@ -1306,7 +1313,7 @@ const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-lime-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-lime-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700"
                 title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
@@ -1314,7 +1321,7 @@ const App: React.FC = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700"
                 title="Lock / Logout"
               >
                 <LogOut size={15} />
@@ -1324,7 +1331,7 @@ const App: React.FC = () => {
 
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 transition-colors text-[11px] font-medium cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/90 dark:hover:bg-zinc-800/80 transition-colors text-[11px] font-bold cursor-pointer border border-slate-300/70 dark:border-zinc-800/80"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span>Collapse</span></>}
