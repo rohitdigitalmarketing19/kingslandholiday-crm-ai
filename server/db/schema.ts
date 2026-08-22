@@ -140,6 +140,11 @@ export function initializeDatabase(): void {
     `ALTER TABLE agency_settings ADD COLUMN trip_id_prefix TEXT DEFAULT 'KL-'`,
     `ALTER TABLE agency_settings ADD COLUMN trip_id_next_number INTEGER DEFAULT 1001`,
     `ALTER TABLE agency_settings ADD COLUMN trip_id_digits INTEGER DEFAULT 4`,
+    `ALTER TABLE agency_settings ADD COLUMN smtp_host TEXT DEFAULT 'smtp.gmail.com'`,
+    `ALTER TABLE agency_settings ADD COLUMN smtp_port INTEGER DEFAULT 587`,
+    `ALTER TABLE agency_settings ADD COLUMN smtp_user TEXT DEFAULT 'rohit.digitalmarketing19@gmail.com'`,
+    `ALTER TABLE agency_settings ADD COLUMN smtp_pass TEXT DEFAULT ''`,
+    `ALTER TABLE agency_settings ADD COLUMN smtp_from_name TEXT DEFAULT 'Kingsland Holidays'`,
     `ALTER TABLE pdf_designs ADD COLUMN pdf_file_data TEXT DEFAULT ''`,
     `ALTER TABLE pdf_designs ADD COLUMN page_count INTEGER DEFAULT 0`,
     `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`

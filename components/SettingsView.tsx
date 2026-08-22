@@ -14,7 +14,12 @@ import {
   Percent,
   MapPin,
   Sparkles,
-  Hash
+  Hash,
+  Lock,
+  Eye,
+  EyeOff,
+  Send,
+  AlertTriangle
 } from 'lucide-react';
 import * as api from '../services/apiService';
 
@@ -22,6 +27,10 @@ export const SettingsView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showSmtpPass, setShowSmtpPass] = useState(false);
+  const [testEmailTarget, setTestEmailTarget] = useState('rohit.digitalmarketing19@gmail.com');
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [smtpTestMsg, setSmtpTestMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [formData, setFormData] = useState({
     company_name: 'Kingsland Holidays',
@@ -42,6 +51,11 @@ export const SettingsView: React.FC = () => {
     trip_id_prefix: 'KL-',
     trip_id_next_number: 1001,
     trip_id_digits: 4,
+    smtp_host: 'smtp.gmail.com',
+    smtp_port: 587,
+    smtp_user: 'rohit.digitalmarketing19@gmail.com',
+    smtp_pass: '',
+    smtp_from_name: 'Kingsland Holidays CRM',
     default_payment_terms: '50% advance to confirm the booking, balance 15 days before travel.',
     default_terms_conditions: `1. Booking and Payment: All bookings are subject to availability and confirmation. Payment as per the payment schedule.
 2. Cancellation and Refunds: Cancellation charges apply as per the cancellation policy. Refunds, if applicable, are processed per our refund policy.
@@ -118,6 +132,46 @@ Cancellation Policy (Land Package):
         updateBrowserFavicon(iconData);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTestSmtp = async () => {
+    if (!testEmailTarget.trim()) {
+      setSmtpTestMsg({ type: 'error', text: 'Please enter a valid recipient email address to test.' });
+      return;
+    }
+    if (!formData.smtp_pass.trim()) {
+      setSmtpTestMsg({ type: 'error', text: 'Please enter your 16-digit Gmail App Password in the field above first.' });
+      return;
+    }
+
+    try {
+      setIsTestingSmtp(true);
+      setSmtpTestMsg(null);
+
+      const res = await fetch('/api/settings/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smtp_host: formData.smtp_host,
+          smtp_port: formData.smtp_port,
+          smtp_user: formData.smtp_user,
+          smtp_pass: formData.smtp_pass,
+          smtp_from_name: formData.smtp_from_name,
+          to_email: testEmailTarget.trim()
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send test email');
+      }
+
+      setSmtpTestMsg({ type: 'success', text: data.message || `✓ Test email sent successfully to ${testEmailTarget.trim()}! Check your inbox.` });
+    } catch (err: any) {
+      setSmtpTestMsg({ type: 'error', text: `❌ ${err.message}` });
+    } finally {
+      setIsTestingSmtp(false);
     }
   };
 
@@ -399,110 +453,236 @@ Cancellation Policy (Land Package):
         {/* Box 3: Branding & Proof */}
         <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
-            Branding & proof
+            Branding & Proof
           </span>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                Intro / about (shown on proposal)
+                Established year
               </label>
-              <textarea
-                rows={3}
-                value={formData.intro_about}
-                onChange={e => handleChange('intro_about', e.target.value)}
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30 resize-y"
+              <input
+                type="text"
+                value={formData.established_year}
+                onChange={e => handleChange('established_year', e.target.value)}
+                placeholder="2010"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Established year
-                </label>
-                <input
-                  type="text"
-                  value={formData.established_year}
-                  onChange={e => handleChange('established_year', e.target.value)}
-                  placeholder="2010"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Rating (0–5)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                max="5"
+                min="0"
+                value={formData.rating}
+                onChange={e => handleChange('rating', parseFloat(e.target.value) || 0)}
+                placeholder="4.8"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Rating (0–5)
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Happy customers
+              </label>
+              <input
+                type="text"
+                value={formData.happy_customers}
+                onChange={e => handleChange('happy_customers', e.target.value)}
+                placeholder="5000+"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Agency Logo
+              </label>
+              <div className="flex items-center gap-3">
+                <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
+                  <Upload className="w-3.5 h-3.5 text-lime-400" />
+                  Choose Logo
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  max="5"
-                  min="0"
-                  value={formData.rating}
-                  onChange={e => handleChange('rating', parseFloat(e.target.value) || 0)}
-                  placeholder="4.8"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
-                />
+                {formData.logo_url ? (
+                  <img src={formData.logo_url} alt="Logo" className="h-7 max-w-[80px] object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
+                ) : (
+                  <span className="text-[11px] text-zinc-500 truncate">No file</span>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Happy customers
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Favicon (Browser Icon)
+              </label>
+              <div className="flex items-center gap-3">
+                <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
+                  <Upload className="w-3.5 h-3.5 text-lime-400" />
+                  Choose Icon
+                  <input type="file" accept="image/x-icon,image/png,image/svg+xml,image/jpeg" onChange={handleFaviconUpload} className="hidden" />
                 </label>
-                <input
-                  type="text"
-                  value={formData.happy_customers}
-                  onChange={e => handleChange('happy_customers', e.target.value)}
-                  placeholder="5000+"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Agency Logo
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
-                    <Upload className="w-3.5 h-3.5 text-lime-400" />
-                    Choose Logo
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                  </label>
-                  {formData.logo_url ? (
-                    <img src={formData.logo_url} alt="Logo" className="h-7 max-w-[80px] object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
-                  ) : (
-                    <span className="text-[11px] text-zinc-500 truncate">No file</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Favicon (Browser Icon)
-                </label>
-                <div className="flex items-center gap-3">
-                  <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
-                    <Upload className="w-3.5 h-3.5 text-lime-400" />
-                    Choose Icon
-                    <input type="file" accept="image/x-icon,image/png,image/svg+xml,image/jpeg" onChange={handleFaviconUpload} className="hidden" />
-                  </label>
-                  {formData.favicon_url ? (
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <img src={formData.favicon_url} alt="Favicon" className="w-6 h-6 object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
-                      <span className="text-[10px] text-lime-400 font-bold truncate">Active ✓</span>
-                    </div>
-                  ) : (
-                    <span className="text-[11px] text-zinc-500 truncate">Default</span>
-                  )}
-                </div>
+                {formData.favicon_url ? (
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <img src={formData.favicon_url} alt="Favicon" className="w-6 h-6 object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
+                    <span className="text-[10px] text-lime-400 font-bold truncate">Active ✓</span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-zinc-500 truncate">Default</span>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Box 3: Defaults for Documents */}
+        {/* Box 4: Email & SMTP Settings */}
+        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 text-lime-400" />
+              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+                Gmail & SMTP Email Delivery Settings
+              </span>
+            </div>
+            <span className="text-[10px] text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-700 font-medium">
+              Used for 1-Click Login Links, OTP Security Codes & New User Credentials
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Sender Email Address (Gmail Account) *
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.smtp_user}
+                onChange={e => handleChange('smtp_user', e.target.value)}
+                placeholder="rohit.digitalmarketing19@gmail.com"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+              <span className="text-[10px] text-zinc-500 mt-1 block">Account from which CRM emails are dispatched</span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Gmail App Password (16-Digit) *
+              </label>
+              <div className="relative">
+                <input
+                  type={showSmtpPass ? 'text' : 'password'}
+                  value={formData.smtp_pass}
+                  onChange={e => handleChange('smtp_pass', e.target.value)}
+                  placeholder="e.g. vrsa reev ziev otqa"
+                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl pl-4 pr-10 py-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSmtpPass(!showSmtpPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer"
+                >
+                  {showSmtpPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+              <span className="text-[10px] text-zinc-500 mt-1 block">
+                Generate 16-digit password at: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-lime-400 hover:underline">Google App Passwords</a>
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">SMTP Host</label>
+              <input
+                type="text"
+                value={formData.smtp_host}
+                onChange={e => handleChange('smtp_host', e.target.value)}
+                placeholder="smtp.gmail.com"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">SMTP Port</label>
+                <input
+                  type="number"
+                  value={formData.smtp_port}
+                  onChange={e => handleChange('smtp_port', parseInt(e.target.value) || 587)}
+                  placeholder="587"
+                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-zinc-300 mb-1.5">Sender Display Name</label>
+                <input
+                  type="text"
+                  value={formData.smtp_from_name}
+                  onChange={e => handleChange('smtp_from_name', e.target.value)}
+                  placeholder="Kingsland Holidays"
+                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Test Email Verification Box */}
+          <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 space-y-3 mt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
+                  <Send size={13} className="text-lime-400" />
+                  <span>Test Real-Time Email Delivery</span>
+                </h4>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  Send a live test verification email to confirm that your SMTP and Gmail password are working.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  value={testEmailTarget}
+                  onChange={e => setTestEmailTarget(e.target.value)}
+                  placeholder="Recipient Email"
+                  className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-400 w-56"
+                />
+                <button
+                  type="button"
+                  onClick={handleTestSmtp}
+                  disabled={isTestingSmtp}
+                  className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {isTestingSmtp ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
+                  <span>{isTestingSmtp ? 'Sending...' : 'Send Test'}</span>
+                </button>
+              </div>
+            </div>
+
+            {smtpTestMsg && (
+              <div className={`p-3 rounded-lg text-xs font-medium border flex items-start gap-2 ${
+                smtpTestMsg.type === 'success'
+                  ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60'
+                  : 'bg-red-950/40 text-red-300 border-red-800/60'
+              }`}>
+                {smtpTestMsg.type === 'success' ? (
+                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                )}
+                <span>{smtpTestMsg.text}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Box 5: Defaults for Documents */}
         <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
             Defaults for documents

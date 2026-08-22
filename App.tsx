@@ -289,6 +289,38 @@ const App: React.FC = () => {
     }).catch(() => {});
   }, []);
 
+  // Check for 1-Click Magic Login Link in URL parameters
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const magicToken = urlParams.get('magicToken') || urlParams.get('magic_token') || urlParams.get('auth_token');
+      if (magicToken) {
+        fetch('/api/users/verify-magic-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ magicToken })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.user) {
+              setCurrentUser(data.user);
+              localStorage.setItem('kingsland_active_user_id', data.user.id);
+              setIsLoginModalOpen(false);
+              // Clean URL query parameters
+              const cleanUrl = window.location.pathname + window.location.hash;
+              window.history.replaceState({}, document.title, cleanUrl);
+              alert(`🎉 Welcome back, ${data.user.name}! You are logged in via 1-Click Link.`);
+            } else if (data.error) {
+              alert(`⚠️ Magic Login Link: ${data.error}`);
+            }
+          })
+          .catch(err => {
+            console.error('Magic link verification error:', err);
+          });
+      }
+    } catch (_e) {}
+  }, []);
+
   const [opsCustomersList, setOpsCustomersList] = useState<any[]>([]);
 
   // Fetch Users
@@ -418,18 +450,7 @@ const App: React.FC = () => {
     const dueItems: any[] = [];
 
     opsCustomersList.forEach((cust: any) => {
-      let installments = cust.installments || [];
-      if ((!installments || installments.length === 0) && (cust.totalAmount || cust.total_amount) > 0) {
-        const tot = cust.totalAmount || cust.total_amount || 0;
-        const inst1 = Math.round(tot * 0.3);
-        const inst2 = Math.round(tot * 0.4);
-        const inst3 = tot - inst1 - inst2;
-        installments = [
-          { title: '1st Installment - Token', amount: inst1, status: 'Pending', dueDate: cust.startDate || '' },
-          { title: '2nd Installment - Hotel Lock', amount: inst2, status: 'Pending', dueDate: cust.startDate || '' },
-          { title: '3rd Installment - Final Balance', amount: inst3, status: 'Pending', dueDate: cust.startDate || '' },
-        ];
-      }
+      const installments = cust.installments || [];
       installments.forEach((inst: any) => {
         createdCount++;
         createdAmount += (inst.amount || 0);

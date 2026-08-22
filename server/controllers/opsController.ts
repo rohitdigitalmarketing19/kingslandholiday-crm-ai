@@ -341,33 +341,14 @@ export function syncConvertedLeadsToOps() {
         }
       }
 
-      // If still empty but we have a total amount > 0, generate standard 3-stage milestone schedule
-      if (dbInstallments.length === 0 && totalAmount > 0) {
-        const inst1Amt = Math.round(totalAmount * 0.3);
-        const inst2Amt = Math.round(totalAmount * 0.4);
-        const inst3Amt = Math.max(0, totalAmount - inst1Amt - inst2Amt);
+      // Clean up legacy auto-generated phantom milestones if they were never paid and have no explicit link
+      runQuery("DELETE FROM payment_installments WHERE (id LIKE 'inst-%-1' OR id LIKE 'inst-%-2' OR id LIKE 'inst-%-3') AND payment_status != 'Paid' AND (pay_key = id OR pay_key = '' OR pay_key IS NULL)");
+      runQuery("DELETE FROM ops_customer_installments WHERE (id LIKE 'inst-%-1' OR id LIKE 'inst-%-2' OR id LIKE 'inst-%-3') AND status != 'Paid'");
 
-        const defaultMilestones = [
-          { id: `inst-${targetCustId}-1`, title: 'Booking Advance Token (30%)', amount: inst1Amt, due_date: startDate },
-          { id: `inst-${targetCustId}-2`, title: 'Second Milestone Installment (40%)', amount: inst2Amt, due_date: startDate },
-          { id: `inst-${targetCustId}-3`, title: 'Final Balance Clearance (30%)', amount: inst3Amt, due_date: endDate || startDate }
-        ];
-
-        for (const dm of defaultMilestones) {
-          try {
-            runQuery(
-              `INSERT OR REPLACE INTO payment_installments (id, lead_id, title, amount, due_date, payment_condition, payment_status, paid_amount, pay_key, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [dm.id, lead.id, dm.title, dm.amount, dm.due_date, 'Standard Payment Milestone', 'Pending', 0, dm.id, now]
-            );
-          } catch (_e) {}
-        }
-
-        dbInstallments = queryAll(
-          "SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC",
-          [lead.id, lead.trip_id || lead.id]
-        ) || [];
-      }
+      dbInstallments = queryAll(
+        "SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC",
+        [lead.id, lead.trip_id || lead.id]
+      ) || [];
 
       if (dbInstallments.length > 0) {
         // Rewrite ops_customer_installments cleanly matching the source of truth

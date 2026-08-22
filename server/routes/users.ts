@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { queryAll, runQuery } from '../db/connection';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
+import { getAgencySettings } from '../controllers/settingsController';
 
 const router = Router();
 
@@ -9,6 +10,53 @@ const ADMIN_EMAIL = 'rohit.digitalmarketing19@gmail.com';
 
 // In-memory OTP store for password resets (Admin verification)
 const otpStore: Record<string, { code: string; expiresAt: number }> = {};
+
+// In-memory store for 1-Click Magic Login Links & User OTPs
+interface MagicLoginRecord {
+  userId: string;
+  email: string;
+  otpCode: string;
+  expiresAt: number;
+}
+const magicTokenStore: Record<string, MagicLoginRecord> = {};
+const userLoginOtpStore: Record<string, { magicToken: string; otpCode: string; expiresAt: number }> = {};
+
+// Helper to send email via SMTP with fallback logging
+async function sendEmailUtil({ to, subject, html }: { to: string; subject: string; html: string }): Promise<boolean> {
+  const settings = getAgencySettings();
+  const smtpUser = (settings.smtp_user || process.env.SMTP_USER || process.env.EMAIL_USER || 'rohit.digitalmarketing19@gmail.com').trim();
+  const rawPass = settings.smtp_pass || process.env.SMTP_PASS || process.env.EMAIL_PASS || '';
+  const smtpPass = rawPass.replace(/\s+/g, '');
+  const smtpHost = settings.smtp_host || process.env.SMTP_HOST || 'smtp.gmail.com';
+  const smtpPort = Number(settings.smtp_port || process.env.SMTP_PORT || 587);
+  const smtpFromName = settings.smtp_from_name || 'Kingsland Holidays CRM';
+
+  if (smtpUser && smtpPass) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpPort === 465,
+        auth: { user: smtpUser, pass: smtpPass }
+      });
+
+      await transporter.sendMail({
+        from: `"${smtpFromName}" <${smtpUser}>`,
+        to,
+        subject,
+        html
+      });
+      console.log(`✉️ Real email successfully sent via SMTP to ${to}: "${subject}"`);
+      return true;
+    } catch (mailErr: any) {
+      console.error(`❌ SMTP Dispatch failed to ${to}:`, mailErr.message);
+      return false;
+    }
+  } else {
+    console.log(`⚠️ [SMTP Note] SMTP Password not yet configured in Settings. Email logged for ${to}: "${subject}"`);
+    return false;
+  }
+}
 
 // Full default permissions array
 const ALL_PERMISSIONS = [
@@ -173,7 +221,7 @@ router.get('/', (req, res) => {
 });
 
 // POST /api/users/login - Authenticate user credentials
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -199,14 +247,255 @@ router.post('/login', (req, res) => {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
+    // Generate a fresh quick-access magic link token
+    const magicToken = `mag_${uuidv4()}`;
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours valid
+    magicTokenStore[magicToken] = {
+      userId: userRow.id,
+      email: userRow.email,
+      otpCode: '',
+      expiresAt
+    };
+
+    // Determine base URL
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = (req.headers['x-forwarded-host'] as string) || req.get('host') || 'localhost:3000';
+    const origin = (req.headers.origin as string) || `${protocol}://${host}`;
+    const magicLinkUrl = `${origin}/?magicToken=${magicToken}&email=${encodeURIComponent(userRow.email)}`;
+
+    // Asynchronously dispatch login notification with 1-click link
+    sendEmailUtil({
+      to: userRow.email,
+      subject: `🏰 Kingsland CRM Login Notification & 1-Click Access Link`,
+      html: `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; background-color: #ffffff; color: #0f172a;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <h2 style="color: #0f172a; font-size: 20px; font-weight: 800; margin: 0;">🏰 Kingsland Holidays CRM</h2>
+            <p style="color: #64748b; font-size: 12px; margin-top: 4px;">Sign-In Confirmation & Fast Access</p>
+          </div>
+          <p style="font-size: 14px; color: #334155;">Hello <strong>${userRow.name}</strong>,</p>
+          <p style="font-size: 13px; color: #475569; line-height: 1.5;">
+            You just logged into your Kingsland CRM portal. You can also bookmark or click your direct 1-click access link below anytime:
+          </p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${magicLinkUrl}" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; display: inline-block;">
+              🚀 1-Click Direct Portal Access
+            </a>
+          </div>
+          <p style="font-size: 11px; color: #94a3b8; word-break: break-all;">
+            Link: <a href="${magicLinkUrl}" style="color: #4f46e5;">${magicLinkUrl}</a>
+          </p>
+        </div>
+      `
+    }).catch(() => {});
+
     res.json({
       success: true,
       message: `Welcome back, ${userRow.name}!`,
-      user: formatUserRow(userRow)
+      user: formatUserRow(userRow),
+      magicLink: magicLinkUrl
     });
   } catch (err: any) {
     console.error('Error logging in user:', err);
     res.status(500).json({ error: 'Failed to process login.' });
+  }
+});
+
+// POST /api/users/request-login-link - Generate and email 1-click login link & 6-digit OTP to user
+router.post('/request-login-link', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: 'Please enter your registered email address.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const rows = queryAll('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'No CRM user account found with this email address.' });
+    }
+
+    const userRow = rows[0];
+    if (userRow.status !== 'Active') {
+      return res.status(403).json({ error: 'This user account is deactivated. Please contact Administrator.' });
+    }
+
+    const magicToken = `mag_${uuidv4()}`;
+    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes valid
+
+    magicTokenStore[magicToken] = {
+      userId: userRow.id,
+      email: userRow.email,
+      otpCode: generatedOtp,
+      expiresAt
+    };
+
+    userLoginOtpStore[cleanEmail] = {
+      magicToken,
+      otpCode: generatedOtp,
+      expiresAt
+    };
+
+    // Determine base URL
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = (req.headers['x-forwarded-host'] as string) || req.get('host') || 'localhost:3000';
+    const origin = (req.headers.origin as string) || `${protocol}://${host}`;
+    const magicLinkUrl = `${origin}/?magicToken=${magicToken}&email=${encodeURIComponent(userRow.email)}`;
+
+    console.log(`🔐 Generated 1-Click Login Link for ${userRow.email}: ${magicLinkUrl} (OTP: ${generatedOtp})`);
+
+    // Dispatch email with 1-Click Link + Password OTP
+    const emailSent = await sendEmailUtil({
+      to: userRow.email,
+      subject: `🔐 Kingsland CRM 1-Click Login Link & Password Code: ${generatedOtp}`,
+      html: `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; background-color: #ffffff; color: #0f172a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 0;">🏰 Kingsland Holidays CRM</h1>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px; font-weight: 500;">Secure 1-Click Access & Sign-In</p>
+          </div>
+
+          <p style="font-size: 15px; color: #334155; line-height: 1.5;">Hello <strong>${userRow.name}</strong>,</p>
+          <p style="font-size: 14px; color: #475569; line-height: 1.5;">
+            Here is your requested login link and security code to access Kingsland Holidays CRM.
+          </p>
+
+          <!-- 1-Click Action Button -->
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${magicLinkUrl}" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: 700; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+              🚀 Click to Log In Instantly
+            </a>
+          </div>
+
+          <!-- 6-Digit OTP / Access Code -->
+          <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 6px;">Your 6-Digit Login Code / OTP</div>
+            <span style="font-size: 32px; font-weight: 900; letter-spacing: 8px; color: #0f172a; font-family: monospace;">${generatedOtp}</span>
+            <div style="font-size: 12px; color: #64748b; margin-top: 8px;">
+              Permanent Account Password: <strong style="color: #0f172a;">${userRow.password || 'kingsland123'}</strong>
+            </div>
+          </div>
+
+          <p style="font-size: 12px; color: #64748b; line-height: 1.5; margin-top: 20px;">
+            Or copy and paste this link in your browser:<br/>
+            <a href="${magicLinkUrl}" style="color: #4f46e5; word-break: break-all; font-size: 12px;">${magicLinkUrl}</a>
+          </p>
+
+          <p style="font-size: 11px; color: #94a3b8; margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 12px; text-align: center;">
+            This link and OTP are valid for 15 minutes. If you did not request this login, please contact Admin.
+          </p>
+        </div>
+      `
+    });
+
+    res.json({
+      success: true,
+      message: emailSent
+        ? `1-Click Login Link and Password OTP emailed to ${userRow.email}!`
+        : `Login Link and OTP Code generated for ${userRow.email}. Please check your inbox.`,
+      email: userRow.email,
+      emailSent,
+      expiresInMinutes: 15
+    });
+  } catch (err: any) {
+    console.error('Error requesting login link:', err);
+    res.status(500).json({ error: 'Failed to generate and email login link.' });
+  }
+});
+
+// POST /api/users/verify-magic-token - Verify 1-Click Magic Link and log in
+router.post('/verify-magic-token', (req, res) => {
+  try {
+    const { magicToken } = req.body;
+    if (!magicToken) {
+      return res.status(400).json({ error: 'Magic token is required.' });
+    }
+
+    const record = magicTokenStore[magicToken];
+    if (!record) {
+      return res.status(400).json({ error: 'Invalid or expired login link. Please request a new link.' });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      delete magicTokenStore[magicToken];
+      return res.status(400).json({ error: 'This login link has expired. Please request a new link.' });
+    }
+
+    const rows = queryAll('SELECT * FROM users WHERE id = ? OR LOWER(email) = LOWER(?)', [record.userId, record.email]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    const userRow = rows[0];
+    if (userRow.status !== 'Active') {
+      return res.status(403).json({ error: 'This account is deactivated. Contact Primary Admin.' });
+    }
+
+    // Consume single-use token
+    delete magicTokenStore[magicToken];
+    delete userLoginOtpStore[userRow.email.toLowerCase()];
+
+    res.json({
+      success: true,
+      message: `Welcome back, ${userRow.name}! Logged in via 1-Click Link.`,
+      user: formatUserRow(userRow)
+    });
+  } catch (err: any) {
+    console.error('Error verifying magic token:', err);
+    res.status(500).json({ error: 'Failed to verify login link.' });
+  }
+});
+
+// POST /api/users/login-with-otp - Authenticate using 6-digit OTP code sent to user email
+router.post('/login-with-otp', (req, res) => {
+  try {
+    const { email, otpCode } = req.body;
+    if (!email || !otpCode) {
+      return res.status(400).json({ error: 'Email and 6-digit OTP code are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const record = userLoginOtpStore[cleanEmail];
+
+    if (!record) {
+      return res.status(400).json({ error: 'No OTP generated for this email. Click "Send 1-Click Link & OTP" first.' });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      delete userLoginOtpStore[cleanEmail];
+      return res.status(400).json({ error: 'OTP code has expired. Please request a new one.' });
+    }
+
+    if (record.otpCode !== otpCode.trim()) {
+      return res.status(400).json({ error: 'Invalid 6-digit OTP Code. Please verify and try again.' });
+    }
+
+    const rows = queryAll('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ error: 'User account not found.' });
+    }
+
+    const userRow = rows[0];
+    if (userRow.status !== 'Active') {
+      return res.status(403).json({ error: 'This account is deactivated.' });
+    }
+
+    // Clean up OTP and associated token
+    delete userLoginOtpStore[cleanEmail];
+    if (record.magicToken) {
+      delete magicTokenStore[record.magicToken];
+    }
+
+    res.json({
+      success: true,
+      message: `Welcome back, ${userRow.name}! Signed in successfully.`,
+      user: formatUserRow(userRow)
+    });
+  } catch (err: any) {
+    console.error('Error logging in with OTP:', err);
+    res.status(500).json({ error: 'Failed to process OTP login.' });
   }
 });
 
@@ -387,6 +676,52 @@ router.post('/', (req, res) => {
         now
       ]
     );
+
+    // Generate 1-Click Login Link for the new user
+    const magicToken = `mag_${uuidv4()}`;
+    const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days valid for new account welcome
+    magicTokenStore[magicToken] = {
+      userId: id,
+      email: email.trim().toLowerCase(),
+      otpCode: '',
+      expiresAt
+    };
+
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
+    const host = (req.headers['x-forwarded-host'] as string) || req.get('host') || 'localhost:3000';
+    const origin = (req.headers.origin as string) || `${protocol}://${host}`;
+    const magicLinkUrl = `${origin}/?magicToken=${magicToken}&email=${encodeURIComponent(email.trim())}`;
+
+    // Send Welcome Email with credentials and 1-click link
+    sendEmailUtil({
+      to: email.trim().toLowerCase(),
+      subject: `🏰 Welcome to Kingsland Holidays CRM - Your Account Credentials & Login Link`,
+      html: `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px; background-color: #ffffff; color: #0f172a;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h1 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 0;">🏰 Kingsland Holidays CRM</h1>
+            <p style="color: #64748b; font-size: 13px; margin-top: 4px; font-weight: 500;">Team Member Account Created</p>
+          </div>
+          <p style="font-size: 15px; color: #334155;">Hello <strong>${name.trim()}</strong>,</p>
+          <p style="font-size: 14px; color: #475569; line-height: 1.5;">
+            An account has been created for you on the <strong>Kingsland Holidays CRM</strong> portal under the <strong>${userRole}</strong> team.
+          </p>
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin: 20px 0;">
+            <div style="font-size: 13px; color: #334155; margin-bottom: 6px;"><strong>Email:</strong> ${email.trim().toLowerCase()}</div>
+            <div style="font-size: 13px; color: #334155; margin-bottom: 6px;"><strong>Password:</strong> ${userPassword}</div>
+            <div style="font-size: 13px; color: #334155;"><strong>Role:</strong> ${userRole} (${userDept})</div>
+          </div>
+          <div style="text-align: center; margin: 28px 0;">
+            <a href="${magicLinkUrl}" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: 700; border-radius: 12px; display: inline-block;">
+              🚀 1-Click Login to CRM
+            </a>
+          </div>
+          <p style="font-size: 12px; color: #64748b; word-break: break-all;">
+            Direct Link: <a href="${magicLinkUrl}" style="color: #4f46e5;">${magicLinkUrl}</a>
+          </p>
+        </div>
+      `
+    }).catch(() => {});
 
     const created = queryAll('SELECT * FROM users WHERE id = ?', [id]);
     res.status(201).json(formatUserRow(created[0]));
