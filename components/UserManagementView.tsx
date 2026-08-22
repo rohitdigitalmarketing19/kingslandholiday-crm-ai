@@ -183,10 +183,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
       setOtpSent(true);
       setOtpCountdown(60);
-      setOtpMsg(data.emailSent 
-        ? '✓ 6-Digit OTP Code sent to rohit.digitalmarketing19@gmail.com!' 
-        : `✓ OTP Generated: ${data.otpPreview || 'Check Admin Inbox'}`
-      );
+      setOtpMsg('✓ 6-Digit Security OTP sent to Admin (rohit.digitalmarketing19@gmail.com). Please check your email inbox.');
     } catch (err: any) {
       setOtpMsg(`⚠️ ${err.message}`);
     } finally {

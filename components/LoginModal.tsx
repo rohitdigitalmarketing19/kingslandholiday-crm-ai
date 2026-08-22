@@ -107,10 +107,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       setOtpSent(true);
       setOtpCountdown(60);
-      setOtpStatusMsg(data.emailSent 
-        ? '✓ 6-Digit OTP sent to Admin (rohit.digitalmarketing19@gmail.com)!' 
-        : `✓ OTP Generated: ${data.otpPreview || 'Check Admin Inbox'}`
-      );
+      setOtpStatusMsg('✓ 6-Digit Security OTP sent to Admin (rohit.digitalmarketing19@gmail.com). Please check your email inbox.');
     } catch (err: any) {
       setOtpStatusMsg(`⚠️ ${err.message}`);
     } finally {

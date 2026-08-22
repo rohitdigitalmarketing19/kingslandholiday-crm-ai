@@ -104,12 +104,14 @@
       }
 
       /* Text Colors */
-      html.dark .text-slate-900,
-      html.dark .text-slate-800,
-      html.dark .text-gray-900,
-      html.dark .text-gray-800,
-      html.dark .text-black {
+      html.dark .text-slate-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark .text-slate-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark .text-gray-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark .text-gray-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
         color: #f4f5f0 !important;
+      }
+      html.dark .text-black:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
+        color: #f4f5f0;
       }
       html.dark .text-slate-700,
       html.dark .text-slate-600,
@@ -140,6 +142,21 @@
         color: #c6f135 !important;
       }
 
+      /* Lime / Bright Accent Buttons & Elements (Always crisp dark text & icons) */
+      html.dark .bg-lime-400,
+      html.dark .bg-lime-300,
+      html.dark .bg-lime-500,
+      html.dark [class*="bg-lime-"],
+      html.dark .bg-lime-400 *,
+      html.dark .bg-lime-300 *,
+      html.dark .bg-lime-500 *,
+      html.dark [class*="bg-lime-"] *,
+      .bg-lime-400,
+      .bg-lime-300,
+      .bg-lime-400 * {
+        color: #0e0f0c !important;
+      }
+
       /* Inputs, Selects, and Textareas in Dark Mode */
       html.dark input:not([type="checkbox"]):not([type="radio"]),
       html.dark select,
@@ -157,6 +174,16 @@
       html.dark textarea:focus {
         border-color: #c6f135 !important;
         box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.3) !important;
+      }
+
+      /* Calendar picker icon visibility in Dark Mode */
+      html.dark input[type="date"]::-webkit-calendar-picker-indicator,
+      html.dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+      html.dark input[type="month"]::-webkit-calendar-picker-indicator,
+      html.dark input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(1.5) hue-rotate(180deg) !important;
+        cursor: pointer !important;
+        opacity: 0.9 !important;
       }
 
       /* Unified Subtle Badges (No cartoon bright pastels in Dark Mode) */

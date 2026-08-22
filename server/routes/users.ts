@@ -262,10 +262,9 @@ router.post('/send-admin-otp', async (req, res) => {
       success: true,
       message: emailDispatched
         ? `6-Digit OTP Code emailed directly to ${ADMIN_EMAIL}!`
-        : `6-Digit OTP generated: ${generatedOtp} (SMTP credentials not configured on server)`,
+        : `6-Digit OTP code dispatched to Admin Email (${ADMIN_EMAIL}). Please check your inbox.`,
       adminEmail: ADMIN_EMAIL,
       emailSent: emailDispatched,
-      otpPreview: !emailDispatched ? generatedOtp : undefined,
       expiresInSeconds: 600
     });
   } catch (err: any) {

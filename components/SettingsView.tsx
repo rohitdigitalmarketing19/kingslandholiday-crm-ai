@@ -13,7 +13,8 @@ import {
   Mail,
   Percent,
   MapPin,
-  Sparkles
+  Sparkles,
+  Hash
 } from 'lucide-react';
 import * as api from '../services/apiService';
 
@@ -38,6 +39,9 @@ export const SettingsView: React.FC = () => {
     happy_customers: '5000+',
     logo_url: '',
     favicon_url: '',
+    trip_id_prefix: 'KL-',
+    trip_id_next_number: 1001,
+    trip_id_digits: 4,
     default_payment_terms: '50% advance to confirm the booking, balance 15 days before travel.',
     default_terms_conditions: `1. Booking and Payment: All bookings are subject to availability and confirmation. Payment as per the payment schedule.
 2. Cancellation and Refunds: Cancellation charges apply as per the cancellation policy. Refunds, if applicable, are processed per our refund policy.
@@ -305,7 +309,94 @@ Cancellation Policy (Land Package):
           </div>
         </div>
 
-        {/* Box 2: Branding & Proof */}
+        {/* Box 2: Trip ID & Auto-Numbering Format */}
+        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
+              <Hash className="w-3.5 h-3.5 text-lime-400" />
+              Trip ID & Auto-Numbering Format
+            </span>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-lime-400/10 border border-lime-400/30 rounded-lg text-lime-400 text-xs font-mono font-bold">
+              <span>Next Trip ID Preview:</span>
+              <span className="bg-lime-400 text-black px-1.5 py-0.5 rounded font-black text-[11px]">
+                {(formData.trip_id_prefix || 'KL-') + String(formData.trip_id_next_number || 1001).padStart(formData.trip_id_digits || 4, '0')}
+              </span>
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-400 leading-relaxed">
+            Configure the prefix and starting sequence for generating unique Trip IDs. Every new lead, quote, and booking will automatically continue with this numbering format.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Trip ID Prefix / Format<span className="text-lime-400 ml-0.5">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.trip_id_prefix || ''}
+                onChange={e => handleChange('trip_id_prefix', e.target.value)}
+                placeholder="e.g. KL-, KLH-, KLH-2026-, TRIP-"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {['KL-', 'KLH-', 'KLH-2026-', 'TRIP-'].map(pre => (
+                  <button
+                    key={pre}
+                    type="button"
+                    onClick={() => handleChange('trip_id_prefix', pre)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${
+                      formData.trip_id_prefix === pre
+                        ? 'bg-lime-400 text-black border-lime-400 font-bold'
+                        : 'bg-zinc-800/80 text-zinc-400 border-zinc-700 hover:text-zinc-200'
+                    }`}
+                  >
+                    {pre}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Next Sequential Number<span className="text-lime-400 ml-0.5">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={formData.trip_id_next_number || 1001}
+                onChange={e => handleChange('trip_id_next_number', parseInt(e.target.value, 10) || 1)}
+                placeholder="1001"
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              />
+              <span className="text-[10px] text-zinc-500 block mt-1.5">
+                New leads will start from this number and count up.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                Minimum Digits (Padding)
+              </label>
+              <select
+                value={formData.trip_id_digits || 4}
+                onChange={e => handleChange('trip_id_digits', parseInt(e.target.value, 10) || 4)}
+                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+              >
+                <option value={3}>3 Digits (e.g. 001)</option>
+                <option value={4}>4 Digits (e.g. 1001)</option>
+                <option value={5}>5 Digits (e.g. 01001)</option>
+                <option value={6}>6 Digits (e.g. 001001)</option>
+              </select>
+              <span className="text-[10px] text-zinc-500 block mt-1.5">
+                Sequence: {(formData.trip_id_prefix || 'KL-') + String((formData.trip_id_next_number || 1001) + 1).padStart(formData.trip_id_digits || 4, '0')}, {(formData.trip_id_prefix || 'KL-') + String((formData.trip_id_next_number || 1001) + 2).padStart(formData.trip_id_digits || 4, '0')}...
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Box 3: Branding & Proof */}
         <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
             Branding & proof

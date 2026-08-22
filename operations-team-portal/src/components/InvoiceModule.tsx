@@ -178,6 +178,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   const [customerPan, setCustomerPan] = useState('');
 
   // Trip / Reference Details
+  const [tripId, setTripId] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [tripStartDate, setTripStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -266,7 +267,10 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     setCustomerAddress((cust as any).address || (cust as any).city || '');
     setCustomerGstin((cust as any).gstin || '');
     setCustomerPan((cust as any).pan || '');
-    setInvoiceNo(cust.bookingId || cust.id || '');
+    const targetTripId = cust.bookingId || cust.id || '';
+    setTripId(targetTripId);
+    const cleanNum = targetTripId.replace(/^[A-Za-z-]+/, '');
+    setInvoiceNo(cleanNum ? `INV-${cleanNum}` : (cust.bookingId || cust.id || 'INV-1001'));
     setTripName(`${cust.destination || 'Tour'} Package`);
     setTripStartDate(cust.startDate || new Date().toISOString().split('T')[0]);
     setPlaceOfSupply(cust.destination || 'Rajasthan');
@@ -1125,14 +1129,29 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <h4 className="font-extrabold text-slate-900 uppercase text-[11px] tracking-wider text-teal-700">Invoice Reference & Trip Info</h4>
               
-              <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Invoice / Booking No</label>
-                <input
-                  type="text"
-                  value={invoiceNo}
-                  onChange={(e) => setInvoiceNo(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Trip ID</label>
+                  <input
+                    type="text"
+                    value={tripId}
+                    onChange={(e) => setTripId(e.target.value)}
+                    placeholder="e.g. KL-1001"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold font-mono text-slate-900 bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                    {activeType === 'package_customer' ? 'Receipt No.' : 'Invoice No.'}
+                  </label>
+                  <input
+                    type="text"
+                    value={invoiceNo}
+                    onChange={(e) => setInvoiceNo(e.target.value)}
+                    placeholder={activeType === 'package_customer' ? 'Receipt No.' : 'Invoice No.'}
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold font-mono text-slate-900 bg-white"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
@@ -1583,7 +1602,8 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   <div className="space-y-1.5">
                     <h3 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b pb-1">INVOICE REFERENCE</h3>
                     <div className="space-y-1 pt-1">
-                      <p><strong className="font-bold">Invoice No:</strong> {invoiceNo}</p>
+                      <p><strong className="font-bold">Invoice No:</strong> <span className="font-mono font-bold">{invoiceNo}</span></p>
+                      {tripId && <p><strong className="font-bold">Trip ID:</strong> <span className="font-mono font-bold text-indigo-700">#{tripId}</span></p>}
                       <p><strong className="font-bold">Invoice Date:</strong> {invoiceDate}</p>
                       <p><strong className="font-bold">Trip Start Date:</strong> {tripStartDate}</p>
                       <p><strong className="font-bold">Place of Supply:</strong> {placeOfSupply}</p>
@@ -1775,7 +1795,8 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   <div className="space-y-1.5">
                     <h3 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider border-b pb-1">PACKAGE GENERAL INFO</h3>
                     <div className="space-y-1 pt-1">
-                      <p><strong className="font-bold">Booking Ref:</strong> {invoiceNo}</p>
+                      <p><strong className="font-bold">Invoice No:</strong> <span className="font-mono font-bold">{invoiceNo}</span></p>
+                      {tripId && <p><strong className="font-bold">Trip ID:</strong> <span className="font-mono font-bold text-indigo-700">#{tripId}</span></p>}
                       <p><strong className="font-bold">Trip Name:</strong> {tripName}</p>
                       <p><strong className="font-bold">Travel Start Date:</strong> {tripStartDate}</p>
                       <p><strong className="font-bold">Total Travelers:</strong> {totalTravelersStr}</p>
@@ -1907,7 +1928,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     ) : (
                       <h2 className="text-2xl sm:text-3xl font-black font-serif italic text-[#7B1D2A] tracking-tight">{pkgCustomerTitle}</h2>
                     )}
-                    <p className="font-mono text-sm font-extrabold text-[#B85B28]">BOOKING REF: #{invoiceNo}</p>
+                    <p className="font-mono text-sm font-extrabold text-[#B85B28]">
+                      TRIP ID: #{tripId || invoiceNo} {invoiceNo ? `· RECEIPT NO: #${invoiceNo}` : ''}
+                    </p>
                     <div>
                       <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
@@ -1918,8 +1941,8 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
                 </div>
 
-                {/* Metadata Bar (4 Columns) */}
-                <div className="invoice-meta-bar invoice-avoid-break grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[#F6F0E4] border border-[#E6DCC8] text-center text-xs">
+                {/* Metadata Bar (5 Columns) */}
+                <div className="invoice-meta-bar invoice-avoid-break grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 rounded-2xl bg-[#F6F0E4] border border-[#E6DCC8] text-center text-xs">
                   <div>
                     <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">ISSUE DATE</span>
                     <span className="font-bold text-slate-900">{invoiceDate}</span>
@@ -1929,7 +1952,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <span className="font-bold text-slate-900">{tripStartDate}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">BOOKING REF / TRIP ID</span>
+                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">TRIP ID</span>
+                    <span className="font-bold text-[#7B1D2A] font-mono">{tripId || invoiceNo}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">RECEIPT NO</span>
                     <span className="font-bold text-slate-900 font-mono">{invoiceNo}</span>
                   </div>
                   <div>
@@ -2167,7 +2194,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <AlertCircle className="w-4 h-4 text-rose-600" /> IMPORTANT RESERVATION NOTICE
                   </h4>
                   <p className="leading-relaxed font-medium">
-                    This Payment Confirmation Slip officially confirms the receipt of advance token / milestone funds for booking ref <strong>#{invoiceNo}</strong>. Kindly ensure subsequent milestone installments are cleared prior to the due dates to ensure uninterrupted vehicle allocation and luxury stay confirmations. For payment verification or amendments, contact Kingsland 24x7 desk at <strong>{companyPhone}</strong>.
+                    This Payment Confirmation Slip officially confirms the receipt of advance token / milestone funds for Trip ID <strong>#{tripId || invoiceNo}</strong> (Receipt Ref: <strong>#{invoiceNo}</strong>). Kindly ensure subsequent milestone installments are cleared prior to the due dates to ensure uninterrupted vehicle allocation and luxury stay confirmations. For payment verification or amendments, contact Kingsland 24x7 desk at <strong>{companyPhone}</strong>.
                   </p>
                 </div>
 

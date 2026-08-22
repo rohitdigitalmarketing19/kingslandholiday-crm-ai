@@ -54,7 +54,8 @@ import {
   Moon,
   Database,
   Palette,
-  Settings
+  Settings,
+  Calendar
 } from 'lucide-react';
 
 // NavItem props
@@ -477,7 +478,7 @@ const App: React.FC = () => {
 
   // Form State for Lead
   const [formData, setFormData] = useState({
-    tripId: `KL-${Math.floor(1000 + Math.random() * 9000)}`,
+    tripId: '',
     name: '', phone: '', email: '', days: 10, nights: 9, travelDate: '',
     adults: 2, children: 0, childAges: [] as number[], destination: '',
     otherInfo: '', source: 'Google Ads', salesPersonId: '',
@@ -693,6 +694,7 @@ const App: React.FC = () => {
 
     try {
       const newLeadData = {
+        tripId: formData.tripId.trim() ? formData.tripId.trim() : undefined,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -720,7 +722,7 @@ const App: React.FC = () => {
       await loadLeads(); // Refresh leads list
 
       setFormData({ 
-        tripId: `KL-${Math.floor(1000 + Math.random() * 9000)}`,
+        tripId: '',
         name: '', phone: '', email: '', days: 10, nights: 9, travelDate: '', 
         adults: 2, children: 0, childAges: [], destination: '', otherInfo: '', 
         source: 'Website Form', salesPersonId: agents[0]?.id || '',
@@ -1538,12 +1540,12 @@ const App: React.FC = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Trip ID (Auto-Generated / Custom)</label>
-                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="e.g. KL-1005" />
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Trip ID (Auto / Custom)</label>
+                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="Auto (Leaves format to Settings)" />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Lead Source</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Lead Source</label>
                       <select className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer" value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})}>
                         <option value="Google Ads">Google Ads</option>
                         <option value="Meta Ads">Meta Ads</option>
@@ -1555,23 +1557,26 @@ const App: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Customer Full Name *</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Customer Full Name *</label>
                       <input type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Phone / WhatsApp</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Phone / WhatsApp</label>
                       <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="+91 00000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Travel Destination *</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Destination *</label>
                       <input type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="e.g. Kashmir / Dubai / Bali" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Travel Date</label>
-                      <input type="date" min={todayStr} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Date</label>
+                      <div className="relative flex items-center">
+                        <Calendar className="w-4 h-4 text-slate-400 dark:text-lime-400 absolute left-3 pointer-events-none z-10" />
+                        <input type="date" min={todayStr} className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
+                      </div>
                     </div>
 
                     <div>

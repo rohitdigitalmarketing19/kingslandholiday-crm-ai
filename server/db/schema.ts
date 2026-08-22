@@ -137,6 +137,9 @@ export function initializeDatabase(): void {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
     `ALTER TABLE agency_settings ADD COLUMN favicon_url TEXT DEFAULT ''`,
+    `ALTER TABLE agency_settings ADD COLUMN trip_id_prefix TEXT DEFAULT 'KL-'`,
+    `ALTER TABLE agency_settings ADD COLUMN trip_id_next_number INTEGER DEFAULT 1001`,
+    `ALTER TABLE agency_settings ADD COLUMN trip_id_digits INTEGER DEFAULT 4`,
     `ALTER TABLE pdf_designs ADD COLUMN pdf_file_data TEXT DEFAULT ''`,
     `ALTER TABLE pdf_designs ADD COLUMN page_count INTEGER DEFAULT 0`,
     `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`

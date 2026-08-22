@@ -71,11 +71,12 @@ export function getLeadById(id: string) {
   return row ? hydrateLead(row) : null;
 }
 
+import { generateNextTripId } from './settingsController';
+
 export function createLead(data: any) {
-  const lastLead = queryOne('SELECT trip_id FROM leads ORDER BY CAST(SUBSTR(trip_id, 4) AS INTEGER) DESC LIMIT 1');
-  let nextNum = 1001;
-  if (lastLead) { const num = parseInt(lastLead.trip_id.replace('KL-', ''), 10); if (!isNaN(num)) nextNum = num + 1; }
-  const id = data.id || `lead-${Date.now()}`; const tripId = `KL-${nextNum}`; const now = new Date().toISOString();
+  const id = data.id || `lead-${Date.now()}`;
+  const tripId = data.tripId || generateNextTripId();
+  const now = new Date().toISOString();
   runQuery('INSERT INTO leads (id, trip_id, name, phone, email, raw_inquiry, summary, score, intent, destination, budget_tier, assigned_to, source, status, travel_date, duration_days, adults, children, child_ages, other_info, include_stay, include_flight, include_cab, hotel_category, english_driver, created_at, last_follow_up) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [id, tripId, data.name || '', data.phone || '', data.email || '', data.rawInquiry || '', data.summary || '', data.score || 50, data.intent || 'Information Seeking', data.destination || '', data.budgetTier || 'Mid', data.assignedTo || '', data.source || 'Website Form', data.status || 'New', data.travelDate || '', data.durationDays || 7, data.travelers?.adults || 2, data.travelers?.children || 0, JSON.stringify(data.travelers?.childAges || []), data.otherInfo || '', data.includeStay || 'Yes', data.includeFlight || 'No', data.includeCab || 'Yes', data.hotelCategory || '4/3 Star', data.englishDriver ? 1 : 0, now, now]
   );

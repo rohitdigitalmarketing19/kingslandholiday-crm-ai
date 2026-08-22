@@ -1,6 +1,7 @@
 import { runQuery, queryAll, queryOne } from '../db/connection';
 import { getLeadById } from './leadsController';
 import { syncConvertedLeadsToOps } from './opsController';
+import { generateNextTripId } from './settingsController';
 
 function saveInclusions(quoteId: string, inclusions: any) {
   if (!inclusions) return;
@@ -54,7 +55,7 @@ export function createQuote(leadId: string, data: any) {
   // Ensure lead exists in DB to prevent FK constraint error
   const existingLead = queryOne('SELECT id FROM leads WHERE id = ?', [leadId]);
   if (!existingLead) {
-    const tripId = `KL-${Math.floor(1000 + Math.random() * 9000)}`;
+    const tripId = generateNextTripId();
     runQuery('INSERT INTO leads (id, trip_id, name, created_at, last_follow_up) VALUES (?,?,?,?,?)', [leadId, tripId, 'Client', now, now]);
   }
 
