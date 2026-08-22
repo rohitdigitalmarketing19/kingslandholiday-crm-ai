@@ -296,38 +296,6 @@ const App: React.FC = () => {
     }).catch(() => {});
   }, []);
 
-  // Check for 1-Click Magic Login Link in URL parameters
-  useEffect(() => {
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const magicToken = urlParams.get('magicToken') || urlParams.get('magic_token') || urlParams.get('auth_token');
-      if (magicToken) {
-        fetch('/api/users/verify-magic-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ magicToken })
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.user) {
-              setCurrentUser(data.user);
-              localStorage.setItem('kingsland_active_user_id', data.user.id);
-              setIsLoginModalOpen(false);
-              // Clean URL query parameters
-              const cleanUrl = window.location.pathname + window.location.hash;
-              window.history.replaceState({}, document.title, cleanUrl);
-              alert(`🎉 Welcome back, ${data.user.name}! You are logged in via 1-Click Link.`);
-            } else if (data.error) {
-              alert(`⚠️ Magic Login Link: ${data.error}`);
-            }
-          })
-          .catch(err => {
-            console.error('Magic link verification error:', err);
-          });
-      }
-    } catch (_e) {}
-  }, []);
-
   const [opsCustomersList, setOpsCustomersList] = useState<any[]>([]);
 
   // Fetch Users
