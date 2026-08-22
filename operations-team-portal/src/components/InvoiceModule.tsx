@@ -1516,6 +1516,68 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 break-after: avoid !important;
                 page-break-after: avoid !important;
               }
+              .doc-preview-protected, .doc-preview-protected * {
+                color-scheme: light !important;
+              }
+              .doc-preview-protected {
+                color: #0f172a !important;
+              }
+              .doc-preview-protected .text-slate-900,
+              .doc-preview-protected .text-slate-950,
+              .doc-preview-protected .text-gray-900,
+              .doc-preview-protected .text-black,
+              .doc-preview-protected h1,
+              .doc-preview-protected h2,
+              .doc-preview-protected h3,
+              .doc-preview-protected h4,
+              .doc-preview-protected strong,
+              .doc-preview-protected b {
+                color: #0f172a !important;
+              }
+              .doc-preview-protected .text-slate-800,
+              .doc-preview-protected .text-gray-800 {
+                color: #1e293b !important;
+              }
+              .doc-preview-protected .text-slate-700,
+              .doc-preview-protected .text-gray-700 {
+                color: #334155 !important;
+              }
+              .doc-preview-protected .text-slate-600,
+              .doc-preview-protected .text-gray-600 {
+                color: #475569 !important;
+              }
+              .doc-preview-protected .text-slate-500,
+              .doc-preview-protected .text-gray-500 {
+                color: #64748b !important;
+              }
+              .doc-preview-protected .text-slate-400,
+              .doc-preview-protected .text-gray-400 {
+                color: #94a3b8 !important;
+              }
+              .doc-preview-protected .bg-white {
+                background-color: #ffffff !important;
+              }
+              .doc-preview-protected .bg-slate-50 {
+                background-color: #f8fafc !important;
+              }
+              .doc-preview-protected .bg-slate-100 {
+                background-color: #f1f5f9 !important;
+              }
+              .doc-preview-protected .bg-slate-200 {
+                background-color: #e2e8f0 !important;
+              }
+              .doc-preview-protected .border-slate-100 {
+                border-color: #f1f5f9 !important;
+              }
+              .doc-preview-protected .border-slate-200 {
+                border-color: #e2e8f0 !important;
+              }
+              .doc-preview-protected .border-slate-300 {
+                border-color: #cbd5e1 !important;
+              }
+              .doc-preview-protected .border-slate-900 {
+                border-color: #0f172a !important;
+              }
             `}</style>
             
             {/* ======================================================== */}

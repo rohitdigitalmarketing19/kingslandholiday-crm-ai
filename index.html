@@ -103,26 +103,26 @@
         border-color: #282a22 !important;
       }
 
-      /* Text Colors */
-      html.dark .text-slate-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
-      html.dark .text-slate-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
-      html.dark .text-gray-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
-      html.dark .text-gray-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
+      /* Text Colors (Scoped outside protected documents & invoices) */
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-900:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300),
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-800:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
         color: #f4f5f0 !important;
       }
-      html.dark .text-black:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-black:not([class*="bg-lime-"]):not(.bg-lime-400):not(.bg-lime-300) {
         color: #f4f5f0;
       }
-      html.dark .text-slate-700,
-      html.dark .text-slate-600,
-      html.dark .text-gray-700,
-      html.dark .text-gray-600 {
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-700,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-600,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-700,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-600 {
         color: #d4d4d8 !important;
       }
-      html.dark .text-slate-500,
-      html.dark .text-slate-400,
-      html.dark .text-gray-500,
-      html.dark .text-gray-400 {
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-500,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-slate-400,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-500,
+      html.dark body :not(.doc-preview-protected):not(.doc-preview-protected *):not(.printable-voucher-container):not(.printable-voucher-container *).text-gray-400 {
         color: #9e9f97 !important;
       }
 
