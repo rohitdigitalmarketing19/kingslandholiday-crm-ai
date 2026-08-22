@@ -11,6 +11,7 @@
     "dev:full": "concurrently -n \"server,client\" -c \"cyan,magenta\" \"npm run server\" \"npm run dev\"",
     "dev:all": "concurrently -n \"server,crm,ops\" -c \"cyan,magenta,yellow\" \"npm run server\" \"npm run dev\" \"npm run dev:ops\"",
     "build": "tsc && vite build && npx esbuild server/index.ts --bundle --platform=node --format=esm --outfile=server.js --packages=external --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\"",
+    "package:zip": "node scripts/package-deploy.cjs",
     "preview": "vite preview",
     "db:seed": "tsx server/db/seed.ts"
   },
@@ -21,7 +22,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "html2pdf.js": "^0.10.3",
+    "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.27.0",
     "nodemailer": "^9.0.5",
     "pg": "^8.23.0",
@@ -35,7 +36,7 @@
   },
   "overrides": {
     "jspdf": "^4.2.1",
-    "dompurify": "^3.2.4",
+    "dompurify": "^3.4.13",
     "nanoid": "^5.1.6"
   },
   "devDependencies": {
@@ -47,8 +48,8 @@
     "@types/react-dom": "^19.0.0",
     "@types/sql.js": "^1.4.9",
     "@types/uuid": "^10.0.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.5.0",
     "concurrently": "^9.1.2",
-    "vite": "^5.4.15"
+    "vite": "^6.4.3"
   }
 }

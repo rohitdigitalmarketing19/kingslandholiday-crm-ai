@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Printer, Download, CheckCircle, Hotel, Sparkles, FileText, Send, Building2, User, Calendar, ShieldCheck } from 'lucide-react';
 import { Customer, HotelVoucher } from '../types';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 interface CreateVoucherModalProps {
   isOpen: boolean;
@@ -57,22 +58,19 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
     window.print();
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!printRef.current) return;
-    const element = printRef.current;
     const filename = `Hotel_Voucher_${hotelName.replace(/\s+/g, '_')}.pdf`;
     
-    const opt = {
-      margin: 0.2,
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    if (typeof (window as any).html2pdf !== 'undefined') {
-      (window as any).html2pdf().set(opt).from(element).save();
-    } else {
+    try {
+      await exportElementToPdf(printRef.current, {
+        filename,
+        margin: 6,
+        width: 800,
+        scale: 2
+      });
+    } catch (err) {
+      console.error('PDF export error:', err);
       window.print();
     }
   };

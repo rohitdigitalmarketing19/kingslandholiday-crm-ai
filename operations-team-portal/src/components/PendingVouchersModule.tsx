@@ -18,7 +18,8 @@ import {
   Eye,
   Package,
   Layers,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { HotelVoucher } from '../types';
 
@@ -30,6 +31,7 @@ interface PendingVouchersModuleProps {
   onOpenCreateVoucherClick?: (voucher?: HotelVoucher) => void;
   onViewVoucherClick?: (voucher: HotelVoucher) => void;
   onSendMailToHotel?: (voucher: HotelVoucher, allVouchersInPackage?: HotelVoucher[]) => void;
+  onDeleteVoucher?: (voucherId: string) => void;
 }
 
 export const PendingVouchersModule: React.FC<PendingVouchersModuleProps> = ({
@@ -40,6 +42,7 @@ export const PendingVouchersModule: React.FC<PendingVouchersModuleProps> = ({
   onOpenCreateVoucherClick,
   onViewVoucherClick,
   onSendMailToHotel,
+  onDeleteVoucher,
 }) => {
   const [urgencyFilter, setUrgencyFilter] = useState<string>('all');
   const [selectedCustomer, setSelectedCustomer] = useState<string>('all');
@@ -352,6 +355,21 @@ export const PendingVouchersModule: React.FC<PendingVouchersModuleProps> = ({
                                   <Upload className="w-3.5 h-3.5" />
                                   <span>Upload Voucher</span>
                                 </button>
+
+                                {onDeleteVoucher && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete this pending hotel voucher for "${v.hotelName}"?`)) {
+                                        onDeleteVoucher(v.id);
+                                      }
+                                    }}
+                                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors flex items-center gap-1.5"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Delete</span>
+                                  </button>
+                                )}
                               </>
                             ) : (
                               <>
@@ -372,6 +390,21 @@ export const PendingVouchersModule: React.FC<PendingVouchersModuleProps> = ({
                                   >
                                     <Sparkles className="w-3.5 h-3.5 text-teal-600" />
                                     <span>Edit Voucher</span>
+                                  </button>
+                                )}
+
+                                {onDeleteVoucher && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm(`Are you sure you want to delete this confirmed hotel voucher for "${v.hotelName}"?`)) {
+                                        onDeleteVoucher(v.id);
+                                      }
+                                    }}
+                                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-colors flex items-center gap-1.5"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Delete</span>
                                   </button>
                                 )}
                               </>

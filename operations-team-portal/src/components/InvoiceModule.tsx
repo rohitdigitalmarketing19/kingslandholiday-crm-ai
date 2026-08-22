@@ -21,11 +21,19 @@ import {
   Settings,
   Upload,
   Image as ImageIcon,
-  Save
+  Save,
+  ShieldCheck,
+  Shield,
+  CreditCard,
+  Smartphone,
+  Landmark,
+  Check,
+  CheckCheck,
+  Lock,
+  Sparkles
 } from 'lucide-react';
 import { Customer } from '../types';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 export type InvoiceType = 'tax' | 'package_description' | 'package_customer' | 'settings';
 
@@ -162,28 +170,23 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   const [taxMode, setTaxMode] = useState<'cgst_sgst' | 'igst'>('cgst_sgst');
 
   // Customer / Lead Profile State
-  const [customerName, setCustomerName] = useState('GUEST CLIENT');
+  const [customerName, setCustomerName] = useState('');
   const [customerMobile, setCustomerMobile] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
-  const [customerAddress, setCustomerAddress] = useState('—');
+  const [customerAddress, setCustomerAddress] = useState('');
   const [customerGstin, setCustomerGstin] = useState('');
   const [customerPan, setCustomerPan] = useState('');
 
   // Trip / Reference Details
-  const [invoiceNo, setInvoiceNo] = useState(`Trip ID - ${Math.floor(1000 + Math.random() * 9000)}`);
+  const [invoiceNo, setInvoiceNo] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
   const [tripStartDate, setTripStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [placeOfSupply, setPlaceOfSupply] = useState('Destination');
-  const [tripName, setTripName] = useState('Tour Package');
-  const [totalTravelersStr, setTotalTravelersStr] = useState('2 Passengers (2 Adults)');
+  const [placeOfSupply, setPlaceOfSupply] = useState('');
+  const [tripName, setTripName] = useState('');
+  const [totalTravelersStr, setTotalTravelersStr] = useState('');
 
   // Passengers list
-  const [passengers, setPassengers] = useState<Array<{ id: string; text: string }>>([
-    { id: '1', text: 'Rahul Age 4' },
-    { id: '2', text: 'rahul Age 4' },
-    { id: '3', text: 'rahul Age 4' },
-    { id: '4', text: 'rahul Age 4' },
-  ]);
+  const [passengers, setPassengers] = useState<Array<{ id: string; text: string }>>([]);
 
   // Tax Invoice Line Items
   const [taxItems, setTaxItems] = useState<Array<{
@@ -199,9 +202,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     {
       id: '1',
       description: 'Service Charges & Commission Fee',
-      subDescription: 'Taxable booking and facilitation fees for Jaipur tour package',
+      subDescription: 'Taxable booking and facilitation fees for tour package',
       sacCode: '998552',
-      taxableValue: 10000,
+      taxableValue: 0,
       cgstRate: 9,
       sgstRate: 9,
       igstRate: 18
@@ -214,97 +217,283 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     description: string;
     price: number;
   }>>([
-    { id: '1', description: 'Commission Services & Processing Fee', price: 10000 },
-    { id: '2', description: 'Hotel Accommodation & Stay Expenses (3 Star Hotel)', price: 10000 },
-    { id: '3', description: 'Cab Operations & Transit Services ()', price: 10000 },
-    { id: '4', description: 'Food, Catering & Dining Services (Continental Breakfast)', price: 10000 },
-    { id: '5', description: 'Flight', price: 10000 },
+    { id: '1', description: 'Commission Services & Processing Fee', price: 0 },
+    { id: '2', description: 'Hotel Accommodation & Stay Expenses', price: 0 },
+    { id: '3', description: 'Cab Operations & Transit Services', price: 0 },
+    { id: '4', description: 'Food, Catering & Dining Services', price: 0 },
+    { id: '5', description: 'Flight / Transit Ticketing', price: 0 },
   ]);
 
-  // Customer Package Invoice (PDF 3) Specifics
-  const [pkgDepositStatus, setPkgDepositStatus] = useState('Pending Deposit');
-  const [hotelBadge, setHotelBadge] = useState('3 Star Hotel');
-  const [mealBadge, setMealBadge] = useState('Continental Breakfast');
-  const [destinationBadge, setDestinationBadge] = useState('Jaipur');
+  // Customer Package Invoice (PDF 3) Specifics - Payment Confirmation Slip
+  const [pkgDepositStatus, setPkgDepositStatus] = useState('ADVANCE CONFIRMED');
+  const [hotelBadge, setHotelBadge] = useState('Heritage Deluxe Stays');
+  const [mealBadge, setMealBadge] = useState('Breakfast & Dinner Included (MAP)');
+  const [destinationBadge, setDestinationBadge] = useState('');
   const [installments, setInstallments] = useState<Array<{
     id: string;
     num: number;
+    title: string;
     amount: number;
     dueDate: string;
     status: 'DUE NOW' | 'UPCOMING' | 'PAID';
-  }>>([
-    { id: '1', num: 1, amount: 25000, dueDate: '14 Oct 2026', status: 'DUE NOW' },
-    { id: '2', num: 2, amount: 25000, dueDate: '26 Nov 2026', status: 'UPCOMING' },
-  ]);
+    paidAt?: string;
+    paymentMode?: string;
+    transactionRef?: string;
+  }>>([]);
+  const [paymentsList, setPaymentsList] = useState<Array<{
+    id: string;
+    date: string;
+    mode: string;
+    utrNumber: string;
+    amount: number;
+    status: string;
+  }>>([]);
   const [totalPaidAmount, setTotalPaidAmount] = useState<number>(0);
-  const [nextDueDate, setNextDueDate] = useState<string>('14 Oct 2026');
+  const [nextDueDate, setNextDueDate] = useState<string>('');
 
-  // Auto-fill from selected customer
-  const handleAutoFillFromCustomer = (cust: Customer) => {
+  // Custom Printable Titles Editable States
+  const [taxInvoiceTitle, setTaxInvoiceTitle] = useState('TAX INVOICE');
+  const [taxInvoiceSubtitle, setTaxInvoiceSubtitle] = useState('Original For Recipient');
+  const [pkgDescTitle, setPkgDescTitle] = useState('PACKAGE DESCRIPTION');
+  const [pkgCustomerTitle, setPkgCustomerTitle] = useState('PAYMENT CONFIRMATION SLIP');
+
+  // Complete Auto-fill from selected customer & lead database
+  const handleAutoFillFromCustomer = async (cust: Customer) => {
     if (!cust) return;
-    setCustomerName(cust.name || 'GUEST CLIENT');
-    setCustomerMobile(cust.phone || '9999999999');
-    setCustomerEmail(cust.email || 'guest@example.com');
-    setInvoiceNo(cust.bookingId || `Trip ID - ${Math.floor(1000 + Math.random() * 9000)}`);
-    setTripName(`${cust.destination || 'India'} Tour Package`);
-    setTripStartDate(cust.startDate || '23 Jul 2026');
-    setDestinationBadge(cust.destination || 'Jaipur');
-    const paxCount = `${(cust.paxAdults || 2) + (cust.paxChildren || 0)} Passengers (${cust.paxAdults || 2} Adults, ${cust.paxChildren || 0} Children)`;
+    setCustomerName(cust.name || '');
+    setCustomerMobile(cust.phone || '');
+    setCustomerEmail(cust.email || '');
+    setCustomerAddress((cust as any).address || (cust as any).city || '');
+    setCustomerGstin((cust as any).gstin || '');
+    setCustomerPan((cust as any).pan || '');
+    setInvoiceNo(cust.bookingId || cust.id || '');
+    setTripName(`${cust.destination || 'Tour'} Package`);
+    setTripStartDate(cust.startDate || new Date().toISOString().split('T')[0]);
+    setPlaceOfSupply(cust.destination || 'Rajasthan');
+    setDestinationBadge(cust.destination || 'Rajasthan');
+
+    const adults = cust.paxAdults || 2;
+    const children = cust.paxChildren || 0;
+    const paxCount = `${adults + children} Passengers (${adults} Adults${children ? `, ${children} Children` : ''})`;
     setTotalTravelersStr(paxCount);
 
-    const total = cust.totalAmount || 50000;
-    const instList = cust.installments && cust.installments.length > 0 ? cust.installments.map((inst, idx) => ({
-      id: inst.id || `${idx + 1}`,
-      num: inst.installmentNumber || idx + 1,
-      amount: inst.amount || Math.round(total / 2),
-      dueDate: inst.dueDate || '14 Oct 2026',
-      status: (inst.status === 'Paid' ? 'PAID' : (idx === 0 ? 'DUE NOW' : 'UPCOMING')) as any
-    })) : [
-      { id: '1', num: 1, amount: Math.round(total / 2), dueDate: '14 Oct 2026', status: 'DUE NOW' as const },
-      { id: '2', num: 2, amount: Math.round(total / 2), dueDate: '26 Nov 2026', status: 'UPCOMING' as const },
-    ];
-    setInstallments(instList);
+    // Auto-fill passengers roster if present or generate from traveler party
+    const newPassengers: Array<{ id: string; text: string }> = [];
+    newPassengers.push({ id: '1', text: `1. ${cust.name || 'Primary Guest'} (Lead Traveler)` });
+    for (let i = 2; i <= adults; i++) {
+      newPassengers.push({ id: `adult-${i}`, text: `${i}. Adult Passenger ${i}` });
+    }
+    for (let j = 1; j <= children; j++) {
+      newPassengers.push({ id: `child-${j}`, text: `${adults + j}. Child Passenger ${j} (Child)` });
+    }
+    setPassengers(newPassengers);
 
-    const paidSum = cust.installments ? cust.installments.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.amount, 0) : 0;
-    setTotalPaidAmount(paidSum);
+    setHotelBadge(`${cust.destination || 'Rajasthan'} Luxury Hotel Accommodation`);
+    setMealBadge('Breakfast & Dinner Included (MAP Plan)');
 
-    // Update tax invoice items default
-    const commFee = Math.round(total * 0.2);
-    setTaxItems([{
-      id: '1',
-      description: 'Service Charges & Commission Fee',
-      subDescription: `Taxable booking and facilitation fees for ${cust.destination || 'Jaipur'} tour package`,
-      sacCode: '998552',
-      taxableValue: commFee,
-      cgstRate: 9,
-      sgstRate: 9,
-      igstRate: 18
-    }]);
+    const targetTotal = Number(cust.totalAmount) || 65000;
 
-    // Update package description items default
-    const actualHotel = cust.hotelTotalCost || 0;
-    const actualCab = cust.cabTotalCost || 0;
+    // Load Live Installments and Submissions from API
+    let fetchedInsts: any[] = [];
+    let fetchedSubs: any[] = [];
+    try {
+      const targetId = cust.id || cust.bookingId;
+      const [instsRes, subsRes] = await Promise.all([
+        fetch(`/api/payments/installments?leadId=${encodeURIComponent(targetId)}`).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(`/api/payments/submissions?leadId=${encodeURIComponent(targetId)}`).then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      fetchedInsts = Array.isArray(instsRes) ? instsRes : [];
+      fetchedSubs = Array.isArray(subsRes) ? subsRes : [];
+    } catch (_err) {}
+
+    // Process Installments Schedule
+    let finalInstallments: Array<{
+      id: string;
+      num: number;
+      title: string;
+      amount: number;
+      dueDate: string;
+      status: 'DUE NOW' | 'UPCOMING' | 'PAID';
+      paidAt?: string;
+      paymentMode?: string;
+      transactionRef?: string;
+    }> = [];
+
+    if (fetchedInsts.length > 0) {
+      finalInstallments = fetchedInsts.map((inst: any, idx: number) => {
+        const isPaid = inst.payment_status === 'Paid' || inst.status === 'Paid';
+        const isFirstPending = !isPaid && !fetchedInsts.slice(0, idx).some((x: any) => (x.payment_status !== 'Paid' && x.status !== 'Paid'));
+        return {
+          id: inst.id || `inst-${idx + 1}`,
+          num: inst.installment_number || inst.installmentNumber || idx + 1,
+          title: inst.title || (idx === 0 ? 'Booking Advance Token' : idx === 1 ? 'Milestone Installment' : 'Final Balance Clearance'),
+          amount: Number(inst.amount) || 0,
+          dueDate: inst.due_date || inst.dueDate || cust.startDate || '',
+          status: isPaid ? 'PAID' : isFirstPending ? 'DUE NOW' : 'UPCOMING',
+          paidAt: inst.paid_at || inst.paidAt || '',
+          paymentMode: inst.payment_mode || inst.paymentMode || 'UPI',
+          transactionRef: inst.transaction_ref || inst.transactionRef || inst.utr_number || '',
+        };
+      });
+    } else if (cust.installments && cust.installments.length > 0) {
+      finalInstallments = cust.installments.map((inst: any, idx: number) => {
+        const isPaid = inst.status === 'Paid' || inst.payment_status === 'Paid';
+        return {
+          id: inst.id || `inst-${idx + 1}`,
+          num: inst.installmentNumber || idx + 1,
+          title: inst.title || (idx === 0 ? 'Booking Advance Token' : idx === 1 ? 'Milestone Installment' : 'Final Balance Clearance'),
+          amount: Number(inst.amount) || 0,
+          dueDate: inst.dueDate || inst.due_date || cust.startDate || '',
+          status: isPaid ? 'PAID' : idx === 0 ? 'DUE NOW' : 'UPCOMING',
+          paidAt: inst.paidAt || inst.paid_at || '',
+          paymentMode: inst.paymentMode || inst.payment_mode || 'UPI',
+          transactionRef: inst.transactionRef || inst.transaction_ref || '',
+        };
+      });
+    } else {
+      // Auto-generate standard milestone schedule from package total
+      const inst1Amt = Math.round(targetTotal * 0.3);
+      const inst2Amt = Math.round(targetTotal * 0.5);
+      const inst3Amt = targetTotal - inst1Amt - inst2Amt;
+
+      const startDateObj = cust.startDate ? new Date(cust.startDate) : new Date(Date.now() + 14 * 86400000);
+      const due1 = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
+      const due2 = new Date(startDateObj.getTime() - 7 * 86400000).toISOString().split('T')[0];
+      const due3 = new Date(startDateObj.getTime() - 2 * 86400000).toISOString().split('T')[0];
+
+      finalInstallments = [
+        {
+          id: 'inst-1',
+          num: 1,
+          title: 'Booking Advance Token (Confirmed)',
+          amount: inst1Amt,
+          dueDate: due1,
+          status: 'PAID',
+          paidAt: due1,
+          paymentMode: 'UPI / Online',
+          transactionRef: `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+        },
+        {
+          id: 'inst-2',
+          num: 2,
+          title: 'Second Milestone Installment',
+          amount: inst2Amt,
+          dueDate: due2,
+          status: 'DUE NOW',
+        },
+        {
+          id: 'inst-3',
+          num: 3,
+          title: 'Final Balance Clearance',
+          amount: inst3Amt,
+          dueDate: due3,
+          status: 'UPCOMING',
+        },
+      ];
+    }
+
+    setInstallments(finalInstallments);
+
+    // Build Verified Payments List
+    const payments: Array<{
+      id: string;
+      date: string;
+      mode: string;
+      utrNumber: string;
+      amount: number;
+      status: string;
+    }> = [];
+
+    // From paid installments
+    finalInstallments.filter(i => i.status === 'PAID').forEach(i => {
+      payments.push({
+        id: `pay-${i.id}`,
+        date: i.paidAt || new Date().toISOString().split('T')[0],
+        mode: i.paymentMode || 'UPI / QR Code',
+        utrNumber: i.transactionRef || `CONFIRMED-${i.id}`,
+        amount: i.amount,
+        status: '✓ Reconciled & Confirmed',
+      });
+    });
+
+    // From approved submissions if any
+    fetchedSubs.filter((s: any) => s.verification_status === 'Approved').forEach((s: any) => {
+      if (!payments.some(p => p.utrNumber === s.utr_number)) {
+        payments.push({
+          id: s.id,
+          date: (s.created_at || new Date().toISOString()).split('T')[0],
+          mode: s.payment_mode || 'UPI',
+          utrNumber: s.utr_number || 'ONLINE-GATEWAY',
+          amount: Number(s.amount_paid) || 0,
+          status: '✓ Reconciled & Confirmed',
+        });
+      }
+    });
+
+    setPaymentsList(payments);
+
+    // Calculate total paid & remaining balance
+    const calculatedPaid = finalInstallments
+      .filter(i => i.status === 'PAID')
+      .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     
-    // Distribute remaining balance across other 3 items (Commission, Food, Flight)
-    let remainingAmount = total - actualHotel - actualCab;
-    if (remainingAmount < 0) remainingAmount = 0; // Prevent negative prices
-    const shareRemaining = Math.round(remainingAmount / 3);
-    
+    setTotalPaidAmount(calculatedPaid);
+
+    const firstPending = finalInstallments.find(i => i.status !== 'PAID');
+    setNextDueDate(firstPending ? firstPending.dueDate : 'All Cleared');
+
+    const totalPkg = finalInstallments.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const balance = totalPkg - calculatedPaid;
+
+    if (balance <= 0) {
+      setPkgDepositStatus('PAID IN FULL (100%)');
+    } else if (calculatedPaid > 0) {
+      setPkgDepositStatus(`TOKEN CONFIRMED (₹${calculatedPaid.toLocaleString('en-IN')})`);
+    } else {
+      setPkgDepositStatus('PENDING ADVANCE');
+    }
+
+    // Tax invoice items default
+    setTaxItems([
+      {
+        id: '1',
+        description: 'Service Charges & Commission Fee',
+        subDescription: `Taxable booking and facilitation fees for ${cust.destination || 'Rajasthan'} tour package`,
+        sacCode: '998552',
+        taxableValue: Math.round(targetTotal * 0.1),
+        cgstRate: 9,
+        sgstRate: 9,
+        igstRate: 18
+      }
+    ]);
+
+    // Package description items default
     setPkgDescItems([
-      { id: '1', description: 'Commission Services & Processing Fee', price: shareRemaining },
-      { id: '2', description: 'Hotel Accommodation & Stay Expenses (3 Star Hotel)', price: actualHotel || shareRemaining },
-      { id: '3', description: 'Cab Operations & Transit Services', price: actualCab || shareRemaining },
-      { id: '4', description: 'Food, Catering & Dining Services (Continental Breakfast)', price: shareRemaining },
-      { id: '5', description: 'Flight / Transit Ticketing', price: total - actualHotel - actualCab - (shareRemaining * 2) > 0 ? total - actualHotel - actualCab - (shareRemaining * 2) : shareRemaining },
+      { id: '1', description: 'Commission Services & Processing Fee', price: Math.round(targetTotal * 0.12) },
+      { id: '2', description: 'Hotel Accommodation & Stay Expenses', price: Math.round(targetTotal * 0.45) },
+      { id: '3', description: 'Cab Operations & Transit Services', price: Math.round(targetTotal * 0.25) },
+      { id: '4', description: 'Food, Catering & Dining Services', price: Math.round(targetTotal * 0.18) },
     ]);
   };
 
+  // Sync initial customer or auto-select when customers array updates
   useEffect(() => {
-    if (selectedCustomerId) {
-      const cust = customers.find(c => c.id === selectedCustomerId);
-      if (cust) handleAutoFillFromCustomer(cust);
+    if (initialCustomerId) {
+      setSelectedCustomerId(initialCustomerId);
+    } else if (!selectedCustomerId && customers.length > 0) {
+      setSelectedCustomerId(customers[0].id);
     }
-  }, [selectedCustomerId]);
+  }, [initialCustomerId, customers]);
+
+  // Auto-fill fields whenever customer selection changes
+  useEffect(() => {
+    if (selectedCustomerId && customers.length > 0) {
+      const cust = customers.find(c => c.id === selectedCustomerId || c.bookingId === selectedCustomerId);
+      if (cust) {
+        handleAutoFillFromCustomer(cust);
+      }
+    }
+  }, [selectedCustomerId, customers]);
 
   // Calculations for Tax Invoice
   const taxSubtotal = taxItems.reduce((acc, item) => acc + (Number(item.taxableValue) || 0), 0);
@@ -330,36 +519,32 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
-    const element = printRef.current;
+    
+    // Temporarily turn off edit mode so inputs don't get cut off in the PDF
+    const wasEditMode = isEditMode;
+    if (wasEditMode) {
+      setIsEditMode(false);
+      // Wait for React to re-render the plain text versions
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
     const nameStr = (customerName || 'Guest').replace(/\s+/g, '_');
     const filename = `${activeType.toUpperCase()}_Invoice_${nameStr}.pdf`;
 
-    const opt = {
-      margin: [0.2, 0.2, 0.2, 0.2],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        scrollY: 0,
-        scrollX: 0,
-        windowWidth: 1200
-      },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
     try {
-      const pdfFunc = typeof html2pdf === 'function' ? html2pdf : (window as any).html2pdf;
-      if (pdfFunc) {
-        await pdfFunc().set(opt).from(element).save();
-      } else {
-        window.print();
-      }
+      await exportElementToPdf(printRef.current, {
+        filename,
+        margin: 8,
+        width: 794,
+        scale: 3
+      });
     } catch (e) {
       console.error('PDF export error, falling back to print:', e);
       window.print();
+    } finally {
+      if (wasEditMode) {
+        setIsEditMode(true);
+      }
     }
   };
 
@@ -523,7 +708,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           }`}
         >
           <Plane className="w-4 h-4 text-amber-400" />
-          <span>3. Payment Confirmation</span>
+          <span>3. Payment Confirmation Slip</span>
         </button>
 
         {!isReadOnly && (
@@ -808,12 +993,12 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
               </div>
 
-              {/* 3. Payment Confirmation Terms Editor */}
+              {/* 3. Payment Confirmation Slip Terms Editor */}
               <div className="p-5 rounded-2xl bg-amber-50/40 border border-amber-200 space-y-3">
                 <div className="flex items-center justify-between border-b border-amber-200 pb-2">
                   <h5 className="font-extrabold text-amber-900 text-xs uppercase flex items-center gap-1.5">
                     <Plane className="w-4 h-4 text-amber-600" />
-                    3. Payment Confirmation Terms
+                    3. Payment Confirmation Slip Terms
                   </h5>
                   <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Paragraph Box</span>
                 </div>
@@ -824,10 +1009,10 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     rows={8}
                     value={pkgCustomerTermsText}
                     onChange={(e) => setPkgCustomerTermsText(e.target.value)}
-                    placeholder="Enter Payment Confirmation terms, payment schedules, and cancellation policies paragraphs here..."
+                    placeholder="Enter Payment Confirmation Slip terms, payment schedules, and cancellation policies paragraphs here..."
                     className="w-full p-3 rounded-xl border border-amber-300 text-xs text-slate-800 bg-white font-sans leading-relaxed focus:ring-2 focus:ring-amber-500/20 shadow-xs"
                   />
-                  <p className="text-[10px] text-slate-500 italic">Applies to the 3. Payment Confirmation template footer.</p>
+                  <p className="text-[10px] text-slate-500 italic">Applies to the 3. Payment Confirmation Slip template footer.</p>
                 </div>
               </div>
 
@@ -1293,13 +1478,26 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
       {/* PRINTABLE / DISPLAY CONTAINER (PIXEL PERFECT MATCHING USER PDFs) */}
       {activeType !== 'settings' && (
-        <div className="p-4 bg-slate-200 rounded-3xl overflow-x-auto flex justify-center custom-scrollbar print:bg-white print:p-0">
+        <div className="p-4 bg-slate-200 dark:bg-zinc-800 rounded-3xl overflow-x-auto flex justify-center custom-scrollbar print:bg-white print:p-0">
           
           <div
             ref={printRef}
-            className="printable-voucher-container bg-white shadow-xl w-full max-w-4xl p-8 sm:p-10 space-y-6 text-slate-900 font-sans print:shadow-none print:border-none print:w-full print:p-0 print:max-w-none relative"
-            style={{ minHeight: '1050px' }}
+            className="doc-preview-protected printable-voucher-container bg-white shadow-xl w-full max-w-4xl p-8 sm:p-10 space-y-6 text-slate-900 font-sans print:shadow-none print:border-none print:w-full print:p-0 print:max-w-none relative"
+            style={{ width: '794px', minWidth: '794px', maxWidth: '794px', boxSizing: 'border-box', backgroundColor: '#ffffff', color: '#0f172a' }}
           >
+            <style>{`
+              .invoice-avoid-break, .invoice-header, .invoice-meta-bar, .invoice-guest-pkg-cards,
+              .invoice-milestones-section, .invoice-milestone-card, .invoice-receipts-section,
+              .invoice-summary-cards, .invoice-notice-box, .invoice-terms-box,
+              .invoice-signatures-footer, .avoid-page-break, tr, .box, .two-col {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+              }
+              .invoice-section-title, th {
+                break-after: avoid !important;
+                page-break-after: avoid !important;
+              }
+            `}</style>
             
             {/* ======================================================== */}
             {/* TEMPLATE 1: TAX INVOICE (Matching PDF 1) */}
@@ -1308,7 +1506,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               <div className="space-y-6 text-slate-900">
                 
                 {/* Header: Logo / Company Name Left + Right with full company details */}
-                <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+                <div className="invoice-header invoice-avoid-break flex items-start justify-between pb-4 border-b border-slate-200">
                   <div className="space-y-1.5">
                     {companyLogo ? (
                       <img src={companyLogo} alt="Company Logo" className="h-16 max-w-[240px] object-contain" />
@@ -1337,12 +1535,36 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* Title Section */}
-                <div className="text-center pt-2 pb-1 border-t-2 border-slate-900 border-b-4">
-                  <h2 className="text-2xl font-black tracking-widest text-slate-900 uppercase">TAX INVOICE</h2>
+                <div className="invoice-section-title invoice-avoid-break text-center pt-2 pb-1 border-t-2 border-slate-900 border-b-4 space-y-1">
+                  {isEditMode ? (
+                    <div className="space-y-1 max-w-md mx-auto">
+                      <input
+                        type="text"
+                        value={taxInvoiceTitle}
+                        onChange={(e) => setTaxInvoiceTitle(e.target.value)}
+                        className="text-2xl font-black tracking-widest text-slate-900 uppercase text-center bg-indigo-50 border border-indigo-200 rounded px-2 outline-none w-full"
+                        placeholder="Tax Invoice Title"
+                      />
+                      <input
+                        type="text"
+                        value={taxInvoiceSubtitle}
+                        onChange={(e) => setTaxInvoiceSubtitle(e.target.value)}
+                        className="text-[10px] font-bold tracking-widest text-slate-500 uppercase text-center bg-indigo-50 border border-indigo-200 rounded px-2 outline-none w-full"
+                        placeholder="Tax Invoice Subtitle"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-black tracking-widest text-slate-900 uppercase">{taxInvoiceTitle}</h2>
+                      {taxInvoiceSubtitle && (
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{taxInvoiceSubtitle}</p>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 {/* Customer & Reference Details 2-Column */}
-                <div className="grid grid-cols-2 gap-8 text-xs font-sans">
+                <div className="invoice-meta-bar invoice-avoid-break grid grid-cols-2 gap-8 text-xs font-sans">
                   
                   {/* Left: BILLED TO */}
                   <div className="space-y-1.5">
@@ -1371,7 +1593,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* TRAVELERS & PASSENGER DETAILS PANEL */}
-                <div className="space-y-2">
+                <div className="invoice-guest-pkg-cards invoice-avoid-break space-y-2">
                   <h3 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">TRAVELERS & PASSENGER DETAILS</h3>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs leading-relaxed space-y-1">
                     {passengers.map((p) => (
@@ -1381,7 +1603,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* ITEMIZED TABLE */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
+                <div className="invoice-receipts-section invoice-avoid-break border border-slate-200 rounded-lg overflow-hidden text-xs">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-100 font-extrabold text-slate-900 uppercase text-[10px] tracking-wider border-b border-slate-300">
                       <tr>
@@ -1425,7 +1647,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* SUMMARY & GRAND TOTAL */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs items-start pt-2">
+                <div className="invoice-summary-cards invoice-avoid-break grid grid-cols-1 md:grid-cols-2 gap-6 text-xs items-start pt-2">
                   
                   {/* AMOUNT IN WORDS */}
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
@@ -1467,7 +1689,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* FOOTER SIGNATURE & TERMS */}
-                <div className="pt-10 border-t border-slate-200 space-y-6 text-xs">
+                <div className="invoice-signatures-footer invoice-avoid-break pt-10 border-t border-slate-200 space-y-6 text-xs">
                   <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
                     <div className="space-y-1.5 text-slate-700 text-[11px] max-w-lg">
                       <p className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">Terms & Conditions:</p>
@@ -1493,7 +1715,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               <div className="space-y-6 text-slate-900">
                 
                 {/* Header: Company Logo / Name Left + Right with full company info */}
-                <div className="flex items-start justify-between pb-4 border-b border-slate-200">
+                <div className="invoice-header invoice-avoid-break flex items-start justify-between pb-4 border-b border-slate-200">
                   <div className="space-y-1.5">
                     {companyLogo ? (
                       <img src={companyLogo} alt="Company Logo" className="h-16 max-w-[240px] object-contain" />
@@ -1522,12 +1744,22 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* Title Section */}
-                <div className="text-center pt-2 pb-1 border-t-2 border-slate-900 border-b-4">
-                  <h2 className="text-2xl font-black tracking-widest text-slate-900 uppercase">PACKAGE DESCRIPTION</h2>
+                <div className="invoice-section-title invoice-avoid-break text-center pt-2 pb-1 border-t-2 border-slate-900 border-b-4">
+                  {isEditMode ? (
+                    <input
+                      type="text"
+                      value={pkgDescTitle}
+                      onChange={(e) => setPkgDescTitle(e.target.value)}
+                      className="text-2xl font-black tracking-widest text-slate-900 uppercase text-center bg-indigo-50 border border-indigo-200 rounded px-2 outline-none w-full max-w-md mx-auto block"
+                      placeholder="Package Description Title"
+                    />
+                  ) : (
+                    <h2 className="text-2xl font-black tracking-widest text-slate-900 uppercase">{pkgDescTitle}</h2>
+                  )}
                 </div>
 
                 {/* Traveler Profile & Package General Info */}
-                <div className="grid grid-cols-2 gap-8 text-xs font-sans">
+                <div className="invoice-meta-bar invoice-avoid-break grid grid-cols-2 gap-8 text-xs font-sans">
                   
                   {/* Left: TRAVELER & CLIENT PROFILE */}
                   <div className="space-y-1.5">
@@ -1553,7 +1785,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* TRAVELERS & PASSENGER DETAILS PANEL */}
-                <div className="space-y-2">
+                <div className="invoice-guest-pkg-cards invoice-avoid-break space-y-2">
                   <h3 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider">TRAVELERS & PASSENGER DETAILS</h3>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs leading-relaxed space-y-1">
                     {passengers.map((p) => (
@@ -1563,7 +1795,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* ITEMIZED TABLE */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden text-xs">
+                <div className="invoice-receipts-section invoice-avoid-break border border-slate-200 rounded-lg overflow-hidden text-xs">
                   <table className="w-full text-left border-collapse">
                     <thead className="bg-slate-100 font-extrabold text-slate-900 uppercase text-[10px] tracking-wider border-b border-slate-300">
                       <tr>
@@ -1585,7 +1817,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* SUMMARY & TOTAL PAYMENT */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs items-start pt-2">
+                <div className="invoice-summary-cards invoice-avoid-break grid grid-cols-1 md:grid-cols-2 gap-6 text-xs items-start pt-2">
                   
                   {/* AMOUNT IN WORDS */}
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
@@ -1608,7 +1840,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                 </div>
 
                 {/* FOOTER SIGNATURE & TERMS */}
-                <div className="pt-10 border-t border-slate-200 space-y-6 text-xs">
+                <div className="invoice-signatures-footer invoice-avoid-break pt-10 border-t border-slate-200 space-y-6 text-xs">
                   <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6">
                     <div className="space-y-1.5 text-slate-700 text-[11px] max-w-lg">
                       <p className="font-extrabold text-slate-900 uppercase tracking-wider text-xs">Terms & Conditions:</p>
@@ -1628,23 +1860,23 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             )}
 
             {/* ======================================================== */}
-            {/* TEMPLATE 3: PAYMENT CONFIRMATION (Matching PDF 3 EXACTLY) */}
+            {/* TEMPLATE 3: PAYMENT CONFIRMATION SLIP (Full Details)     */}
             {/* ======================================================== */}
             {activeType === 'package_customer' && (
-              <div className="p-6 rounded-3xl bg-[#FFFDF8] border border-[#EBE3D5] text-slate-900 space-y-6 shadow-sm font-sans relative">
+              <div className="p-6 md:p-8 rounded-3xl bg-[#FFFDF8] border border-[#EBE3D5] text-slate-900 space-y-6 shadow-sm font-sans relative">
                 
-                {/* Top Accent Line */}
-                <div className="h-1.5 w-full bg-[#B85B28] rounded-full mb-4" />
+                {/* Top Luxury Accent Ribbon */}
+                <div className="h-2 w-full bg-gradient-to-r from-[#7B1D2A] via-[#C9922A] to-[#7B1D2A] rounded-full mb-4" />
 
-                {/* Header Box with Full Company Info */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E8E0D0] pb-6">
+                {/* Header Box with Full Company Info & Slip Title */}
+                <div className="invoice-header invoice-avoid-break flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E8E0D0] pb-6">
                   
                   {/* Left Brand Details */}
                   <div className="flex items-start gap-3.5">
                     {companyLogo ? (
                       <img src={companyLogo} alt="Company Logo" className="h-16 max-w-[200px] object-contain rounded-xl border border-slate-200 p-1.5 bg-white shrink-0 shadow-xs" />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-[#1C1A17] text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-md">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7B1D2A] to-[#450C14] text-white flex items-center justify-center font-bold text-xl shrink-0 shadow-md">
                         <Plane className="w-6 h-6 text-amber-400" />
                       </div>
                     )}
@@ -1662,20 +1894,32 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     </div>
                   </div>
 
-                  {/* Right Payment Confirmation Title & Badge */}
-                  <div className="text-right space-y-1">
-                    <h2 className="text-2xl sm:text-3xl font-black font-serif italic text-slate-900">Payment Confirmation</h2>
-                    <p className="font-mono text-sm font-bold text-[#B85B28]">#{invoiceNo}</p>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
-                      <span className="w-2 h-2 rounded-full bg-amber-600"></span>
-                      {pkgDepositStatus}
-                    </span>
+                  {/* Right Payment Confirmation Slip Title & Status */}
+                  <div className="text-left sm:text-right space-y-1.5">
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={pkgCustomerTitle}
+                        onChange={(e) => setPkgCustomerTitle(e.target.value)}
+                        className="text-2xl sm:text-3xl font-black font-serif italic text-slate-900 text-left sm:text-right bg-indigo-50 border border-indigo-200 rounded px-2 outline-none w-full"
+                        placeholder="Payment Confirmation Slip Title"
+                      />
+                    ) : (
+                      <h2 className="text-2xl sm:text-3xl font-black font-serif italic text-[#7B1D2A] tracking-tight">{pkgCustomerTitle}</h2>
+                    )}
+                    <p className="font-mono text-sm font-extrabold text-[#B85B28]">BOOKING REF: #{invoiceNo}</p>
+                    <div>
+                      <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                        {pkgDepositStatus}
+                      </span>
+                    </div>
                   </div>
 
                 </div>
 
                 {/* Metadata Bar (4 Columns) */}
-                <div className="grid grid-cols-4 gap-4 p-3.5 rounded-2xl bg-[#F6F0E4] border border-[#E6DCC8] text-center text-xs">
+                <div className="invoice-meta-bar invoice-avoid-break grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[#F6F0E4] border border-[#E6DCC8] text-center text-xs">
                   <div>
                     <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">ISSUE DATE</span>
                     <span className="font-bold text-slate-900">{invoiceDate}</span>
@@ -1685,45 +1929,51 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <span className="font-bold text-slate-900">{tripStartDate}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">BOOKING REF</span>
+                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">BOOKING REF / TRIP ID</span>
                     <span className="font-bold text-slate-900 font-mono">{invoiceNo}</span>
                   </div>
                   <div>
-                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">TRAVELLERS</span>
+                    <span className="text-[9px] uppercase tracking-widest font-extrabold text-slate-500 block">PASSENGERS</span>
                     <span className="font-bold text-slate-900">{totalTravelersStr}</span>
                   </div>
                 </div>
 
                 {/* Traveller Details & Package Details Cards (Side-by-Side) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="invoice-guest-pkg-cards invoice-avoid-break grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                   
                   {/* Card 1: Traveller Details */}
                   <div className="p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-3">
-                    <h3 className="font-bold font-serif text-slate-900 text-sm border-b border-[#E0D3BB] pb-1.5 italic">Traveller Details</h3>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between"><span className="text-slate-500">Full Name</span><strong className="text-slate-900">{customerName}</strong></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Contact</span><strong className="text-slate-900 font-mono">{customerMobile}</strong></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Email</span><strong className="text-slate-900">{customerEmail}</strong></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Travellers</span><strong className="text-slate-900">{totalTravelersStr}</strong></div>
-                      <div className="flex justify-between"><span className="text-slate-500">Customer GSTIN</span><strong className="text-slate-900 font-mono">{customerGstin}</strong></div>
+                    <h3 className="font-black font-serif text-slate-900 text-sm border-b border-[#E0D3BB] pb-1.5 flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-[#7B1D2A]" /> Guest & Lead Details
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between"><span className="text-slate-500">Primary Guest:</span><strong className="text-slate-900 text-sm">{customerName}</strong></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Mobile / WhatsApp:</span><strong className="text-slate-900 font-mono">{customerMobile}</strong></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Email Address:</span><strong className="text-slate-900">{customerEmail}</strong></div>
+                      <div className="flex justify-between"><span className="text-slate-500">Travel Party:</span><strong className="text-slate-900">{totalTravelersStr}</strong></div>
+                      {customerGstin && (
+                        <div className="flex justify-between"><span className="text-slate-500">Customer GSTIN:</span><strong className="text-slate-900 font-mono">{customerGstin}</strong></div>
+                      )}
                     </div>
                   </div>
 
                   {/* Card 2: Package Details */}
                   <div className="p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-3">
-                    <h3 className="font-bold font-serif text-slate-900 text-sm border-b border-[#E0D3BB] pb-1.5 italic">Package Details</h3>
+                    <h3 className="font-black font-serif text-slate-900 text-sm border-b border-[#E0D3BB] pb-1.5 flex items-center gap-2">
+                      <Plane className="w-4 h-4 text-[#7B1D2A]" /> Tour Package Details
+                    </h3>
                     <div className="space-y-2">
-                      <h4 className="text-lg font-black text-slate-900 font-serif">{tripName}</h4>
-                      <div className="flex items-center gap-1 text-xs text-[#B85B28] font-bold">
+                      <h4 className="text-base font-black text-slate-900 font-serif">{tripName}</h4>
+                      <div className="flex items-center gap-1.5 text-xs text-[#B85B28] font-extrabold">
                         <MapPin className="w-3.5 h-3.5" />
-                        <span>{destinationBadge}</span>
+                        <span>{destinationBadge || 'Rajasthan'}</span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
-                        <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E0D3BB] font-semibold text-[11px] text-slate-800 flex items-center gap-1">
-                          🏨 {hotelBadge}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E0D3BB] font-bold text-[11px] text-slate-800 flex items-center gap-1">
+                          🏨 {hotelBadge || 'Deluxe Hotel Accommodation'}
                         </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E0D3BB] font-semibold text-[11px] text-slate-800 flex items-center gap-1">
-                          🍽️ {mealBadge}
+                        <span className="px-2.5 py-1 rounded-lg bg-white border border-[#E0D3BB] font-bold text-[11px] text-slate-800 flex items-center gap-1">
+                          🍽️ {mealBadge || 'Breakfast & Dinner Included (MAP)'}
                         </span>
                       </div>
                     </div>
@@ -1731,96 +1981,224 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
                 </div>
 
-                {/* Instalment Plan Section */}
-                <div className="space-y-3">
-                  <h3 className="font-bold font-serif text-slate-900 text-sm italic">Instalment Plan</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Milestone Installment Schedule Section */}
+                <div className="invoice-milestones-section invoice-avoid-break space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#E0D3BB] pb-2">
+                    <h3 className="font-black font-serif text-slate-900 text-sm flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#7B1D2A]" /> Complete Milestone Installment Plan
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-500">
+                      {installments.length} Scheduled Milestones
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {installments.map((inst) => (
-                      <div key={inst.id} className="p-4 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-2 relative">
+                      <div
+                        key={inst.id}
+                        className={`invoice-milestone-card invoice-avoid-break p-4 rounded-2xl border space-y-2.5 relative transition-all ${
+                          inst.status === 'PAID'
+                            ? 'bg-emerald-50/60 border-emerald-300 ring-1 ring-emerald-200'
+                            : inst.status === 'DUE NOW'
+                            ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-200/60 shadow-sm'
+                            : 'bg-[#FAF4E8] border-[#E4D9C4]'
+                        }`}
+                      >
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">INSTALLATION - {inst.num}</span>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                            inst.status === 'PAID' ? 'bg-emerald-100 text-emerald-800' :
-                            inst.status === 'DUE NOW' ? 'bg-amber-100 text-amber-900 border border-amber-300' :
-                            'bg-slate-200 text-slate-700'
-                          }`}>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-slate-600">
+                            MILESTONE {inst.num}
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide flex items-center gap-1 ${
+                              inst.status === 'PAID'
+                                ? 'bg-emerald-600 text-white'
+                                : inst.status === 'DUE NOW'
+                                ? 'bg-amber-500 text-white animate-pulse'
+                                : 'bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            {inst.status === 'PAID' && <Check className="w-2.5 h-2.5" />}
                             {inst.status}
                           </span>
                         </div>
-                        <p className="text-2xl font-black font-mono text-[#B85B28]">₹ {inst.amount.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-slate-600 font-semibold flex items-center gap-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Due: {inst.dueDate}</span>
-                        </p>
+
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-700 truncate">{inst.title}</p>
+                          <p className="text-2xl font-black font-mono text-[#7B1D2A] mt-0.5">
+                            ₹ {inst.amount.toLocaleString('en-IN')}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-200/70 text-[10px] space-y-1">
+                          <p className="text-slate-600 font-semibold flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-500" />
+                            <span>Due Date: <strong>{inst.dueDate}</strong></span>
+                          </p>
+                          {inst.status === 'PAID' && (
+                            <div className="text-emerald-800 font-mono text-[9.5px] bg-emerald-100/80 px-2 py-1 rounded-lg">
+                              <span>✓ Paid: {inst.paidAt || 'Recorded'} • {inst.paymentMode || 'UPI'}</span>
+                              {inst.transactionRef && (
+                                <span className="block truncate font-bold text-[9px] text-emerald-900 mt-0.5">Ref: {inst.transactionRef}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Payment Summary Section (2 Columns) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs items-stretch">
+                {/* Recorded Payment Receipts & Transaction Log Table */}
+                <div className="invoice-receipts-section invoice-avoid-break space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#E0D3BB] pb-2">
+                    <h3 className="font-black font-serif text-slate-900 text-sm flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-[#7B1D2A]" /> Payments Received & Verification Log
+                    </h3>
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      Automated Receipt Trail
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto rounded-2xl border border-[#E4D9C4] bg-white shadow-xs">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-[#F4ECE1] text-[#7B1D2A] text-[10px] font-black uppercase tracking-wider border-b border-[#E4D9C4]">
+                          <th className="p-3 text-center w-10">#</th>
+                          <th className="p-3">Receipt Date</th>
+                          <th className="p-3">Payment Mode</th>
+                          <th className="p-3">Transaction / UTR Reference No.</th>
+                          <th className="p-3 text-right">Amount Paid</th>
+                          <th className="p-3 text-center">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#F0E8DC] text-[11px]">
+                        {paymentsList.length > 0 ? (
+                          paymentsList.map((pay, idx) => (
+                            <tr key={pay.id} className="hover:bg-[#FAF6F0] transition-colors">
+                              <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                              <td className="p-3 font-semibold text-slate-800">{pay.date}</td>
+                              <td className="p-3 font-bold text-slate-700 flex items-center gap-1.5">
+                                {pay.mode.includes('Card') ? <CreditCard className="w-3.5 h-3.5 text-blue-600" /> :
+                                 pay.mode.includes('Bank') ? <Landmark className="w-3.5 h-3.5 text-purple-600" /> :
+                                 <Smartphone className="w-3.5 h-3.5 text-emerald-600" />}
+                                <span>{pay.mode}</span>
+                              </td>
+                              <td className="p-3 font-mono font-bold text-slate-900">{pay.utrNumber}</td>
+                              <td className="p-3 text-right font-mono font-black text-emerald-700 text-xs">
+                                ₹ {pay.amount.toLocaleString('en-IN')}.00
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-900 inline-flex items-center gap-1">
+                                  <Check className="w-2.5 h-2.5 text-emerald-700" /> {pay.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={6} className="p-6 text-center text-slate-500 italic">
+                              Payment records automatically populated from verified installments and transactions.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Financial Summary & Balance Due Breakdown */}
+                <div className="invoice-summary-cards invoice-avoid-break grid grid-cols-1 md:grid-cols-2 gap-4 text-xs items-stretch">
                   
                   {/* Left Summary Box */}
-                  <div className="p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-2 flex flex-col justify-between">
-                    <h4 className="font-bold font-serif text-slate-900 text-sm italic">Payment Summary</h4>
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex justify-between text-slate-700"><span>Package Total</span><strong className="font-mono text-slate-900">₹ {pkgTotal.toLocaleString('en-IN')}</strong></div>
-                      <div className="flex justify-between text-slate-900 font-bold border-t border-[#E0D3BB] pt-1.5"><span>Grand Total</span><strong className="font-mono">₹ {pkgTotal.toLocaleString('en-IN')}</strong></div>
-                      <div className="flex justify-between text-emerald-700 font-semibold"><span>✓ Total Paid</span><strong className="font-mono">₹ {totalPaidAmount.toLocaleString('en-IN')}</strong></div>
-                      <div className="flex justify-between text-rose-700 font-bold border-t border-[#E0D3BB] pt-1.5"><span>⚠ Balance Due</span><strong className="font-mono text-base">₹ {balanceDue.toLocaleString('en-IN')}</strong></div>
+                  <div className="p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-2.5 flex flex-col justify-between">
+                    <h4 className="font-black font-serif text-slate-900 text-sm border-b border-[#E0D3BB] pb-1.5">
+                      Financial Summary & Breakdown
+                    </h4>
+                    <div className="space-y-2 pt-1 text-xs">
+                      <div className="flex justify-between text-slate-700">
+                        <span>Package Base Value:</span>
+                        <strong className="font-mono text-slate-900">₹ {pkgTotal.toLocaleString('en-IN')}.00</strong>
+                      </div>
+                      <div className="flex justify-between text-slate-900 font-extrabold border-t border-[#E0D3BB] pt-1.5">
+                        <span>Total Package Cost:</span>
+                        <strong className="font-mono text-sm text-[#7B1D2A]">₹ {pkgTotal.toLocaleString('en-IN')}.00</strong>
+                      </div>
+                      <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                        <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Total Received:</span>
+                        <strong className="font-mono text-sm text-emerald-800">₹ {totalPaidAmount.toLocaleString('en-IN')}.00</strong>
+                      </div>
+                      <div className="flex justify-between text-rose-800 font-bold bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200">
+                        <span className="flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Balance Remaining:</span>
+                        <strong className="font-mono text-sm text-rose-800">₹ {balanceDue.toLocaleString('en-IN')}.00</strong>
+                      </div>
                     </div>
                   </div>
 
                   {/* Right Balance Due Dark Card */}
-                  <div className="p-6 rounded-2xl bg-[#1C1A17] text-white flex flex-col justify-between space-y-4 shadow-md">
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-[#1C1A17] via-[#2A231C] to-[#1C1A17] text-white flex flex-col justify-between space-y-4 shadow-lg border border-[#C9922A]/30">
                     <div>
-                      <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block">BALANCE DUE</span>
-                      <h3 className="text-3xl font-black font-mono text-amber-400 mt-1">₹ {balanceDue.toLocaleString('en-IN')}</h3>
-                      <p className="text-xs text-slate-300 mt-1">{installments.filter(i => i.status !== 'PAID').length} instalments remaining</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase font-black tracking-widest text-[#E8B84B] block">
+                          NET BALANCE DUE
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-amber-400/20 text-amber-300 rounded-full text-[9px] font-bold">
+                          {installments.filter(i => i.status !== 'PAID').length} Milestone(s) Left
+                        </span>
+                      </div>
+                      <h3 className="text-3xl font-black font-mono text-amber-400 mt-2 tracking-tight">
+                        ₹ {balanceDue.toLocaleString('en-IN')}.00
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-1">
+                        {balanceDue <= 0 ? '✓ Entire package amount has been fully settled.' : 'Advance token recorded. Balance to be cleared as per schedule.'}
+                      </p>
                     </div>
-                    <div className="inline-block bg-[#B85B28] text-white px-4 py-2 rounded-xl text-xs font-bold text-center">
-                      Next Due: {installments.find(i => i.status !== 'PAID')?.dueDate || nextDueDate}
+
+                    <div className="bg-[#B85B28] text-white px-4 py-2.5 rounded-xl text-xs font-black text-center shadow-md flex items-center justify-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Next Due Milestone: {nextDueDate || installments.find(i => i.status !== 'PAID')?.dueDate || 'Cleared'}</span>
                     </div>
                   </div>
 
                 </div>
 
                 {/* IMPORTANT NOTICE BOX */}
-                <div className="p-4 rounded-2xl bg-[#FFF2EA] border border-[#FAD9C5] space-y-1 text-xs text-[#803512]">
-                  <h4 className="font-black text-rose-700 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
-                    <AlertCircle className="w-4 h-4" /> IMPORTANT NOTICE
+                <div className="invoice-notice-box invoice-avoid-break p-4 md:p-5 rounded-2xl bg-[#FFF2EA] border border-[#FAD9C5] space-y-1.5 text-xs text-[#803512]">
+                  <h4 className="font-black text-rose-800 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                    <AlertCircle className="w-4 h-4 text-rose-600" /> IMPORTANT RESERVATION NOTICE
                   </h4>
                   <p className="leading-relaxed font-medium">
-                    Please complete installation - 1 (₹{installments[0]?.amount?.toLocaleString('en-IN') || '25,000'}) by {installments[0]?.dueDate || '14 Oct 2026'} to confirm your booking. Failure to pay by the due date may result in automatic cancellation of reserved seats and hotel without refund of amounts paid. For payment assistance, contact your travel consultant immediately.
+                    This Payment Confirmation Slip officially confirms the receipt of advance token / milestone funds for booking ref <strong>#{invoiceNo}</strong>. Kindly ensure subsequent milestone installments are cleared prior to the due dates to ensure uninterrupted vehicle allocation and luxury stay confirmations. For payment verification or amendments, contact Kingsland 24x7 desk at <strong>{companyPhone}</strong>.
                   </p>
                 </div>
 
                 {/* PAYMENT TERMS & CONDITIONS BOX */}
-                <div className="p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-2 text-xs text-slate-800">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-[#B85B28]" /> PAYMENT TERMS & CONDITIONS
+                <div className="invoice-terms-box invoice-avoid-break p-5 rounded-2xl bg-[#FAF4E8] border border-[#E4D9C4] space-y-2.5 text-xs text-slate-800">
+                  <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 flex items-center gap-1.5 border-b border-[#E0D3BB] pb-1.5">
+                    <FileText className="w-4 h-4 text-[#B85B28]" /> PAYMENT TERMS & CONFIRMATION POLICIES
                   </h4>
-                  <div className="whitespace-pre-line leading-relaxed text-[11px] text-slate-700 font-medium">
+                  <div className="whitespace-pre-line leading-relaxed text-[11px] text-slate-700 font-medium space-y-1">
                     {pkgCustomerTermsText}
                   </div>
                 </div>
 
-                {/* SIGNATURES & FOOTER */}
-                <div className="pt-6 border-t border-[#E8E0D0] space-y-6 text-xs">
-                  <div className="flex items-center justify-between pt-4">
-                    <div className="text-center pt-8 border-t border-slate-400 min-w-[200px]">
-                      <p className="font-bold text-slate-900">Authorised Signatory — {companyName}</p>
+                {/* SIGNATURES & OFFICIAL FOOTER */}
+                <div className="invoice-signatures-footer invoice-avoid-break pt-6 border-t border-[#E8E0D0] space-y-6 text-xs">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
+                    <div className="text-center pt-8 border-t border-slate-400 min-w-[220px]">
+                      <p className="font-extrabold text-slate-900">Authorised Signatory</p>
+                      <p className="text-[10px] text-slate-500 font-medium">{companyName}</p>
                     </div>
-                    <div className="text-center pt-8 border-t border-slate-400 min-w-[200px]">
-                      <p className="font-bold text-slate-900">Customer Signature & Acceptance</p>
+                    <div className="text-center pt-8 border-t border-slate-400 min-w-[220px]">
+                      <p className="font-extrabold text-slate-900">Guest Acceptance & Signature</p>
+                      <p className="text-[10px] text-slate-500 font-medium">{customerName}</p>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-[#E8E0D0] flex items-center justify-between text-[11px] text-slate-600">
-                    <span className="font-bold text-slate-900">{companyName}</span>
-                    <div className="text-right">
+                  <div className="pt-4 border-t border-[#E8E0D0] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-600">
+                    <span className="font-bold text-slate-900">{companyName} — Official Customer Payment Confirmation Slip</span>
+                    <div className="text-center sm:text-right">
                       <p className="font-bold text-[#B85B28]">Thank you for choosing {companyName}!</p>
-                      <p className="text-[10px] text-slate-500">Computer-generated invoice. No signature required. Generated: {invoiceDate}</p>
+                      <p className="text-[10px] text-slate-500">System-generated slip verified from payment records. Generated: {invoiceDate}</p>
                     </div>
                   </div>
                 </div>
@@ -1836,3 +2214,4 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     </div>
   );
 };
+

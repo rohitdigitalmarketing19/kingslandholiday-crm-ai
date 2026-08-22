@@ -19,6 +19,9 @@ import aiRouter from './routes/ai';
 import paymentsRouter from './routes/payments';
 import opsRouter from './routes/ops';
 import usersRouter from './routes/users';
+import mastersRouter from './routes/masters';
+import pdfDesignsRouter from './routes/pdfDesigns';
+import settingsRouter from './routes/settings';
 
 import { securityHeadersMiddleware, bodySanitizerMiddleware, rateLimiterMiddleware } from './middleware/security';
 
@@ -54,6 +57,9 @@ app.use('/api/ai', aiRouter);
 app.use('/api/payments', paymentsRouter);
 app.use('/api/ops', opsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/masters', mastersRouter);
+app.use('/api/pdf-designs', pdfDesignsRouter);
+app.use('/api/settings', settingsRouter);
 
 app.get('/api/health', (req, res) => { res.json({ status: 'ok', timestamp: new Date().toISOString() }); });
 

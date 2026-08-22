@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, updateLeadAccounts } from '../controllers/leadsController';
+import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, updateLeadAccounts, updateLeadTravelers } from '../controllers/leadsController';
 
 const router = Router();
 
@@ -42,6 +42,32 @@ router.patch('/:id/accounts', (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update accounts details' });
+  }
+});
+
+router.patch('/:id/travelers', (req: Request, res: Response) => {
+  try {
+    const { adults, children, childAges, budgetTier, includeStay, includeFlight, includeCab, hotelCategory, otherInfo } = req.body;
+    if (adults === undefined || children === undefined) {
+      return res.status(400).json({ error: 'adults and children count are required' });
+    }
+    const lead = updateLeadTravelers(
+      req.params.id as string,
+      Number(adults),
+      Number(children),
+      childAges || [],
+      budgetTier,
+      includeStay,
+      includeFlight,
+      includeCab,
+      hotelCategory,
+      otherInfo
+    );
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    res.json(lead);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update travelers details' });
   }
 });
 

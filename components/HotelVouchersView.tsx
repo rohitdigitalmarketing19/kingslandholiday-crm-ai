@@ -1219,7 +1219,7 @@ Website: www.kingslandholidays.com`;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="hotel-voucher-fixed send-mail-hotel-fixed hotel-email-modal-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200 shrink-0">
@@ -1502,7 +1502,7 @@ const HotelSideUploadModal: React.FC<HotelSideUploadModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
+      <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
@@ -1675,7 +1675,7 @@ const HotelDocumentViewerModal: React.FC<HotelDocumentViewerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-5xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150">
+      <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-5xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150">
         
         {/* Top Control Bar */}
         <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white shrink-0 z-10">

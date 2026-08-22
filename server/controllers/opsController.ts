@@ -292,20 +292,85 @@ export function syncConvertedLeadsToOps() {
       const targetCustId = resolvedCust ? resolvedCust.id : custId;
 
       // --- Sync Payment Installments (always re-sync from payment_installments source of truth) ---
-      const dbInstallments = queryAll(
+      let dbInstallments = queryAll(
         "SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC",
         [lead.id, lead.trip_id || lead.id]
       ) || [];
 
-      if (dbInstallments.length > 0) {
-        // Payment desk has installments — sync them to ops table
-        const existingOpsInsts = queryAll("SELECT * FROM ops_customer_installments WHERE customer_id = ?", [targetCustId]) || [];
-        const existingOpsMap = new Map<string, any>();
+      const existingOpsInsts = queryAll("SELECT * FROM ops_customer_installments WHERE customer_id = ?", [targetCustId]) || [];
+      const existingOpsMap = new Map<string, any>();
+      for (const oi of existingOpsInsts) {
+        existingOpsMap.set(oi.id, oi);
+      }
+
+      // If payment_installments is empty, but ops already has installments, sync them to payment_installments
+      if (dbInstallments.length === 0 && existingOpsInsts.length > 0) {
         for (const oi of existingOpsInsts) {
-          existingOpsMap.set(oi.id, oi);
+          try {
+            runQuery(
+              `INSERT OR REPLACE INTO payment_installments (id, lead_id, title, amount, due_date, payment_condition, payment_status, paid_amount, pay_key, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                oi.id,
+                lead.id,
+                oi.title,
+                oi.amount || 0,
+                oi.due_date || startDate,
+                oi.notes || '',
+                oi.status === 'Paid' ? 'Paid' : 'Pending',
+                oi.status === 'Paid' ? (oi.amount || 0) : 0,
+                oi.id,
+                oi.paid_at || now
+              ]
+            );
+          } catch (_e) {}
+        }
+      }
+
+      // If existing installments all have 0 amount (or only non-paid 0-amount) but we now have totalAmount > 0,
+      // purge the stale 0-amount installments so they get regenerated with actual milestone amounts
+      if (dbInstallments.length > 0 && totalAmount > 0) {
+        const hasOnlyZeroOrUnpaidZero = dbInstallments.every((i: any) => (!i.amount || Number(i.amount) === 0) && i.payment_status !== 'Paid');
+        if (hasOnlyZeroOrUnpaidZero) {
+          runQuery("DELETE FROM payment_installments WHERE (lead_id = ? OR lead_id = ?) AND payment_status != 'Paid'", [lead.id, lead.trip_id || lead.id]);
+          runQuery("DELETE FROM ops_customer_installments WHERE customer_id = ? AND status != 'Paid'", [targetCustId]);
+          dbInstallments = queryAll(
+            "SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC",
+            [lead.id, lead.trip_id || lead.id]
+          ) || [];
+        }
+      }
+
+      // If still empty but we have a total amount > 0, generate standard 3-stage milestone schedule
+      if (dbInstallments.length === 0 && totalAmount > 0) {
+        const inst1Amt = Math.round(totalAmount * 0.3);
+        const inst2Amt = Math.round(totalAmount * 0.4);
+        const inst3Amt = Math.max(0, totalAmount - inst1Amt - inst2Amt);
+
+        const defaultMilestones = [
+          { id: `inst-${targetCustId}-1`, title: 'Booking Advance Token (30%)', amount: inst1Amt, due_date: startDate },
+          { id: `inst-${targetCustId}-2`, title: 'Second Milestone Installment (40%)', amount: inst2Amt, due_date: startDate },
+          { id: `inst-${targetCustId}-3`, title: 'Final Balance Clearance (30%)', amount: inst3Amt, due_date: endDate || startDate }
+        ];
+
+        for (const dm of defaultMilestones) {
+          try {
+            runQuery(
+              `INSERT OR REPLACE INTO payment_installments (id, lead_id, title, amount, due_date, payment_condition, payment_status, paid_amount, pay_key, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [dm.id, lead.id, dm.title, dm.amount, dm.due_date, 'Standard Payment Milestone', 'Pending', 0, dm.id, now]
+            );
+          } catch (_e) {}
         }
 
-        // Delete existing and rewrite with exact count and details
+        dbInstallments = queryAll(
+          "SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC",
+          [lead.id, lead.trip_id || lead.id]
+        ) || [];
+      }
+
+      if (dbInstallments.length > 0) {
+        // Rewrite ops_customer_installments cleanly matching the source of truth
         runQuery("DELETE FROM ops_customer_installments WHERE customer_id = ?", [targetCustId]);
 
         for (let idx = 0; idx < dbInstallments.length; idx++) {
@@ -321,6 +386,7 @@ export function syncConvertedLeadsToOps() {
           const paymentMode = existingOps?.payment_mode || inst.payment_mode || (isPaid ? 'UPI' : '');
           const transactionRef = existingOps?.transaction_ref || inst.transaction_ref || (isPaid ? 'TXN-CONFIRMED' : '');
           const notes = existingOps?.notes || inst.payment_condition || inst.notes || '';
+          const effectiveAmount = (inst.amount && inst.amount > 0) ? inst.amount : (existingOps?.amount || 0);
 
           try {
             runQuery(
@@ -331,7 +397,7 @@ export function syncConvertedLeadsToOps() {
                 targetCustId,
                 instNum,
                 inst.title || `Installment ${instNum}`,
-                inst.amount || 0,
+                effectiveAmount,
                 inst.due_date || startDate,
                 status,
                 paidAt,
@@ -342,38 +408,24 @@ export function syncConvertedLeadsToOps() {
             );
           } catch (_instErr) { /* skip */ }
         }
-      } else {
-        // No payment desk installments — only create defaults if ops table is also completely empty
-        const existingOpsCount = queryOne("SELECT COUNT(*) as count FROM ops_customer_installments WHERE customer_id = ?", [targetCustId]);
-        if ((!existingOpsCount || existingOpsCount.count === 0) && totalAmount > 0) {
-          const inst1 = Math.round(totalAmount * 0.3);
-          const inst2 = Math.round(totalAmount * 0.4);
-          const inst3 = totalAmount - inst1 - inst2;
-          const defaultInsts = [
-            { num: 1, title: '1st Installment - Advance Token', amt: inst1, status: 'Paid', notes: 'Advance paid at conversion.' },
-            { num: 2, title: '2nd Installment - Hotel & Travel Lock', amt: inst2, status: 'Pending', notes: 'Due for booking confirmation.' },
-            { num: 3, title: '3rd Installment - Final Balance', amt: inst3, status: 'Pending', notes: 'Due before departure.' },
-          ];
-          for (const i of defaultInsts) {
-            try {
-              runQuery(
-                `INSERT OR IGNORE INTO ops_customer_installments (id, customer_id, installment_number, title, amount, due_date, status, paid_at, payment_mode, transaction_ref, notes)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [`inst-${targetCustId}-${i.num}`, targetCustId, i.num, i.title, i.amt, startDate, i.status, i.status === 'Paid' ? now : '', i.status === 'Paid' ? 'UPI' : '', '', i.notes]
-              );
-            } catch (_instErr) { /* skip duplicate */ }
-          }
-        }
       }
 
       // --- Sync Hotel Vouchers (only from actual quoted hotels) ---
-      const quoteHotels = queryAll("SELECT qh.* FROM quote_hotels qh JOIN quotes q ON qh.quote_id = q.id WHERE q.lead_id = ? ORDER BY qh.sort_order ASC", [lead.id]) || [];
+      const quoteHotels = latestQuote ? (queryAll("SELECT * FROM quote_hotels WHERE quote_id = ? ORDER BY sort_order ASC", [latestQuote.id]) || []) : [];
 
+      const currentVouchIds: string[] = [];
 
       for (let hIdx = 0; hIdx < quoteHotels.length; hIdx++) {
         const h = quoteHotels[hIdx];
         const vId = `vouch-${lead.id}-h${hIdx + 1}`;
-        const existingVoucher = queryOne("SELECT id FROM ops_vouchers WHERE id = ?", [vId]);
+        currentVouchIds.push(vId);
+
+        const existingVoucher = queryOne("SELECT id, hotel_name FROM ops_vouchers WHERE id = ?", [vId]);
+        const targetHotelName = h.hotel_name || `${h.city || destination} Resort & Hotel`;
+        const targetCity = h.city || destination;
+        const targetNights = h.nights || 1;
+        const targetRoomType = h.room_type || 'Deluxe Room';
+
         if (!existingVoucher) {
           try {
             runQuery(
@@ -384,12 +436,12 @@ export function syncConvertedLeadsToOps() {
                 bookingId,
                 targetCustId,
                 name,
-                h.hotel_name || `${h.city || destination} Resort & Hotel`,
-                h.city || destination,
+                targetHotelName,
+                targetCity,
                 startDate,
                 endDate,
-                h.nights || 1,
-                h.room_type || 'Deluxe Room',
+                targetNights,
+                targetRoomType,
                 'CPAI (Breakfast)',
                 'Kingsland Holidays Partner',
                 '',
@@ -400,8 +452,35 @@ export function syncConvertedLeadsToOps() {
               ]
             );
             console.log(`[OPS SYNC] Created pending voucher ${vId} for ${name} (${h.hotel_name})`);
-          } catch (_vErr) { /* skip duplicate */ }
+          } catch (_vErr) { /* skip */ }
+        } else {
+          // If the hotel name has changed, reset the confirmation status and files
+          if (existingVoucher.hotel_name !== targetHotelName) {
+            runQuery(
+              `UPDATE ops_vouchers
+               SET hotel_name = ?, city = ?, check_in = ?, check_out = ?, nights = ?, room_type = ?,
+                   confirmation_number = '', status = 'Pending', file_name = '', file_url = '', uploaded_at = '', uploaded_by = ''
+               WHERE id = ?`,
+              [targetHotelName, targetCity, startDate, endDate, targetNights, targetRoomType, vId]
+            );
+          } else {
+            // Just update dates and city but preserve status and uploaded files
+            runQuery(
+              `UPDATE ops_vouchers
+               SET city = ?, check_in = ?, check_out = ?, nights = ?, room_type = ?
+               WHERE id = ?`,
+              [targetCity, startDate, endDate, targetNights, targetRoomType, vId]
+            );
+          }
         }
+      }
+
+      // Delete orphaned vouchers
+      if (currentVouchIds.length > 0) {
+        const placeholders = currentVouchIds.map(() => '?').join(',');
+        runQuery(`DELETE FROM ops_vouchers WHERE customer_id = ? AND id NOT IN (${placeholders})`, [targetCustId, ...currentVouchIds]);
+      } else {
+        runQuery(`DELETE FROM ops_vouchers WHERE customer_id = ?`, [targetCustId]);
       }
 
       // --- Sync Itinerary & Daily Activities ---
@@ -532,40 +611,8 @@ export function createOpsCustomer(data: any) {
     ]
   );
 
-  // Auto-create payment installments if provided or default
-  const total = data.totalAmount || 1850;
-  const insts = data.installments || [
-    {
-      id: `inst-${id}-1`,
-      installmentNumber: 1,
-      title: '1st Installment - Advance Token',
-      amount: Math.round(total * 0.3),
-      dueDate: data.startDate || now,
-      status: 'Paid',
-      paidAt: now,
-      paymentMode: 'UPI',
-      transactionRef: `UPI-${Math.floor(100000 + Math.random() * 900000)}`,
-      notes: 'Token received.',
-    },
-    {
-      id: `inst-${id}-2`,
-      installmentNumber: 2,
-      title: '2nd Installment - Hotel & Flight Lock',
-      amount: Math.round(total * 0.4),
-      dueDate: data.startDate || now,
-      status: 'Pending',
-      notes: 'Payment scheduled.',
-    },
-    {
-      id: `inst-${id}-3`,
-      installmentNumber: 3,
-      title: '3rd Installment - Pre-Departure Balance',
-      amount: total - Math.round(total * 0.3) - Math.round(total * 0.4),
-      dueDate: data.startDate || now,
-      status: 'Pending',
-      notes: 'Final balance.',
-    },
-  ];
+  // Auto-create payment installments if provided
+  const insts = data.installments || [];
 
   for (const inst of insts) {
     runQuery(
@@ -711,8 +758,8 @@ export function recordOpsPayment(customerId: string, installmentId: string, deta
     if (details.amount !== undefined) { extraFields.push('amount = ?'); extraParams.push(Number(details.amount)); }
     if (details.dueDate !== undefined) { extraFields.push('due_date = ?'); extraParams.push(details.dueDate); }
     if (extraFields.length > 0) {
-      extraParams.push(installmentId, actualCustId);
-      runQuery(`UPDATE ops_customer_installments SET ${extraFields.join(', ')} WHERE id = ? OR customer_id = ?`, extraParams);
+      extraParams.push(installmentId);
+      runQuery(`UPDATE ops_customer_installments SET ${extraFields.join(', ')} WHERE id = ?`, extraParams);
     }
   }
 
@@ -842,6 +889,10 @@ export function updateOpsVoucher(id: string, data: any) {
   const params: any[] = [];
 
   const fieldMap: Record<string, string> = {
+    hotelName: 'hotel_name',
+    city: 'city',
+    checkIn: 'check_in',
+    checkOut: 'check_out',
     confirmationNumber: 'confirmation_number',
     status: 'status',
     fileUrl: 'file_url',

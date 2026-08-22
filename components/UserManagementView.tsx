@@ -1,5 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { UserAccount, UserRole, UserPermissionSection } from '../types';
+import { 
+  Shield, 
+  Key, 
+  Mail, 
+  Phone, 
+  Lock, 
+  Eye, 
+  EyeOff, 
+  Plus, 
+  Edit3, 
+  Trash2, 
+  Search, 
+  CheckCircle2, 
+  X, 
+  RefreshCw, 
+  AlertTriangle,
+  UserCheck,
+  Building,
+  Sliders,
+  Send
+} from 'lucide-react';
 
 interface UserManagementViewProps {
   users: UserAccount[];
@@ -7,23 +28,23 @@ interface UserManagementViewProps {
   onAddUser: (user: Partial<UserAccount>) => Promise<void>;
   onUpdateUser: (id: string, user: Partial<UserAccount>) => Promise<void>;
   onDeleteUser: (id: string) => Promise<void>;
-  onSwitchUser: (user: UserAccount) => void;
+  onSwitchUser?: (user: UserAccount) => void;
 }
 
-const ALL_SECTIONS: { id: UserPermissionSection; label: string; icon: string; desc: string; category: 'General' | 'Sales' | 'Operations' | 'Admin' }[] = [
-  { id: 'Dashboard', label: 'Executive Dashboard', icon: '📊', desc: 'KPI cards, monthly graphs, and overall business overview', category: 'General' },
-  { id: 'Leads', label: 'Leads Pipeline', icon: '📋', desc: 'Manage lead cards, stages, statuses, and inquiry details', category: 'Sales' },
-  { id: 'New Inquiry', label: 'Create New Inquiry', icon: '➕', desc: 'Form to submit and parse new client travel inquiries', category: 'Sales' },
-  { id: 'Follow-ups', label: 'Follow-ups & Reminders', icon: '📞', desc: 'Scheduled client call logs, post-poned date filters, touchpoints', category: 'Sales' },
-  { id: 'Saved Itinerary', label: 'Itinerary Library', icon: '🗺️', desc: 'Pre-built package itineraries and day-wise templates', category: 'Sales' },
-  { id: 'HotelVouchers', label: 'Hotel Voucher Desk', icon: '🏨', desc: 'Hotel-side voucher uploads, hotel email dispatch, confirmation tracker', category: 'Operations' },
-  { id: 'Operations', label: 'Operations Portal', icon: '🚗', desc: 'Trip execution, cab drivers, day-wise itineraries, customer readiness', category: 'Operations' },
-  { id: 'Payments', label: 'Payment Management', icon: '💳', desc: 'Generate payment links, part-payment installments, UTR verification', category: 'Admin' },
-  { id: 'Accounts', label: 'Accounts & Audit', icon: '📑', desc: 'Hotel/Cab 2-part disbursement logs, monthly lead filtering, revenue', category: 'Admin' },
-  { id: 'Invoices', label: 'Tax & Package Invoices', icon: '📄', desc: 'Generate & view tax invoices, GST breakdowns, customer receipts', category: 'Admin' },
-  { id: 'Analytics', label: 'Analytics & Reports', icon: '📈', desc: 'Conversion rates, destination breakdown, revenue metrics', category: 'Sales' },
-  { id: 'Sales Team', label: 'Sales Team Management', icon: '👥', desc: 'Assign leads to sales representatives, track performance', category: 'Admin' },
-  { id: 'User Management', label: 'User & Permission Management', icon: '🛡️', desc: 'Create users, assign roles, configure section access rights', category: 'Admin' }
+const ALL_SECTIONS: { id: UserPermissionSection; label: string; desc: string; category: 'General' | 'Sales' | 'Operations' | 'Admin' }[] = [
+  { id: 'Dashboard', label: 'Executive Dashboard', desc: 'KPI cards, monthly graphs, and overall business overview', category: 'General' },
+  { id: 'Leads', label: 'Leads Pipeline', desc: 'Manage lead cards, stages, statuses, and inquiry details', category: 'Sales' },
+  { id: 'New Inquiry', label: 'Create New Inquiry', desc: 'Form to submit and parse new client travel inquiries', category: 'Sales' },
+  { id: 'Follow-ups', label: 'Follow-ups & Reminders', desc: 'Scheduled client call logs, post-poned date filters, touchpoints', category: 'Sales' },
+  { id: 'Saved Itinerary', label: 'Itinerary Library', desc: 'Pre-built package itineraries and day-wise templates', category: 'Sales' },
+  { id: 'HotelVouchers', label: 'Hotel Voucher Desk', desc: 'Hotel-side voucher uploads, hotel email dispatch, confirmation tracker', category: 'Operations' },
+  { id: 'Operations', label: 'Operations Portal', desc: 'Trip execution, cab drivers, day-wise itineraries, customer readiness', category: 'Operations' },
+  { id: 'Payments', label: 'Payment Management', desc: 'Generate payment links, part-payment installments, UTR verification', category: 'Admin' },
+  { id: 'Accounts', label: 'Accounts & Audit', desc: 'Hotel/Cab 2-part disbursement logs, monthly lead filtering, revenue', category: 'Admin' },
+  { id: 'Invoices', label: 'Tax & Package Invoices', desc: 'Generate & view tax invoices, GST breakdowns, customer receipts', category: 'Admin' },
+  { id: 'Analytics', label: 'Analytics & Reports', desc: 'Conversion rates, destination breakdown, revenue metrics', category: 'Sales' },
+  { id: 'Sales Team', label: 'Sales Team Management', desc: 'Assign leads to sales representatives, track performance', category: 'Admin' },
+  { id: 'User Management', label: 'User & Permission Management', desc: 'Create users, assign roles, configure section access rights', category: 'Admin' }
 ];
 
 export const UserManagementView: React.FC<UserManagementViewProps> = ({
@@ -58,7 +79,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     name: '',
     email: '',
     phone: '',
-    password: 'kingsland123',
+    password: '',
     role: 'Sales',
     department: 'Sales',
     status: 'Active',
@@ -75,7 +96,6 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
   const [newPassword, setNewPassword] = useState('');
   const [otpCodeInput, setOtpCodeInput] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [otpPreviewCode, setOtpPreviewCode] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [otpMsg, setOtpMsg] = useState('');
   const [isSendingOtp, setIsSendingOtp] = useState(false);
@@ -97,7 +117,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       name: '',
       email: '',
       phone: '',
-      password: 'kingsland123',
+      password: '',
       role: 'Sales',
       department: 'Sales',
       status: 'Active',
@@ -105,6 +125,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       permissions: ['Dashboard', 'Leads', 'New Inquiry', 'Follow-ups', 'Saved Itinerary', 'Analytics']
     });
     setErrorMsg('');
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -115,7 +136,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       name: u.name,
       email: u.email,
       phone: u.phone || '',
-      password: u.password || 'kingsland123',
+      password: u.password || '',
       role: u.role,
       department: u.department || 'Sales',
       status: u.status,
@@ -123,6 +144,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       permissions: u.permissions || []
     });
     setErrorMsg('');
+    setShowPassword(false);
     setIsModalOpen(true);
   };
 
@@ -132,13 +154,12 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     setNewPassword('');
     setOtpCodeInput('');
     setOtpSent(false);
-    setOtpPreviewCode('');
     setOtpMsg('');
     setOtpCountdown(0);
     setIsOtpModalOpen(true);
   };
 
-  // Trigger Send OTP to Admin Email (rohit.digitalmarketing19@gmail.com)
+  // Trigger Send OTP to Admin Email
   const handleSendAdminOtp = async () => {
     try {
       setIsSendingOtp(true);
@@ -151,7 +172,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       
       const contentType = res.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
-        throw new Error('Backend API is unreachable (Server returned HTML instead of JSON). Ensure Node.js backend is running on Hostinger.');
+        throw new Error('Backend API is unreachable. Ensure the backend server is running.');
       }
 
       const data = await res.json();
@@ -161,8 +182,11 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       }
 
       setOtpSent(true);
-      setOtpCountdown(60); // 60 seconds countdown before resend
-      setOtpMsg(data.emailSent ? `✅ 6-Digit OTP Code emailed to rohit.digitalmarketing19@gmail.com!` : `✅ 6-Digit OTP requested! Please check the Admin Email inbox.`);
+      setOtpCountdown(60);
+      setOtpMsg(data.emailSent 
+        ? '✓ 6-Digit OTP Code sent to rohit.digitalmarketing19@gmail.com!' 
+        : `✓ OTP Generated: ${data.otpPreview || 'Check Admin Inbox'}`
+      );
     } catch (err: any) {
       setOtpMsg(`⚠️ ${err.message}`);
     } finally {
@@ -204,9 +228,9 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
         throw new Error(data.error || 'Failed to verify OTP & update password.');
       }
 
-      // Update local state if successful
+      // Update local state
       await onUpdateUser(otpTargetUser.id, { password: newPassword.trim() });
-      alert(`🎉 Password successfully updated for ${otpTargetUser.name}!`);
+      alert(`✓ Password successfully updated for ${otpTargetUser.name}!`);
       setIsOtpModalOpen(false);
     } catch (err: any) {
       setOtpMsg(`⚠️ ${err.message}`);
@@ -264,7 +288,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
     });
   };
 
-  // Submit Handler
+  // Form Submit (Create or Update)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.email.trim()) {
@@ -284,116 +308,64 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
       setIsModalOpen(false);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to save user.');
+      setErrorMsg(err.message || 'Operation failed.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Filtered Users List
+  // Filtered Users
   const filteredUsers = users.filter(u => {
-    const matchesSearch = 
-      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = !searchQuery || 
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (u.phone && u.phone.includes(searchQuery));
-
     const matchesRole = roleFilter === 'All' || u.role === roleFilter;
     const matchesStatus = statusFilter === 'All' || u.status === statusFilter;
-
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const adminCount = users.filter(u => u.role === 'Admin').length;
-  const salesCount = users.filter(u => u.role === 'Sales').length;
-  const opsCount = users.filter(u => u.role === 'Operations').length;
-
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl text-xl font-bold">🛡️</span>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight">User & Role Permission Management</h1>
-              <p className="text-xs text-slate-500 font-medium">Create team members for Sales & Operations with password security and Admin OTP verification</p>
-            </div>
+            <Shield className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-xl font-semibold text-slate-800">User & Permission Management</h2>
           </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage team accounts, view real passwords, grant permissions, and authorize password resets.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Logged in As</span>
-            <span className="text-xs font-black text-slate-900 flex items-center gap-1">
-              👑 {currentUser.name} ({currentUser.role})
-            </span>
-          </div>
-          <button
-            onClick={handleOpenCreateModal}
-            className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-indigo-200 transition-all flex items-center gap-2"
-          >
-            <span>➕ Add New User</span>
-          </button>
-        </div>
+        <button
+          onClick={handleOpenCreateModal}
+          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+        >
+          <Plus size={15} />
+          <span>Add New User</span>
+        </button>
       </div>
 
-      {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Registered Users</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">{users.length}</span>
-            <span className="text-[11px] text-slate-500 font-medium">Active CRM Accounts</span>
-          </div>
-          <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-xl">👥</div>
-        </div>
-
-        <div className="bg-indigo-900 text-white p-5 rounded-2xl shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest block">Admin Superusers</span>
-            <span className="text-2xl font-black text-white mt-1 block">{adminCount}</span>
-            <span className="text-[10px] text-indigo-200 truncate block">rohit.digitalmarketing19@gmail.com</span>
-          </div>
-          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl backdrop-blur-sm">👑</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block">Sales Executives</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">{salesCount}</span>
-            <span className="text-[11px] text-slate-500 font-medium">Lead & Quote Managers</span>
-          </div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl">💼</div>
-        </div>
-
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block">Operations Team</span>
-            <span className="text-2xl font-black text-slate-900 mt-1 block">{opsCount}</span>
-            <span className="text-[11px] text-slate-500 font-medium">Vouchers & Cab Execution</span>
-          </div>
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl">🚗</div>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-80">
+      {/* Filter Toolbar */}
+      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by name, email or phone..."
+            placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white transition-all"
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all"
           />
-          <span className="absolute left-3 top-3 text-slate-400 text-xs">🔍</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-2.5">
           <select
             value={roleFilter}
             onChange={e => setRoleFilter(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500"
+            className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-indigo-400 cursor-pointer"
           >
             <option value="All">All Roles</option>
             <option value="Admin">Admin</option>
@@ -406,7 +378,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500"
+            className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:border-indigo-400 cursor-pointer"
           >
             <option value="All">All Status</option>
             <option value="Active">Active</option>
@@ -416,114 +388,111 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                <th className="py-4 px-6">User / Team Member</th>
-                <th className="py-4 px-4">Role & Mode</th>
-                <th className="py-4 px-4">Allowed Sections ({ALL_SECTIONS.length})</th>
-                <th className="py-4 px-4">Status</th>
-                <th className="py-4 px-4 text-right">Actions</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="py-3.5 px-5">Team Member</th>
+                <th className="py-3.5 px-4">Role & Access</th>
+                <th className="py-3.5 px-4">Password</th>
+                <th className="py-3.5 px-4">Permissions ({ALL_SECTIONS.length})</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">
-                    No matching team users found. Click "Add New User" to create one.
+                  <td colSpan={6} className="py-10 text-center text-slate-400 font-medium">
+                    No team users found matching filters.
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map(u => {
                   const isCurrentActive = currentUser.id === u.id;
                   return (
-                    <tr key={u.id} className={`hover:bg-slate-50/80 transition-colors ${isCurrentActive ? 'bg-indigo-50/40' : ''}`}>
+                    <tr key={u.id} className={`hover:bg-slate-50/60 transition-colors ${isCurrentActive ? 'bg-indigo-50/20' : ''}`}>
                       {/* User Info */}
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-                            alt={u.name}
-                            className="w-10 h-10 rounded-2xl object-cover border border-slate-200 shadow-sm"
-                          />
+                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                            {u.name.charAt(0).toUpperCase()}
+                          </div>
                           <div>
-                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                            <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                               {u.name}
                               {u.email === 'rohit.digitalmarketing19@gmail.com' && (
-                                <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-1.5 py-0.5 rounded-full">Primary Admin</span>
+                                <span className="text-[10px] bg-amber-50 text-amber-800 font-medium px-1.5 py-0.5 rounded border border-amber-200">Primary Admin</span>
                               )}
                               {isCurrentActive && (
-                                <span className="text-[9px] bg-indigo-600 text-white font-black px-1.5 py-0.5 rounded-full">Current Active</span>
+                                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-medium px-1.5 py-0.5 rounded border border-indigo-200">Current Session</span>
                               )}
                             </div>
                             <div className="text-[11px] text-slate-500">{u.email}</div>
-                            {u.phone && <div className="text-[10px] font-mono text-slate-400">{u.phone}</div>}
+                            {u.phone && <div className="text-[10px] text-slate-400 font-mono">{u.phone}</div>}
                           </div>
                         </div>
                       </td>
 
-                      {/* Role & Department */}
-                      <td className="py-4 px-4">
+                      {/* Role & Access Mode */}
+                      <td className="py-3.5 px-4">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1.5">
                             <span
-                              className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
                                 u.role === 'Admin'
-                                  ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
                                   : u.role === 'Operations'
-                                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : u.role === 'Accounts'
-                                  ? 'bg-teal-100 text-teal-700 border border-teal-200'
+                                  ? 'bg-teal-50 text-teal-700 border border-teal-200'
                                   : u.role === 'Sales'
-                                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                                  : 'bg-amber-100 text-amber-700 border border-amber-200'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
                               }`}
                             >
-                              {u.role === 'Admin' ? '👑 Admin' : u.role === 'Operations' ? '🚗 Operations' : u.role === 'Accounts' ? '💰 Accounts' : u.role === 'Sales' ? '💼 Sales' : '⚙️ Custom'}
+                              {u.role}
                             </span>
-
-                            <button
-                              type="button"
-                              onClick={() => onUpdateUser(u.id, { accessLevel: u.accessLevel === 'ViewOnly' ? 'Editor' : 'ViewOnly' })}
-                              className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all border ${
-                                u.accessLevel === 'ViewOnly'
-                                  ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100'
-                                  : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                              }`}
-                              title="Click to toggle access mode (Editor vs View Only)"
-                            >
-                              {u.accessLevel === 'ViewOnly' ? '👁️ View Only' : '✏️ Editor'}
-                            </button>
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                              u.accessLevel === 'ViewOnly'
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {u.accessLevel === 'ViewOnly' ? 'View Only' : 'Editor'}
+                            </span>
                           </div>
-                          <div className="text-[10px] text-slate-400 font-bold">{u.department || 'General'}</div>
+                          <div className="text-[10px] text-slate-400">{u.department || 'General'}</div>
                         </div>
                       </td>
 
-                      {/* Section Permissions Preview */}
-                      <td className="py-4 px-4 max-w-xs">
-                        <div className="space-y-1">
-                          <div className="font-bold text-slate-700 text-[11px]">
-                            {u.role === 'Admin' || u.permissions.length === ALL_SECTIONS.length ? (
-                              <span className="text-purple-600 font-black">✨ Full Access ({ALL_SECTIONS.length} Sections)</span>
-                            ) : (
-                              <span>{u.permissions.length} of {ALL_SECTIONS.length} Sections Allowed</span>
-                            )}
-                          </div>
+                      {/* Real Password Display */}
+                      <td className="py-3.5 px-4">
+                        <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-50 rounded border border-slate-200 font-mono text-[11px] text-slate-700">
+                          <Lock size={11} className="text-slate-400" />
+                          <span>{u.password || '••••••••'}</span>
+                        </div>
+                      </td>
 
+                      {/* Permissions */}
+                      <td className="py-3.5 px-4 max-w-xs">
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-medium text-slate-700 block">
+                            {u.role === 'Admin' || u.permissions.length === ALL_SECTIONS.length ? (
+                              <span className="text-indigo-600 font-semibold">Full Access ({ALL_SECTIONS.length} Sections)</span>
+                            ) : (
+                              <span>{u.permissions.length} of {ALL_SECTIONS.length} Allowed</span>
+                            )}
+                          </span>
                           <div className="flex flex-wrap gap-1">
-                            {u.permissions.slice(0, 4).map(pId => {
-                              const s = ALL_SECTIONS.find(sec => sec.id === pId);
-                              return (
-                                <span key={pId} className="text-[9px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold">
-                                  {s?.icon || '•'} {pId}
-                                </span>
-                              );
-                            })}
-                            {u.permissions.length > 4 && (
-                              <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-bold">
-                                +{u.permissions.length - 4} more
+                            {u.permissions.slice(0, 3).map(pId => (
+                              <span key={pId} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
+                                {pId}
+                              </span>
+                            ))}
+                            {u.permissions.length > 3 && (
+                              <span className="text-[9px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-medium">
+                                +{u.permissions.length - 3} more
                               </span>
                             )}
                           </div>
@@ -531,48 +500,37 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                       </td>
 
                       {/* Status */}
-                      <td className="py-4 px-4">
+                      <td className="py-3.5 px-4">
                         <button
                           onClick={() => onUpdateUser(u.id, { status: u.status === 'Active' ? 'Inactive' : 'Active' })}
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider transition-colors ${
                             u.status === 'Active'
-                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100'
-                              : 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
                           }`}
                         >
-                          {u.status === 'Active' ? '● Active' : '○ Inactive'}
+                          {u.status === 'Active' ? 'Active' : 'Inactive'}
                         </button>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-4 px-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="py-3.5 px-5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleOpenOtpResetModal(u)}
-                            title="Reset password via Admin OTP verification"
-                            className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-[10px] font-black border border-amber-200 transition-all flex items-center gap-1"
+                            title="Reset password via Admin OTP"
+                            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-[11px] font-medium border border-amber-200 transition-colors flex items-center gap-1 cursor-pointer"
                           >
-                            <span>🔑 Reset Password</span>
-                          </button>
-
-                          <button
-                            onClick={() => onSwitchUser(u)}
-                            title="Switch active logged in user profile"
-                            className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold transition-all ${
-                              isCurrentActive
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600'
-                            }`}
-                          >
-                            {isCurrentActive ? '✓ Active' : '🔁 Switch'}
+                            <Key size={12} />
+                            <span>Reset Password</span>
                           </button>
 
                           <button
                             onClick={() => handleOpenEditModal(u)}
-                            title="Edit Permissions & Role"
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                            title="Edit User"
+                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                           >
-                            ✏️
+                            <Edit3 size={14} />
                           </button>
 
                           {u.email !== 'rohit.digitalmarketing19@gmail.com' && (
@@ -582,10 +540,10 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                                   onDeleteUser(u.id);
                                 }
                               }}
-                              title="Delete User Account"
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              title="Delete User"
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                             >
-                              🗑️
+                              <Trash2 size={14} />
                             </button>
                           )}
                         </div>
@@ -599,304 +557,180 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
         </div>
       </div>
 
-      {/* Create / Edit User Modal */}
+      {/* CREATE / EDIT USER MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-xl border border-slate-100 overflow-hidden my-8">
-            {/* Modal Header */}
-            <div className="bg-slate-900 text-white p-6 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200 my-8">
+            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-black flex items-center gap-2">
-                  <span>{editingUser ? '✏️ Edit User & Permissions' : '➕ Create New Team User'}</span>
+                <h3 className="text-base font-semibold">
+                  {editingUser ? `Edit User: ${editingUser.name}` : 'Create New Team Member'}
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Configure user credentials, role access rights, and password settings
+                  Configure account credentials, department, and section permissions.
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold transition-all"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
               {errorMsg && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold border border-red-200">
-                  ⚠️ {errorMsg}
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium flex items-center gap-2">
+                  <AlertTriangle size={14} />
+                  <span>{errorMsg}</span>
                 </div>
               )}
 
-              {/* Basic Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Basic Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Full Name *</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Vikram Sharma"
+                    placeholder="e.g. Rahul Sharma"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold outline-none focus:border-indigo-500 focus:bg-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Email Address *</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Email Address *</label>
                   <input
                     type="email"
                     required
-                    placeholder="e.g. vikram.ops@kingslandholidays.com"
+                    placeholder="name@kingslandholidays.com"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold outline-none focus:border-indigo-500 focus:bg-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Phone / WhatsApp</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Phone Number</label>
                   <input
                     type="text"
-                    placeholder="e.g. +91 7014939068"
+                    placeholder="+91 00000 00000"
                     value={formData.phone}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold outline-none focus:border-indigo-500 focus:bg-white"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Account Password</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Account Password *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Enter password"
+                      required
+                      placeholder="Set account password"
                       value={formData.password}
                       onChange={e => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-10 py-2 text-xs font-mono font-bold outline-none focus:border-indigo-500 focus:bg-white"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-9 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-2 text-[10px] font-bold text-slate-400 hover:text-slate-600 px-1"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     >
-                      {showPassword ? '🙈 Hide' : '👁️ Show'}
+                      {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
                   </div>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Account Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value as 'Active' | 'Inactive' })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold outline-none focus:border-indigo-500"
-                  >
-                    <option value="Active">● Active</option>
-                    <option value="Inactive">○ Inactive</option>
-                  </select>
+              {/* Role Preset */}
+              <div>
+                <label className="block text-[11px] font-medium text-slate-600 mb-1.5">Role Preset</label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(['Admin', 'Sales', 'Operations', 'Accounts'] as UserRole[]).map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => applyRolePreset(r)}
+                      className={`py-2 px-3 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                        formData.role === r
+                          ? 'bg-indigo-50 border-indigo-500 text-indigo-700 shadow-xs'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Access Mode Selector: Editor vs View-Only */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">User Access Level / Permissions Mode *</label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, accessLevel: 'Editor' })}
-                    className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      formData.accessLevel === 'Editor'
-                        ? 'border-indigo-600 bg-indigo-50 text-indigo-900 font-bold shadow-sm ring-2 ring-indigo-500/20'
-                        : 'border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-medium'
-                    }`}
-                  >
-                    <span className="text-base">✏️</span>
-                    <div>
-                      <span className="text-xs font-black block">Editor Access</span>
-                      <span className="text-[10px] text-slate-400 block leading-tight">Can edit, create & update records</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, accessLevel: 'ViewOnly' })}
-                    className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
-                      formData.accessLevel === 'ViewOnly'
-                        ? 'border-amber-600 bg-amber-50 text-amber-900 font-bold shadow-sm ring-2 ring-amber-500/20'
-                        : 'border-slate-200 bg-white hover:bg-slate-100 text-slate-600 font-medium'
-                    }`}
-                  >
-                    <span className="text-base">👁️</span>
-                    <div>
-                      <span className="text-xs font-black block">View Only (Read-Only)</span>
-                      <span className="text-[10px] text-slate-400 block leading-tight">Strictly view mode (cannot edit or delete)</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Role Presets */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Select Role & Quick Presets</label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => applyRolePreset('Sales')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      formData.role === 'Sales'
-                        ? 'border-blue-500 bg-blue-50/50 text-blue-900 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <span className="text-sm block">💼 Sales</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">Leads & Quotes</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyRolePreset('Operations')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      formData.role === 'Operations'
-                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-900 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <span className="text-sm block">🚗 Operations</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">Vouchers & Trips</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyRolePreset('Accounts')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      formData.role === 'Accounts'
-                        ? 'border-teal-500 bg-teal-50/50 text-teal-900 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <span className="text-sm block">💰 Accounts</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">Accounts & Invoices</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => applyRolePreset('Admin')}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      formData.role === 'Admin'
-                        ? 'border-purple-500 bg-purple-50/50 text-purple-900 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <span className="text-sm block">👑 Admin</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">All Sections</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, role: 'Custom' })}
-                    className={`p-3 rounded-2xl border text-left transition-all ${
-                      formData.role === 'Custom'
-                        ? 'border-amber-500 bg-amber-50/50 text-amber-900 font-bold shadow-sm'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                    }`}
-                  >
-                    <span className="text-sm block">⚙️ Custom</span>
-                    <span className="text-[10px] text-slate-400 block font-normal">Manual Select</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Granular Section Access Grid */}
-              <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-black text-slate-900">Section Access Rights ({formData.permissions.length} Enabled)</h4>
-                    <p className="text-[10px] text-slate-400">Toggle sections this user is allowed to access in the CRM sidebar</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
+              {/* Permissions Checkboxes */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[11px] font-medium text-slate-600">
+                    Section Access Permissions ({formData.permissions.length} of {ALL_SECTIONS.length})
+                  </label>
+                  <div className="flex gap-2 text-[10px]">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, permissions: ALL_SECTIONS.map(s => s.id) })}
-                      className="text-[10px] font-bold text-indigo-600 hover:underline"
+                      className="text-indigo-600 hover:underline font-medium"
                     >
                       Select All
                     </button>
-                    <span className="text-slate-300">|</span>
+                    <span>·</span>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, permissions: [] })}
-                      className="text-[10px] font-bold text-slate-400 hover:underline"
+                      className="text-slate-400 hover:underline"
                     >
-                      Clear All
+                      Deselect All
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-48 overflow-y-auto custom-scrollbar">
                   {ALL_SECTIONS.map(sec => {
                     const isChecked = formData.permissions.includes(sec.id);
                     return (
-                      <div
+                      <label
                         key={sec.id}
-                        onClick={() => togglePermission(sec.id)}
-                        className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
-                          isChecked
-                            ? 'border-indigo-500 bg-indigo-50/30 text-slate-900'
-                            : 'border-slate-200 hover:border-slate-300 opacity-60 bg-white'
+                        className={`flex items-center gap-2 p-2 rounded-lg border text-xs transition-all cursor-pointer ${
+                          isChecked 
+                            ? 'bg-white border-indigo-200 text-slate-900 shadow-2xs' 
+                            : 'bg-white/50 border-transparent text-slate-500'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}} // Handled by parent div
-                          className="mt-0.5 accent-indigo-600 rounded"
+                          onChange={() => togglePermission(sec.id)}
+                          className="rounded text-indigo-600 focus:ring-indigo-500"
                         />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black flex items-center gap-1.5">
-                              <span>{sec.icon}</span>
-                              <span>{sec.label}</span>
-                            </span>
-                            <span
-                              className={`text-[8.5px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                                sec.category === 'Admin'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : sec.category === 'Operations'
-                                  ? 'bg-emerald-100 text-emerald-700'
-                                  : sec.category === 'Sales'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              {sec.category}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 font-medium mt-0.5">{sec.desc}</p>
-                        </div>
-                      </div>
+                        <span className="font-medium truncate">{sec.label}</span>
+                      </label>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              {/* Modal Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-lg shadow-indigo-200 transition-all"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-xs transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Saving...' : editingUser ? 'Update User Account' : 'Create User Account'}
+                  {isSubmitting ? 'Saving...' : editingUser ? 'Update User' : 'Create User'}
                 </button>
               </div>
             </form>
@@ -906,30 +740,31 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
       {/* ADMIN OTP PASSWORD RESET MODAL */}
       {isOtpModalOpen && otpTargetUser && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="bg-slate-900 text-white p-6 flex items-center justify-between">
+            <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-black flex items-center gap-2">
-                  <span>🔑 Admin OTP Password Reset</span>
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  <Key size={16} className="text-amber-400" />
+                  <span>Admin OTP Password Reset</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Resetting password for: <strong className="text-amber-300">{otpTargetUser.name}</strong> ({otpTargetUser.email})
+                  Resetting password for: <strong className="text-white">{otpTargetUser.name}</strong> ({otpTargetUser.email})
                 </p>
               </div>
               <button
                 onClick={() => setIsOtpModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs font-bold"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleConfirmPasswordReset} className="p-6 space-y-4">
               {otpMsg && (
-                <div className={`p-3.5 rounded-2xl text-xs font-bold border ${
-                  otpMsg.includes('✅') || otpMsg.includes('🎉')
+                <div className={`p-3 rounded-lg text-xs font-medium border ${
+                  otpMsg.includes('✓')
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-amber-50 text-amber-900 border-amber-200'
                 }`}>
@@ -937,43 +772,50 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                 </div>
               )}
 
-              {/* Step 1: Admin Email Info & Send OTP */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Admin Email Authorization</span>
-                <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <span>📧 OTP Target:</span>
+              {/* Step 1: Admin Authorization */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <span className="text-[11px] font-medium text-slate-500 block">Primary Admin Authorization</span>
+                <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                  <Mail size={13} className="text-indigo-600" />
                   <span className="font-mono text-indigo-700">rohit.digitalmarketing19@gmail.com</span>
                 </p>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  A 6-digit OTP code is sent to the primary Admin email to authorize changing account passwords.
+                <p className="text-[11px] text-slate-500">
+                  Send a 6-digit OTP to the admin email to authorize resetting this staff password.
                 </p>
 
                 <button
                   type="button"
                   onClick={handleSendAdminOtp}
                   disabled={isSendingOtp || otpCountdown > 0}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>{isSendingOtp ? 'Sending OTP...' : otpCountdown > 0 ? `Resend OTP in ${otpCountdown}s` : '📩 Send 6-Digit OTP to Admin Email'}</span>
+                  <RefreshCw size={12} className={isSendingOtp ? 'animate-spin' : ''} />
+                  <span>
+                    {isSendingOtp 
+                      ? 'Sending OTP...' 
+                      : otpCountdown > 0 
+                      ? `Resend OTP in ${otpCountdown}s` 
+                      : 'Send 6-Digit OTP to Admin Email'}
+                  </span>
                 </button>
               </div>
 
-              {/* Step 2: New Password & OTP Code Entry */}
+              {/* Step 2: New Password & OTP Code */}
               <div className="space-y-3">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">New Password *</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">New Password *</label>
                   <input
                     type="text"
                     required
-                    placeholder="Enter new password for user"
+                    placeholder="Enter new password"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono font-bold outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">6-Digit Admin OTP Code *</label>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">6-Digit Admin OTP Code *</label>
                   <input
                     type="text"
                     required
@@ -981,27 +823,28 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                     placeholder="Enter 6-digit OTP code"
                     value={otpCodeInput}
                     onChange={e => setOtpCodeInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base font-mono font-black text-center tracking-widest text-indigo-700 outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono font-bold text-center tracking-widest text-indigo-700 outline-none focus:border-indigo-400 focus:bg-white"
                   />
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsOtpModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors"
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  disabled={isVerifyingOtp || !otpSent}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg shadow-emerald-100 transition-all disabled:opacity-50"
+                  disabled={isVerifyingOtp || !otpSent || !otpCodeInput}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium shadow-xs transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                 >
-                  {isVerifyingOtp ? 'Verifying & Updating...' : '🔑 Verify OTP & Update Password'}
+                  <CheckCircle2 size={13} />
+                  <span>{isVerifyingOtp ? 'Verifying...' : 'Verify & Update Password'}</span>
                 </button>
               </div>
             </form>

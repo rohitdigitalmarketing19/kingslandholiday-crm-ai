@@ -62,6 +62,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
   const [previewVoucher, setPreviewVoucher] = useState<HotelVoucher | null>(null);
   const [uploadTargetVoucher, setUploadTargetVoucher] = useState<HotelVoucher | null>(null);
   const [selectedCustomerIdForDayWise, setSelectedCustomerIdForDayWise] = useState<string>('');
+  const [selectedCustomerIdForInvoice, setSelectedCustomerIdForInvoice] = useState<string>('');
 
   // Create Voucher Modal State
   const [isCreateVoucherOpen, setIsCreateVoucherOpen] = useState<boolean>(false);
@@ -181,6 +182,22 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
       const newCusts = customers.map((c) => (c.id === updatedCust.id ? updatedCust : c));
       setCustomers(newCusts);
       saveCustomers(newCusts);
+    }
+  };
+
+  const handleDeleteVoucher = async (voucherId: string) => {
+    try {
+      const success = await api.deleteOpsVoucher(voucherId);
+      if (success) {
+        const newVouchers = vouchers.filter((v) => v.id !== voucherId);
+        setVouchers(newVouchers);
+        saveVouchers(newVouchers);
+      } else {
+        alert('Failed to delete voucher');
+      }
+    } catch (e) {
+      console.error('Error deleting voucher:', e);
+      alert('Error deleting voucher');
     }
   };
 
@@ -421,6 +438,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
                 onOpenCreateVoucherClick={handleOpenCreateVoucher}
                 onViewVoucherClick={(v) => setPreviewVoucher(v)}
                 onSendMailToHotel={handleOpenSendMailToHotel}
+                onDeleteVoucher={handleDeleteVoucher}
               />
             )}
 
@@ -432,6 +450,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
                 onPreviewVoucher={(v) => setPreviewVoucher(v)}
                 onSendToCustomer={handleSendVoucherToCustomer}
                 onReuploadVoucher={(v) => setUploadTargetVoucher(v)}
+                onDeleteVoucher={handleDeleteVoucher}
               />
             )}
 
@@ -507,6 +526,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
             {activeTab === 'invoices' && (
               <InvoiceModule
                 customers={customers}
+                initialCustomerId={selectedCustomerIdForInvoice || (customers[0]?.id || '')}
                 isReadOnly={isReadOnly}
                 onOpenShareModal={(msg) => {
                   setShareText(msg);
@@ -537,7 +557,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
           setActiveTab('day-wise-trip');
         }}
         onNavigateToInvoices={(custKey) => {
-          setSelectedCustomerIdForDayWise(custKey);
+          setSelectedCustomerIdForInvoice(custKey);
           setActiveTab('invoices');
         }}
         onPreviewVoucher={(v) => setPreviewVoucher(v)}

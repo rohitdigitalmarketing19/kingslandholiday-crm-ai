@@ -465,7 +465,7 @@ export const SendHotelEmailModal: React.FC<SendHotelEmailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-5xl w-full border border-slate-200 shadow-xl overflow-hidden my-6 flex flex-col max-h-[92vh]">
+      <div className="hotel-voucher-fixed send-mail-hotel-fixed hotel-email-modal-fixed doc-preview-protected bg-white rounded-3xl max-w-5xl w-full border border-slate-200 shadow-xl overflow-hidden my-6 flex flex-col max-h-[92vh]">
         
         {/* MODAL HEADER */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between border-b border-indigo-800/40">

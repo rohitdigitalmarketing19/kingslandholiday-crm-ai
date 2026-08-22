@@ -5,13 +5,518 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kingsland Holidays AI CRM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              lime: {
+                400: '#c6f135',
+                300: '#d7f763',
+                500: '#b0de23',
+              },
+              dark: {
+                bg: '#0e0f0c',
+                surface: '#161713',
+                card: '#1a1b16',
+                border: '#282a22',
+                muted: '#9e9f97',
+              }
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.14.0/html2pdf.bundle.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700;800;900&family=Work+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <style>
-      body { font-family: 'Inter', sans-serif; }
+      /* ========================================
+         KINGSLAND CRM — UNIFIED DESIGN SYSTEM
+         ======================================== */
+      :root {
+        --surface: #ffffff;
+        --surface-muted: #f8fafc;
+        --surface-raised: #f1f5f9;
+        --surface-sidebar: #ffffff;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --text-muted: #94a3b8;
+        --primary: #0f172a;
+        --border: #e2e8f0;
+      }
+
+      html.dark {
+        --surface: #161713;
+        --surface-muted: #0e0f0c;
+        --surface-raised: #1c1d18;
+        --surface-sidebar: #161713;
+        --text-primary: #f4f5f0;
+        --text-secondary: #d4d4d8;
+        --text-muted: #9e9f97;
+        --primary: #c6f135;
+        --border: #282a22;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: var(--surface-muted);
+        color: var(--text-primary);
+      }
+
+      /* ========================================
+         DARK THEME GLOBAL HARMONIZATION
+         Eliminates all cartoon/multi-color clashes
+         ======================================== */
+      html.dark body {
+        background-color: #0e0f0c !important;
+        color: #f4f5f0 !important;
+      }
+
+      /* Surfaces & Cards */
+      html.dark .bg-white {
+        background-color: #161713 !important;
+      }
+      html.dark .bg-slate-50,
+      html.dark .bg-gray-50,
+      html.dark .bg-zinc-50 {
+        background-color: #0e0f0c !important;
+      }
+      html.dark .bg-slate-100,
+      html.dark .bg-gray-100,
+      html.dark .bg-zinc-100 {
+        background-color: #1c1d18 !important;
+      }
+      html.dark .bg-slate-200,
+      html.dark .bg-gray-200 {
+        background-color: #242620 !important;
+      }
+
+      /* Borders */
+      html.dark .border-slate-100,
+      html.dark .border-slate-200,
+      html.dark .border-slate-300,
+      html.dark .border-gray-200,
+      html.dark .border-gray-100 {
+        border-color: #282a22 !important;
+      }
+
+      /* Text Colors */
+      html.dark .text-slate-900,
+      html.dark .text-slate-800,
+      html.dark .text-gray-900,
+      html.dark .text-gray-800,
+      html.dark .text-black {
+        color: #f4f5f0 !important;
+      }
+      html.dark .text-slate-700,
+      html.dark .text-slate-600,
+      html.dark .text-gray-700,
+      html.dark .text-gray-600 {
+        color: #d4d4d8 !important;
+      }
+      html.dark .text-slate-500,
+      html.dark .text-slate-400,
+      html.dark .text-gray-500,
+      html.dark .text-gray-400 {
+        color: #9e9f97 !important;
+      }
+
+      /* Primary Buttons & Interactive Accents */
+      html.dark .bg-indigo-600,
+      html.dark .bg-indigo-700 {
+        background-color: #c6f135 !important;
+        color: #0e0f0c !important;
+        font-weight: 700 !important;
+      }
+      html.dark .bg-indigo-600:hover,
+      html.dark .bg-indigo-700:hover {
+        background-color: #d7f763 !important;
+      }
+      html.dark .text-indigo-600,
+      html.dark .text-indigo-700 {
+        color: #c6f135 !important;
+      }
+
+      /* Inputs, Selects, and Textareas in Dark Mode */
+      html.dark input:not([type="checkbox"]):not([type="radio"]),
+      html.dark select,
+      html.dark textarea {
+        background-color: #12130f !important;
+        color: #f4f5f0 !important;
+        border-color: #282a22 !important;
+      }
+      html.dark input::placeholder,
+      html.dark textarea::placeholder {
+        color: #71717a !important;
+      }
+      html.dark input:focus,
+      html.dark select:focus,
+      html.dark textarea:focus {
+        border-color: #c6f135 !important;
+        box-shadow: 0 0 0 1px rgba(198, 241, 53, 0.3) !important;
+      }
+
+      /* Unified Subtle Badges (No cartoon bright pastels in Dark Mode) */
+      html.dark .bg-indigo-50,
+      html.dark .bg-blue-50,
+      html.dark .bg-purple-50,
+      html.dark .bg-cyan-50 {
+        background-color: #1f211a !important;
+        color: #d4d4d8 !important;
+        border-color: #2e3026 !important;
+      }
+      html.dark .bg-emerald-50,
+      html.dark .bg-green-50,
+      html.dark .bg-teal-50 {
+        background-color: rgba(198, 241, 53, 0.1) !important;
+        color: #c6f135 !important;
+        border-color: rgba(198, 241, 53, 0.25) !important;
+      }
+      html.dark .bg-rose-50,
+      html.dark .bg-red-50 {
+        background-color: rgba(244, 63, 94, 0.12) !important;
+        color: #fb7185 !important;
+        border-color: rgba(244, 63, 94, 0.25) !important;
+      }
+      html.dark .bg-amber-50,
+      html.dark .bg-yellow-50,
+      html.dark .bg-orange-50 {
+        background-color: rgba(245, 158, 11, 0.12) !important;
+        color: #fbbf24 !important;
+        border-color: rgba(245, 158, 11, 0.25) !important;
+      }
+
+      /* ========================================
+         DOCUMENT & HOTEL VOUCHER / EMAIL PROTECTION
+         Proposal previews, Hotel Vouchers, Send Mail to Hotel,
+         and Invoices must ALWAYS render in their fixed, authentic
+         white-background / document design, unaffected by dark mode.
+         ======================================== */
+      html.dark .doc-preview-protected,
+      html.dark .doc-preview-protected *,
+      html.dark .hotel-voucher-fixed,
+      html.dark .hotel-voucher-fixed *,
+      html.dark .send-mail-hotel-fixed,
+      html.dark .send-mail-hotel-fixed *,
+      html.dark .hotel-email-modal-fixed,
+      html.dark .hotel-email-modal-fixed *,
+      html.dark .printable-voucher-container,
+      html.dark .printable-voucher-container * {
+        /* Preserve natural styling */
+      }
+
+      /* Root container backgrounds & text */
+      html.dark .doc-preview-protected,
+      html.dark .hotel-voucher-fixed,
+      html.dark .send-mail-hotel-fixed,
+      html.dark .hotel-email-modal-fixed,
+      html.dark .printable-voucher-container {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      /* White & Light Backgrounds */
+      html.dark .doc-preview-protected .bg-white,
+      html.dark .hotel-voucher-fixed .bg-white,
+      html.dark .send-mail-hotel-fixed .bg-white,
+      html.dark .hotel-email-modal-fixed .bg-white,
+      html.dark .printable-voucher-container .bg-white {
+        background-color: #ffffff !important;
+      }
+
+      html.dark .doc-preview-protected .bg-slate-50,
+      html.dark .hotel-voucher-fixed .bg-slate-50,
+      html.dark .send-mail-hotel-fixed .bg-slate-50,
+      html.dark .hotel-email-modal-fixed .bg-slate-50,
+      html.dark .printable-voucher-container .bg-slate-50 {
+        background-color: #f8fafc !important;
+      }
+
+      html.dark .doc-preview-protected .bg-slate-100,
+      html.dark .hotel-voucher-fixed .bg-slate-100,
+      html.dark .send-mail-hotel-fixed .bg-slate-100,
+      html.dark .hotel-email-modal-fixed .bg-slate-100,
+      html.dark .printable-voucher-container .bg-slate-100 {
+        background-color: #f1f5f9 !important;
+      }
+
+      html.dark .doc-preview-protected .bg-slate-200,
+      html.dark .hotel-voucher-fixed .bg-slate-200,
+      html.dark .send-mail-hotel-fixed .bg-slate-200,
+      html.dark .hotel-email-modal-fixed .bg-slate-200,
+      html.dark .printable-voucher-container .bg-slate-200 {
+        background-color: #e2e8f0 !important;
+      }
+
+      /* Specific Brand / Header Backgrounds inside protected modals */
+      html.dark .hotel-voucher-fixed .bg-slate-900,
+      html.dark .send-mail-hotel-fixed .bg-slate-900,
+      html.dark .hotel-email-modal-fixed .bg-slate-900,
+      html.dark .printable-voucher-container .bg-slate-900 {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .hotel-voucher-fixed .bg-slate-950,
+      html.dark .send-mail-hotel-fixed .bg-slate-950,
+      html.dark .hotel-email-modal-fixed .bg-slate-950,
+      html.dark .printable-voucher-container .bg-slate-950 {
+        background-color: #020617 !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .hotel-voucher-fixed .bg-teal-700,
+      html.dark .printable-voucher-container .bg-teal-700 {
+        background-color: #0f766e !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .hotel-voucher-fixed .bg-teal-50,
+      html.dark .hotel-voucher-fixed .bg-teal-50\/40,
+      html.dark .hotel-voucher-fixed .bg-teal-50\/20,
+      html.dark .printable-voucher-container .bg-teal-50,
+      html.dark .printable-voucher-container .bg-teal-50\/40,
+      html.dark .printable-voucher-container .bg-teal-50\/20 {
+        background-color: #f0fdfa !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-amber-400,
+      html.dark .hotel-email-modal-fixed .bg-amber-400 {
+        background-color: #fbbf24 !important;
+        color: #020617 !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-blue-600,
+      html.dark .hotel-email-modal-fixed .bg-blue-600 {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-indigo-600,
+      html.dark .hotel-voucher-fixed .bg-indigo-600 {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-emerald-600,
+      html.dark .hotel-voucher-fixed .bg-emerald-600 {
+        background-color: #059669 !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-rose-600,
+      html.dark .hotel-voucher-fixed .bg-rose-600 {
+        background-color: #e11d48 !important;
+        color: #ffffff !important;
+      }
+
+      html.dark .send-mail-hotel-fixed .bg-sky-600,
+      html.dark .hotel-voucher-fixed .bg-sky-600 {
+        background-color: #0284c7 !important;
+        color: #ffffff !important;
+      }
+
+      /* Text Colors */
+      html.dark .doc-preview-protected .text-slate-900,
+      html.dark .hotel-voucher-fixed .text-slate-900,
+      html.dark .send-mail-hotel-fixed .text-slate-900,
+      html.dark .hotel-email-modal-fixed .text-slate-900,
+      html.dark .printable-voucher-container .text-slate-900 {
+        color: #0f172a !important;
+      }
+
+      html.dark .doc-preview-protected .text-slate-800,
+      html.dark .hotel-voucher-fixed .text-slate-800,
+      html.dark .send-mail-hotel-fixed .text-slate-800,
+      html.dark .hotel-email-modal-fixed .text-slate-800,
+      html.dark .printable-voucher-container .text-slate-800 {
+        color: #1e293b !important;
+      }
+
+      html.dark .doc-preview-protected .text-slate-700,
+      html.dark .hotel-voucher-fixed .text-slate-700,
+      html.dark .send-mail-hotel-fixed .text-slate-700,
+      html.dark .hotel-email-modal-fixed .text-slate-700,
+      html.dark .printable-voucher-container .text-slate-700 {
+        color: #334155 !important;
+      }
+
+      html.dark .doc-preview-protected .text-slate-600,
+      html.dark .hotel-voucher-fixed .text-slate-600,
+      html.dark .send-mail-hotel-fixed .text-slate-600,
+      html.dark .hotel-email-modal-fixed .text-slate-600,
+      html.dark .printable-voucher-container .text-slate-600 {
+        color: #475569 !important;
+      }
+
+      html.dark .doc-preview-protected .text-slate-500,
+      html.dark .doc-preview-protected .text-slate-400,
+      html.dark .hotel-voucher-fixed .text-slate-500,
+      html.dark .hotel-voucher-fixed .text-slate-400,
+      html.dark .send-mail-hotel-fixed .text-slate-500,
+      html.dark .send-mail-hotel-fixed .text-slate-400,
+      html.dark .hotel-email-modal-fixed .text-slate-500,
+      html.dark .hotel-email-modal-fixed .text-slate-400,
+      html.dark .printable-voucher-container .text-slate-500,
+      html.dark .printable-voucher-container .text-slate-400 {
+        color: #64748b !important;
+      }
+
+      html.dark .hotel-voucher-fixed .text-teal-700,
+      html.dark .printable-voucher-container .text-teal-700 {
+        color: #0f766e !important;
+      }
+
+      html.dark .hotel-voucher-fixed .text-teal-800,
+      html.dark .printable-voucher-container .text-teal-800 {
+        color: #115e59 !important;
+      }
+
+      html.dark .hotel-voucher-fixed .text-teal-900,
+      html.dark .printable-voucher-container .text-teal-900 {
+        color: #134e4a !important;
+      }
+
+      /* Borders */
+      html.dark .doc-preview-protected .border-slate-200,
+      html.dark .hotel-voucher-fixed .border-slate-200,
+      html.dark .send-mail-hotel-fixed .border-slate-200,
+      html.dark .hotel-email-modal-fixed .border-slate-200,
+      html.dark .printable-voucher-container .border-slate-200 {
+        border-color: #e2e8f0 !important;
+      }
+
+      html.dark .doc-preview-protected .border-slate-300,
+      html.dark .hotel-voucher-fixed .border-slate-300,
+      html.dark .send-mail-hotel-fixed .border-slate-300,
+      html.dark .hotel-email-modal-fixed .border-slate-300,
+      html.dark .printable-voucher-container .border-slate-300 {
+        border-color: #cbd5e1 !important;
+      }
+
+      html.dark .hotel-voucher-fixed .border-teal-800,
+      html.dark .printable-voucher-container .border-teal-800,
+      html.dark .printable-voucher-container .divide-teal-800 > * + * {
+        border-color: #115e59 !important;
+      }
+
+      /* Form inputs inside protected areas */
+      html.dark .doc-preview-protected input,
+      html.dark .doc-preview-protected select,
+      html.dark .doc-preview-protected textarea,
+      html.dark .hotel-voucher-fixed input,
+      html.dark .hotel-voucher-fixed select,
+      html.dark .hotel-voucher-fixed textarea,
+      html.dark .send-mail-hotel-fixed input,
+      html.dark .send-mail-hotel-fixed select,
+      html.dark .send-mail-hotel-fixed textarea,
+      html.dark .hotel-email-modal-fixed input,
+      html.dark .hotel-email-modal-fixed select,
+      html.dark .hotel-email-modal-fixed textarea {
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      html.dark .doc-preview-protected input:read-only,
+      html.dark .doc-preview-protected textarea:read-only,
+      html.dark .hotel-voucher-fixed input:read-only,
+      html.dark .hotel-voucher-fixed textarea:read-only,
+      html.dark .send-mail-hotel-fixed input:read-only,
+      html.dark .send-mail-hotel-fixed textarea:read-only,
+      html.dark .hotel-email-modal-fixed input:read-only,
+      html.dark .hotel-email-modal-fixed textarea:read-only {
+        background-color: #f1f5f9 !important;
+        color: #64748b !important;
+      }
+
+      /* Tables inside protected areas */
+      html.dark .hotel-voucher-fixed table th,
+      html.dark .send-mail-hotel-fixed table th,
+      html.dark .hotel-email-modal-fixed table th,
+      html.dark .printable-voucher-container table th {
+        color: inherit !important;
+      }
+
+      html.dark .hotel-voucher-fixed table td,
+      html.dark .send-mail-hotel-fixed table td,
+      html.dark .hotel-email-modal-fixed table td,
+      html.dark .printable-voucher-container table td {
+        color: inherit !important;
+      }
+
+      /* ========================================
+         ADDITIONAL DARK-MODE TEXT FIXES
+         Catch remaining hardcoded text shades
+         ======================================== */
+      html.dark .text-zinc-900,
+      html.dark .text-zinc-800 {
+        color: #f4f5f0 !important;
+      }
+      html.dark .text-zinc-700,
+      html.dark .text-zinc-600 {
+        color: #d4d4d8 !important;
+      }
+      html.dark .text-zinc-500 {
+        color: #9e9f97 !important;
+      }
+
+      /* Fix Follow-ups / tabs container in dark mode */
+      html.dark .bg-slate-100\/80 {
+        background-color: #1c1d18 !important;
+      }
+
+      /* Select / option elements in dark mode */
+      html.dark select option {
+        background-color: #161713 !important;
+        color: #f4f5f0 !important;
+      }
+
+      /* Table headers and rows in dark mode */
+      html.dark th {
+        color: #d4d4d8 !important;
+      }
+      html.dark td {
+        color: #f4f5f0 !important;
+      }
+      html.dark thead {
+        border-color: #282a22 !important;
+      }
+
+      /* Fix hover states in dark mode */
+      html.dark .hover\:bg-slate-50:hover {
+        background-color: #1c1d18 !important;
+      }
+      html.dark .hover\:bg-slate-100:hover {
+        background-color: #242620 !important;
+      }
+
+      /* Ring and focus in dark mode */
+      html.dark .ring-slate-200,
+      html.dark .ring-slate-300 {
+        --tw-ring-color: #282a22 !important;
+      }
+
+      /* Shadow adjustments for dark mode */
+      html.dark .shadow-xs,
+      html.dark .shadow-sm {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      /* Modals & Drawers Backdrop */
+      html.dark .bg-slate-900\/60,
+      html.dark .bg-slate-900\/50,
+      html.dark .bg-black\/50 {
+        background-color: rgba(0, 0, 0, 0.8) !important;
+      }
+
+      /* Scrollbar */
       .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+        width: 5px;
+        height: 5px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
         background: transparent;
@@ -20,8 +525,31 @@
         background: #cbd5e1;
         border-radius: 10px;
       }
+      html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #282a22;
+      }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
+      }
+      html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #3f4236;
+      }
+
+      /* Toast notification animations */
+      @keyframes toast-in {
+        from { transform: translateY(-8px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes toast-out {
+        from { transform: translateY(0); opacity: 1; }
+        to { transform: translateY(-8px); opacity: 0; }
+      }
+      .toast-enter { animation: toast-in 0.2s ease-out; }
+      .toast-exit { animation: toast-out 0.15s ease-in forwards; }
+
+      /* Sidebar transition */
+      .sidebar-transition {
+        transition: width 0.2s ease;
       }
 
       /* PRINT OVERRIDES: Ensure PDF & Browser Print output is crisp, visible & non-blank */
@@ -88,7 +616,7 @@
       }
     </style>
   </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body class="bg-slate-50 dark:bg-[#0e0f0c] text-slate-900 dark:text-zinc-100">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

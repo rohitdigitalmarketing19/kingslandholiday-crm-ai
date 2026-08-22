@@ -72,6 +72,26 @@ export async function deleteLead(id: string) {
   return request<any>(`/leads/${id}`, { method: 'DELETE' });
 }
 
+export async function updateLeadTravelers(
+  id: string,
+  adults: number,
+  children: number,
+  childAges: number[] = [],
+  extra?: {
+    budgetTier?: string;
+    includeStay?: string;
+    includeFlight?: string;
+    includeCab?: string;
+    hotelCategory?: string;
+    otherInfo?: string;
+  }
+) {
+  return request<any>(`/leads/${id}/travelers`, {
+    method: 'PATCH',
+    body: JSON.stringify({ adults, children, childAges, ...extra }),
+  });
+}
+
 // ========================
 // AGENTS
 // ========================
@@ -375,11 +395,19 @@ export function updateInstallmentStatus(
   status: 'Pending' | 'Paid',
   paidAmount?: number,
   paymentMode?: string,
-  transactionRef?: string
+  transactionRef?: string,
+  comments?: string
 ) {
   return request<any>(`/payments/installments/${id}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ status, paidAmount, paymentMode, transactionRef }),
+    body: JSON.stringify({ status, paidAmount, paymentMode, transactionRef, comments, notes: comments }),
+  });
+}
+
+export function updateInstallmentComment(id: string, comment: string) {
+  return request<any>(`/payments/installments/${id}/comment`, {
+    method: 'PATCH',
+    body: JSON.stringify({ comment, comments: comment, notes: comment }),
   });
 }
 
@@ -389,6 +417,8 @@ export async function confirmPayment(data: {
   refNumber?: string;
   paymentMode?: string;
   amount?: number;
+  comments?: string;
+  notes?: string;
 }) {
   return request<any>('/payments/confirm', {
     method: 'POST',
@@ -446,3 +476,103 @@ export async function updateOpsVoucher(id: string, data: any) {
     body: JSON.stringify(data),
   });
 }
+
+// ========================
+// MASTERS REFERENCE DATA
+// ========================
+
+export async function fetchMasters(category?: string) {
+  const query = category ? `?category=${encodeURIComponent(category)}` : '';
+  return request<any[]>(`/masters${query}`);
+}
+
+export async function addMasterItem(data: { category: string; name: string; code?: string; description?: string }) {
+  return request<any>('/masters', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function toggleMasterItem(id: string, isEnabled?: boolean) {
+  return request<any>(`/masters/${id}/toggle`, {
+    method: 'PATCH',
+    body: JSON.stringify({ isEnabled }),
+  });
+}
+
+export async function updateMasterItem(id: string, data: any) {
+  return request<any>(`/masters/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteMasterItem(id: string) {
+  return request<any>(`/masters/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ========================
+// PDF DESIGNS & TEMPLATES
+// ========================
+
+export async function fetchPdfDesigns() {
+  return request<any[]>('/pdf-designs');
+}
+
+export async function fetchActivePdfDesign() {
+  return request<any>('/pdf-designs/active');
+}
+
+export async function fetchPdfDesignById(id: string) {
+  return request<any>(`/pdf-designs/${id}`);
+}
+
+export async function savePdfDesign(data: any) {
+  return request<any>('/pdf-designs', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function activatePdfDesign(id: string) {
+  return request<any>(`/pdf-designs/${id}/activate`, {
+    method: 'PATCH',
+  });
+}
+
+export async function deactivatePdfDesign(id: string) {
+  return request<any>(`/pdf-designs/${id}/deactivate`, {
+    method: 'PATCH',
+  });
+}
+
+export async function updatePdfDesignMappings(id: string, fieldMappings: any[]) {
+  return request<any>(`/pdf-designs/${id}/mappings`, {
+    method: 'PATCH',
+    body: JSON.stringify({ field_mappings: fieldMappings }),
+  });
+}
+
+export async function deletePdfDesign(id: string) {
+  return request<any>(`/pdf-designs/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ========================
+// AGENCY SETTINGS
+// ========================
+
+export async function fetchAgencySettings() {
+  return request<any>('/settings');
+}
+
+export async function updateAgencySettings(data: any) {
+  return request<any>('/settings', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+

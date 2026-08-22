@@ -1,5 +1,6 @@
 import { runQuery, queryAll, queryOne } from '../db/connection';
 import { getLeadById } from './leadsController';
+import { syncConvertedLeadsToOps } from './opsController';
 
 function saveInclusions(quoteId: string, inclusions: any) {
   if (!inclusions) return;
@@ -69,6 +70,7 @@ export function createQuote(leadId: string, data: any) {
     runQuery('UPDATE leads SET status = ?, last_follow_up = ? WHERE id = ?', ['Itinerary Sent', now, leadId]);
   }
 
+  syncConvertedLeadsToOps();
   return getLeadById(leadId);
 }
 
@@ -88,6 +90,7 @@ export function updateQuote(leadId: string, quoteId: string, data: any) {
   if (data.inclusions) saveInclusions(quoteId, data.inclusions);
   if (data.itinerary) saveItineraryDays(quoteId, data.itinerary);
 
+  syncConvertedLeadsToOps();
   return getLeadById(leadId);
 }
 

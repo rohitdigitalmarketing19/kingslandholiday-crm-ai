@@ -1,6 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Lead } from '../types';
 import * as api from '../services/apiService';
+import PaymentPageView from './PaymentPageView';
+import { 
+  CreditCard, 
+  Link2, 
+  Calendar, 
+  CheckCircle2, 
+  FileText, 
+  Plus, 
+  Smartphone, 
+  Settings, 
+  ExternalLink, 
+  Copy, 
+  Check, 
+  MessageSquare, 
+  Mail, 
+  RefreshCw, 
+  X, 
+  AlertTriangle, 
+  IndianRupee, 
+  ShieldCheck, 
+  ChevronRight,
+  Search,
+  Trash2,
+  Eye,
+  SlidersHorizontal,
+  Share2
+} from 'lucide-react';
 
 export type PaymentTab = 'Links' | 'Submissions' | 'Installments' | 'CreateLink' | 'Settings' | 'Portal' | 'Confirmation';
 
@@ -21,6 +48,11 @@ interface Installment {
   payment_condition: string;
   payment_status: 'Pending' | 'Paid';
   pay_key?: string;
+  comments?: string;
+  notes?: string;
+  paid_at?: string;
+  payment_mode?: string;
+  transaction_ref?: string;
 }
 
 const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({ 
@@ -78,6 +110,24 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   const [showPaidLinks, setShowPaidLinks] = useState<boolean>(false);
   const [showCreateChoiceModal, setShowCreateChoiceModal] = useState<boolean>(false);
   const [createdLinkModalData, setCreatedLinkModalData] = useState<any | null>(null);
+
+  // Payment Confirmation Modal State
+  const [confirmPaymentModal, setConfirmPaymentModal] = useState<{
+    open: boolean;
+    link: any;
+  }>({ open: false, link: null });
+  const [confirmRef, setConfirmRef] = useState('');
+  const [confirmMode, setConfirmMode] = useState('UPI');
+  const [confirmComment, setConfirmComment] = useState('');
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+
+  // Installment Comment Modal State
+  const [installmentCommentModal, setInstallmentCommentModal] = useState<{
+    open: boolean;
+    instIdx: number;
+    comment: string;
+    isSaving?: boolean;
+  }>({ open: false, instIdx: -1, comment: '' });
 
   useEffect(() => {
     api.fetchLeads().then(data => setAllLeads(data)).catch(() => {});
@@ -152,6 +202,38 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   const [utrNumber, setUtrNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [localToast, setLocalToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmClearActive, setConfirmClearActive] = useState(false);
+
+  const showLocalToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setLocalToast({ message, type });
+    setTimeout(() => setLocalToast(null), 3000);
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleClearSubmissions = async () => {
+    if (!confirmClearActive) {
+      setConfirmClearActive(true);
+      setTimeout(() => setConfirmClearActive(false), 4000);
+      return;
+    }
+    try {
+      await api.clearAllPaymentSubmissions();
+      setSubmissions([]);
+      setConfirmClearActive(false);
+      showLocalToast('All payment submissions cleared successfully!');
+    } catch (e) {
+      console.error(e);
+      showLocalToast('Failed to clear submissions', 'error');
+    }
+  };
+
   // Sharing Helper Functions
   const shareOnWhatsApp = (title: string, amount: number, linkUrl: string, phone?: string) => {
     const text = `Hello! Here is your official secure payment link for ${title}:\n\nTotal Amount Payable: ₹${amount.toLocaleString('en-IN')}\n\nClick here to complete payment: ${linkUrl}\n\nThank you,\nKingsland Holidays Services`;
@@ -178,16 +260,25 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   const [billingMobile, setBillingMobile] = useState(lead?.phone || '');
   const [billingEmail, setBillingEmail] = useState(lead?.email || '');
 
-  const handleClearSubmissions = async () => {
-    if (confirm('Are you sure you want to clear all payment verification submissions? This will clear all pending/approved submissions.')) {
-      await api.clearAllPaymentSubmissions();
-      setSubmissions([]);
-      alert('✅ All payment submissions cleared successfully!');
-    }
-  };
-
   useEffect(() => {
     loadData();
+  }, [lead, targetLead?.id]);
+
+  useEffect(() => {
+    const activeLead = targetLead || lead;
+    if (activeLead) {
+      setPackageName(activeLead.destination ? `${activeLead.destination} Tour Package` : 'Tour Package Confirmation');
+      setDestination(activeLead.destination || 'Bali / Maldives / Kashmir');
+      setTravelDate(activeLead.travelDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]);
+      setBaseAmount(getLeadPackagePrice(activeLead));
+      setCustName(activeLead.name || '');
+      setCustPhone(activeLead.phone || '');
+      setCustEmail(activeLead.email || '');
+      setAdultsCount(activeLead.travelers?.adults || 2);
+      setChildrenCount(activeLead.travelers?.children || 0);
+      setDurationText(activeLead.durationDays ? `${activeLead.durationDays} Days / ${activeLead.durationDays - 1} Nights` : '6 Days / 5 Nights');
+      setTravelersText(activeLead.travelers ? `${activeLead.travelers.adults || 2} Adults, ${activeLead.travelers.children || 0} Children` : '2 Adults, 0 Children');
+    }
   }, [lead, targetLead?.id]);
 
   useEffect(() => {
@@ -238,28 +329,60 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         const insts = await api.fetchLeadInstallments(targetId);
         if (insts && insts.length > 0) {
           const sum = insts.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-          if (sum !== pkgPrice && pkgPrice > 0 && sum > 0) {
-             // Automatically adjust installments proportionally to match new package price
-             const ratio = pkgPrice / sum;
-             let runningTotal = 0;
-             const adjustedInsts = insts.map((inst: any, idx: number) => {
-               if (idx === insts.length - 1) {
-                 return { ...inst, amount: pkgPrice - runningTotal };
-               }
-               const newAmt = Math.round((inst.amount || 0) * ratio);
-               runningTotal += newAmt;
-               return { ...inst, amount: newAmt };
-             });
-             setInstallments(adjustedInsts);
+          if (sum === 0 && pkgPrice > 0) {
+            // All existing installments are 0, recalculate based on split count
+            const count = insts.length || 3;
+            const inst1 = Math.round(pkgPrice * 0.3);
+            const inst2 = Math.round(pkgPrice * 0.4);
+            const inst3 = pkgPrice - inst1 - inst2;
+            const defaultAmounts = count === 2 ? [Math.round(pkgPrice * 0.5), pkgPrice - Math.round(pkgPrice * 0.5)] : [inst1, inst2, inst3];
+            const adjustedInsts = insts.map((inst: any, idx: number) => ({
+              ...inst,
+              amount: defaultAmounts[idx] !== undefined ? defaultAmounts[idx] : Math.round(pkgPrice / count)
+            }));
+            setInstallments(adjustedInsts);
+            try {
+              const saved = await api.saveInstallmentSchedule(targetId, adjustedInsts);
+              if (saved && saved.length > 0) setInstallments(saved);
+            } catch (saveErr) {
+              console.error('Failed to auto-save adjusted zero installments:', saveErr);
+            }
+          } else if (sum !== pkgPrice && pkgPrice > 0 && sum > 0) {
+             const linkedSum = insts.filter((i: any) => !!i.pay_key).reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
+             const remainingPrice = Math.max(0, pkgPrice - linkedSum);
+             const unlinkedInsts = insts.filter((i: any) => !i.pay_key);
+             const unlinkedOriginalSum = unlinkedInsts.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
 
-             // CRITICAL: Save adjusted amounts back to DB so payment links show correct amount
-             try {
-               const saved = await api.saveInstallmentSchedule(targetId, adjustedInsts);
-               if (saved && saved.length > 0) {
-                 setInstallments(saved);
+             if (unlinkedInsts.length > 0 && unlinkedOriginalSum > 0) {
+               const ratio = remainingPrice / unlinkedOriginalSum;
+               let runningUnlinkedTotal = 0;
+               let unlinkedProcessedCount = 0;
+               
+               const adjustedInsts = insts.map((inst: any) => {
+                 if (inst.pay_key) {
+                   return inst;
+                 }
+                 unlinkedProcessedCount++;
+                 if (unlinkedProcessedCount === unlinkedInsts.length) {
+                   return { ...inst, amount: remainingPrice - runningUnlinkedTotal };
+                 }
+                 const newAmt = Math.round((inst.amount || 0) * ratio);
+                 runningUnlinkedTotal += newAmt;
+                 return { ...inst, amount: newAmt };
+               });
+               setInstallments(adjustedInsts);
+
+               // CRITICAL: Save adjusted amounts back to DB so payment links show correct amount
+               try {
+                 const saved = await api.saveInstallmentSchedule(targetId, adjustedInsts);
+                 if (saved && saved.length > 0) {
+                   setInstallments(saved);
+                 }
+               } catch (saveErr) {
+                 console.error('Failed to auto-save adjusted installments:', saveErr);
                }
-             } catch (saveErr) {
-               console.error('Failed to auto-save adjusted installments:', saveErr);
+             } else {
+               setInstallments(insts);
              }
           } else {
              setInstallments(insts);
@@ -289,7 +412,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
     }
     setIsSavingInstallments(true);
     try {
-      const saved = await api.saveInstallmentSchedule(targetId, installments);
+      const updatedInstallments = [...installments];
+      if (indexToSave !== undefined && !updatedInstallments[indexToSave].pay_key) {
+        updatedInstallments[indexToSave].pay_key = `pay_inst_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
+      }
+      const saved = await api.saveInstallmentSchedule(targetId, updatedInstallments);
       setInstallments(saved);
       setHasExistingEMI(saved.length > 0);
       const targetInst = (indexToSave !== undefined && saved[indexToSave]) ? saved[indexToSave] : saved[0];
@@ -390,38 +517,25 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
     refNo: string,
     payMode: string,
     amt: number,
-    payKey?: string
+    payKey?: string,
+    comments?: string
   ) => {
     try {
       const activeLead = targetLead || lead;
       const targetId = targetLeadId || activeLead?.id || activeLead?.tripId || '';
 
-      // 1. Call universal backend confirm endpoint
+      // 1. Call universal backend confirm endpoint (handles installment, link, ops installment & submissions in a single transaction)
       await api.confirmPayment({
         payKey: payKey || instId,
         id: instId,
         refNumber: refNo || 'CONFIRMED',
         paymentMode: payMode || 'UPI',
         amount: amt,
+        comments: comments || '',
+        notes: comments || ''
       });
 
-      // 2. Explicitly sync installment if needed
-      if (instId) {
-        await api.updateInstallmentStatus(instId, 'Paid', amt, payMode, refNo).catch(() => {});
-      }
-
-      // 3. Sync to Operations customer installment
-      if (targetId) {
-        await api.updateOpsInstallment(`cust-${targetId}`, instId || payKey || '', {
-          status: 'Paid',
-          paidAt: new Date().toISOString().split('T')[0],
-          paymentMode: payMode || 'UPI',
-          transactionRef: refNo || 'CONFIRMED',
-          amount: amt
-        }).catch(() => {});
-      }
-
-      // 4. Reload fresh state from backend
+      // 2. Reload fresh state from backend
       await loadData();
       if (onPaymentUpdated) onPaymentUpdated();
 
@@ -498,19 +612,19 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       
       {/* Header Bar in Modal Mode */}
       {!isFullPage && (
-        <div className="p-8 bg-slate-900 text-white flex justify-between items-center rounded-3xl shadow-xl">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg">
-                💳
+        <div className="p-6 bg-slate-900 text-white flex justify-between items-center rounded-xl shadow-lg border border-slate-800">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-xs">
+                <CreditCard size={20} />
              </div>
              <div>
-                <h2 className="text-2xl font-black tracking-tight uppercase">KINGSLAND PAYMENT DESK</h2>
-                <p className="text-xs text-slate-400 font-medium">Razorpay API Gateway & Partial EMI Installments Manager</p>
+                <h2 className="text-base font-semibold text-white">Payment & Collections Desk</h2>
+                <p className="text-xs text-slate-400 font-medium">Razorpay Gateway, UPI Transfers & Partial EMI Schedules</p>
              </div>
           </div>
           {onClose && (
-            <button onClick={onClose} className="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-colors">
-              ✕
+            <button onClick={onClose} className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors cursor-pointer">
+              <X size={16} />
             </button>
           )}
         </div>
@@ -518,38 +632,35 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* Clean Full Page Header */}
       {isFullPage && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.3em]">Kingsland Payment Desk</span>
-              <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-              <span className="text-[10px] font-black text-emerald-600 uppercase">Razorpay Live Connected</span>
+            <div className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-indigo-600" />
+              <h2 className="text-xl font-semibold text-slate-800">
+                Payment & Collections Desk
+              </h2>
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">
-              {activeTab === 'Links' && 'Active Payment Links'}
-              {activeTab === 'Installments' && 'EMI & Installment Schedules'}
-              {activeTab === 'Confirmation' && 'Payment Confirmation Desk ("Payment Conference")'}
-              {activeTab === 'Submissions' && 'Payment Proof Submissions'}
-              {activeTab === 'CreateLink' && 'Create Payment Link'}
-              {activeTab === 'Settings' && 'Razorpay & Bank Settings'}
-              {activeTab === 'Portal' && 'Customer Payment Portal'}
-            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manage payment links, partial EMI schedules, customer submissions, and gateway settings.
+            </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {activeTab !== 'CreateLink' && (
               <button 
                 onClick={() => setShowCreateChoiceModal(true)} 
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md transition-all flex items-center gap-2"
+                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                + Create New Link
+                <Plus size={14} />
+                <span>Create Payment Link</span>
               </button>
             )}
             <button 
               onClick={() => { setSelectedLink(null); setActiveTab('Portal'); }}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md transition-all flex items-center gap-2"
+              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              🚀 Open Payment Portal ↗
+              <ExternalLink size={13} />
+              <span>Customer Portal Preview</span>
             </button>
           </div>
         </div>
@@ -557,29 +668,28 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* Payment Desk Sub-Navigation Tabs */}
       {isFullPage && (
-        <div className="flex flex-wrap items-center gap-2 bg-slate-100/80 p-2 rounded-2xl border border-slate-200">
+        <div className="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
           {[
-            { id: 'Links', icon: '🔗', label: 'Links' },
-            { id: 'Installments', icon: '🗓️', label: 'Installments & EMI' },
-            { id: 'Confirmation', icon: '✅', label: 'Confirmation' },
-            { id: 'Submissions', icon: '🧾', label: 'Submissions' },
-            { id: 'CreateLink', icon: '✨', label: 'Create Link' },
-            { id: 'Portal', icon: '📱', label: 'Portal Preview' },
-            { id: 'Settings', icon: '⚙️', label: 'Settings' }
+            { id: 'Links', label: 'Payment Links' },
+            { id: 'Installments', label: 'EMI Schedules' },
+            { id: 'Confirmation', label: 'Confirmation Desk' },
+            { id: 'Submissions', label: 'Payment Proofs' },
+            { id: 'CreateLink', label: 'Generate Link' },
+            { id: 'Portal', label: 'Portal Preview' },
+            { id: 'Settings', label: 'Gateway Settings' }
           ].map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as PaymentTab)}
-              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeTab === t.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
               }`}
             >
-              <span>{t.icon}</span>
               <span>{t.label}</span>
               {t.id === 'Confirmation' && submissions.filter(s => s.verification_status === 'Pending Review').length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[9px] bg-emerald-500 text-white font-black animate-pulse">
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500 text-white font-semibold">
                   {submissions.filter(s => s.verification_status === 'Pending Review').length}
                 </span>
               )}
@@ -588,40 +698,36 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         </div>
       )}
 
-      {/* Main Content Area based on Tab */}
-
       {/* CREATE PAYMENT LINK TYPE SELECTION MODAL */}
       {showCreateChoiceModal && (
-        <div className="fixed inset-0 z-[250] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-8 border border-slate-200 shadow-xl space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-black">
-                  🔗
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Create Payment Link</h3>
-                  <p className="text-xs text-slate-500 font-medium">Select the type of payment link you want to generate</p>
-                </div>
-              </div>
-              <button onClick={() => setShowCreateChoiceModal(false)} className="p-2 text-slate-400 hover:text-slate-600 font-bold">✕</button>
+        <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 border border-slate-200 shadow-xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900">Create Payment Link</h3>
+              <button onClick={() => setShowCreateChoiceModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+                <X size={16} />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => {
                   setShowCreateChoiceModal(false);
                   setActiveTab('CreateLink');
                 }}
-                className="p-6 rounded-2xl border-2 border-indigo-100 hover:border-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 text-left space-y-3 transition-all group"
+                className="p-4 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 text-left space-y-2 transition-all cursor-pointer"
               >
-                <span className="text-2xl block">📦</span>
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm group-hover:text-indigo-600">Complete Deposit</h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">Generate a full payment link for individual tour package booking.</p>
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                  <CreditCard size={16} />
                 </div>
-                <span className="inline-block text-[10px] font-black text-indigo-600 uppercase tracking-wider">Create Full Link →</span>
+                <div>
+                  <h4 className="font-semibold text-slate-900 text-xs">Full Package Link</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Generate a one-time full package payment link.</p>
+                </div>
+                <span className="text-[10px] font-semibold text-indigo-600 flex items-center gap-1">
+                  Create Link <ChevronRight size={12} />
+                </span>
               </button>
 
               <button
@@ -630,14 +736,18 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   setShowCreateChoiceModal(false);
                   setActiveTab('Installments');
                 }}
-                className="p-6 rounded-2xl border-2 border-emerald-100 hover:border-emerald-600 bg-emerald-50/50 hover:bg-emerald-50 text-left space-y-3 transition-all group"
+                className="p-4 rounded-xl border border-slate-200 hover:border-emerald-400 bg-slate-50/50 hover:bg-emerald-50/30 text-left space-y-2 transition-all cursor-pointer"
               >
-                <span className="text-2xl block">🗓️</span>
-                <div>
-                  <h4 className="font-extrabold text-slate-900 text-sm group-hover:text-emerald-600">EMI & Installment</h4>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-snug">Create installment milestones schedule for customer trip.</p>
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <Calendar size={16} />
                 </div>
-                <span className="inline-block text-[10px] font-black text-emerald-600 uppercase tracking-wider">Configure EMI →</span>
+                <div>
+                  <h4 className="font-semibold text-slate-900 text-xs">EMI Installments</h4>
+                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Split booking into partial milestone payments.</p>
+                </div>
+                <span className="text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
+                  Configure EMI <ChevronRight size={12} />
+                </span>
               </button>
             </div>
           </div>
@@ -646,43 +756,44 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* CREATED PAYMENT LINK SUCCESS POPUP */}
       {createdLinkModalData && (
-        <div className="fixed inset-0 z-[250] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-md w-full p-8 border border-slate-200 shadow-xl space-y-6 text-center">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center text-3xl font-black">
-              ✓
+        <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl max-w-sm w-full p-6 border border-slate-200 shadow-xl space-y-4 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center">
+              <CheckCircle2 size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-1">PAYMENT LINK CREATED</span>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{createdLinkModalData.package_name}</h3>
-              <p className="text-xs text-slate-500 mt-1">Customer: <strong className="text-slate-800">{createdLinkModalData.customer_name}</strong></p>
-              <p className="text-xl font-black text-emerald-600 mt-2">₹{(createdLinkModalData.net_amount || 0).toLocaleString('en-IN')}</p>
+              <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide block">Payment Link Ready</span>
+              <h3 className="text-sm font-semibold text-slate-900 mt-0.5">{createdLinkModalData.package_name}</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Guest: <strong className="text-slate-800">{createdLinkModalData.customer_name}</strong></p>
+              <p className="text-lg font-bold text-emerald-700 mt-1">₹{(createdLinkModalData.net_amount || 0).toLocaleString('en-IN')}</p>
             </div>
 
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-2">
-              <input type="text" readOnly value={createdLinkModalData.portalUrl} className="bg-transparent text-xs font-mono font-bold text-slate-700 flex-1 outline-none truncate" />
+            <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-1.5">
+              <input type="text" readOnly value={createdLinkModalData.portalUrl} className="bg-transparent text-[11px] font-mono font-medium text-slate-700 flex-1 outline-none truncate" />
               <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(createdLinkModalData.portalUrl);
-                  alert('Link copied to clipboard!');
-                }}
-                className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold uppercase hover:bg-indigo-700"
+                onClick={() => handleCopy('createdLink', createdLinkModalData.portalUrl)}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                  copiedId === 'createdLink' ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
               >
-                Copy
+                {copiedId === 'createdLink' ? 'Copied' : 'Copy'}
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => shareOnWhatsApp(createdLinkModalData.package_name, createdLinkModalData.net_amount, createdLinkModalData.portalUrl, createdLinkModalData.customer_phone)}
-                className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+                className="py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
-                💬 WhatsApp
+                <MessageSquare size={13} />
+                <span>WhatsApp</span>
               </button>
               <button
                 onClick={() => shareViaEmail(createdLinkModalData.package_name, createdLinkModalData.net_amount, createdLinkModalData.portalUrl, createdLinkModalData.customer_email)}
-                className="py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2"
+                className="py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
-                ✉️ Email
+                <Mail size={13} />
+                <span>Email</span>
               </button>
             </div>
 
@@ -691,9 +802,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                 setCreatedLinkModalData(null);
                 setActiveTab('Links');
               }}
-              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer"
             >
-              Close & View Active Links
+              Done & View Links
             </button>
           </div>
         </div>
@@ -798,13 +909,12 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
                                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                   <button 
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(portalUrl);
-                                      alert('Payment link copied to clipboard!\n\n' + portalUrl);
-                                    }}
-                                    className="px-3.5 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-xs hover:bg-indigo-100 flex items-center gap-1.5"
+                                    onClick={() => handleCopy(link.id, portalUrl)}
+                                    className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors ${
+                                      copiedId === link.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                                    }`}
                                   >
-                                    📋 Copy
+                                    {copiedId === link.id ? '✓ Copied!' : '📋 Copy'}
                                   </button>
                                   <button 
                                     onClick={() => shareOnWhatsApp(link.package_name, link.net_amount, portalUrl, link.customer_phone)}
@@ -833,11 +943,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                     </span>
                                   ) : (
                                     <button 
-                                      onClick={async () => {
-                                        const ref = prompt(`Confirm payment received for ${link.customer_name} (${link.package_name}). Enter Transaction Ref/UTR:`, `PAYLINK-${link.pay_key || 'UPI'}`);
-                                        if (ref) {
-                                          await handleConfirmEmiReceived(link.lead_id || '', link.id, ref, 'UPI', link.net_amount || 0, link.pay_key);
-                                        }
+                                      onClick={() => {
+                                        setConfirmRef(`PAYLINK-${link.pay_key || 'UPI'}`);
+                                        setConfirmMode('UPI');
+                                        setConfirmComment('');
+                                        setConfirmPaymentModal({ open: true, link });
                                       }}
                                       className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
                                     >
@@ -1022,7 +1132,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   updated[idx].title = e.target.value;
                                   setInstallments(updated);
                                 }}
-                                className="font-bold text-slate-900 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full"
+                                disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                className="font-bold text-slate-900 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full disabled:opacity-75"
                               />
                               <input 
                                 type="text" 
@@ -1033,7 +1144,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   updated[idx].payment_condition = e.target.value;
                                   setInstallments(updated);
                                 }}
-                                className="text-xs text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full"
+                                disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                className="text-xs text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full disabled:opacity-75"
                               />
                            </div>
 
@@ -1048,7 +1160,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                      updated[idx].amount = Number(e.target.value);
                                      setInstallments(updated);
                                    }}
-                                   className="w-28 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 outline-none"
+                                   disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                   className="w-28 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 outline-none disabled:opacity-75"
                                  />
                               </div>
                               <div>
@@ -1061,7 +1174,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                      updated[idx].due_date = e.target.value;
                                      setInstallments(updated);
                                    }}
-                                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none"
+                                   disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none disabled:opacity-75"
                                  />
                               </div>
                               <div className="pt-3">
@@ -1072,19 +1186,50 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                            </div>
                         </div>
 
+                        {/* Installment Payment Comment Display Box */}
+                        {(inst.comments || inst.notes) && (
+                          <div className="mt-3 px-3.5 py-2.5 bg-indigo-50/90 border border-indigo-200/80 rounded-xl flex items-start justify-between gap-2 shadow-2xs">
+                            <div className="flex items-start gap-2 text-xs">
+                              <MessageSquare className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                              <div>
+                                <span className="font-bold text-[10px] text-indigo-700 uppercase tracking-wider block">Payment Comment / Note</span>
+                                <p className="font-semibold text-slate-800 text-xs mt-0.5 whitespace-pre-wrap">{inst.comments || inst.notes}</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setInstallmentCommentModal({ open: true, instIdx: idx, comment: inst.comments || inst.notes || '' })}
+                              className="px-2.5 py-1 bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold shrink-0 transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
+                              title="Edit comment"
+                            >
+                              ✏️ Edit
+                            </button>
+                          </div>
+                        )}
+
                         {/* EMI Milestone Action Toolbar */}
                         <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                            <div className="text-[11px] font-mono text-slate-500 truncate max-w-xs">
                              {inst.pay_key ? <>Pay Key: <strong className="text-slate-800">{inst.pay_key}</strong></> : <span className="text-amber-600 font-bold">⚠️ Unsaved Link — Click 'Create Link' to generate</span>}
                            </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Comment Button */}
+                              <button
+                                type="button"
+                                onClick={() => setInstallmentCommentModal({ open: true, instIdx: idx, comment: inst.comments || inst.notes || '' })}
+                                className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/70 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                title="Add or edit comments for this installment"
+                              >
+                                💬 Comment
+                              </button>
+
                               {!inst.pay_key ? (
                                 <button
                                   type="button"
                                   onClick={() => handleCreateInstallmentLink(idx)}
                                   disabled={isSavingInstallments}
-                                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                                 >
                                   ⚡ Create Link
                                 </button>
@@ -1092,25 +1237,24 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                 <>
                                   <button
                                     type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(instPortalUrl);
-                                      alert(`EMI Link copied to clipboard!\n\n${instPortalUrl}`);
-                                    }}
-                                    className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 flex items-center gap-1"
+                                    onClick={() => handleCopy(inst.id || idx.toString(), instPortalUrl)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
+                                      copiedId === (inst.id || idx.toString()) ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                    }`}
                                   >
-                                    📋 Copy Link
+                                    {copiedId === (inst.id || idx.toString()) ? '✓ Copied!' : '📋 Copy Link'}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => shareOnWhatsApp(`${targetLead?.name || 'Customer'} - ${inst.title}`, inst.amount, instPortalUrl, targetLead?.phone || custPhone)}
-                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 flex items-center gap-1"
+                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 flex items-center gap-1 cursor-pointer"
                                   >
                                     💬 WhatsApp
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => shareViaEmail(`${targetLead?.name || 'Customer'} - ${inst.title}`, inst.amount, instPortalUrl, targetLead?.email || custEmail)}
-                                    className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 flex items-center gap-1"
+                                    className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 flex items-center gap-1 cursor-pointer"
                                   >
                                     ✉️ Email
                                   </button>
@@ -1120,28 +1264,60 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       window.location.hash = `payment?pay_id=${inst.pay_key}`;
                                       window.open(`${window.location.origin}/#payment?pay_id=${inst.pay_key}`, '_blank');
                                     }}
-                                    className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 flex items-center gap-1"
+                                    className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
                                   >
                                     💳 Pay Now
                                   </button>
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      const ref = prompt(`Confirm EMI Received for ${targetLead?.name || custName || 'Customer'} (${inst.title}). Enter Transaction Ref / UTR:`, `EMI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
-                                      if (ref) {
-                                        const updated = [...installments];
-                                        updated[idx].payment_status = 'Paid';
-                                        setInstallments(updated);
-                                        await handleConfirmEmiReceived(targetLead?.id || lead?.id || '', inst.id, ref, 'UPI', inst.amount, inst.pay_key);
-                                      }
-                                    }}
-                                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-sm"
-                                  >
-                                    ✓ Confirm EMI Received
-                                  </button>
+                                  {inst.payment_status === 'Paid' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setConfirmRef(inst.transaction_ref || `EMI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
+                                        setConfirmMode(inst.payment_mode || 'UPI');
+                                        setConfirmComment(inst.comments || inst.notes || '');
+                                        setConfirmPaymentModal({
+                                          open: true,
+                                          link: {
+                                            id: inst.id,
+                                            pay_key: inst.pay_key,
+                                            lead_id: targetLead?.id || lead?.id,
+                                            net_amount: inst.amount,
+                                            package_name: `${inst.title} - ${targetLead?.name || custName || 'Customer'}`,
+                                            instIdx: idx
+                                          }
+                                        });
+                                      }}
+                                      className="px-3.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    >
+                                      ✓ Paid / Update
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setConfirmRef(`EMI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
+                                        setConfirmMode('UPI');
+                                        setConfirmComment(inst.comments || inst.notes || '');
+                                        setConfirmPaymentModal({
+                                          open: true,
+                                          link: {
+                                            id: inst.id,
+                                            pay_key: inst.pay_key,
+                                            lead_id: targetLead?.id || lead?.id,
+                                            net_amount: inst.amount,
+                                            package_name: `${inst.title} - ${targetLead?.name || custName || 'Customer'}`,
+                                            instIdx: idx
+                                          }
+                                        });
+                                      }}
+                                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-sm cursor-pointer"
+                                    >
+                                      ✓ Confirm EMI Received
+                                    </button>
+                                  )}
                                 </>
                               )}
-                           </div>
+                            </div>
                         </div>
                      </div>
                    );
@@ -1233,9 +1409,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                       <button
                         type="button"
                         onClick={handleClearSubmissions}
-                        className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all flex items-center gap-1.5"
+                        className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-xs ${
+                          confirmClearActive 
+                            ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm' 
+                            : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                        }`}
                       >
-                        🗑️ Clear All Submissions
+                        {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
                       </button>
                     )}
                   </div>
@@ -1266,6 +1446,17 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                             <p className="text-xs text-slate-600">
                               Customer: <strong className="text-slate-800">{sub.customer_name}</strong> ({sub.mobile})
                             </p>
+
+                            {/* Payment Comment Box in Confirmation Desk */}
+                            {(sub.comments || sub.notes) && (
+                              <div className="mt-2 px-3 py-2 bg-indigo-50/80 border border-indigo-100 rounded-xl flex items-start gap-2 text-xs">
+                                <MessageSquare className="w-3.5 h-3.5 text-indigo-600 mt-0.5 shrink-0" />
+                                <div>
+                                  <span className="text-[9px] font-black text-indigo-600 uppercase block tracking-wider">Payment Confirmation Comment / Note</span>
+                                  <p className="font-semibold text-slate-800 text-xs mt-0.5 whitespace-pre-wrap">{sub.comments || sub.notes}</p>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
@@ -1277,22 +1468,33 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                             <div className="flex flex-wrap gap-2">
                               {sub.verification_status !== 'Approved' && (
                                 <button
-                                  onClick={async () => {
-                                    const ref = prompt('Enter Transaction UTR / Ref Number to confirm EMI received:', sub.utr_number || 'UPI-REF');
-                                    if (ref !== null) {
-                                      await handleVerifySubmission(sub.id, 'Approved');
-                                      await handleConfirmEmiReceived(sub.lead_id || targetLead?.id || '', undefined, ref, sub.payment_mode || 'UPI', sub.amount_paid || 0, sub.pay_key);
-                                    }
+                                  type="button"
+                                  onClick={() => {
+                                    setConfirmRef(sub.utr_number || `UPI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
+                                    setConfirmMode(sub.payment_mode || 'UPI');
+                                    setConfirmComment(sub.comments || sub.notes || '');
+                                    setConfirmPaymentModal({
+                                      open: true,
+                                      link: {
+                                        id: sub.id,
+                                        pay_key: sub.pay_key,
+                                        lead_id: sub.lead_id || targetLead?.id || '',
+                                        net_amount: sub.amount_paid,
+                                        package_name: sub.package_name,
+                                        submissionId: sub.id
+                                      }
+                                    });
                                   }}
-                                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-1.5"
+                                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
                                 >
                                   ✓ Confirm EMI Received
                                 </button>
                               )}
                               {sub.verification_status === 'Pending Review' && (
                                 <button
+                                  type="button"
                                   onClick={() => handleVerifySubmission(sub.id, 'Rejected')}
-                                  className="px-3.5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs rounded-xl"
+                                  className="px-3.5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs rounded-xl cursor-pointer"
                                 >
                                   Reject
                                 </button>
@@ -1322,9 +1524,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   <button
                     type="button"
                     onClick={handleClearSubmissions}
-                    className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition-all flex items-center gap-1.5"
+                    className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-xs ${
+                      confirmClearActive 
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm' 
+                        : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                    }`}
                   >
-                    🗑️ Clear All Submissions
+                    {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
                   </button>
                 )}
               </div>
@@ -1534,497 +1740,221 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
            </form>
          )}
 
-         {/* TAB 6: CUSTOMER PAYMENT PORTAL */}
-         {activeTab === 'Portal' && (() => {
-           // For portal view, base off selectedLink or fallbacks
-           const portalName = selectedLink?.customer_name || custName;
-           const portalPhone = selectedLink?.customer_phone || custPhone;
-           const portalPackage = selectedLink?.package_name || packageName;
-           const portalAmount = selectedLink?.amount ?? baseAmount;
-           const portalGst = selectedLink?.gst ?? gstAmount;
-           const portalFee = selectedLink?.fee ?? feeAmount;
-           const portalDiscount = selectedLink?.discount ?? discountAmount;
-
-           const standardTotal = selectedLink ? (selectedLink.net_amount || portalAmount) : Math.max(0, portalAmount + portalGst + portalFee - portalDiscount);
-           const cardFeeRate = settings.card_fee_percentage !== undefined ? Number(settings.card_fee_percentage) : 2.5;
-           const cardSurcharge = portalTab === 'CARD' ? Math.round((standardTotal * cardFeeRate) / 100) : 0;
-           const finalPayableTotal = standardTotal + cardSurcharge;
-
-           return (
-             <div className="space-y-6 text-slate-800 font-sans animate-in fade-in duration-300">
-
-               {/* Standalone Customer Header */}
-               {!isFullPage && (
-                 <div className="mb-8 pb-6 border-b-2 border-[#E8E1D5]">
-                    <h2 className="text-3xl font-black text-[#7B1D2A] font-serif mb-2 tracking-tight">Complete Your Booking</h2>
-                    <p className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">
-                      Safe & Secure Payment Gateway — Kingsland Holidays
-                    </p>
-                    <p className="text-lg font-black text-slate-800 bg-white inline-block px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-                      Mr./Ms. {portalName || 'Valued Guest'} 
-                      <span className="text-slate-500 font-semibold ml-2">
-                        ({selectedLink?.lead_id || targetLead?.id || 'Booking'} / {portalPackage || 'Tour Package'})
-                      </span>
-                    </p>
-                 </div>
-               )}
-
-               {/* Card Processing Fee Popup Notification Modal */}
-               {showCardFeePopup && (
-                 <div className="fixed inset-0 z-[200] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-                   <div className="bg-white rounded-3xl max-w-md w-full p-8 text-center border-2 border-[#E0C990] shadow-xl space-y-6 animate-in zoom-in-95 duration-200">
-                     <div className="w-16 h-16 bg-rose-50 text-[#7B1D2A] rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-inner border border-rose-100">
-                       💳
-                     </div>
-                     <div>
-                       <h3 className="text-2xl font-black text-[#7B1D2A] font-serif tracking-tight">Credit Card Processing Fee</h3>
-                       <p className="text-sm font-medium text-slate-600 mt-3 leading-relaxed">
-                         If you use credit card you will be charged <span className="font-extrabold text-[#7B1D2A]">{cardFeeRate}%</span> for payment via credit card.
-                       </p>
-                     </div>
-                     <button
-                       type="button"
-                       onClick={() => setShowCardFeePopup(false)}
-                       className="w-full py-4 bg-[#C9922A] hover:bg-[#A67C1E] text-white font-extrabold text-sm rounded-2xl uppercase tracking-wider shadow-lg transition-all"
-                     >
-                       I Understand
-                     </button>
-                   </div>
-                 </div>
-               )}
-
-               {/* 2-Column Main Portal Layout matching screenshots */}
-               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                 
-                 {/* LEFT COLUMN: Payment Methods & Tabs (7 cols) */}
-                 <div className="lg:col-span-7 bg-[#FAF7F2] border border-[#E8E1D5] rounded-3xl shadow-md overflow-hidden">
-                   
-                   {/* Top Tabs Bar */}
-                   <div className="grid grid-cols-4 bg-[#F2EBDC] border-b border-[#E3DAC8]">
-                     {[
-                       { id: 'UPI', label: 'UPI', icon: '📱' },
-                       { id: 'QR CODE', label: 'QR CODE', icon: '⬛' },
-                       { id: 'BANK', label: 'BANK', icon: '🏛️' },
-                       { id: 'CARD', label: 'CARD', icon: '💳' },
-                     ].map((tab) => {
-                       const isActive = portalTab === tab.id;
-                       return (
-                         <button
-                           key={tab.id}
-                           type="button"
-                           onClick={() => {
-                             setPortalTab(tab.id as any);
-                             if (tab.id === 'CARD') setShowCardFeePopup(true);
-                           }}
-                           className={`py-4 px-2 flex flex-col items-center justify-center gap-1 transition-all text-xs uppercase font-extrabold tracking-wider ${
-                             isActive
-                               ? 'bg-white text-[#7B1D2A] border-b-4 border-[#C9922A] shadow-sm'
-                               : 'text-[#8C7E6C] hover:text-[#524636] hover:bg-[#EAE1CF]'
-                           }`}
-                         >
-                           <span className="text-base">{tab.icon}</span>
-                           <span>{tab.label}</span>
-                         </button>
-                       );
-                     })}
-                   </div>
-
-                   {/* Tab Inner Contents */}
-                   <div className="p-6 md:p-8 bg-white space-y-6">
-
-                     {/* TAB 1: UPI PAYMENT */}
-                     {portalTab === 'UPI' && (
-                       <div className="space-y-6 animate-in fade-in duration-200">
-                         <div>
-                           <h3 className="text-2xl font-black text-[#7B1D2A] font-serif">UPI Payment</h3>
-                           <p className="text-xs text-slate-500 font-medium">Pay instantly using any UPI app on your phone.</p>
-                         </div>
-
-                         <div className="grid grid-cols-2 gap-4">
-                           {[
-                             { id: 'PhonePe', color: 'bg-purple-600', icon: '💜' },
-                             { id: 'GPay', color: 'bg-blue-500', icon: '🔵' },
-                             { id: 'Paytm', color: 'bg-sky-500', icon: '🟠' },
-                             { id: 'BHIM UPI', color: 'bg-indigo-600', icon: '💜' },
-                           ].map((app) => {
-                             const isSelected = selectedUpiApp === app.id;
-                             return (
-                               <button
-                                 key={app.id}
-                                 type="button"
-                                 onClick={() => setSelectedUpiApp(app.id as any)}
-                                 className={`p-4 rounded-2xl border-2 flex items-center justify-center gap-3 transition-all ${
-                                   isSelected
-                                     ? 'border-[#C9922A] bg-[#FFFDF9] shadow-sm ring-2 ring-[#C9922A]/20'
-                                     : 'border-[#EAE3D2] bg-white hover:border-[#C9922A]/50'
-                                 }`}
-                               >
-                                 <span className={`w-8 h-8 rounded-full ${app.color} text-white flex items-center justify-center text-xs font-bold`}>{app.icon}</span>
-                                 <span className="font-extrabold text-sm text-[#5C2B30]">{app.id}</span>
-                               </button>
-                             );
-                           })}
-                         </div>
-
-                         <div className="space-y-4 pt-2">
-                           <div>
-                             <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider mb-1">ENTER UPI ID</label>
-                             <input
-                               type="text"
-                               placeholder="yourname@upi"
-                               value={customerUpiId}
-                               onChange={(e) => setCustomerUpiId(e.target.value)}
-                               className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                             />
-                           </div>
-
-                           <div>
-                             <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider mb-1">UPI REGISTERED MOBILE NUMBER</label>
-                             <input
-                               type="text"
-                               value={customerUpiPhone}
-                               onChange={(e) => setCustomerUpiPhone(e.target.value)}
-                               className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                             />
-                           </div>
-                         </div>
-
-                         <button
-                           type="button"
-                           onClick={() => {
-                             if (!utrNumber.trim()) {
-                               triggerRazorpayCheckout(finalPayableTotal, selectedLink?.package_name || packageName);
-                             } else {
-                               handleCustomerSubmitUTRWithRef(utrNumber.trim(), 'UPI');
-                             }
-                           }}
-                           className="w-full py-4 bg-[#A67C1E] hover:bg-[#8A6617] text-white font-black text-sm rounded-xl uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all"
-                         >
-                           🚀 CONFIRM & SUBMIT DETAILS
-                         </button>
-                       </div>
-                     )}
-
-                     {/* TAB 2: QR CODE */}
-                     {portalTab === 'QR CODE' && (
-                       <div className="space-y-6 animate-in fade-in duration-200">
-                         <div>
-                           <h3 className="text-2xl font-black text-[#7B1D2A] font-serif">Scan & Pay via QR</h3>
-                           <p className="text-xs text-slate-500 font-medium">Open any UPI app, scan the QR code below and complete payment.</p>
-                         </div>
-
-                         <div className="p-6 bg-[#FAF7F2] border-2 border-dashed border-[#E0C990] rounded-2xl text-center space-y-4">
-                           <div className="w-52 h-52 mx-auto bg-white p-3 rounded-xl shadow-md border border-[#E3DAC8] flex flex-col items-center justify-center">
-                             <img
-                               src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=${settings.upi_id}&pn=${encodeURIComponent(settings.upi_payee)}&am=${finalPayableTotal}&cu=INR`)}`}
-                               alt="UPI QR Code"
-                               className="w-44 h-44 object-contain"
-                             />
-                           </div>
-                           <div>
-                             <p className="font-extrabold text-sm text-[#7B1D2A]">{settings.upi_payee}</p>
-                             <p className="text-xs font-bold text-slate-500">Scan to pay <strong className="text-emerald-700 font-black">₹{finalPayableTotal.toLocaleString()}</strong></p>
-                           </div>
-
-                           <div className="flex items-center gap-2 max-w-sm mx-auto bg-white border border-[#E3DAC8] rounded-xl p-1.5">
-                             <span className="text-xs font-mono font-bold text-slate-700 truncate px-2 flex-1">{settings.upi_id}</span>
-                             <button
-                               type="button"
-                               onClick={() => {
-                                 navigator.clipboard.writeText(settings.upi_id);
-                                 alert('UPI ID copied to clipboard!');
-                               }}
-                               className="px-4 py-1.5 bg-[#F4ECDC] text-[#7B1D2A] text-[10px] font-black uppercase rounded-lg hover:bg-[#EBDDC3]"
-                             >
-                               COPY
-                             </button>
-                           </div>
-                         </div>
-
-                         <div className="space-y-2">
-                           <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider">TRANSACTION / UTR REFERENCE NUMBER AFTER PAYMENT</label>
-                           <input
-                             type="text"
-                             placeholder="12-digit transaction reference"
-                             value={utrNumber}
-                             onChange={(e) => setUtrNumber(e.target.value)}
-                             className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                           />
-                         </div>
-
-                         <button
-                           type="button"
-                           onClick={() => {
-                             if (!utrNumber.trim()) {
-                               alert('Please enter your UTR / Transaction Reference Number.');
-                               return;
-                             }
-                             handleCustomerSubmitUTRWithRef(utrNumber.trim(), 'UPI');
-                           }}
-                           className="w-full py-4 bg-[#A67C1E] hover:bg-[#8A6617] text-white font-black text-sm rounded-xl uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all"
-                         >
-                           ✓ CONFIRM PAYMENT
-                         </button>
-                       </div>
-                     )}
-
-                     {/* TAB 3: BANK TRANSFER */}
-                     {portalTab === 'BANK' && (
-                       <div className="space-y-6 animate-in fade-in duration-200">
-                         <div>
-                           <h3 className="text-2xl font-black text-[#7B1D2A] font-serif">Bank Transfer / NEFT / RTGS</h3>
-                           <p className="text-xs text-slate-500 font-medium">Transfer directly to our bank account and share the reference number.</p>
-                         </div>
-
-                         <div className="bg-white border border-[#E3DAC8] rounded-2xl overflow-hidden divide-y divide-[#E3DAC8] text-xs font-bold">
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">ACCOUNT NAME</span>
-                             <div className="flex items-center gap-3">
-                               <span className="text-slate-800 font-extrabold">{settings.bank_acc_name}</span>
-                               <button type="button" onClick={() => { navigator.clipboard.writeText(settings.bank_acc_name); alert('Account Name copied!'); }} className="px-3 py-1 bg-[#F4ECDC] text-[#7B1D2A] text-[9px] font-black uppercase rounded-md hover:bg-[#EBDDC3]">COPY</button>
-                             </div>
-                           </div>
-
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">ACCOUNT NUMBER</span>
-                             <div className="flex items-center gap-3">
-                               <span className="text-slate-900 font-mono font-black">{settings.bank_acc_num}</span>
-                               <button type="button" onClick={() => { navigator.clipboard.writeText(settings.bank_acc_num); alert('Account Number copied!'); }} className="px-3 py-1 bg-[#F4ECDC] text-[#7B1D2A] text-[9px] font-black uppercase rounded-md hover:bg-[#EBDDC3]">COPY</button>
-                             </div>
-                           </div>
-
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">IFSC CODE</span>
-                             <div className="flex items-center gap-3">
-                               <span className="text-slate-900 font-mono font-black">{settings.bank_ifsc}</span>
-                               <button type="button" onClick={() => { navigator.clipboard.writeText(settings.bank_ifsc); alert('IFSC Code copied!'); }} className="px-3 py-1 bg-[#F4ECDC] text-[#7B1D2A] text-[9px] font-black uppercase rounded-md hover:bg-[#EBDDC3]">COPY</button>
-                             </div>
-                           </div>
-
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">BANK NAME</span>
-                             <span className="text-slate-800 font-extrabold">{settings.bank_name}</span>
-                           </div>
-
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">BRANCH</span>
-                             <span className="text-slate-800 font-extrabold">{settings.bank_branch}</span>
-                           </div>
-
-                           <div className="flex items-center justify-between p-3.5">
-                             <span className="text-[#8C7E6C] font-black uppercase text-[10px]">ACCOUNT TYPE</span>
-                             <span className="px-3 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase rounded-md">CURRENT</span>
-                           </div>
-                         </div>
-
-                         <div className="space-y-2">
-                           <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider">TRANSACTION / UTR REFERENCE NUMBER AFTER PAYMENT</label>
-                           <input
-                             type="text"
-                             placeholder="12-digit NEFT / RTGS reference number"
-                             value={utrNumber}
-                             onChange={(e) => setUtrNumber(e.target.value)}
-                             className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                           />
-                         </div>
-
-                         <button
-                           type="button"
-                           onClick={() => {
-                             if (!utrNumber.trim()) {
-                               alert('Please enter your UTR / Transaction Reference Number.');
-                               return;
-                             }
-                             handleCustomerSubmitUTRWithRef(utrNumber.trim(), 'Bank Transfer');
-                           }}
-                           className="w-full py-4 bg-[#A67C1E] hover:bg-[#8A6617] text-white font-black text-sm rounded-xl uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all"
-                         >
-                           📥 SUBMIT TRANSFER DETAILS
-                         </button>
-                       </div>
-                     )}
-
-                     {/* TAB 4: CARD PAYMENT */}
-                     {portalTab === 'CARD' && (
-                       <div className="space-y-6 animate-in fade-in duration-200">
-                         <div>
-                           <h3 className="text-2xl font-black text-[#7B1D2A] font-serif">Credit / Debit Card</h3>
-                           <p className="text-xs text-slate-500 font-medium">Pay securely with Visa, Mastercard, or RuPay card.</p>
-                         </div>
-
-                         <div className="p-6 bg-gradient-to-br from-[#7B1D2A] to-[#4A101A] rounded-2xl text-white shadow-xl relative overflow-hidden space-y-6 border border-[#C9922A]/30">
-                           <div className="flex justify-between items-center">
-                             <div className="w-12 h-9 bg-gradient-to-r from-amber-300 to-amber-500 rounded-md shadow-md border border-amber-200"></div>
-                             <span className="text-xs font-extrabold uppercase tracking-widest text-[#E8B84B]">CARD PAYMENT</span>
-                           </div>
-
-                           <div className="text-lg font-mono tracking-widest text-slate-200">
-                             •••• •••• •••• ••••
-                           </div>
-
-                           <div className="flex justify-between items-end text-xs uppercase font-mono">
-                             <div>
-                               <span className="text-[8px] text-amber-200/70 block">CARD HOLDER</span>
-                               <span className="font-extrabold text-white">{billingName || 'YOUR NAME'}</span>
-                             </div>
-                             <div>
-                               <span className="text-[8px] text-amber-200/70 block">EXPIRES</span>
-                               <span className="font-extrabold text-white">MM/YY</span>
-                             </div>
-                           </div>
-                         </div>
-
-                         <div className="space-y-4">
-                           <div>
-                             <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider mb-1">BILLING NAME *</label>
-                             <input
-                               type="text"
-                               required
-                               value={billingName}
-                               onChange={(e) => setBillingName(e.target.value)}
-                               className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                             />
-                           </div>
-
-                           <div>
-                             <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider mb-1">BILLING MOBILE *</label>
-                             <input
-                               type="text"
-                               required
-                               value={billingMobile}
-                               onChange={(e) => setBillingMobile(e.target.value)}
-                               className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                             />
-                           </div>
-
-                           <div>
-                             <label className="block text-[11px] font-black text-[#8C7E6C] uppercase tracking-wider mb-1">BILLING EMAIL *</label>
-                             <input
-                               type="email"
-                               required
-                               value={billingEmail}
-                               onChange={(e) => setBillingEmail(e.target.value)}
-                               className="w-full bg-[#FAF7F2] border border-[#E3DAC8] rounded-xl px-4 py-3 text-xs font-bold outline-none focus:border-[#C9922A]"
-                             />
-                           </div>
-                         </div>
-
-                         <button
-                           type="button"
-                           onClick={() => {
-                             const title = selectedLink ? selectedLink.package_name : packageName;
-                             triggerRazorpayCheckout(finalPayableTotal, title);
-                           }}
-                           className="w-full py-4 bg-[#A67C1E] hover:bg-[#8A6617] text-white font-black text-sm rounded-xl uppercase tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all"
-                         >
-                           🔒 PAY ₹{finalPayableTotal.toLocaleString()} SECURELY
-                         </button>
-                       </div>
-                     )}
-
-                   </div>
-                 </div>
-
-                 {/* RIGHT COLUMN: Booking Summary & Features (5 cols) */}
-                 <div className="lg:col-span-5 space-y-6">
-
-                   {/* Card 1: Booking Summary */}
-                   <div className="bg-white border border-[#E8E1D5] rounded-3xl shadow-md overflow-hidden">
-                     <div className="bg-[#7B1D2A] text-white p-5 font-serif flex items-center gap-3">
-                       <span className="text-xl">🗺️</span>
-                       <h3 className="text-lg font-black tracking-wide">Booking Summary</h3>
-                     </div>
-
-                     <div className="p-6 space-y-4 text-xs font-bold text-slate-700">
-                       <div className="pb-3 border-b border-[#EAE3D2]">
-                         <span className="font-extrabold text-sm text-[#7B1D2A] leading-tight block">
-                           {selectedLink ? selectedLink.package_name : (packageName || 'Tour Package Confirmation')}
-                         </span>
-                       </div>
-
-                       <div className="space-y-2.5 pt-1">
-                         <div className="flex justify-between items-center text-slate-600">
-                           <span>Amount</span>
-                           <span className="font-mono text-slate-900">₹{portalAmount.toLocaleString()}.00</span>
-                         </div>
-
-                         <div className="flex justify-between items-center text-slate-600">
-                           <span>GST</span>
-                           <span className="font-mono text-slate-900">₹{portalGst.toLocaleString()}.00</span>
-                         </div>
-
-                         <div className="flex justify-between items-center text-slate-600">
-                           <span>Processing Fee</span>
-                           <span className="font-mono text-slate-900">₹{portalFee.toLocaleString()}.00</span>
-                         </div>
-
-                         {portalDiscount > 0 && (
-                           <div className="flex justify-between items-center text-emerald-600">
-                             <span>Discount</span>
-                             <span className="font-mono text-emerald-700">-₹{portalDiscount.toLocaleString()}.00</span>
-                           </div>
-                         )}
-
-                         {portalTab === 'CARD' && (
-                           <div className="flex justify-between items-center text-[#7B1D2A] bg-rose-50/70 p-2.5 rounded-xl border border-rose-200">
-                             <span>Card Surcharge ({cardFeeRate}%)</span>
-                             <span className="font-mono font-black text-[#7B1D2A]">₹{cardSurcharge.toLocaleString()}.00</span>
-                           </div>
-                         )}
-
-
-                       </div>
-
-                       <div className="pt-4 border-t-2 border-[#EAE3D2] flex justify-between items-center">
-                         <span className="text-base font-black text-[#7B1D2A]">Total Payable</span>
-                         <span className="text-2xl font-black text-[#7B1D2A] font-mono">
-                           ₹{finalPayableTotal.toLocaleString()}.00
-                         </span>
-                       </div>
-                     </div>
-                   </div>
-
-                   {/* Card 2: WHY PAY WITH US */}
-                   <div className="bg-[#FFFDF9] border border-[#E8E1D5] rounded-3xl p-6 space-y-4 text-xs">
-                     <h4 className="font-black text-[#8C7E6C] uppercase tracking-wider text-[10px]">WHY PAY WITH US</h4>
-
-                     <div className="space-y-3 font-medium text-slate-600">
-                       <div className="flex items-start gap-3">
-                         <span className="text-base">🔒</span>
-                         <p>256-bit SSL encrypted transactions — your data is fully protected.</p>
-                       </div>
-
-                       <div className="flex items-start gap-3">
-                         <span className="text-base text-emerald-600">✅</span>
-                         <p>Instant booking confirmation via email & SMS.</p>
-                       </div>
-
-                       <div className="flex items-start gap-3">
-                         <span className="text-base text-indigo-600">🔄</span>
-                         <p>Easy cancellation & refund within 48 hours.</p>
-                       </div>
-                     </div>
-                   </div>
-
-                   {/* Card 3: ACCEPTED PAYMENTS */}
-                   <div className="bg-[#FFFDF9] border border-[#E8E1D5] rounded-3xl p-6 text-center space-y-3">
-                     <h4 className="font-black text-[#8C7E6C] uppercase tracking-wider text-[10px]">ACCEPTED PAYMENTS</h4>
-                     <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                       {['VISA', 'MC', 'RuPay', 'UPI', 'NETBANKING'].map((b) => (
-                         <span key={b} className="px-3 py-1 bg-white border border-[#E3DAC8] text-[#7B1D2A] font-black text-[10px] rounded-lg shadow-2xs uppercase">
-                           {b}
-                         </span>
-                       ))}
-                     </div>
-                   </div>
-
-                 </div>
-
-               </div>
-             </div>
-           );
-         })()}
+         {/* TAB 6: CUSTOMER PAYMENT PORTAL (6 RESPONSIVE THEMES) */}
+         {activeTab === 'Portal' && (
+           <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in duration-300">
+             <PaymentPageView
+               targetLead={targetLead || lead}
+               initialLinkKey={selectedLink?.pay_key}
+               onPaymentSuccess={() => {
+                 loadData();
+                 if (onPaymentUpdated) onPaymentUpdated();
+               }}
+               isStandalone={false}
+             />
+           </div>
+         )}
       </div>
+      {localToast && (
+        <div className="fixed bottom-6 right-6 z-[250] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-slate-800 animate-in slide-in-from-bottom duration-300">
+          <span className="text-emerald-400 font-extrabold">✓</span>
+          <span className="text-xs font-bold">{localToast.message}</span>
+        </div>
+      )}
+      {/* Payment Confirmation Modal */}
+      {confirmPaymentModal.open && confirmPaymentModal.link && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-5 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200">Confirm Payment Received</p>
+                  <h3 className="text-lg font-black mt-0.5">{confirmPaymentModal.link.customer_name}</h3>
+                  <p className="text-xs text-emerald-100 mt-0.5">{confirmPaymentModal.link.package_name} · ₹{(confirmPaymentModal.link.net_amount || 0).toLocaleString()}</p>
+                </div>
+                <button onClick={() => setConfirmPaymentModal({ open: false, link: null })} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Transaction Ref / UTR Number *</label>
+                <input
+                  type="text"
+                  value={confirmRef}
+                  onChange={e => setConfirmRef(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder="e.g. UTR-123456789012 or TXN-REF"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Mode</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['UPI', 'Cash', 'Bank Transfer', 'Card'].map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setConfirmMode(mode)}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                        confirmMode === mode
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-200'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      {mode === 'UPI' && '📱 '}
+                      {mode === 'Cash' && '💵 '}
+                      {mode === 'Bank Transfer' && '🏦 '}
+                      {mode === 'Card' && '💳 '}
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">💬 Payment Comment / Notes (Optional)</label>
+                <textarea
+                  value={confirmComment}
+                  onChange={e => setConfirmComment(e.target.value)}
+                  className="w-full border border-indigo-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                  rows={3}
+                  placeholder="e.g. Client paid via Google Pay. Balance ₹5000 pending for next installment. Spoke with Mr. Sharma on call."
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setConfirmPaymentModal({ open: false, link: null })}
+                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!confirmRef.trim() || isConfirmingPayment}
+                onClick={async () => {
+                  const link = confirmPaymentModal.link;
+                  setIsConfirmingPayment(true);
+                  try {
+                    const commentVal = confirmComment.trim();
+                    const cleanRef = confirmRef.trim();
+
+                    await handleConfirmEmiReceived(
+                      link.lead_id || '',
+                      link.id,
+                      cleanRef,
+                      confirmMode,
+                      link.net_amount || 0,
+                      link.pay_key,
+                      commentVal
+                    );
+
+                    if (link.instIdx !== undefined && installments[link.instIdx]) {
+                      const updated = [...installments];
+                      updated[link.instIdx].payment_status = 'Paid';
+                      updated[link.instIdx].comments = commentVal;
+                      updated[link.instIdx].notes = commentVal;
+                      updated[link.instIdx].transaction_ref = confirmRef.trim();
+                      updated[link.instIdx].payment_mode = confirmMode;
+                      setInstallments(updated);
+                    }
+
+                    setConfirmPaymentModal({ open: false, link: null });
+                    setConfirmRef('');
+                    setConfirmMode('UPI');
+                    setConfirmComment('');
+                  } finally {
+                    setIsConfirmingPayment(false);
+                  }
+                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-black text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isConfirmingPayment ? (
+                  <><RefreshCw className="w-4 h-4 animate-spin" /> Processing...</>
+                ) : (
+                  <><CheckCircle2 className="w-4 h-4" /> Confirm Payment Received</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Installment Comment Modal */}
+      {installmentCommentModal.open && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                <h3 className="font-bold text-base">Installment Payment Comment</h3>
+              </div>
+              <button
+                onClick={() => setInstallmentCommentModal({ open: false, instIdx: -1, comment: '' })}
+                className="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-xs text-slate-500 mb-2 font-medium">
+                  Add operational remarks, verification details, or payment notes for <strong className="text-slate-800 font-bold">{installments[installmentCommentModal.instIdx]?.title || 'Installment'}</strong>:
+                </p>
+                <textarea
+                  value={installmentCommentModal.comment}
+                  onChange={e => setInstallmentCommentModal(prev => ({ ...prev, comment: e.target.value }))}
+                  rows={4}
+                  placeholder="e.g. Received ₹23,333 via GPay (UTR: 3291039103). Verified in HDFC Bank account by Rahul."
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-slate-800"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setInstallmentCommentModal({ open: false, instIdx: -1, comment: '' })}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={installmentCommentModal.isSaving}
+                  onClick={async () => {
+                    const idx = installmentCommentModal.instIdx;
+                    const commentText = installmentCommentModal.comment.trim();
+                    setInstallmentCommentModal(prev => ({ ...prev, isSaving: true }));
+                    try {
+                      const updated = [...installments];
+                      if (updated[idx]) {
+                        updated[idx].comments = commentText;
+                        updated[idx].notes = commentText;
+                        setInstallments(updated);
+                        if (updated[idx].id) {
+                          await api.updateInstallmentComment(updated[idx].id!, commentText);
+                        }
+                      }
+                      setInstallmentCommentModal({ open: false, instIdx: -1, comment: '' });
+                    } catch (err) {
+                      console.error('Error saving installment comment:', err);
+                    }
+                  }}
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  💾 Save Comment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

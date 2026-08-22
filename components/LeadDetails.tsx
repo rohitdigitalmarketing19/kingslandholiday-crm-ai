@@ -1,7 +1,9 @@
 
 import React, { useState } from 'react';
+import { Trash2, X } from 'lucide-react';
 import { Lead, Itinerary } from '../types';
 import { generateItinerary, draftFollowUpEmail } from '../services/geminiService';
+import { updateLeadTravelers } from '../services/apiService';
 
 interface LeadDetailsProps {
   lead: Lead;
@@ -9,12 +11,39 @@ interface LeadDetailsProps {
   onClose: () => void;
   onUpdateStatus: (leadId: string, status: Lead['status']) => void;
   onDeleteLead?: (leadId: string) => void;
+  onUpdateLead?: (updatedLead: Lead) => void;
 }
 
-const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onUpdateStatus, onDeleteLead }) => {
+const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onUpdateStatus, onDeleteLead, onUpdateLead }) => {
   const [loading, setLoading] = useState(false);
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [emailDraft, setEmailDraft] = useState<string>('');
+
+  const [isEditingTravelers, setIsEditingTravelers] = useState(false);
+  const [tempAdults, setTempAdults] = useState(lead.travelers?.adults || 0);
+  const [tempChildren, setTempChildren] = useState(lead.travelers?.children || 0);
+
+  const handleStartEditTravelers = () => {
+    setTempAdults(lead.travelers?.adults || 0);
+    setTempChildren(lead.travelers?.children || 0);
+    setIsEditingTravelers(true);
+  };
+
+  const handleSaveTravelers = async () => {
+    setLoading(true);
+    try {
+      const updated = await updateLeadTravelers(lead.id, tempAdults, tempChildren, lead.travelers?.childAges || []);
+      if (onUpdateLead) {
+        onUpdateLead(updated);
+      }
+      setIsEditingTravelers(false);
+    } catch (e) {
+      console.error('Failed to save travelers count:', e);
+      alert('Failed to update travelers count');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGenerateItinerary = async () => {
     setLoading(true);
@@ -53,23 +82,21 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
           <div className="flex items-center gap-3">
             {onDeleteLead && (
               <button 
+                type="button"
                 onClick={() => {
-                  if (confirm(`Delete Lead inquiry #${lead.tripId} (${lead.name})?`)) {
-                    onDeleteLead(lead.id);
-                  }
+                  onDeleteLead(lead.id);
                 }}
-                className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-black uppercase transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
               >
-                🗑️ Delete Lead
+                <Trash2 size={13} />
+                <span>Delete Lead</span>
               </button>
             )}
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400"
+              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-400"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -89,10 +116,60 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
                </div>
                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <span className="block text-xs text-slate-400 font-bold mb-1">Travelers</span>
-                  <span className="text-lg font-bold text-slate-700">
-                    {lead.travelers?.adults || 0} Adults
-                    {lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}
-                  </span>
+                  {isEditingTravelers ? (
+                    <div className="space-y-2 mt-1">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] text-slate-500 font-bold w-12">Adults:</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={tempAdults}
+                          onChange={(e) => setTempAdults(Number(e.target.value))}
+                          className="w-16 px-1.5 py-0.5 rounded border border-slate-300 text-xs font-bold bg-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] text-slate-500 font-bold w-12">Kids:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={tempChildren}
+                          onChange={(e) => setTempChildren(Number(e.target.value))}
+                          className="w-16 px-1.5 py-0.5 rounded border border-slate-300 text-xs font-bold bg-white outline-none"
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleSaveTravelers}
+                          className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[11px] font-bold hover:bg-indigo-700"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingTravelers(false)}
+                          className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-[11px] font-bold hover:bg-slate-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <span className="text-lg font-bold text-slate-700">
+                        {lead.travelers?.adults || 0} Adults
+                        {lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleStartEditTravelers}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
                </div>
                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                   <span className="block text-xs text-slate-400 font-bold mb-1">Destination</span>

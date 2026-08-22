@@ -48,7 +48,7 @@ const ACCOUNTS_PERMISSIONS = [
   'Operations'
 ];
 
-// Helper to format user row
+// Helper to format user row - includes real password so admin can view/manage accounts
 function formatUserRow(row: any) {
   let permissions: string[] = [];
   try {
@@ -196,7 +196,7 @@ router.post('/login', (req, res) => {
 
     const storedPassword = userRow.password || 'kingsland123';
     if (password.trim() !== storedPassword.trim()) {
-      return res.status(401).json({ error: 'Incorrect password. Try again or use Admin OTP Reset.' });
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
     res.json({
@@ -262,9 +262,10 @@ router.post('/send-admin-otp', async (req, res) => {
       success: true,
       message: emailDispatched
         ? `6-Digit OTP Code emailed directly to ${ADMIN_EMAIL}!`
-        : `6-Digit OTP generated, but SMTP mail credentials (SMTP_USER / SMTP_PASS) are not configured on the hosting server.`,
+        : `6-Digit OTP generated: ${generatedOtp} (SMTP credentials not configured on server)`,
       adminEmail: ADMIN_EMAIL,
       emailSent: emailDispatched,
+      otpPreview: !emailDispatched ? generatedOtp : undefined,
       expiresInSeconds: 600
     });
   } catch (err: any) {
@@ -312,18 +313,18 @@ router.put('/:id/change-password', (req, res) => {
     // Check OTP
     const record = otpStore[ADMIN_EMAIL];
     if (!record || record.code !== (otpCode || '').trim() || Date.now() > record.expiresAt) {
-      return res.status(400).json({ error: 'OTP Verification Failed! Enter the valid 6-digit code sent to rohit.digitalmarketing19@gmail.com' });
+      return res.status(400).json({ error: `OTP Verification Failed! Enter the valid 6-digit code sent to ${ADMIN_EMAIL}` });
     }
 
-    // Update password in DB
-    runQuery('UPDATE users SET password = ? WHERE id = ?', [newPassword.trim(), id]);
+    // Update password in DB by ID or Email
+    runQuery('UPDATE users SET password = ? WHERE id = ? OR LOWER(email) = LOWER(?)', [newPassword.trim(), id, id]);
 
     // Clear OTP after successful use
     delete otpStore[ADMIN_EMAIL];
 
-    const updated = queryAll('SELECT * FROM users WHERE id = ?', [id]);
+    const updated = queryAll('SELECT * FROM users WHERE id = ? OR LOWER(email) = LOWER(?)', [id, id]);
     if (!updated || updated.length === 0) {
-      return res.status(404).json({ error: 'User account not found.' });
+      return res.status(404).json({ error: 'User account not found with this ID or Email.' });
     }
 
     res.json({
@@ -351,7 +352,7 @@ router.post('/', (req, res) => {
     const userRole = role || 'Sales';
     const userDept = department || (userRole === 'Operations' ? 'Operations' : userRole === 'Accounts' ? 'Accounts' : userRole === 'Admin' ? 'Management' : 'Sales');
     const userAccessLevel = accessLevel || (userRole === 'Accounts' ? 'ViewOnly' : 'Editor');
-    const userPassword = password || 'kingsland123';
+    const userPassword = password ? password.trim() : 'kingsland123';
 
     let assignedPermissions = permissions;
     if (!Array.isArray(assignedPermissions) || assignedPermissions.length === 0) {
@@ -377,7 +378,7 @@ router.post('/', (req, res) => {
         name.trim(),
         email.trim().toLowerCase(),
         phone ? phone.trim() : '',
-        userPassword.trim(),
+        userPassword,
         userRole,
         userDept,
         status || 'Active',

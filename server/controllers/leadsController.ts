@@ -131,15 +131,60 @@ export function updateLeadAccounts(id: string, data: { accountsRemarks?: string;
   return getLeadById(id);
 }
 
+export function updateLeadTravelers(
+  id: string,
+  adults: number,
+  children: number,
+  childAges: number[] = [],
+  budgetTier?: string,
+  includeStay?: string,
+  includeFlight?: string,
+  includeCab?: string,
+  hotelCategory?: string,
+  otherInfo?: string
+) {
+  const fields = ['adults = ?', 'children = ?', 'child_ages = ?'];
+  const params: any[] = [adults, children, JSON.stringify(childAges)];
+
+  if (budgetTier !== undefined) { fields.push('budget_tier = ?'); params.push(budgetTier); }
+  if (includeStay !== undefined) { fields.push('include_stay = ?'); params.push(includeStay); }
+  if (includeFlight !== undefined) { fields.push('include_flight = ?'); params.push(includeFlight); }
+  if (includeCab !== undefined) { fields.push('include_cab = ?'); params.push(includeCab); }
+  if (hotelCategory !== undefined) { fields.push('hotel_category = ?'); params.push(hotelCategory); }
+  if (otherInfo !== undefined) { fields.push('other_info = ?'); params.push(otherInfo); }
+
+  params.push(id);
+  runQuery(`UPDATE leads SET ${fields.join(', ')} WHERE id = ?`, params);
+  return getLeadById(id);
+}
+
 export function deleteLead(id: string) {
-  runQuery('DELETE FROM quote_inclusions WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ?)', [id]);
-  runQuery('DELETE FROM quote_hotels WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ?)', [id]);
-  runQuery('DELETE FROM quote_itinerary_days WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ?)', [id]);
-  runQuery('DELETE FROM quotes WHERE lead_id = ?', [id]);
-  runQuery('DELETE FROM lead_notes WHERE lead_id = ?', [id]);
-  runQuery('DELETE FROM payment_installments WHERE lead_id = ?', [id]);
-  runQuery('DELETE FROM payment_links WHERE lead_id = ?', [id]);
-  runQuery('DELETE FROM payment_submissions WHERE lead_id = ?', [id]);
-  return runQuery('DELETE FROM leads WHERE id = ?', [id]).changes > 0;
+  const target = queryOne('SELECT id, trip_id FROM leads WHERE id = ? OR trip_id = ?', [id, id]);
+  const leadId = target ? target.id : id;
+  const tripId = target ? target.trip_id : id;
+
+  runQuery('DELETE FROM quote_inclusions WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
+  runQuery('DELETE FROM quote_hotels WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
+  runQuery('DELETE FROM quote_itinerary_days WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
+  runQuery('DELETE FROM quotes WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
+  runQuery('DELETE FROM lead_notes WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
+  runQuery('DELETE FROM payment_installments WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
+  runQuery('DELETE FROM payment_links WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
+  runQuery('DELETE FROM payment_submissions WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
+
+  // Clean ops tables completely using possible resolved customer IDs
+  const possibleCustIds = [leadId, tripId, `cust-${leadId}`, `cust-${tripId}`].filter(Boolean);
+  if (possibleCustIds.length > 0) {
+    const placeHolders = possibleCustIds.map(() => '?').join(',');
+    runQuery(`DELETE FROM ops_customer_installments WHERE customer_id IN (${placeHolders})`, possibleCustIds);
+    runQuery(`DELETE FROM ops_vouchers WHERE customer_id IN (${placeHolders})`, possibleCustIds);
+    runQuery(`DELETE FROM ops_daily_activities WHERE itinerary_id IN (SELECT id FROM ops_itineraries WHERE customer_id IN (${placeHolders}))`, possibleCustIds);
+    runQuery(`DELETE FROM ops_itineraries WHERE customer_id IN (${placeHolders})`, possibleCustIds);
+    runQuery(`DELETE FROM ops_customers WHERE id IN (${placeHolders}) OR booking_id IN (${placeHolders})`, [...possibleCustIds, ...possibleCustIds]);
+  }
+
+  const res = runQuery('DELETE FROM leads WHERE id = ? OR trip_id = ?', [leadId, tripId]);
+  return res.changes > 0 || !!target;
 }
 export { hydrateQuote };
+

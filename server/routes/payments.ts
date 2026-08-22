@@ -12,6 +12,7 @@ import {
   getLeadInstallments,
   saveInstallmentSchedule,
   updateInstallmentStatus,
+  updateInstallmentComment,
   confirmPaymentLink,
 } from '../controllers/paymentsController';
 
@@ -63,18 +64,28 @@ router.post('/installments', (req: Request, res: Response) => {
 
 router.patch('/installments/:id/status', (req: Request, res: Response) => {
   try {
-    const { status, paidAmount, paymentMode, transactionRef } = req.body;
-    res.json(updateInstallmentStatus(req.params.id as string, status, paidAmount, paymentMode, transactionRef));
+    const { status, paidAmount, paymentMode, transactionRef, comments, notes } = req.body;
+    res.json(updateInstallmentStatus(req.params.id as string, status, paidAmount, paymentMode, transactionRef, comments || notes));
   } catch (err: any) {
     console.error('Error updating installment status:', err);
     res.status(500).json({ error: 'Failed to update installment status' });
   }
 });
 
+router.patch('/installments/:id/comment', (req: Request, res: Response) => {
+  try {
+    const { comment, comments, notes } = req.body;
+    res.json(updateInstallmentComment(req.params.id as string, comment || comments || notes || ''));
+  } catch (err: any) {
+    console.error('Error updating installment comment:', err);
+    res.status(500).json({ error: 'Failed to update installment comment' });
+  }
+});
+
 router.post('/confirm', (req: Request, res: Response) => {
   try {
-    const { payKey, id, refNumber, paymentMode, amount } = req.body;
-    res.json(confirmPaymentLink(payKey || id, refNumber, paymentMode, amount));
+    const { payKey, id, refNumber, paymentMode, amount, comments, notes } = req.body;
+    res.json(confirmPaymentLink(payKey || id, refNumber, paymentMode, amount, comments || notes));
   } catch (err: any) {
     console.error('Error confirming payment:', err);
     res.status(500).json({ error: 'Failed to confirm payment' });

@@ -81,6 +81,12 @@ export function initializeDatabase(): void {
     `ALTER TABLE payment_installments ADD COLUMN paid_at TEXT DEFAULT ''`,
     `ALTER TABLE payment_installments ADD COLUMN payment_mode TEXT DEFAULT ''`,
     `ALTER TABLE payment_installments ADD COLUMN transaction_ref TEXT DEFAULT ''`,
+    `ALTER TABLE payment_installments ADD COLUMN comments TEXT DEFAULT ''`,
+    `ALTER TABLE payment_installments ADD COLUMN notes TEXT DEFAULT ''`,
+    `ALTER TABLE payment_submissions ADD COLUMN comments TEXT DEFAULT ''`,
+    `ALTER TABLE payment_submissions ADD COLUMN notes TEXT DEFAULT ''`,
+    `ALTER TABLE payment_links ADD COLUMN comments TEXT DEFAULT ''`,
+    `ALTER TABLE payment_links ADD COLUMN notes TEXT DEFAULT ''`,
     `ALTER TABLE leads ADD COLUMN postponed_date TEXT DEFAULT ''`,
     `ALTER TABLE leads ADD COLUMN postponed_reason TEXT DEFAULT ''`,
     `ALTER TABLE leads ADD COLUMN follow_up_date TEXT DEFAULT ''`,
@@ -106,15 +112,114 @@ export function initializeDatabase(): void {
     `ALTER TABLE ops_customers ADD COLUMN cab_payment_logs_json TEXT DEFAULT '[]'`,
     `ALTER TABLE users ADD COLUMN access_level TEXT DEFAULT 'Editor'`,
     `ALTER TABLE users ADD COLUMN password TEXT DEFAULT 'kingsland123'`,
+    `CREATE TABLE IF NOT EXISTS masters_data (id TEXT PRIMARY KEY, category TEXT NOT NULL, name TEXT NOT NULL, code TEXT DEFAULT '', description TEXT DEFAULT '', is_enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
+    `CREATE INDEX IF NOT EXISTS idx_masters_category ON masters_data(category)`,
+    `CREATE TABLE IF NOT EXISTS pdf_designs (id TEXT PRIMARY KEY, title TEXT NOT NULL, theme_preset TEXT DEFAULT 'minimal_dark', primary_color TEXT DEFAULT '#c6f135', secondary_color TEXT DEFAULT '#161713', header_banner_url TEXT DEFAULT '', agency_stamp_url TEXT DEFAULT '', signature_url TEXT DEFAULT '', watermark_text TEXT DEFAULT 'KINGSLAND HOLIDAYS', font_family TEXT DEFAULT 'Inter', cover_style TEXT DEFAULT 'Modern Grid', is_active INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
+    `CREATE TABLE IF NOT EXISTS agency_settings (
+      id TEXT PRIMARY KEY DEFAULT 'default_agency_settings',
+      company_name TEXT DEFAULT 'Kingsland Holidays',
+      tagline TEXT DEFAULT 'Desire to travel',
+      phone TEXT DEFAULT '+91 6376983416',
+      email TEXT DEFAULT 'support@kingslandholiday.com',
+      website TEXT DEFAULT 'kingslandholiday.com',
+      gst_number TEXT DEFAULT '',
+      default_gst_percent REAL DEFAULT 5.00,
+      place_of_supply TEXT DEFAULT 'Rajasthan (08)',
+      address TEXT DEFAULT 'Plot No. 42, Kingsland Tower, MI Road, Jaipur, Rajasthan 302001',
+      intro_about TEXT DEFAULT 'Founded in 2010, we are a trusted travel agency committed to creating memorable journeys for our clients. We specialise in personalised holiday packages, guided tours, and unique travel experiences across India and abroad. Your satisfaction is our priority — let us turn your travel dreams into reality!',
+      established_year TEXT DEFAULT '2010',
+      rating REAL DEFAULT 4.8,
+      happy_customers TEXT DEFAULT '5000+',
+      logo_url TEXT DEFAULT '',
+      favicon_url TEXT DEFAULT '',
+      default_payment_terms TEXT DEFAULT '50% advance to confirm the booking, balance 15 days before travel.',
+      default_terms_conditions TEXT DEFAULT '1. Booking and Payment: All bookings are subject to availability and confirmation. Payment as per the payment schedule.\n2. Cancellation and Refunds: Cancellation charges apply as per the cancellation policy. Refunds, if applicable, are processed per our refund policy.\n3. Travel Documents: Guests must carry valid photo ID and any required permits. We are not liable for loss from inadequate or expired documents.\n4. Health and Safety: Participants are responsible for their health and safety and must comply with local laws and customs.\n5. Limitation of Liability: We act only as a booking agent for airlines, hotels, and operators, and are not liable for their acts or omissions. Our liability is limited to the amount paid for the booking.\n\nCancellation Policy (Land Package):\n- >30 days before travel: 25% cancellation fees\n- 16-30 days before travel: 40% cancellation fees\n- 7-15 days before travel: 55% cancellation fees\n- 3-6 days before travel: 70% cancellation fees\n- 0-2 days before travel / No Show: 100% cancellation fees\n- Non-refundable during peak periods (Diwali, Christmas, New Year, Long Weekends).',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `ALTER TABLE agency_settings ADD COLUMN favicon_url TEXT DEFAULT ''`,
+    `ALTER TABLE pdf_designs ADD COLUMN pdf_file_data TEXT DEFAULT ''`,
+    `ALTER TABLE pdf_designs ADD COLUMN page_count INTEGER DEFAULT 0`,
+    `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`
   ];
 
   for (const mSql of migrations) {
     try {
       execSql(mSql);
     } catch (_e) {
-      // Column already exists
+      // Column or table already exists
     }
   }
+
+  // Seed default Masters data if empty
+  try {
+    const defaultMasters = [
+      // Destinations
+      { id: 'dest-1', category: 'Destinations', name: 'Rajasthan' },
+      { id: 'dest-2', category: 'Destinations', name: 'Sikkim' },
+      { id: 'dest-3', category: 'Destinations', name: 'Darjeeling' },
+      { id: 'dest-4', category: 'Destinations', name: 'Himachal' },
+      { id: 'dest-5', category: 'Destinations', name: 'Kashmir' },
+      { id: 'dest-6', category: 'Destinations', name: 'Goa' },
+      { id: 'dest-7', category: 'Destinations', name: 'Kerala' },
+      { id: 'dest-8', category: 'Destinations', name: 'Dubai' },
+      { id: 'dest-9', category: 'Destinations', name: 'Bali' },
+      { id: 'dest-10', category: 'Destinations', name: 'Maldives' },
+      { id: 'dest-11', category: 'Destinations', name: 'Thailand' },
+      { id: 'dest-12', category: 'Destinations', name: 'Vietnam' },
+      // Hotel Categories
+      { id: 'cat-1', category: 'Hotel Categories', name: '5 Star Luxury' },
+      { id: 'cat-2', category: 'Hotel Categories', name: '4 Star Premium' },
+      { id: 'cat-3', category: 'Hotel Categories', name: '3 Star Deluxe' },
+      { id: 'cat-4', category: 'Hotel Categories', name: 'Heritage Haveli / Palace' },
+      { id: 'cat-5', category: 'Hotel Categories', name: 'Boutique Nature Resort' },
+      { id: 'cat-6', category: 'Hotel Categories', name: 'Luxury Glamping / Camp' },
+      // Room Types
+      { id: 'room-1', category: 'Room Types', name: 'Standard Room' },
+      { id: 'room-2', category: 'Room Types', name: 'Deluxe Room' },
+      { id: 'room-3', category: 'Room Types', name: 'Super Deluxe Room' },
+      { id: 'room-4', category: 'Room Types', name: 'Executive Suite' },
+      { id: 'room-5', category: 'Room Types', name: 'Pool Villa' },
+      { id: 'room-6', category: 'Room Types', name: 'Family Suite (Quad)' },
+      // Meal Plans
+      { id: 'meal-1', category: 'Meal Plans', name: 'EP (European Plan - Room Only)' },
+      { id: 'meal-2', category: 'Meal Plans', name: 'CP (Continental Plan - Room + Breakfast)' },
+      { id: 'meal-3', category: 'Meal Plans', name: 'MAP (Modified American - Breakfast + Dinner)' },
+      { id: 'meal-4', category: 'Meal Plans', name: 'AP (American Plan - All 3 Meals)' },
+      // Transport Modes
+      { id: 'trans-1', category: 'Transport Modes', name: 'Sedan (Dzire / Etios / Amaze - 4 Pax)' },
+      { id: 'trans-2', category: 'Transport Modes', name: 'SUV (Innova Crysta - 6 Pax)' },
+      { id: 'trans-3', category: 'Transport Modes', name: 'Tempo Traveller (12 to 17 Seater)' },
+      { id: 'trans-4', category: 'Transport Modes', name: 'Luxury Urbania Coach' },
+      { id: 'trans-5', category: 'Transport Modes', name: 'Self-Drive Vehicle' },
+      // Tax Rates
+      { id: 'tax-1', category: 'Tax Rates', name: '5% GST on Tour Package (Without ITC)' },
+      { id: 'tax-2', category: 'Tax Rates', name: '18% GST on Standalone Service Fees' },
+      { id: 'tax-3', category: 'Tax Rates', name: '12% Hotel Accommodation GST' },
+      { id: 'tax-4', category: 'Tax Rates', name: '0% Exempt / Out of Scope' },
+    ];
+
+    for (const m of defaultMasters) {
+      try {
+        execSql(`INSERT OR IGNORE INTO masters_data (id, category, name, is_enabled, sort_order) VALUES ('${m.id}', '${m.category}', '${m.name.replace(/'/g, "''")}', 1, 0)`);
+      } catch (_e) {}
+    }
+  } catch (_e) {}
+
+  // Seed default PDF designs
+  try {
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
+      VALUES ('design-dark-luxury', 'Executive Matte Dark & Lime', 'minimal_dark', '#c6f135', '#161713', 'KINGSLAND HOLIDAYS', 'Modern Grid', 1)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
+      VALUES ('design-royal-burgundy', 'Royal Burgundy & Gold', 'royal', '#991b1b', '#fef3c7', 'KINGSLAND HOLIDAYS', 'Classic Serif', 0)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
+      VALUES ('design-emerald-alpine', 'Alpine Emerald Clean', 'emerald', '#059669', '#ecfdf5', 'KINGSLAND HOLIDAYS', 'Split Minimal', 0)`);
+  } catch (_e) {}
+
+  // Seed default agency settings
+  try {
+    execSql(`INSERT OR IGNORE INTO agency_settings (id, company_name, tagline, phone, email, website, default_gst_percent, place_of_supply)
+      VALUES ('default_agency_settings', 'Kingsland Holidays', 'Desire to travel', '+91 6376983416', 'support@kingslandholiday.com', 'kingslandholiday.com', 5.0, 'Rajasthan (08)')`);
+  } catch (_e) {}
 
   console.log('✅ Database schema & migrations initialized.');
 }

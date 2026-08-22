@@ -14,7 +14,8 @@ import {
   Search,
   ExternalLink,
   Building2,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { HotelVoucher } from '../types';
 
@@ -24,6 +25,7 @@ interface UploadedVouchersModuleProps {
   onPreviewVoucher: (voucher: HotelVoucher) => void;
   onSendToCustomer: (voucher: HotelVoucher) => void;
   onReuploadVoucher: (voucher: HotelVoucher) => void;
+  onDeleteVoucher?: (voucherId: string) => void;
 }
 
 export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
@@ -32,6 +34,7 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
   onPreviewVoucher,
   onSendToCustomer,
   onReuploadVoucher,
+  onDeleteVoucher,
 }) => {
   const [deliveryFilter, setDeliveryFilter] = useState<string>('all');
 
@@ -246,6 +249,20 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
+
+                  {onDeleteVoucher && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete this uploaded hotel voucher for "${v.hotelName}"?`)) {
+                          onDeleteVoucher(v.id);
+                        }
+                      }}
+                      className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Delete Voucher"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
               </div>

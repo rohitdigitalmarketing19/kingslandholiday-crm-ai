@@ -232,24 +232,28 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="p-2.5 rounded-xl bg-white border border-teal-100">
                 <span className="text-[10px] text-slate-500 font-bold block">Driver Name</span>
-                <strong className="text-slate-900 font-extrabold">{customer.driverName || 'Rajesh Sharma'}</strong>
+                <strong className="text-slate-900 font-extrabold">{customer.driverName || ''}</strong>
               </div>
 
               <div className="p-2.5 rounded-xl bg-white border border-teal-100">
                 <span className="text-[10px] text-slate-500 font-bold block">Driver Mobile</span>
-                <a href={`tel:${customer.driverPhone || '+91 98290 12345'}`} className="text-teal-700 font-mono font-bold hover:underline">
-                  {customer.driverPhone || '+91 98290 12345'}
-                </a>
+                {customer.driverPhone ? (
+                  <a href={`tel:${customer.driverPhone}`} className="text-teal-700 font-mono font-bold hover:underline">
+                    {customer.driverPhone}
+                  </a>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
               </div>
 
               <div className="p-2.5 rounded-xl bg-white border border-teal-100">
                 <span className="text-[10px] text-slate-500 font-bold block">Vehicle Model</span>
-                <strong className="text-slate-900 font-bold">{customer.cabModel || 'Toyota Innova Crysta'}</strong>
+                <strong className="text-slate-900 font-bold">{customer.cabModel || ''}</strong>
               </div>
 
               <div className="p-2.5 rounded-xl bg-white border border-teal-100">
                 <span className="text-[10px] text-slate-500 font-bold block">Cab Reg No</span>
-                <strong className="text-slate-900 font-mono">{customer.cabNumber || 'RJ 14 CZ 9876'}</strong>
+                <strong className="text-slate-900 font-mono">{customer.cabNumber || ''}</strong>
               </div>
             </div>
           </div>
@@ -274,9 +278,9 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] font-black text-slate-900">
-                  ₹{(computedHotelTotalCost || customer.hotelPaymentAmount || Math.round((customer.totalAmount || 0) * 0.4)).toLocaleString()}
+                  ₹{(computedHotelTotalCost || customer.hotelPaymentAmount || 0).toLocaleString()}
                 </p>
-                <p className="text-[10px] text-slate-500">Mode: {customer.hotelPaymentMode || 'Bank Wire'}</p>
+                <p className="text-[10px] text-slate-500">Mode: {customer.hotelPaymentMode || ''}</p>
               </div>
 
               {/* Cab Payment Box */}
@@ -292,9 +296,9 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] font-black text-slate-900">
-                  ₹{(customer.cabTotalCost || customer.cabPaymentAmount || Math.round((customer.totalAmount || 0) * 0.2)).toLocaleString()}
+                  ₹{(customer.cabTotalCost || customer.cabPaymentAmount || 0).toLocaleString()}
                 </p>
-                <p className="text-[10px] text-slate-500">Mode: {customer.cabPaymentMode || 'UPI'}</p>
+                <p className="text-[10px] text-slate-500">Mode: {customer.cabPaymentMode || ''}</p>
               </div>
             </div>
           </div>
@@ -305,7 +309,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
               <MessageSquare className="w-4 h-4 text-indigo-600" /> Internal Operations Remarks
             </h4>
             <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium italic">
-              {customer.opsRemarks || customer.specialRequests || 'No special remarks recorded.'}
+              {customer.opsRemarks || customer.specialRequests || ''}
             </div>
           </div>
 

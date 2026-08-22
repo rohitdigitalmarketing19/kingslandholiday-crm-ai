@@ -1,8 +1,8 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 interface LeadProposalViewProps {
   lead: Lead;
@@ -23,13 +23,202 @@ interface LeadProposalViewProps {
   onDeleteQuote: (leadId: string, quoteId: string) => void;
   onDeleteLead?: (leadId: string) => void;
   isReadOnly?: boolean;
+  onUpdateLead?: (updatedLead: Lead) => void;
 }
 
 const PASTEL_TAB_COLORS = ['#ff9d81', '#8ecae6', '#c9a4ff', '#8fd9a8', '#ffd166'];
 
-const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, onClose, onUpdateStatus, onAddNote, onEditQuote, onNewQuote, onDeleteQuote, onDeleteLead, isReadOnly = false }) => {
+const StructuredTermsBlock: React.FC<{ termsText?: string; isPdf?: boolean }> = ({ termsText, isPdf = false }) => {
+  const content = (termsText && termsText.trim().length > 10) ? termsText : `Terms & Conditions
+
+Cancellation Policy (for the land package):
+• More than 30 days before the starting date: 25% of the total land package cost will be cancellation fees.
+• Between 16-30 days before the starting date: 40% of the total land package cost will be cancellation fees.
+• Between 7-15 days before the starting date: 55% of the total land package cost will be cancellation fees.
+• Between 3-6 days before the starting date: 70% of the total land package cost will be cancellation fees.
+• Within 0-2 days before the starting date: 85% of the total land package cost will be cancellation fees.
+• In case of No Show: 100% of the total land package cost will be cancellation fees.
+• Peak Periods: No Refund & No Amendment allowed during the Diwali period, Christmas, New Year period, and Long weekends.
+• Note: Number of days for cancellation will be counted by first contact and check-in time and date. First contact is considered when you first email / WhatsApp our salesperson cancellation request.
+
+Cancellation Policy (for flights/trains):
+• For flights and trains, cancellation charges vary as per airlines / Railways / booking source policies. Cancellation charges will be according to that.
+
+Hotels & Accommodation Guidelines:
+• Most of the time hotels mentioned in this quote will be provided. In some cases, if the mentioned hotels are not available due to unforeseen reasons, similar hotels will be provided.
+• On 24th Dec - 31st Dec: Gala Dinner may be compulsory in some hotels (ranging from Rs. 1500 per person to Rs. 5000 per person or sometimes higher), payable directly to the hotel.
+• Standard Check-in time is 12:00 PM and Check-out time is 10:00 AM (varies as per hotel). Early check-in and/or late check-out is subject to availability and may be chargeable directly to the hotel.
+• Itinerary provided in this quote is indicative. It may change before or during the trip if required. No refund will be given in case of a missed itinerary.
+• Room Heater: Certain Hotels in Low Budget, Standard, Deluxe categories provide room heaters on request at extra charge. We do not include this cost; travelers settle directly before checkout (INR 250.00 to INR 500.00 per heater per room per night).
+
+Important Information & Permits:
+• All guests must carry valid Government Photo IDs (Passport / Driving License / Voter ID). PAN Card is NOT accepted as valid address proof.
+• Guests must carry 4 passport size photographs along with Photo-ID proof (Passport / DL / Voter ID & School ID for children) for Gangtok (Changu Lake / Baba Mandir) and North Sikkim (Lachung) permits.
+• Tsomgo Lake, Baba Mandir, Nathula Pass, Gurudongmar, Yumthang & Yumesamdong (Zero Point) depend heavily on weather conditions. In hilly areas, roads may be out of operation at the time of travel. Operational status will be updated during the pre-arrival briefing call.
+• Nathula Permit Formalities: Nathula Pass is an optional tour with supplement cost, applied 24 hours prior. Only 5% of vehicles get permits via government lottery. Once a permit is issued, there is no refund if Nathula Pass cannot be visited for any reason.
+• Himalayan Mountaineering Institute and Padmaja Naidu Himalayan Zoological Park remain closed on Thursday.
+• Toy Train Ride: A 2-hour journey starting from Darjeeling up to Ghoom Station and back, covering Batasia Loop, War Memorial & Ghoom Railway Museum. Cost of tickets and pickup-drop will be borne by the traveler.
+• The Tibetan Refugee Centre remains closed on Sunday.
+• Vehicle Capacity: Maximum capacity is 6 people (including children) as per Motor Vehicle Act.
+• Sector Allotment: In Sikkim and Darjeeling, vehicles are allotted per sector as per syndicate rules; a single vehicle cannot be used for the entire trip. Good vehicles and drivers are assured for each sector.
+• Point-to-Point Transfers: All vehicles assigned are on a point-to-point basis and not disposable. Air conditioning will not operate on uphill drives.
+• Parking & Entry: Due to parking scarcity, entry restrictions and specific timings apply in many areas.
+• Natural Diversions: Landslides are common in hilly areas. Guests must bear additional costs for any diversion/changes due to road blockage, landslide, or political unrest.
+• Local Syndicate Excursions: Excursions like Tshangu Lake, Nathula, and North Sikkim are controlled by local transport syndicates. Vehicles and drivers may change for transfers and sightseeing.
+• Restricted Area Security: Nathula is a restricted area and can be sealed without notice for security reasons. In such cases, tours operate only up to Tshangu Lake with no refund for unutilized services.
+• Payment Schedule: Payments must be cleared as per the payment schedule. Delayed installments attract late payment charges (5% of installment amount).
+
+Pure Agent Declaration (Terms & Conditions):
+• We provide our services strictly as a pure agent, and charge a service fee solely for planning, coordinating, and arranging the tour on behalf of the client.
+• All other travel-related services (transport, hotel booking, entry tickets, etc.) are arranged on behalf of the customer and recovered at actual cost.
+• As a pure agent: We do not intend to hold nor hold any title to the goods or services procured on behalf of the client.
+• We do not use such goods or services for our own interest or benefit.
+• We recover only the actual amount incurred for third-party services, in addition to our separately charged service fee.
+• All legal obligations are subject to Jaipur jurisdiction only.`;
+
+  const sections: { title: string; items: string[] }[] = [];
+  let currentSection = { title: 'Standard Terms & Conditions', items: [] as string[] };
+
+  const rawLines = content.split('\n').map(l => l.trim()).filter(Boolean);
+
+  for (const line of rawLines) {
+    const lower = line.toLowerCase();
+    if (
+      lower.startsWith('cancellation policy') ||
+      lower.startsWith('hotels') ||
+      lower.startsWith('important') ||
+      lower.startsWith('pure agent') ||
+      lower.startsWith('payment schedule') ||
+      line.endsWith(':')
+    ) {
+      if (currentSection.items.length > 0 || currentSection.title !== 'Standard Terms & Conditions') {
+        sections.push(currentSection);
+      }
+      currentSection = { title: line.replace(/:$/, ''), items: [] };
+    } else if (lower === 'terms & conditions' || lower === 'terms and conditions') {
+      // Header skip
+    } else {
+      const cleanLine = line.replace(/^[•\-\*]\s*/, '').trim();
+      if (cleanLine) {
+        currentSection.items.push(cleanLine);
+      }
+    }
+  }
+  if (currentSection.items.length > 0) {
+    sections.push(currentSection);
+  }
+
+  if (isPdf) {
+    return (
+      <div className="terms-box" style={{ border: '1px solid #D7E0EA', borderRadius: '4px', padding: '10px 14px', fontSize: '9px', background: '#ffffff', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        {sections.map((sec, sIdx) => (
+          <div key={sIdx} style={{ marginBottom: sIdx === sections.length - 1 ? 0 : '8px' }}>
+            <div style={{ fontWeight: 700, color: '#12233D', fontSize: '10px', marginBottom: '3px', borderBottom: '1px solid #EEF2F6', paddingBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              {sec.title}
+            </div>
+            <ul style={{ margin: '0', paddingLeft: '14px', listStyleType: 'disc', color: '#3d4f66', lineHeight: '1.45' }}>
+              {sec.items.map((it, iIdx) => (
+                <li key={iIdx} style={{ marginBottom: '2px' }}>{it}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="border border-[#D7E0EA] rounded-xl p-5 bg-white space-y-4 text-xs">
+      {sections.map((sec, sIdx) => (
+        <div key={sIdx} className="space-y-1.5">
+          <h5 className="font-bold text-[#12233D] text-xs pb-1 border-b border-slate-100 flex items-center gap-1.5 uppercase tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+            {sec.title}
+          </h5>
+          <ul className="text-[11px] text-slate-600 list-disc pl-5 space-y-1 leading-relaxed">
+            {sec.items.map((it, iIdx) => (
+              <li key={iIdx}>{it}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const getCleanDayTitle = (day: any, dIdx: number, totalDays: number, destination?: string) => {
+  const clean = (day.title || '').trim();
+  if (clean && !/^day\s*0*\d+$/i.test(clean)) {
+    return clean;
+  }
+  // If no title provided or user left default "Day X", provide a meaningful contextual title
+  if (dIdx === 0) return `Arrival & Welcome in ${destination || 'Destination'}`;
+  if (dIdx === totalDays - 1) return `Departure from ${destination || 'Destination'} with Memories`;
+  if (dIdx === 1) return `Local Sightseeing & Guided City Tour`;
+  return `Day ${dIdx + 1} Excursion & Highlights`;
+};
+
+const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, onClose, onUpdateStatus, onAddNote, onEditQuote, onNewQuote, onDeleteQuote, onDeleteLead, isReadOnly = false, onUpdateLead }) => {
   const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<{ label: string; status: Lead['status']; color: string; bg: string } | null>(null);
+
+  const [isEditingReqs, setIsEditingReqs] = useState(false);
+  const [tempAdults, setTempAdults] = useState(lead?.travelers?.adults || 0);
+  const [tempChildren, setTempChildren] = useState(lead?.travelers?.children || 0);
+  const [tempChildAgesStr, setTempChildAgesStr] = useState((lead?.travelers?.childAges || []).join(', '));
+  const [tempBudgetTier, setTempBudgetTier] = useState<'Luxury' | 'Mid' | 'Budget'>(lead?.budgetTier || 'Mid');
+  const [tempIncludeStay, setTempIncludeStay] = useState(lead?.includeStay || 'Yes');
+  const [tempIncludeFlight, setTempIncludeFlight] = useState(lead?.includeFlight || 'No');
+  const [tempIncludeCab, setTempIncludeCab] = useState(lead?.includeCab || 'Yes');
+  const [tempHotelCategory, setTempHotelCategory] = useState(lead?.hotelCategory || '4/3 Star');
+  const [tempOtherInfo, setTempOtherInfo] = useState(lead?.otherInfo || '');
+
+  useEffect(() => {
+    if (lead) {
+      setTempAdults(lead.travelers?.adults || 0);
+      setTempChildren(lead.travelers?.children || 0);
+      setTempChildAgesStr((lead.travelers?.childAges || []).join(', '));
+      setTempBudgetTier(lead.budgetTier || 'Mid');
+      setTempIncludeStay(lead.includeStay || 'Yes');
+      setTempIncludeFlight(lead.includeFlight || 'No');
+      setTempIncludeCab(lead.includeCab || 'Yes');
+      setTempHotelCategory(lead.hotelCategory || '4/3 Star');
+      setTempOtherInfo(lead.otherInfo || '');
+    }
+  }, [lead]);
+
+  const handleSaveTravelerRequirements = async () => {
+    try {
+      const childAgesArr = tempChildAgesStr
+        .split(',')
+        .map(a => a.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter(n => !isNaN(n));
+
+      const updated = await api.updateLeadTravelers(
+        lead.id,
+        Number(tempAdults),
+        Number(tempChildren),
+        childAgesArr,
+        {
+          budgetTier: tempBudgetTier,
+          includeStay: tempIncludeStay,
+          includeFlight: tempIncludeFlight,
+          includeCab: tempIncludeCab,
+          hotelCategory: tempHotelCategory,
+          otherInfo: tempOtherInfo
+        }
+      );
+      if (updated && onUpdateLead) {
+        onUpdateLead(updated);
+      }
+      setIsEditingReqs(false);
+    } catch (e) {
+      console.error('Error saving traveler requirements:', e);
+      alert('Failed to save traveler requirements');
+    }
+  };
   
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
@@ -58,19 +247,25 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   useEffect(() => {
     if (lead?.id) {
       api.fetchLeadInstallments(lead.id).then((instData) => {
-        if (instData && instData.length > 0) {
+        const pkgPrice = currentQuote?.finalSellingPrice || 0;
+        const hasOnlyZero = instData && instData.length > 0 && instData.every((i: any) => !i.amount || Number(i.amount) === 0);
+        if (instData && instData.length > 0 && !hasOnlyZero) {
           setLeadInstallments(instData);
           setPaymentMode('Partial');
         } else {
-          const pkgPrice = currentQuote?.finalSellingPrice || 50000;
-          const part1 = Math.round(pkgPrice * 0.3);
-          const part2 = Math.round(pkgPrice * 0.4);
-          const part3 = pkgPrice - part1 - part2;
-          setLeadInstallments([
+          const effectivePrice = pkgPrice > 0 ? pkgPrice : ((lead as any).budget || 50000);
+          const part1 = Math.round(effectivePrice * 0.3);
+          const part2 = Math.round(effectivePrice * 0.4);
+          const part3 = effectivePrice - part1 - part2;
+          const newInsts = [
             { title: '1st Installment - Token / Visa', amount: part1, dueDate: lead.travelDate || '', paymentCondition: 'Immediate for booking token' },
             { title: '2nd Installment - Hotel & Flight Lock', amount: part2, dueDate: lead.travelDate || '', paymentCondition: '30 days before departure' },
             { title: '3rd Installment - Final Balance', amount: part3, dueDate: lead.travelDate || '', paymentCondition: '15 days before departure' },
-          ]);
+          ];
+          setLeadInstallments(newInsts);
+          if (hasOnlyZero && pkgPrice > 0) {
+            api.saveInstallmentSchedule(lead.id, newInsts).catch(() => {});
+          }
         }
       });
       api.fetchPaymentSettings().then(setPaymentSettings);
@@ -268,23 +463,16 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
   const handleDownloadPDF = async () => {
     if (!printRef.current || !currentQuote || !lead) return;
-    
-    if (typeof html2pdf === 'undefined') {
-      alert("PDF generation library is loading or blocked. Please try again in a moment.");
-      return;
-    }
 
     setIsDownloading(true);
-    const element = printRef.current;
-    const opt = {
-      margin: [8, 8, 8, 8],
-      filename: `Kingsland-Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-    };
     try {
-      await html2pdf().set(opt).from(element).save();
+      const filename = `Kingsland-Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
+      await exportElementToPdf(printRef.current, {
+        filename,
+        margin: 8,
+        width: 794,
+        scale: 3
+      });
     } catch (err) {
       console.error('PDF Generation Error:', err);
       alert('Failed to generate PDF. Browser restrictions may apply.');
@@ -339,15 +527,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
       {/* Printable PDF Template container (Styled strictly as Kingsland-Proposal-Design5-CorporateQuotation.html) */}
-      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '794px' }}>
-        <div ref={printRef} style={{ fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: '#1B2A41', background: '#ffffff', fontSize: '11.8px', lineHeight: '1.55', padding: '24px 30px' }}>
+      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}>
+        <div ref={printRef} style={{ width: '794px', minWidth: '794px', maxWidth: '794px', boxSizing: 'border-box', fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: '#1B2A41', background: '#ffffff', backgroundColor: '#ffffff', fontSize: '11.8px', lineHeight: '1.55', padding: '24px 30px' }}>
           {currentQuote && lead && (
             <div>
               <style>{`
-                .meta-strip, .quotebox, .trust-strip, .hrow, .day, .box,
-                .guarantee-strip, .trow, .partners, .partner-row, .signblock,
-                .footer, .testimonial, .section-title { break-inside: avoid; page-break-inside: avoid; }
-                .hhead { break-after: avoid; page-break-after: avoid; }
+                .meta-strip, .quotebox, .trust-strip, .hrow, .hstays, .day, .box, .two-col,
+                .guarantee-strip, .terms-box, .trow, .partners, .partner-row, .signblock,
+                .footer, .testimonial, .section-title, .avoid-page-break { break-inside: avoid !important; page-break-inside: avoid !important; }
+                .hhead, .section-title { break-after: avoid !important; page-break-after: avoid !important; }
               `}</style>
 
               {/* Letterhead */}
@@ -461,7 +649,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       <div className="c2" style={{ width: '100px', flexShrink: 0 }}>Region / City</div>
                       <div className="c3" style={{ flex: 1, fontWeight: 700 }}>Hotel</div>
                       <div className="c4" style={{ width: '90px', flexShrink: 0 }}>Category</div>
-                      <div className="c5" style={{ width: '150px', flexShrink: 0, textAlign: 'right' }}>Occupancy</div>
+                      <div className="c5" style={{ width: '170px', flexShrink: 0, textAlign: 'right' }}>Room Type</div>
                     </div>
                     {currentQuote.hotels.map((hotel, hIdx) => {
                       const nightStr = (hotel.selectedNightIndices || []).map(n => n + 1).join(' & ');
@@ -469,10 +657,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         <div key={hIdx} className="hrow" style={{ display: 'flex', padding: '8px 14px', borderBottom: hIdx === currentQuote.hotels.length - 1 ? 'none' : '1px solid #EEF2F6', fontSize: '11px', background: hIdx % 2 === 1 ? '#F9FBFC' : '#ffffff', alignItems: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                           <div className="c1" style={{ width: '70px', flexShrink: 0, fontWeight: 700, color: '#12233D' }}>Night {nightStr || hIdx + 1}</div>
                           <div className="c2" style={{ width: '100px', flexShrink: 0, color: '#5c7291' }}>{hotel.city || lead.destination}</div>
-                          <div className="c3" style={{ flex: 1, fontWeight: 700, color: '#12233D' }}>{hotel.hotelName || 'Selected Property'}</div>
+                          <div className="c3" style={{ flex: 1, fontWeight: 700, color: '#12233D' }}>
+                            <div>{hotel.hotelName || 'Selected Property'}</div>
+                            {hotel.comments && (
+                              <div style={{ fontSize: '9px', color: '#B45309', fontWeight: 600, marginTop: '2px' }}>
+                                ✨ {hotel.comments}
+                              </div>
+                            )}
+                          </div>
                           <div className="c4" style={{ width: '90px', flexShrink: 0, color: '#3A6EA5', fontWeight: 600 }}>{hotel.category || '4 Star'}</div>
-                          <div className="c5" style={{ width: '150px', flexShrink: 0, textAlign: 'right', color: '#5c7291' }}>
-                            {hotel.roomType || 'Standard Room'}, {lead.travelers?.adults || 2} Adults{hotel.comments ? ` (${hotel.comments})` : ''}
+                          <div className="c5" style={{ width: '170px', flexShrink: 0, textAlign: 'right', color: '#5c7291' }}>
+                            <div style={{ fontWeight: 600, color: '#12233D' }}>{hotel.roomType || 'Standard Room'}</div>
+                            <div style={{ fontSize: '9px', color: '#5c7291' }}>{lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Child` : ''}</div>
                           </div>
                         </div>
                       );
@@ -490,10 +686,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                   {currentQuote.itinerary.map((day, dIdx) => (
                     <div key={dIdx} className="day" style={{ display: 'flex', gap: '14px', padding: '9px 0', borderBottom: '1px solid #EEF2F6', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                       <div className="dtag" style={{ width: '60px', flexShrink: 0, fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#3A6EA5' }}>
-                        Day 0{day.day}
+                        Day {String(day.day || dIdx + 1).padStart(2, '0')}
                       </div>
                       <div className="dbody" style={{ flex: 1 }}>
-                        <h3 style={{ margin: '0 0 3px 0', fontSize: '12.5px', fontWeight: 700, color: '#12233D' }}>{day.title || `Day ${day.day}`}</h3>
+                        <h3 style={{ margin: '0 0 3px 0', fontSize: '12.5px', fontWeight: 700, color: '#12233D' }}>
+                          {getCleanDayTitle(day, dIdx, currentQuote.itinerary.length, lead.destination)}
+                        </h3>
                         <p style={{ margin: 0, fontSize: '10.8px', color: '#3d4f66', lineHeight: 1.55 }}>{day.description}</p>
                       </div>
                     </div>
@@ -510,7 +708,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
               </div>
 
               {/* Inclusions & Exclusions */}
-              <div style={{ marginTop: '18px' }}>
+              <div className="avoid-page-break" style={{ marginTop: '18px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                 <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Inclusions & Exclusions
                 </div>
@@ -543,7 +741,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
               </div>
 
               {/* Guarantee Strip */}
-              <div className="guarantee-strip" style={{ display: 'flex', gap: '10px', marginTop: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+              <div className="guarantee-strip avoid-page-break" style={{ display: 'flex', gap: '10px', marginTop: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                 <div className="gitem" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '9px 12px', textAlign: 'center', background: '#F4F7FA' }}>
                   <div className="gt" style={{ fontWeight: 700, fontSize: '10.5px', color: '#12233D' }}>Best Price Guarantee</div>
                   <div className="gs" style={{ fontSize: '8.5px', color: '#5c7291', marginTop: '2px' }}>We'll match a lower quote</div>
@@ -559,35 +757,11 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
               </div>
 
               {/* Terms & Cancellation Policy */}
-              <div style={{ marginTop: '18px' }}>
+              <div className="avoid-page-break" style={{ marginTop: '18px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
                 <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Terms & Cancellation Policy
                 </div>
-                <div className="terms-box" style={{ border: '1px solid #D7E0EA', borderRadius: '4px', padding: '12px 16px', fontSize: '10.3px', background: '#ffffff', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                  <div className="trow" style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #EEF2F6' }}>
-                    <span style={{ color: '#5c7291' }}>More than 30 days before travel:</span>
-                    <strong style={{ color: '#12233D' }}>25% cancellation fee on land package</strong>
-                  </div>
-                  <div className="trow" style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #EEF2F6' }}>
-                    <span style={{ color: '#5c7291' }}>16–30 days before travel:</span>
-                    <strong style={{ color: '#12233D' }}>40% cancellation fee</strong>
-                  </div>
-                  <div className="trow" style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #EEF2F6' }}>
-                    <span style={{ color: '#5c7291' }}>7–15 days before travel:</span>
-                    <strong style={{ color: '#12233D' }}>55% cancellation fee</strong>
-                  </div>
-                  <div className="trow" style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0' }}>
-                    <span style={{ color: '#5c7291' }}>0–6 days before travel:</span>
-                    <strong style={{ color: '#12233D' }}>85% cancellation fee</strong>
-                  </div>
-                  <ul className="notes" style={{ fontSize: '9.5px', color: '#5c7291', marginTop: '8px', paddingLeft: '16px', listStyleType: 'disc', margin: '8px 0 0 0' }}>
-                    <li style={{ marginBottom: '2px' }}>All prices are subject to availability at the time of booking.</li>
-                    <li style={{ marginBottom: '2px' }}>50% advance payment required for confirmation.</li>
-                    <li style={{ marginBottom: '2px' }}>Balance must be cleared 21 days before arrival.</li>
-                    <li style={{ marginBottom: '2px' }}>Standard check-in: 14:00, check-out: 12:00.</li>
-                    {currentQuote.termsAndConditions && <li style={{ fontWeight: 700, color: '#12233D' }}>{currentQuote.termsAndConditions}</li>}
-                  </ul>
-                </div>
+                <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={true} />
               </div>
 
               {/* Our Hotel Partner Network */}
@@ -699,20 +873,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {!isReadOnly && onDeleteLead && (
             <button
+              type="button"
               onClick={() => {
-                if (confirm(`Delete Lead inquiry #${lead.tripId} (${lead.name})? This lead and all quotes will be permanently deleted.`)) {
-                  onDeleteLead(lead.id);
-                  onClose();
-                }
+                onDeleteLead(lead.id);
               }}
-              className="px-5 py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shadow-sm"
+              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 shadow-xs"
               title="Delete Lead"
             >
-              <span>🗑️</span>
-              <span>DELETE LEAD</span>
+              <Trash2 size={14} />
+              <span>Delete Lead</span>
             </button>
           )}
 
@@ -940,48 +1112,191 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                   </div>
                </div>
 
-               {/* TRAVELER REQUIREMENTS CARD */}
-               <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
-                  <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.25em] border-b border-slate-50 pb-3">TRAVELER REQUIREMENTS</h3>
-                  <div className="space-y-4">
-                     <div className="flex justify-between items-center pb-3 border-b border-slate-50">
-                        <div>
-                           <p className="text-[9px] font-black text-slate-400 uppercase mb-1">TRIP ROSTER</p>
-                           <p className="text-base font-black text-slate-800">{lead.travelers?.adults || 0} Adults, {lead.travelers?.children || 0} Children</p>
+                {/* TRAVELER REQUIREMENTS CARD */}
+                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
+                   <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                      <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.25em]">TRAVELER REQUIREMENTS</h3>
+                      {!isReadOnly && !isEditingReqs && (
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingReqs(true)}
+                          className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-100 transition-colors"
+                        >
+                          ✏️ Edit Reqs
+                        </button>
+                      )}
+                   </div>
+
+                   {isEditingReqs ? (
+                     <div className="space-y-4 text-xs">
+                       <div className="grid grid-cols-2 gap-3">
+                         <div>
+                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Adults</label>
+                           <input
+                             type="number"
+                             min={0}
+                             value={tempAdults}
+                             onChange={(e) => setTempAdults(Number(e.target.value))}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Children</label>
+                           <input
+                             type="number"
+                             min={0}
+                             value={tempChildren}
+                             onChange={(e) => setTempChildren(Number(e.target.value))}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                           />
+                         </div>
+                       </div>
+
+                       <div>
+                         <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Child Ages (comma separated)</label>
+                         <input
+                           type="text"
+                           placeholder="e.g. 5, 8"
+                           value={tempChildAgesStr}
+                           onChange={(e) => setTempChildAgesStr(e.target.value)}
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                         />
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-3">
+                         <div>
+                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Budget Tier</label>
+                           <select
+                             value={tempBudgetTier}
+                             onChange={(e) => setTempBudgetTier(e.target.value as 'Luxury' | 'Mid' | 'Budget')}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                           >
+                             <option value="Budget">Budget</option>
+                             <option value="Mid">Mid</option>
+                             <option value="Luxury">Luxury</option>
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Hotel Category</label>
+                           <select
+                             value={tempHotelCategory}
+                             onChange={(e) => setTempHotelCategory(e.target.value)}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                           >
+                             <option value="2 Star">2 Star</option>
+                             <option value="3 Star">3 Star</option>
+                             <option value="4/3 Star">4/3 Star</option>
+                             <option value="4 Star">4 Star</option>
+                             <option value="5 Star">5 Star</option>
+                           </select>
+                         </div>
+                       </div>
+
+                       <div className="grid grid-cols-3 gap-2">
+                         <div>
+                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Stay</label>
+                           <select
+                             value={tempIncludeStay}
+                             onChange={(e) => setTempIncludeStay(e.target.value)}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                           >
+                             <option value="Yes">Yes</option>
+                             <option value="No">No</option>
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Flights</label>
+                           <select
+                             value={tempIncludeFlight}
+                             onChange={(e) => setTempIncludeFlight(e.target.value)}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                           >
+                             <option value="Yes">Yes</option>
+                             <option value="No">No</option>
+                           </select>
+                         </div>
+                         <div>
+                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Cab</label>
+                           <select
+                             value={tempIncludeCab}
+                             onChange={(e) => setTempIncludeCab(e.target.value)}
+                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                           >
+                             <option value="Yes">Yes</option>
+                             <option value="No">No</option>
+                           </select>
+                         </div>
+                       </div>
+
+                       <div>
+                         <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Special Comments</label>
+                         <textarea
+                           rows={2}
+                           value={tempOtherInfo}
+                           onChange={(e) => setTempOtherInfo(e.target.value)}
+                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none resize-none"
+                           placeholder="Add requirements comments..."
+                         />
+                       </div>
+
+                       <div className="flex gap-2 pt-2">
+                         <button
+                           type="button"
+                           onClick={() => setIsEditingReqs(false)}
+                           className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors"
+                         >
+                           Cancel
+                         </button>
+                         <button
+                           type="button"
+                           onClick={handleSaveTravelerRequirements}
+                           className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors"
+                         >
+                           Save Reqs
+                         </button>
+                       </div>
+                     </div>
+                   ) : (
+                     <div className="space-y-4">
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-50">
+                           <div>
+                              <p className="text-[9px] font-black text-slate-400 uppercase mb-1">TRIP ROSTER</p>
+                              <p className="text-base font-black text-slate-800">{lead.travelers?.adults || 0} Adults, {lead.travelers?.children || 0} Children</p>
+                           </div>
+                           <span className="text-[9px] font-black bg-slate-50 px-3 py-1 rounded-lg text-slate-500 border border-slate-100">{lead.budgetTier} Tier</span>
                         </div>
-                        <span className="text-[9px] font-black bg-slate-50 px-3 py-1 rounded-lg text-slate-500 border border-slate-100">{lead.budgetTier} Tier</span>
-                     </div>
 
-                     {lead.travelers?.childAges && lead.travelers.childAges.length > 0 && (
-                       <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-center justify-between">
-                         <span className="text-[9px] font-black text-indigo-400 uppercase">Child Ages</span>
-                         <span className="text-xs font-black text-indigo-700">{lead.travelers.childAges.join(', ')} yrs</span>
-                       </div>
-                     )}
-
-                     <div className="grid grid-cols-2 gap-3 pt-2">
-                        {[
-                          { l: 'Accommodation', v: lead.includeStay || 'N/A', icon: '🏨' },
-                          { l: 'Flights', v: lead.includeFlight || 'N/A', icon: '✈️' },
-                          { l: 'Private Cab', v: lead.includeCab || 'N/A', icon: '🚗' },
-                          { l: 'Hotel Star', v: lead.hotelCategory || 'N/A', icon: '⭐' },
-                        ].map((pref, i) => (
-                          <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                             <span className="text-sm block mb-1">{pref.icon}</span>
-                             <span className="text-[8px] font-black text-slate-400 uppercase block">{pref.l}</span>
-                             <span className="text-xs font-black text-slate-800 truncate block">{pref.v}</span>
+                        {lead.travelers?.childAges && lead.travelers.childAges.length > 0 && (
+                          <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-center justify-between">
+                            <span className="text-[9px] font-black text-indigo-400 uppercase">Child Ages</span>
+                            <span className="text-xs font-black text-indigo-700">{lead.travelers.childAges.join(', ')} yrs</span>
                           </div>
-                        ))}
-                     </div>
+                        )}
 
-                     {lead.otherInfo && (
-                       <div className="pt-2">
-                         <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Special Comments</span>
-                         <p className="text-xs text-slate-600 font-medium bg-amber-50/50 p-3 rounded-xl border border-amber-100">{lead.otherInfo}</p>
-                       </div>
-                     )}
-                  </div>
-               </div>
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                           {[
+                             { l: 'Accommodation', v: lead.includeStay || 'N/A', icon: '🏨' },
+                             { l: 'Flights', v: lead.includeFlight || 'N/A', icon: '✈️' },
+                             { l: 'Private Cab', v: lead.includeCab || 'N/A', icon: '🚗' },
+                             { l: 'Hotel Star', v: lead.hotelCategory || 'N/A', icon: '⭐' },
+                           ].map((pref, i) => (
+                             <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                <span className="text-sm block mb-1">{pref.icon}</span>
+                                <span className="text-[8px] font-black text-slate-400 uppercase block">{pref.l}</span>
+                                <span className="text-xs font-black text-slate-800 truncate block">{pref.v}</span>
+                             </div>
+                           ))}
+                        </div>
+
+                        {lead.otherInfo && (
+                          <div className="pt-2">
+                            <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Special Comments</span>
+                            <p className="text-xs text-slate-600 font-medium bg-amber-50/50 p-3 rounded-xl border border-amber-100">{lead.otherInfo}</p>
+                          </div>
+                        )}
+                     </div>
+                   )}
+                </div>
 
                {/* LOG ACTIVITY & NOTES CARD (Matching Screenshot Design) */}
                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
@@ -1208,10 +1523,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        </div>
                     </div>
 
-                   <div className="bg-white rounded-2xl p-8 md:p-12 border border-slate-200 shadow-xl space-y-8" style={{ fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                   <div className="doc-preview-protected bg-white rounded-2xl p-8 md:p-12 border border-slate-200 shadow-xl space-y-8" style={{ fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
                      
                      {/* Letterhead */}
-                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b-[3px] border-[#12233D] gap-4">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b-[3px] border-[#12233D] gap-4 avoid-page-break">
                        <div>
                          <h2 className="text-2xl sm:text-3xl font-black text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>Kingsland Holidays</h2>
                          <p className="text-[10px] tracking-[2px] uppercase text-[#5c7291] font-semibold mt-1">Registered Tour Operator · North India Journeys</p>
@@ -1252,7 +1567,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </p>
 
                      {/* Quotebox (Quoted Package Price Hero) */}
-                      <div className="border-2 border-[#12233D] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-sm">
+                      <div className="border-2 border-[#12233D] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-sm avoid-page-break">
                         <div className="p-5 md:p-6 flex-1 bg-white flex flex-col justify-center">
                           <span className="text-[10px] tracking-[2px] uppercase text-[#5c7291] font-bold block mb-1">Quoted Package Price</span>
                           <h3 className="text-xl sm:text-2xl font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
@@ -1289,7 +1604,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       </div>
 
                      {/* Trust Strip */}
-                     <div className="grid grid-cols-2 md:grid-cols-4 border border-[#D7E0EA] rounded-xl bg-[#F4F7FA] divide-y md:divide-y-0 md:divide-x divide-[#D7E0EA] text-center">
+                     <div className="grid grid-cols-2 md:grid-cols-4 border border-[#D7E0EA] rounded-xl bg-[#F4F7FA] divide-y md:divide-y-0 md:divide-x divide-[#D7E0EA] text-center avoid-page-break">
                        <div className="p-4">
                          <div className="text-lg font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>12,000+</div>
                          <div className="text-[9px] tracking-wider uppercase text-[#5c7291] font-semibold mt-0.5">Trips Delivered</div>
@@ -1310,7 +1625,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                      {/* Accommodation Schedule */}
                      {currentQuote.hotels && currentQuote.hotels.length > 0 && (
-                       <div className="space-y-4">
+                       <div className="space-y-4 avoid-page-break">
                          <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
                            Accommodation Schedule
                          </h4>
@@ -1319,7 +1634,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                              <div className="col-span-2">Night</div>
                              <div className="col-span-3">Region / City</div>
                              <div className="col-span-4">Hotel Property</div>
-                             <div className="col-span-3 text-right">Occupancy</div>
+                             <div className="col-span-3 text-right">Room Type</div>
                            </div>
                            <div className="divide-y divide-slate-100">
                              {currentQuote.hotels.map((hotel, hIdx) => {
@@ -1331,9 +1646,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                    <div className="sm:col-span-4">
                                      <span className="font-bold text-[#12233D] block">{hotel.hotelName || 'Selected Property'}</span>
                                      <span className="text-[10px] text-[#3A6EA5] font-semibold">{hotel.category || '4 Star'}</span>
+                                     {hotel.comments && (
+                                       <span className="block text-[11px] text-amber-700 font-medium mt-0.5">
+                                         ✨ {hotel.comments}
+                                       </span>
+                                     )}
                                    </div>
-                                   <div className="sm:col-span-3 sm:text-right text-[#5c7291]">
-                                     {hotel.roomType || 'Standard Room'}, {lead.travelers?.adults || 2} Adults
+                                   <div className="sm:col-span-3 sm:text-right">
+                                     <span className="font-semibold text-slate-800 block">{hotel.roomType || 'Standard Room'}</span>
+                                     <span className="text-[11px] text-slate-500">{lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Child` : ''}</span>
                                    </div>
                                  </div>
                                );
@@ -1351,12 +1672,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                          </h4>
                          <div className="space-y-4">
                            {currentQuote.itinerary.map((day, dIdx) => (
-                             <div key={dIdx} className="flex gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-all">
+                             <div key={dIdx} className="flex gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-all avoid-page-break">
                                <div className="shrink-0 w-16 text-[#3A6EA5] font-bold text-sm" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
-                                 Day 0{day.day}
+                                 Day {String(day.day || dIdx + 1).padStart(2, '0')}
                                </div>
                                <div className="space-y-1">
-                                 <h5 className="text-sm font-bold text-[#12233D]">{day.title || `Day ${day.day}`}</h5>
+                                 <h5 className="text-sm font-bold text-[#12233D]">
+                                   {getCleanDayTitle(day, dIdx, currentQuote.itinerary.length, lead.destination)}
+                                 </h5>
                                  <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{day.description}</p>
                                </div>
                              </div>
@@ -1366,7 +1689,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      )}
 
                      {/* Testimonial Quote */}
-                     <div className="bg-[#F4F7FA] border-l-4 border-[#3A6EA5] p-5 rounded-r-xl text-xs italic text-slate-700">
+                     <div className="bg-[#F4F7FA] border-l-4 border-[#3A6EA5] p-5 rounded-r-xl text-xs italic text-slate-700 avoid-page-break">
                        “Every hotel, cab and guide was exactly as promised — Kingsland made our trip effortless and truly memorable.”
                        <div className="mt-2 font-bold not-italic text-[10px] text-[#5c7291]">
                          — Verified Client Review · Kingsland Holidays
@@ -1374,7 +1697,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                      {/* Inclusions & Exclusions */}
-                     <div className="space-y-4">
+                     <div className="space-y-4 avoid-page-break">
                        <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
                          Inclusions & Exclusions
                        </h4>
@@ -1407,7 +1730,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                      {/* Guarantee Strip */}
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 avoid-page-break">
                        <div className="border border-[#D7E0EA] rounded-xl p-4 text-center bg-[#F4F7FA]">
                          <div className="text-xs font-bold text-[#12233D]">Best Price Guarantee</div>
                          <div className="text-[10px] text-[#5c7291] mt-0.5">We'll match a lower quote</div>
@@ -1423,38 +1746,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                      {/* Terms & Cancellation Policy */}
-                     <div className="space-y-4">
+                     <div className="space-y-4 avoid-page-break">
                        <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
                          Terms & Cancellation Policy
                        </h4>
-                       <div className="border border-[#D7E0EA] rounded-xl p-5 bg-white space-y-2.5 text-xs text-slate-700">
-                         <div className="flex justify-between py-1 border-b border-slate-100">
-                           <span className="text-[#5c7291]">More than 30 days before travel:</span>
-                           <strong className="text-[#12233D]">25% cancellation fee on land package</strong>
-                         </div>
-                         <div className="flex justify-between py-1 border-b border-slate-100">
-                           <span className="text-[#5c7291]">16–30 days before travel:</span>
-                           <strong className="text-[#12233D]">40% cancellation fee</strong>
-                         </div>
-                         <div className="flex justify-between py-1 border-b border-slate-100">
-                           <span className="text-[#5c7291]">7–15 days before travel:</span>
-                           <strong className="text-[#12233D]">55% cancellation fee</strong>
-                         </div>
-                         <div className="flex justify-between py-1">
-                           <span className="text-[#5c7291]">0–6 days before travel:</span>
-                           <strong className="text-[#12233D]">85% cancellation fee</strong>
-                         </div>
-                         <ul className="text-[10px] text-[#5c7291] list-disc pl-4 pt-2 space-y-1 border-t border-slate-100">
-                           <li>All prices are subject to availability at the time of booking.</li>
-                           <li>50% advance payment required for confirmation.</li>
-                           <li>Balance must be cleared 21 days before arrival.</li>
-                           {currentQuote.termsAndConditions && <li className="font-bold text-[#12233D]">{currentQuote.termsAndConditions}</li>}
-                         </ul>
-                       </div>
+                       <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={false} />
                      </div>
 
                      {/* Hotel Partners & Travel Partners */}
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 avoid-page-break">
                        <div className="border border-[#D7E0EA] rounded-xl p-4 bg-[#F9FBFC]">
                          <span className="text-[10px] font-bold tracking-wider uppercase text-[#12233D] block mb-3" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
                            Our Hotel Partner Network

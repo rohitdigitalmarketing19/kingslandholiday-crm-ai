@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Trash2, Eye, FileText, Calendar, Clock, Phone, User, ChevronDown, ChevronRight, MapPin, Users as UsersIcon } from 'lucide-react';
 import { Lead } from '../types';
 
 interface LeadCardProps {
@@ -9,6 +10,7 @@ interface LeadCardProps {
   agentName?: string;
   showGiveQuote?: boolean; 
   displayIndex?: number;
+  defaultExpanded?: boolean;
 }
 
 const formatDate = (dateStr: string | undefined) => {
@@ -18,210 +20,251 @@ const formatDate = (dateStr: string | undefined) => {
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
-const LeadCard: React.FC<LeadCardProps> = ({ lead, onClick, onViewProposal, onDeleteLead, agentName = "Agent", showGiveQuote = false, displayIndex }) => {
-  // Status mapping to match LeadProposalView logic
-  const statusMapping: Record<Lead['status'], { label: string; badgeBg: string }> = {
-    'New': { label: 'NEW LEAD', badgeBg: 'bg-[#5c6e84]' },
-    'Qualified': { label: 'ACTIVE LEAD', badgeBg: 'bg-indigo-500' },
-    'Hot': { label: 'HOT LEAD', badgeBg: 'bg-rose-500' },
-    'Updated': { label: 'UPDATE LEAD', badgeBg: 'bg-blue-500' },
-    'Itinerary Sent': { label: 'IN PROGRESS LEAD', badgeBg: 'bg-amber-500' },
-    'Closed Won': { label: 'CONVERTED', badgeBg: 'bg-emerald-500' },
-    'Closed Lost': { label: 'CANCEL', badgeBg: 'bg-slate-400' },
-    'Postponed': { label: 'POSTPONED', badgeBg: 'bg-purple-500' },
-    'Payment Pending': { label: 'PAYMENT PENDING', badgeBg: 'bg-amber-600' },
-    'Follow-up': { label: 'FOLLOW-UP', badgeBg: 'bg-amber-500' }
+const LeadCard: React.FC<LeadCardProps> = ({ 
+  lead, 
+  onClick, 
+  onViewProposal, 
+  onDeleteLead, 
+  agentName = "Agent", 
+  showGiveQuote = false, 
+  displayIndex,
+  defaultExpanded = false
+}) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  const statusMapping: Record<Lead['status'], { label: string; badgeClass: string }> = {
+    'New': { label: 'New Lead', badgeClass: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' },
+    'Qualified': { label: 'Active Lead', badgeClass: 'bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700' },
+    'Hot': { label: 'Hot Lead', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' },
+    'Updated': { label: 'Updated', badgeClass: 'bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700' },
+    'Itinerary Sent': { label: 'In Progress', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' },
+    'Closed Won': { label: 'Converted', badgeClass: 'bg-lime-50 text-lime-900 border-lime-200 dark:bg-lime-400/10 dark:text-lime-400 dark:border-lime-400/20' },
+    'Closed Lost': { label: 'Cancelled', badgeClass: 'bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700' },
+    'Postponed': { label: 'Postponed', badgeClass: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' },
+    'Payment Pending': { label: 'Payment Pending', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' },
+    'Follow-up': { label: 'Follow-Up', badgeClass: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' }
   };
 
-  const currentStatus = statusMapping[lead.status] || { label: lead.status.toUpperCase(), badgeBg: 'bg-slate-500' };
+  const currentStatus = statusMapping[lead.status] || { label: lead.status, badgeClass: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' };
 
   return (
     <div 
-      className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-xl transition-all cursor-default mb-6 overflow-hidden font-sans group animate-in fade-in duration-500"
+      className={`bg-white dark:bg-[#161713] border rounded-2xl transition-all font-sans overflow-hidden ${
+        isExpanded 
+          ? 'border-lime-400/50 dark:border-lime-400/40 shadow-md ring-1 ring-lime-400/20' 
+          : 'border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs shadow-2xs'
+      }`}
     >
-      {/* Top Header Row: Numeric Indicator, Status, ID, and Action Buttons */}
-      <div className="flex items-center px-8 py-5 bg-white border-b border-slate-50 gap-4">
-        {/* Dark numeric indicator square/circle */}
-        <div className="w-10 h-10 bg-[#0f172a] text-white font-black flex items-center justify-center rounded-xl text-sm shadow-md">
-          {displayIndex || lead.tripId.slice(-1)}
+      {/* Compact Row Header (Always Visible - Click to toggle full card) */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`px-4 py-3 cursor-pointer select-none transition-colors flex flex-wrap items-center justify-between gap-3 ${
+          isExpanded ? 'bg-slate-50/80 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-zinc-800' : 'bg-white dark:bg-[#161713] hover:bg-slate-50 dark:hover:bg-zinc-800/40'
+        }`}
+      >
+        {/* Left Side: Chevron, Badges, Name, Destination, Key Summary */}
+        <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+          <button
+            type="button"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-transform duration-200"
+            title={isExpanded ? "Collapse card" : "Expand full card"}
+          >
+            {isExpanded ? (
+              <ChevronDown size={16} className="text-lime-400 transform rotate-180 transition-transform duration-200" />
+            ) : (
+              <ChevronRight size={16} className="text-slate-400 dark:text-zinc-500 group-hover:text-slate-600 transition-transform duration-200" />
+            )}
+          </button>
+
+          <span className="w-6 h-6 rounded-md bg-slate-900 dark:bg-zinc-800 text-white font-semibold text-[11px] flex items-center justify-center shrink-0">
+            {displayIndex || lead.tripId.slice(-1)}
+          </span>
+
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${currentStatus.badgeClass}`}>
+            {currentStatus.label}
+          </span>
+
+          <span className="text-xs font-mono font-semibold text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded shrink-0">
+            #{lead.tripId}
+          </span>
+
+          {/* Customer Avatar & Name */}
+          <div className="flex items-center gap-1.5 min-w-0 pr-1">
+            <div className="w-5 h-5 rounded-full bg-lime-400/10 text-lime-400 font-bold text-[10px] flex items-center justify-center shrink-0 border border-lime-400/20">
+              {lead.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="font-semibold text-slate-900 dark:text-zinc-100 text-xs truncate max-w-[150px] sm:max-w-[200px]">
+              {lead.name}
+            </span>
+          </div>
+
+          {/* Quick Destination Badge */}
+          {lead.destination && (
+            <div className="hidden sm:flex items-center gap-1 text-xs text-zinc-700 dark:text-zinc-300 font-semibold bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 px-2 py-0.5 rounded shrink-0">
+              <MapPin size={11} className="text-lime-400" />
+              <span>{lead.destination}</span>
+            </div>
+          )}
+
+          {/* Quick Date & Travelers preview in row */}
+          {!isExpanded && (
+            <div className="hidden md:flex items-center gap-3 text-[11px] text-slate-500 shrink-0">
+              <span>📅 {formatDate(lead.travelDate)}</span>
+              <span>·</span>
+              <span>{lead.durationDays || 0}D/{Math.max(0, (lead.durationDays || 1) - 1)}N</span>
+              <span>·</span>
+              <span>{lead.travelers?.adults || 0} Adults</span>
+            </div>
+          )}
+
+          {/* Follow-up / Postponed indicators */}
+          {lead.status === 'Postponed' && lead.postponedDate && (
+            <span className="bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
+              <Calendar size={11} />
+              <span>{formatDate(lead.postponedDate)}</span>
+            </span>
+          )}
+
+          {(lead.status === 'Follow-up' || lead.followUpDate) && (
+            <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium px-2 py-0.5 rounded flex items-center gap-1 shrink-0">
+              <Clock size={11} />
+              <span>{formatDate(lead.followUpDate)}</span>
+            </span>
+          )}
         </div>
-        
-        {/* Status Pill Badge */}
-        <span className={`${currentStatus.badgeBg} text-white text-[10px] font-extrabold px-6 py-2.5 rounded-full uppercase tracking-[0.1em] shadow-sm`}>
-          {currentStatus.label}
-        </span>
 
-        {lead.status === 'Postponed' && lead.postponedDate && (
-          <span className="bg-purple-100 text-purple-900 border border-purple-300 text-[10px] font-black px-4 py-2 rounded-full flex items-center gap-1.5 shadow-xs">
-            <span>📅</span>
-            <span>POSTPONED UNTIL: {formatDate(lead.postponedDate)}</span>
-          </span>
-        )}
+        {/* Right Side: Agent info & Quick Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-1 text-[11px] text-slate-500 mr-1">
+            <User size={11} className="text-slate-400" />
+            <span>{agentName}</span>
+          </div>
 
-        {(lead.status === 'Follow-up' || lead.followUpDate) && (
-          <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black px-4 py-2 rounded-full flex items-center gap-1.5 shadow-xs animate-pulse">
-            <span>⏰</span>
-            <span>FOLLOW-UP: {formatDate(lead.followUpDate)} {lead.followUpTime ? `· ${lead.followUpTime}` : ''} ({lead.followUpType || 'Call'})</span>
-          </span>
-        )}
-        
-        <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest ml-2">#{lead.tripId}</span>
-
-        <div className="ml-auto flex items-center gap-4">
           {onDeleteLead && (
             <button 
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm(`Delete Lead inquiry #${lead.tripId} (${lead.name})? This lead will be permanently deleted.`)) {
-                  onDeleteLead(lead.id);
-                }
+                onDeleteLead(lead.id);
               }}
-              className="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase transition-colors flex items-center gap-1.5 border border-rose-100"
+              className="px-2.5 py-1.5 bg-white hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 border border-slate-200 hover:border-rose-200 cursor-pointer"
               title="Delete Lead"
             >
-              <span>🗑️</span>
-              <span className="hidden sm:inline">DELETE</span>
+              <Trash2 size={13} />
+              <span className="hidden sm:inline">Delete</span>
             </button>
           )}
 
           <button 
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               if (onViewProposal) onViewProposal(lead);
             }}
-            className="flex items-center gap-2 text-slate-400 font-black text-[11px] uppercase tracking-widest hover:text-indigo-600 transition-colors"
+            className="px-2.5 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 border border-slate-200 cursor-pointer"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            PREVIEW
+            <Eye size={13} className="text-slate-500" />
+            <span>Preview</span>
           </button>
           
           <button 
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClick(lead);
             }}
-            className="px-10 py-3.5 bg-[#4f46e5] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.15em] shadow-lg shadow-indigo-100 hover:bg-[#4338ca] transition-all"
+            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            GIVE QUOTE
+            <FileText size={13} />
+            <span>Give Quote</span>
           </button>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="p-10 grid grid-cols-1 md:grid-cols-3 gap-16">
-        <div className="space-y-8 border-r border-slate-100 pr-10">
-          <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mb-3">STARTING DATE</p>
-            <p className="text-lg font-black text-slate-800 tracking-tight">{formatDate(lead.travelDate)}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mb-3">DURATION</p>
-            <p className="text-lg font-black text-slate-800 tracking-tight">
-              {lead.durationDays || '0'} Days & {Math.max(0, (lead.durationDays || 1) - 1)} Nights
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-8 border-r border-slate-100 pr-10">
-          <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mb-3">NO. OF TRAVELLERS</p>
-            <p className="text-lg font-black text-slate-800 tracking-tight">
-              {lead.travelers?.adults || 0} Adults, {lead.travelers?.children || 0} Child
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mb-3">DESTINATION</p>
-            <p className="text-xl font-black text-[#4f46e5] tracking-widest uppercase">{lead.destination}</p>
-          </div>
-        </div>
-
-        <div className="space-y-8">
-          <div>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-[0.25em] mb-3">SOURCE CHANNEL</p>
-            <p className="text-lg font-black text-slate-800 tracking-tight">{lead.source}</p>
-          </div>
-
-          {lead.status === 'Postponed' ? (
-            <div className="flex items-start gap-4 p-5 bg-purple-50 rounded-xl border border-purple-200 shadow-xs">
-              <div className="text-purple-600 mt-0.5 text-lg">📅</div>
+      {/* Complete Card Body (Visible when Expanded) */}
+      {isExpanded && (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Main Content Grid */}
+          <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-white">
+            {/* Col 1: Travel Specs */}
+            <div className="space-y-2 border-r-0 sm:border-r border-slate-100 sm:pr-4">
               <div>
-                <p className="text-[9px] text-purple-700 font-black uppercase tracking-widest mb-1">POSTPONED UNTIL</p>
-                <p className="text-[14px] font-black text-purple-950">
-                  {formatDate(lead.postponedDate)}
-                </p>
-                {lead.postponedReason && (
-                  <p className="text-[11px] font-bold text-purple-800 mt-1">
-                    Note: {lead.postponedReason}
-                  </p>
-                )}
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Starting Date</span>
+                <span className="font-semibold text-slate-800 text-xs">{formatDate(lead.travelDate)}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Duration</span>
+                <span className="font-medium text-slate-700 text-xs">
+                  {lead.durationDays || 0} Days / {Math.max(0, (lead.durationDays || 1) - 1)} Nights
+                </span>
               </div>
             </div>
-          ) : (lead.status === 'Follow-up' || lead.followUpDate) ? (
-            <div className="flex items-start gap-4 p-5 bg-amber-50 rounded-xl border border-amber-200 shadow-xs">
-              <div className="text-amber-600 mt-0.5 text-lg">⏰</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="text-[9px] text-amber-800 font-black uppercase tracking-widest">NEXT FOLLOW-UP</p>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-200/80 text-amber-900">
-                    {lead.followUpType || 'Call'}
+
+            {/* Col 2: Destination & Travelers */}
+            <div className="space-y-2 border-r-0 sm:border-r border-slate-100 sm:pr-4">
+              <div>
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Destination</span>
+                <span className="font-semibold text-indigo-700 text-xs">{lead.destination || 'Unassigned'}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Travelers</span>
+                <span className="font-medium text-slate-700 text-xs">
+                  {lead.travelers?.adults || 0} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Child` : ''}
+                </span>
+              </div>
+            </div>
+
+            {/* Col 3: Channel & Follow-up status */}
+            <div className="space-y-2">
+              <div>
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Source Channel</span>
+                <span className="font-medium text-slate-700 text-xs">{lead.source || 'Direct'}</span>
+              </div>
+
+              {lead.status === 'Postponed' && lead.postponedReason ? (
+                <div className="p-2 rounded bg-purple-50 border border-purple-100 text-[11px] text-purple-900">
+                  <span className="font-medium">Reason: </span>{lead.postponedReason}
+                </div>
+              ) : (lead.status === 'Follow-up' || lead.followUpDate) && lead.followUpNote ? (
+                <div className="p-2 rounded bg-amber-50 border border-amber-100 text-[11px] text-amber-900 line-clamp-2">
+                  <span className="font-medium">Note: </span>{lead.followUpNote}
+                </div>
+              ) : (
+                <div>
+                  <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Last Activity</span>
+                  <span className="text-[11px] text-slate-500">
+                    {new Date(lead.lastFollowUp || lead.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-[14px] font-black text-amber-950">
-                  {formatDate(lead.followUpDate)} {lead.followUpTime ? `· ${lead.followUpTime}` : ''}
-                </p>
-                {lead.followUpNote && (
-                  <p className="text-[11px] font-semibold text-amber-900 mt-1 line-clamp-2">
-                    {lead.followUpNote}
-                  </p>
-                )}
-              </div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-start gap-4 p-5 bg-[#fffbeb] rounded-xl border border-[#fef3c7]">
-              <div className="text-[#f59e0b] mt-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[9px] text-[#b45309] font-black uppercase tracking-widest mb-1 opacity-60">LAST FOLLOW UP</p>
-                <p className="text-[14px] font-black text-[#92400e]">
-                  {new Date(lead.lastFollowUp).toLocaleDateString()} at {new Date(lead.lastFollowUp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* Footer Contact Bar */}
-      <div className="px-10 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#4f46e5] text-white font-black text-sm rounded-full flex items-center justify-center shadow-lg uppercase">
-              {lead.name.charAt(0)}
-            </div>
-            <span className="text-xl font-black text-slate-800 tracking-tighter">{lead.name}</span>
-          </div>
-          
-          <div className="flex items-center gap-3 text-slate-400">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            <span className="text-base font-black text-slate-600 tracking-tight">{lead.phone || '+91 00000 00000'}</span>
-          </div>
-        </div>
+          {/* Footer Contact Bar */}
+          <div className="px-5 py-2.5 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs gap-2">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-semibold text-[10px] flex items-center justify-center">
+                  {lead.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-semibold text-slate-800">{lead.name}</span>
+              </div>
 
-        <div className="flex items-center gap-4 bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm">
-          <div className="text-right">
-            <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none mb-1">SALES EXPERT</p>
-            <p className="text-[12px] font-black text-slate-800 tracking-tight uppercase">{agentName}</p>
+              {lead.phone && (
+                <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px]">
+                  <Phone size={11} className="text-slate-400" />
+                  <span>{lead.phone}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+              <User size={11} className="text-slate-400" />
+              <span>Assigned: <strong className="text-slate-700 font-medium">{agentName}</strong></span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -217,6 +217,22 @@ export async function updateOpsVoucher(id: string, data: Partial<HotelVoucher>):
   }
 }
 
+export async function deleteOpsVoucher(id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/vouchers/${id}`, {
+      method: 'DELETE',
+    });
+    const result = await handleResponse<{ success: boolean }>(res);
+    return !!result?.success;
+  } catch (err) {
+    console.warn('Backend API fallback: Deleting voucher locally', err);
+    const existing = getStoredVouchers();
+    const updated = existing.filter((v) => v.id !== id);
+    saveVouchers(updated);
+    return true;
+  }
+}
+
 export async function fetchOpsItineraries(): Promise<TripItinerary[]> {
   try {
     const res = await fetch(`${API_BASE}/itineraries`);

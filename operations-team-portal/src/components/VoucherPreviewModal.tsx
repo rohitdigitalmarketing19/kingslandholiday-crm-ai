@@ -80,7 +80,7 @@ export const VoucherPreviewModal: React.FC<VoucherPreviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden print:p-0 print:bg-white print:static">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150 print:max-w-none print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none">
+      <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-4xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150 print:max-w-none print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none">
         
         {/* Modal Top Bar (Hidden on Print) */}
         <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white print:hidden shrink-0 z-10 shadow-sm">

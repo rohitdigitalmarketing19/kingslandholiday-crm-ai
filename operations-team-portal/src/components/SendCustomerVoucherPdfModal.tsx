@@ -130,7 +130,7 @@ export const SendCustomerVoucherPdfModal: React.FC<SendCustomerVoucherPdfModalPr
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static custom-scrollbar">
-      <div className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full shadow-xl overflow-hidden my-auto flex flex-col animate-in zoom-in-95 duration-150">
+      <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-2xl w-full shadow-xl overflow-hidden my-auto flex flex-col animate-in zoom-in-95 duration-150">
         
         {/* MODAL HEADER */}
         <div className="p-5 bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white flex items-center justify-between border-b border-teal-800/40">

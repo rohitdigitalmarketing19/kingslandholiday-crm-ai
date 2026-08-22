@@ -1,5 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Lead, Agent } from '../types';
+import { 
+  Clock, 
+  Search, 
+  Calendar, 
+  Phone, 
+  CheckCircle2, 
+  AlertCircle, 
+  User, 
+  Eye, 
+  ChevronRight,
+  Filter,
+  Check
+} from 'lucide-react';
 
 interface FollowUpsViewProps {
   leads: Lead[];
@@ -33,7 +46,7 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
     return d.toISOString().split('T')[0];
   }, []);
 
-  // ONLY leads that have status === 'Follow-up' OR have a scheduled followUpDate
+  // Leads that have status === 'Follow-up' OR have a scheduled followUpDate
   const allFollowUpLeads = useMemo(() => {
     return leads.filter((l) => {
       return (l.status === 'Follow-up' || Boolean(l.followUpDate));
@@ -105,74 +118,59 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.3em]">
-              Kingsland CRM Touchpoints
-            </span>
-            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              {allFollowUpLeads.filter(l => !l.followUpCompleted).length} Active Scheduled
-            </span>
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-600" />
+            <h2 className="text-xl font-semibold text-slate-800">
+              Follow-ups & Reminders
+            </h2>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl border border-amber-200/80 shadow-sm shadow-amber-500/5">
-              ⏰
-            </div>
-            <div>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter">
-                Follow-ups
-              </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Every planned customer touch — complete them directly or open lead preview.
-              </p>
-            </div>
-          </div>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Manage scheduled customer call logs, touchpoint reminders, and completed follow-up notes.
+          </p>
         </div>
 
-        {/* Right Controls: Agent Filter */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-white p-1.5 pl-4 rounded-2xl border border-slate-200/80 shadow-xs">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Agent:</span>
-            <select
-              value={selectedAgent}
-              onChange={(e) => setSelectedAgent(e.target.value)}
-              className="bg-slate-50 text-slate-800 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-            >
-              <option value="all">All agents</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Agent Filter */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-medium">Assigned Agent:</span>
+          <select
+            value={selectedAgent}
+            onChange={(e) => setSelectedAgent(e.target.value)}
+            className="bg-white text-slate-800 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 cursor-pointer shadow-2xs"
+          >
+            <option value="all">All Agents</option>
+            {agents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Tab Buttons & Search Toolbar */}
-      <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Tabs & Search Toolbar */}
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         
         {/* Tabs Bar */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-lg overflow-x-auto custom-scrollbar">
           
           {/* Overdue */}
           <button
             onClick={() => setActiveTab('overdue')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'overdue'
-                ? 'bg-rose-600 text-white shadow-md shadow-rose-200'
+                ? 'bg-rose-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
             <span>Overdue</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               categorized.overdue.length > 0 
-                ? activeTab === 'overdue' ? 'bg-rose-800 text-white' : 'bg-rose-500 text-white animate-pulse' 
+                ? activeTab === 'overdue' ? 'bg-rose-800 text-white' : 'bg-rose-100 text-rose-700' 
                 : 'bg-slate-200 text-slate-600'
             }`}>
               {categorized.overdue.length}
@@ -182,15 +180,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Today */}
           <button
             onClick={() => setActiveTab('today')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'today'
-                ? 'bg-amber-500 text-white shadow-md shadow-amber-200'
+                ? 'bg-amber-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
             <span>Today</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-              activeTab === 'today' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-800 font-extrabold'
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+              activeTab === 'today' ? 'bg-amber-800 text-white' : 'bg-amber-100 text-amber-800'
             }`}>
               {categorized.today.length}
             </span>
@@ -199,14 +197,14 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Tomorrow */}
           <button
             onClick={() => setActiveTab('tomorrow')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'tomorrow'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
             <span>Tomorrow</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               activeTab === 'tomorrow' ? 'bg-indigo-800 text-white' : 'bg-slate-200 text-slate-600'
             }`}>
               {categorized.tomorrow.length}
@@ -216,14 +214,14 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Upcoming */}
           <button
             onClick={() => setActiveTab('upcoming')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'upcoming'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                ? 'bg-indigo-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
             <span>Upcoming</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               activeTab === 'upcoming' ? 'bg-indigo-800 text-white' : 'bg-slate-200 text-slate-600'
             }`}>
               {categorized.upcoming.length}
@@ -233,14 +231,14 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Completed */}
           <button
             onClick={() => setActiveTab('completed')}
-            className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'completed'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
             <span>Completed</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
               activeTab === 'completed' ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-600'
             }`}>
               {categorized.completed.length}
@@ -249,138 +247,135 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
 
         </div>
 
-        {/* Quick Search */}
-        <div className="relative">
+        {/* Search */}
+        <div className="relative min-w-[220px]">
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search follow-ups..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full md:w-64 bg-slate-50 text-slate-800 border border-slate-200 rounded-2xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-indigo-500/20 placeholder:text-slate-400 outline-none"
+            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-indigo-400 focus:bg-white transition-all"
           />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-bold"
-            >
-              ✕
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Follow-up Items List */}
-      <div className="space-y-4">
+      {/* Follow-up Leads List */}
+      <div className="space-y-3">
         {currentList.length === 0 ? (
-          <div className="p-16 rounded-2xl bg-white border border-slate-100 text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 mx-auto rounded-3xl bg-slate-50 flex items-center justify-center text-3xl">
-              {activeTab === 'completed' ? '🎉' : '☕'}
+          <div className="py-16 text-center bg-white rounded-xl border border-dashed border-slate-200 p-8 space-y-2">
+            <div className="w-10 h-10 mx-auto rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+              <CheckCircle2 size={20} />
             </div>
-            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-              No {activeTab} follow-ups
-            </h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto font-medium">
-              {activeTab === 'completed'
-                ? 'Completed customer touchpoints will appear here.'
-                : `You're all caught up on ${activeTab} customer follow-ups.`}
+            <h4 className="text-sm font-semibold text-slate-800">No Scheduled Follow-ups</h4>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+              There are no {activeTab} follow-up calls or reminders matching your filters.
             </p>
           </div>
         ) : (
           currentList.map((lead) => {
-            const assignedAgent = agents.find((a) => a.id === lead.assignedTo)?.name || 'Alex Thompson';
-            const fDate = lead.followUpDate || lead.createdAt.split('T')[0];
-            const fTime = lead.followUpTime || '10:30';
-            const fType = lead.followUpType || 'Call';
-            const fNote = lead.followUpNote || lead.summary || 'Customer touchpoint scheduled from CRM proposal desk.';
+            const agent = agents.find((a) => a.id === lead.assignedTo);
+            const isCompleted = lead.followUpCompleted;
+            const isCompleting = completingId === lead.id;
 
             return (
               <div
                 key={lead.id}
                 onClick={() => onOpenLead(lead)}
-                className={`p-6 rounded-[2rem] bg-white border transition-all hover:shadow-xl hover:-translate-y-0.5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6 group shadow-sm ${
-                  activeTab === 'overdue' 
-                    ? 'border-rose-300/80 bg-rose-50/20 hover:border-rose-500' 
-                    : 'border-slate-100 hover:border-indigo-400'
-                }`}
+                className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
               >
-                {/* Left Column: Date, Time & Touchpoint Type */}
-                <div className="flex items-center gap-4 min-w-[190px]">
-                  <div className="text-left">
-                    <div className="text-sm font-black text-slate-900 flex items-center gap-2">
-                      <span>{formatDisplayDate(fDate)}</span>
-                      <span className="text-slate-300">·</span>
-                      <span className="text-amber-600 font-mono font-black">{fTime}</span>
-                    </div>
-                    <div className="mt-1">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/80">
-                        <span>{fType === 'Call' ? '📞' : fType === 'WhatsApp' ? '💬' : fType === 'Email' ? '✉️' : '🤝'}</span>
-                        <span>{fType}</span>
+                {/* Left Info */}
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                    {lead.name.charAt(0).toUpperCase()}
+                  </div>
+
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-slate-900 text-xs">{lead.name}</span>
+                      <span className="font-mono text-[10px] text-slate-400">#{lead.tripId}</span>
+                      
+                      <span className="text-[10px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
+                        {lead.destination}
+                      </span>
+
+                      <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">
+                        {lead.followUpType || 'Call'}
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* Center Column: Lead Name, Destination & Action Agenda */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h4 className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
-                      {lead.name}
-                    </h4>
-                    <span className="text-slate-300 text-xs">·</span>
-                    <span className="text-xs font-bold text-slate-600">
-                      {lead.destination}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200/60">
-                      #{lead.tripId}
-                    </span>
-                  </div>
-                  {fNote && (
-                    <div className="mt-2 text-xs font-medium text-slate-600 bg-slate-50 border border-slate-100 px-3 py-2 rounded-xl line-clamp-2">
-                      {fNote}
-                    </div>
-                  )}
-                </div>
-
-                {/* Right Column: Agent Name & Action Buttons */}
-                <div className="flex items-center justify-between md:justify-end gap-4 shrink-0">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">
-                      Assigned Agent
-                    </p>
-                    <p className="text-xs font-black text-slate-800 mt-0.5">
-                      {assignedAgent}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {!lead.followUpCompleted && (
-                      <button
-                        onClick={(e) => handleMarkComplete(lead.id, e)}
-                        disabled={completingId === lead.id}
-                        className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-emerald-200 hover:border-emerald-600 flex items-center gap-1.5 shadow-xs"
-                        title="Mark Follow-up Completed"
-                      >
-                        {completingId === lead.id ? '...' : '✓ Done'}
-                      </button>
+                    {lead.followUpNote && (
+                      <p className="text-xs text-slate-600 line-clamp-1 italic">
+                        "{lead.followUpNote}"
+                      </p>
                     )}
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenLead(lead);
-                      }}
-                      className="px-5 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-slate-900/10"
-                    >
-                      Open Lead →
-                    </button>
+                    <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                      {lead.phone && (
+                        <span className="flex items-center gap-1 font-mono text-slate-600">
+                          <Phone size={10} />
+                          <span>{lead.phone}</span>
+                        </span>
+                      )}
+
+                      {agent && (
+                        <span className="flex items-center gap-1">
+                          <User size={10} />
+                          <span>{agent.name}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Right Action & Schedule Details */}
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-800">
+                      <Calendar size={12} className="text-slate-400" />
+                      <span>{formatDisplayDate(lead.followUpDate)}</span>
+                      {lead.followUpTime && <span className="text-slate-400 font-normal">· {lead.followUpTime}</span>}
+                    </div>
+                    <span className="text-[10px] text-slate-400">
+                      {lead.status === 'Postponed' ? 'Postponed' : 'Scheduled Touch'}
+                    </span>
+                  </div>
+
+                  {!isCompleted ? (
+                    <button
+                      type="button"
+                      disabled={isCompleting}
+                      onClick={(e) => handleMarkComplete(lead.id, e)}
+                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      title="Mark as Completed"
+                    >
+                      <Check size={13} />
+                      <span>{isCompleting ? 'Saving...' : 'Done'}</span>
+                    </button>
+                  ) : (
+                    <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium flex items-center gap-1">
+                      <CheckCircle2 size={13} className="text-emerald-600" />
+                      <span>Completed</span>
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenLead(lead);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    title="Open Lead"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
               </div>
             );
           })
         )}
       </div>
-
     </div>
   );
 };

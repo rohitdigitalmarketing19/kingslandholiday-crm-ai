@@ -12,12 +12,52 @@ interface GiveQuoteViewProps {
   onSave: (quote: QuoteData) => void;
 }
 
-const DEFAULT_TERMS = `1. All prices are subject to availability at the time of booking.
-2. 50% non-refundable advance payment required for confirmation.
-3. Balance 50% must be cleared 21 days before arrival.
-4. Cancellation policies vary per hotel and flight rules.
-5. Standard check-in: 14:00, check-out: 12:00.
-6. Passport must be valid for at least 6 months from travel date.`;
+const DEFAULT_TERMS = `Terms & Conditions
+
+Cancellation Policy (for the land package):
+• More than 30 days before the starting date: 25% of the total land package cost will be cancellation fees.
+• Between 16-30 days before the starting date: 40% of the total land package cost will be cancellation fees.
+• Between 7-15 days before the starting date: 55% of the total land package cost will be cancellation fees.
+• Between 3-6 days before the starting date: 70% of the total land package cost will be cancellation fees.
+• Within 0-2 days before the starting date: 85% of the total land package cost will be cancellation fees.
+• In case of No Show: 100% of the total land package cost will be cancellation fees.
+• Peak Periods: No Refund & No Amendment allowed during the Diwali period, Christmas, New Year period, and Long weekends.
+• Note: Number of days for cancellation will be counted by first contact and check-in time and date. First contact is considered when you first email / WhatsApp our salesperson cancellation request.
+
+Cancellation Policy (for flights/trains):
+• For flights and trains, cancellation charges vary as per airlines / Railways / booking source policies. Cancellation charges will be according to that.
+
+Hotels & Accommodation Guidelines:
+• Most of the time hotels mentioned in this quote will be provided. In some cases, if the mentioned hotels are not available due to unforeseen reasons, similar hotels will be provided.
+• On 24th Dec - 31st Dec: Gala Dinner may be compulsory in some hotels (ranging from Rs. 1500 per person to Rs. 5000 per person or sometimes higher), payable directly to the hotel.
+• Standard Check-in time is 12:00 PM and Check-out time is 10:00 AM (varies as per hotel). Early check-in and/or late check-out is subject to availability and may be chargeable directly to the hotel.
+• Itinerary provided in this quote is indicative. It may change before or during the trip if required. No refund will be given in case of a missed itinerary.
+• Room Heater: Certain Hotels in Low Budget, Standard, Deluxe categories provide room heaters on request at extra charge. We do not include this cost; travelers settle directly before checkout (INR 250.00 to INR 500.00 per heater per room per night).
+
+Important Information & Permits:
+• All guests must carry valid Government Photo IDs (Passport / Driving License / Voter ID). PAN Card is NOT accepted as a valid photo/address ID.
+• Guests must carry 4 passport size photographs along with Photo-ID proof (Passport / DL / Voter ID & School ID for children) for Gangtok (Changu Lake / Baba Mandir) and North Sikkim (Lachung) permits.
+• Tsomgo Lake, Baba Mandir, Nathula Pass, Gurudongmar, Yumthang & Yumesamdong (Zero Point) depend heavily on weather conditions. In hilly areas, roads may be out of operation at the time of travel. Operational status will be updated during the pre-arrival briefing call.
+• Nathula Permit Formalities: Nathula Pass is an optional tour with supplement cost, applied 24 hours prior. Only 5% of vehicles get permits via government lottery. Once a permit is issued, there is no refund if Nathula Pass cannot be visited for any reason.
+• Himalayan Mountaineering Institute and Padmaja Naidu Himalayan Zoological Park remain closed on Thursday.
+• Toy Train Ride: A 2-hour journey starting from Darjeeling up to Ghoom Station and back, covering Batasia Loop, War Memorial & Ghoom Railway Museum. Cost of tickets and pickup-drop will be borne by the traveler.
+• The Tibetan Refugee Centre remains closed on Sunday.
+• Vehicle Capacity: Maximum capacity is 6 people (including children) as per Motor Vehicle Act.
+• Sector Allotment: In Sikkim and Darjeeling, vehicles are allotted per sector as per syndicate rules; a single vehicle cannot be used for the entire trip. Good vehicles and drivers are assured for each sector.
+• Point-to-Point Transfers: All vehicles assigned are on a point-to-point basis and not disposable. Air conditioning will not operate on uphill drives.
+• Parking & Entry: Due to parking scarcity, entry restrictions and specific timings apply in many areas.
+• Natural Diversions: Landslides are common in hilly areas. Guests must bear additional costs for any diversion/changes due to road blockage, landslide, or political unrest.
+• Local Syndicate Excursions: Excursions like Tshangu Lake, Nathula, and North Sikkim are controlled by local transport syndicates. Vehicles and drivers may change for transfers and sightseeing.
+• Restricted Area Security: Nathula is a restricted area and can be sealed without notice for security reasons. In such cases, tours operate only up to Tshangu Lake with no refund for unutilized services.
+• Payment Schedule: Payments must be cleared as per the payment schedule. Delayed installments attract late payment charges (5% of installment amount).
+
+Pure Agent Declaration (Terms & Conditions):
+• We provide our services strictly as a pure agent, and charge a service fee solely for planning, coordinating, and arranging the tour on behalf of the client.
+• All other travel-related services (transport, hotel booking, entry tickets, etc.) are arranged on behalf of the customer and recovered at actual cost.
+• As a pure agent: We do not intend to hold nor hold any title to the goods or services procured on behalf of the client.
+• We do not use such goods or services for our own interest or benefit.
+• We recover only the actual amount incurred for third-party services, in addition to our separately charged service fee.
+• All legal obligations are subject to Jaipur jurisdiction only.`;
 
 const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-slate-800", disabled = false, placeholder = "0" }: { label: string, value: number, onChange: (v: number) => void, icon?: string, colorClass?: string, disabled?: boolean, placeholder?: string }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -513,38 +553,51 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             <SectionHeader title="Hospitality & Stay Plan" icon="🏨" />
             <div className="space-y-6">
                {quote.hotels.map((hotel, idx) => (
-                 <div key={idx} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-6 relative group">
+                  <div key={idx} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4 relative group">
                     <button onClick={() => setQuote({...quote, hotels: quote.hotels.filter((_, i) => i !== idx)})} className="absolute -right-2 -top-2 w-8 h-8 bg-white border border-slate-100 rounded-full text-rose-500 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
-                    <div className="space-y-2">
-                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Nights Selection</label>
-                       <NightSelectDropdown 
-                        totalNights={quote.nights} 
-                        selectedIndices={hotel.selectedNightIndices || []} 
-                        usedIndices={usedNightIndices}
-                        onChange={v => handleHotelChange(idx, 'selectedNightIndices', v)}
-                       />
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Nights Selection</label>
+                        <NightSelectDropdown 
+                          totalNights={quote.nights} 
+                          selectedIndices={hotel.selectedNightIndices || []} 
+                          usedIndices={usedNightIndices}
+                          onChange={v => handleHotelChange(idx, 'selectedNightIndices', v)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Property Name</label>
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.hotelName} onChange={e => handleHotelChange(idx, 'hotelName', e.target.value)} placeholder="e.g. Grand Resort & Spa" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">City / Destination</label>
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.city} onChange={e => handleHotelChange(idx, 'city', e.target.value)} placeholder="e.g. Gangtok" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Hotel Category</label>
+                        <select className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.category} onChange={e => handleHotelChange(idx, 'category', e.target.value)}>
+                          <option value="3 Star">3 Star Standard</option>
+                          <option value="4 Star">4 Star Premium</option>
+                          <option value="5 Star">5 Star Luxury</option>
+                          <option value="Luxury">Luxury Resort</option>
+                          <option value="Heritage">Heritage Property</option>
+                          <option value="Deluxe">Deluxe Hotel</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Property Name</label>
-                       <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none" value={hotel.hotelName} onChange={e => handleHotelChange(idx, 'hotelName', e.target.value)} placeholder="Hotel Name" />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Room Type</label>
+                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.roomType} onChange={e => handleHotelChange(idx, 'roomType', e.target.value)} placeholder="e.g. Deluxe Mountain View Room, Double Occupancy" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-black text-indigo-600 uppercase tracking-widest">Hotel Special Comments / Inclusions (Shows on PDF)</label>
+                        <input type="text" className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.comments || ''} onChange={e => handleHotelChange(idx, 'comments', e.target.value)} placeholder="e.g. Candlelight dinner included on Day 2; Complimentary welcome drink" />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">City & Category</label>
-                       <div className="flex gap-2">
-                          <input type="text" className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none" value={hotel.city} onChange={e => handleHotelChange(idx, 'city', e.target.value)} placeholder="City" />
-                          <select className="bg-white border border-slate-200 rounded-xl px-2 py-2 text-[10px] font-black outline-none" value={hotel.category} onChange={e => handleHotelChange(idx, 'category', e.target.value)}>
-                             <option>3 Star</option>
-                             <option>4 Star</option>
-                             <option>5 Star</option>
-                             <option>Luxury</option>
-                          </select>
-                       </div>
-                    </div>
-                    <div className="space-y-2">
-                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Room Type / Comments</label>
-                       <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none" value={hotel.roomType} onChange={e => handleHotelChange(idx, 'roomType', e.target.value)} placeholder="Room Type" />
-                    </div>
-                 </div>
+                  </div>
                ))}
                <button onClick={handleAddHotel} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 transition-all">+ Add Another Hotel Entry</button>
             </div>
