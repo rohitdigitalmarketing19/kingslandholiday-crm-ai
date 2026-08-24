@@ -13,7 +13,10 @@ const rawPath = process.env.DATABASE_PATH || 'kingsland.db';
 export const dbPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
 
 const dbDir = path.dirname(dbPath);
-export const backupDir = path.resolve(process.cwd(), 'backups');
+const rawBackupPath = process.env.BACKUP_PATH;
+export const backupDir = rawBackupPath
+  ? (path.isAbsolute(rawBackupPath) ? rawBackupPath : path.resolve(process.cwd(), rawBackupPath))
+  : (process.env.DATABASE_PATH ? path.join(dbDir, 'backups') : path.resolve(process.cwd(), 'backups'));
 
 try {
   if (!fs.existsSync(dbDir)) {

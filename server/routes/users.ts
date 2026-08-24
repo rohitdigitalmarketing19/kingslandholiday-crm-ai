@@ -129,7 +129,7 @@ router.get('/', (req, res) => {
     if (!rows || rows.length === 0) {
       const now = new Date().toISOString();
       
-      // Admin user
+      // Primary Admin user
       runQuery(
         `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -145,66 +145,6 @@ router.get('/', (req, res) => {
           'Editor',
           JSON.stringify(ALL_PERMISSIONS),
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          now
-        ]
-      );
-
-      // Default Sales Executive
-      runQuery(
-        `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          'usr-sales-1',
-          'Sarah Miller (Sales)',
-          'sarah.sales@kingslandholidays.com',
-          '+91 7014939068',
-          'sales123',
-          'Sales',
-          'Sales',
-          'Active',
-          'Editor',
-          JSON.stringify(SALES_PERMISSIONS),
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-          now
-        ]
-      );
-
-      // Default Ops Executive
-      runQuery(
-        `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          'usr-ops-1',
-          'Vikram Sharma (Ops)',
-          'vikram.ops@kingslandholidays.com',
-          '+91 9772595049',
-          'ops123',
-          'Operations',
-          'Operations',
-          'Active',
-          'Editor',
-          JSON.stringify(OPS_PERMISSIONS),
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-          now
-        ]
-      );
-
-      // Default Accounts Executive
-      runQuery(
-        `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          'usr-acc-1',
-          'Accounts Team',
-          'accounts.kingsland@gmail.com',
-          '+91 7014939068',
-          'accounts123',
-          'Accounts',
-          'Accounts',
-          'Active',
-          'ViewOnly',
-          JSON.stringify(ACCOUNTS_PERMISSIONS),
-          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
           now
         ]
       );

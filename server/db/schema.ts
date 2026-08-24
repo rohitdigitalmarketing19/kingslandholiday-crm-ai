@@ -158,6 +158,11 @@ export function initializeDatabase(): void {
     }
   }
 
+  // Purge any legacy sample demo users if present
+  try {
+    execSql(`DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') AND email IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')`);
+  } catch (_e) {}
+
   // Seed default Masters data if empty
   try {
     const defaultMasters = [
