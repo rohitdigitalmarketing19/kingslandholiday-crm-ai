@@ -158,11 +158,6 @@ export function initializeDatabase(): void {
     }
   }
 
-  // Purge any legacy sample demo users if present
-  try {
-    execSql(`DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') AND email IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')`);
-  } catch (_e) {}
-
   // Seed default Masters data if empty
   try {
     const defaultMasters = [
@@ -232,6 +227,11 @@ export function initializeDatabase(): void {
   try {
     execSql(`INSERT OR IGNORE INTO agency_settings (id, company_name, tagline, phone, email, website, default_gst_percent, place_of_supply)
       VALUES ('default_agency_settings', 'Kingsland Holidays', 'Desire to travel', '+91 6376983416', 'support@kingslandholiday.com', 'kingslandholiday.com', 5.0, 'Rajasthan (08)')`);
+  } catch (_e) {}
+
+  // Clean up any legacy demo users from past seeds
+  try {
+    execSql(`DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') OR LOWER(email) IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')`);
   } catch (_e) {}
 
   console.log('✅ Database schema & migrations initialized.');

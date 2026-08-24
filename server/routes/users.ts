@@ -6,7 +6,10 @@ import { getAgencySettings } from '../controllers/settingsController';
 
 const router = Router();
 
-const ADMIN_EMAIL = 'rohit.digitalmarketing19@gmail.com';
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.SMTP_USER || 'rohit.digitalmarketing19@gmail.com').trim().toLowerCase();
+const ADMIN_NAME = (process.env.ADMIN_NAME || 'Rohit (Admin)').trim();
+const ADMIN_PHONE = (process.env.ADMIN_PHONE || '+91 6376983416').trim();
+const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || 'admin@kingsland123').trim();
 
 // In-memory OTP store for password resets (Admin verification)
 const otpStore: Record<string, { code: string; expiresAt: number }> = {};
@@ -123,22 +126,27 @@ function formatUserRow(row: any) {
 // GET /api/users - Fetch all users
 router.get('/', (req, res) => {
   try {
+    // Clean up legacy demo users if present
+    try {
+      runQuery("DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') OR LOWER(email) IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')");
+    } catch (_cleanErr) {}
+
     const rows = queryAll('SELECT * FROM users ORDER BY created_at DESC');
     
     // Seed default admin user if database is empty
     if (!rows || rows.length === 0) {
       const now = new Date().toISOString();
       
-      // Primary Admin user
+      // Primary Admin user only
       runQuery(
         `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           'usr-admin-1',
-          'Rohit (Admin)',
+          ADMIN_NAME,
           ADMIN_EMAIL,
-          '+91 6376983416',
-          'admin@kingsland123',
+          ADMIN_PHONE,
+          ADMIN_PASSWORD,
           'Admin',
           'Management',
           'Active',

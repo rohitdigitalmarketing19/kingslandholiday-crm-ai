@@ -16,7 +16,7 @@ const dbDir = path.dirname(dbPath);
 const rawBackupPath = process.env.BACKUP_PATH;
 export const backupDir = rawBackupPath
   ? (path.isAbsolute(rawBackupPath) ? rawBackupPath : path.resolve(process.cwd(), rawBackupPath))
-  : (process.env.DATABASE_PATH ? path.join(dbDir, 'backups') : path.resolve(process.cwd(), 'backups'));
+  : path.join(dbDir, 'backups');
 
 try {
   if (!fs.existsSync(dbDir)) {
