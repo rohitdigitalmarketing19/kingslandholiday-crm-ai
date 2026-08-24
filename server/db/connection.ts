@@ -10,23 +10,55 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const rawPath = process.env.DATABASE_PATH || 'kingsland.db';
-export const dbPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
+export let dbPath = path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
 
 const dbDir = path.dirname(dbPath);
 const rawBackupPath = process.env.BACKUP_PATH;
-export const backupDir = rawBackupPath
+export let backupDir = rawBackupPath
   ? (path.isAbsolute(rawBackupPath) ? rawBackupPath : path.resolve(process.cwd(), rawBackupPath))
   : path.join(dbDir, 'backups');
 
-try {
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+function ensureDir(dirPath: string): boolean {
+  try {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+    return true;
+  } catch (e: any) {
+    console.warn(`⚠️ Could not create directory ${dirPath}:`, e.message);
+    return false;
   }
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
+}
+
+// Initial directory check
+if (!ensureDir(dbDir)) {
+  console.warn(`⚠️ Configured DATABASE_PATH directory (${dbDir}) is not writable. Falling back to local data directory.`);
+  const fallbackDir = path.resolve(process.cwd(), 'data');
+  ensureDir(fallbackDir);
+  dbPath = path.join(fallbackDir, 'kingsland.db');
+  backupDir = path.join(fallbackDir, 'backups');
+  ensureDir(backupDir);
+} else {
+  ensureDir(backupDir);
+}
+
+/**
+ * Safely write buffer to file, ensuring parent directory exists with fallback
+ */
+export function safeWriteBuffer(targetPath: string, buffer: Buffer): string {
+  const targetDir = path.dirname(targetPath);
+  try {
+    ensureDir(targetDir);
+    fs.writeFileSync(targetPath, buffer);
+    return targetPath;
+  } catch (err: any) {
+    console.warn(`⚠️ Write failed to ${targetPath} (${err.message}). Writing to local fallback...`);
+    const fallbackPath = path.resolve(process.cwd(), 'kingsland.db');
+    ensureDir(path.dirname(fallbackPath));
+    fs.writeFileSync(fallbackPath, buffer);
+    dbPath = fallbackPath;
+    return fallbackPath;
   }
-} catch (e) {
-  console.warn('⚠️ Could not create db or backup directory:', e);
 }
 
 let db: SqlJsDatabase;
@@ -38,9 +70,7 @@ let lastBackupTime = 0;
 export function createBackupSnapshot(reason: string = 'auto'): string | null {
   if (!db) return null;
   try {
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir, { recursive: true });
-    }
+    ensureDir(backupDir);
     const data = db.export();
     const buffer = Buffer.from(data);
     if (buffer.length < 1000) return null; // Don't backup empty or invalid db
@@ -49,7 +79,7 @@ export function createBackupSnapshot(reason: string = 'auto'): string | null {
     const filename = `kingsland_backup_${reason}_${timestamp}.db`;
     const fullPath = path.join(backupDir, filename);
 
-    fs.writeFileSync(fullPath, buffer);
+    safeWriteBuffer(fullPath, buffer);
     console.log(`🛡️ Database Snapshot Created: ${filename} (${buffer.length} bytes)`);
 
     // Clean up old backups keeping the most recent 30
@@ -125,7 +155,7 @@ export async function restoreDatabaseFromBuffer(buffer: Buffer): Promise<boolean
   }
 
   db = testDb;
-  fs.writeFileSync(dbPath, buffer);
+  safeWriteBuffer(dbPath, buffer);
   console.log(`✅ Database successfully restored from buffer (${buffer.length} bytes).`);
   return true;
 }
@@ -175,7 +205,7 @@ export async function initDb(): Promise<SqlJsDatabase> {
         const snapPath = path.join(backupDir, latestSnapshot.filename);
         const snapBuffer = fs.readFileSync(snapPath);
         db = new SQL.Database(snapBuffer);
-        fs.writeFileSync(dbPath, snapBuffer);
+        safeWriteBuffer(dbPath, snapBuffer);
         console.log(`🛡️ AUTO-RECOVERY: Successfully recovered database from latest snapshot: ${latestSnapshot.filename}`);
       } catch (snapErr) {
         console.error('⚠️ Could not restore from snapshot, creating fresh database:', snapErr);
@@ -208,7 +238,7 @@ export function saveDb(): void {
   try {
     const data = db.export();
     const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
+    safeWriteBuffer(dbPath, buffer);
 
     // Debounced automatic periodic backup (e.g. at most once every 10 minutes or upon significant writes)
     const now = Date.now();
