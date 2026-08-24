@@ -581,7 +581,7 @@ Cancellation Policy (Land Package):
                   type={showSmtpPass ? 'text' : 'password'}
                   value={formData.smtp_pass}
                   onChange={e => handleChange('smtp_pass', e.target.value)}
-                  placeholder="e.g. vrsa reev ziev otqa"
+                  placeholder="e.g. abcd efgh ijkl mnop"
                   className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl pl-4 pr-10 py-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
                 />
                 <button
