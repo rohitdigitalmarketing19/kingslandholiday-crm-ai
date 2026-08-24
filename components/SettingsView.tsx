@@ -30,6 +30,7 @@ export const SettingsView: React.FC = () => {
   const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [testEmailTarget, setTestEmailTarget] = useState('rohit.digitalmarketing19@gmail.com');
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [smtpTestMsg, setSmtpTestMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [formData, setFormData] = useState({
@@ -734,20 +735,35 @@ Cancellation Policy (Land Package):
                   Upload a previously downloaded <code className="text-amber-400 text-[10px]">.db</code> file to instantly restore all records and settings.
                 </p>
               </div>
-              <label className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 cursor-pointer text-center">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload & Restore Backup</span>
+              <label className={`w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 cursor-pointer text-center ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}>
+                <Upload className={`w-3.5 h-3.5 ${isRestoring ? 'animate-bounce' : ''}`} />
+                <span>{isRestoring ? 'Restoring Database...' : 'Upload & Restore Backup'}</span>
                 <input
                   type="file"
                   accept=".db,.sqlite"
                   className="hidden"
+                  disabled={isRestoring}
                   onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    
+                    // Reset input immediately so selecting the same file again always triggers onChange
+                    const currentTarget = e.target;
+                    
                     if (!confirm(`Are you sure you want to restore database from "${file.name}"? This will update your active CRM records.`)) {
+                      currentTarget.value = '';
                       return;
                     }
+
+                    setIsRestoring(true);
                     const reader = new FileReader();
+
+                    reader.onerror = () => {
+                      setIsRestoring(false);
+                      currentTarget.value = '';
+                      alert('⚠️ Error reading backup file from disk.');
+                    };
+
                     reader.onload = async () => {
                       try {
                         const base64 = reader.result as string;
@@ -756,17 +772,24 @@ Cancellation Policy (Land Package):
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ fileData: base64 })
                         });
+                        
                         const data = await res.json();
+                        currentTarget.value = '';
+
                         if (res.ok) {
-                          alert('✅ Database restored successfully! Reloading...');
+                          alert('✅ Database restored successfully! Reloading CRM now...');
                           window.location.reload();
                         } else {
+                          setIsRestoring(false);
                           alert(`⚠️ Restore failed: ${data.error || 'Invalid database file'}`);
                         }
                       } catch (err: any) {
+                        setIsRestoring(false);
+                        currentTarget.value = '';
                         alert(`⚠️ Restore error: ${err.message}`);
                       }
                     };
+
                     reader.readAsDataURL(file);
                   }}
                 />

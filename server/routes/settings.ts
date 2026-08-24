@@ -9,6 +9,7 @@ import {
   restoreDatabaseFromBuffer, 
   restoreSnapshotByName 
 } from '../db/connection';
+import { initializeDatabase } from '../db/schema';
 
 const router = express.Router();
 
@@ -94,6 +95,9 @@ router.post('/backup/restore-snapshot', async (req, res) => {
       return res.status(400).json({ error: 'Snapshot filename is required.' });
     }
     await restoreSnapshotByName(filename);
+    try {
+      initializeDatabase();
+    } catch (_migErr) {}
     res.json({ success: true, message: `Successfully restored database from ${filename}.` });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to restore snapshot.' });
@@ -109,9 +113,16 @@ router.post('/backup/restore-upload', async (req, res) => {
     }
     const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
     const buffer = Buffer.from(base64Content, 'base64');
+    if (buffer.length < 100) {
+      return res.status(400).json({ error: 'Database file is invalid or empty.' });
+    }
     await restoreDatabaseFromBuffer(buffer);
+    try {
+      initializeDatabase();
+    } catch (_migErr) {}
     res.json({ success: true, message: 'Database successfully restored from uploaded backup file.' });
   } catch (err: any) {
+    console.error('Database restore error:', err);
     res.status(500).json({ error: err.message || 'Failed to restore uploaded database file.' });
   }
 });

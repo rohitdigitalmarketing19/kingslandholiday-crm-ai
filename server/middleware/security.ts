@@ -72,21 +72,31 @@ export function rateLimiterMiddleware(maxRequests: number = 200, windowMs: numbe
 
 /**
  * Input Sanitization Helper — Strips malicious script tags from incoming request payloads
+ * Safely ignores base64 binary data and file payloads to prevent data corruption.
  */
-export function sanitizeInput(input: any): any {
+export function sanitizeInput(input: any, keyName?: string): any {
+  // Never sanitize binary / base64 / file payload keys
+  if (keyName && /file|base64|data|pdf|receipt|buffer/i.test(keyName)) {
+    return input;
+  }
+
   if (typeof input === 'string') {
+    // If it's a long data URI or raw base64 chunk, don't modify it to avoid corruption
+    if (input.startsWith('data:') || input.length > 50000) {
+      return input;
+    }
     return input
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/on\w+="[^"]*"/gi, '')
       .replace(/javascript:[^\s"]*/gi, '');
   }
   if (Array.isArray(input)) {
-    return input.map(sanitizeInput);
+    return input.map(item => sanitizeInput(item));
   }
   if (input !== null && typeof input === 'object') {
     const sanitized: Record<string, any> = {};
     for (const key of Object.keys(input)) {
-      sanitized[key] = sanitizeInput(input[key]);
+      sanitized[key] = sanitizeInput(input[key], key);
     }
     return sanitized;
   }
@@ -97,6 +107,10 @@ export function sanitizeInput(input: any): any {
  * Request Body Sanitizer Middleware
  */
 export function bodySanitizerMiddleware(req: Request, res: Response, next: NextFunction): void {
+  // Skip binary / backup restore routes completely
+  if (req.path.includes('/backup/restore-upload') || req.path.includes('/pdf-designs') || req.path.includes('/upload')) {
+    return next();
+  }
   if (req.body && typeof req.body === 'object') {
     req.body = sanitizeInput(req.body);
   }
