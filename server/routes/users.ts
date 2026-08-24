@@ -256,10 +256,7 @@ router.post('/send-admin-otp', async (req, res) => {
 
     res.json({
       success: true,
-      message: emailDispatched
-        ? `6-Digit OTP Code emailed directly to ${ADMIN_EMAIL}!`
-        : `6-Digit OTP code dispatched to Admin Email (${ADMIN_EMAIL}). Please check your inbox.`,
-      adminEmail: ADMIN_EMAIL,
+      message: '✓ 6-Digit Security OTP sent. Please check your admin Gmail.',
       emailSent: emailDispatched,
       expiresInSeconds: 600
     });
@@ -308,7 +305,7 @@ router.put('/:id/change-password', (req, res) => {
     // Check OTP
     const record = otpStore[ADMIN_EMAIL];
     if (!record || record.code !== (otpCode || '').trim() || Date.now() > record.expiresAt) {
-      return res.status(400).json({ error: `OTP Verification Failed! Enter the valid 6-digit code sent to ${ADMIN_EMAIL}` });
+      return res.status(400).json({ error: 'OTP Verification Failed! Enter the valid 6-digit code sent to your admin Gmail.' });
     }
 
     // Update password in DB by ID or Email

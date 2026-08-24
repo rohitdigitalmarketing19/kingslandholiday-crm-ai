@@ -183,7 +183,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
 
       setOtpSent(true);
       setOtpCountdown(60);
-      setOtpMsg('✓ 6-Digit Security OTP sent to Admin (rohit.digitalmarketing19@gmail.com). Please check your email inbox.');
+      setOtpMsg(data.message || '✓ 6-Digit Security OTP sent. Please check your Admin Gmail inbox.');
     } catch (err: any) {
       setOtpMsg(`⚠️ ${err.message}`);
     } finally {
@@ -774,7 +774,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                 <span className="text-[11px] font-medium text-slate-500 block">Primary Admin Authorization</span>
                 <p className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                   <Mail size={13} className="text-indigo-600" />
-                  <span className="font-mono text-indigo-700">rohit.digitalmarketing19@gmail.com</span>
+                  <span className="font-medium text-indigo-700">(Check your admin Gmail)</span>
                 </p>
                 <p className="text-[11px] text-slate-500">
                   Send a 6-digit OTP to the admin email to authorize resetting this staff password.

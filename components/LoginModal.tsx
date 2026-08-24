@@ -107,7 +107,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       setOtpSent(true);
       setOtpCountdown(60);
-      setOtpStatusMsg('✓ 6-Digit Security OTP sent to Admin (rohit.digitalmarketing19@gmail.com). Please check your email inbox.');
+      setOtpStatusMsg(data.message || '✓ 6-Digit Security OTP sent. Please check your Admin Gmail inbox.');
     } catch (err: any) {
       setOtpStatusMsg(`⚠️ ${err.message}`);
     } finally {
@@ -339,7 +339,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-medium text-slate-600">Admin Authorization OTP</span>
-                  <span className="text-[10px] text-slate-400 font-mono">rohit.digitalmarketing19@gmail.com</span>
+                  <span className="text-[10px] text-slate-400 font-medium">(Check your admin Gmail)</span>
                 </div>
 
                 <button
