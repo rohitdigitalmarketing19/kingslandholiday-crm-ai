@@ -213,14 +213,21 @@ export function initializeDatabase(): void {
     }
   } catch (_e) {}
 
-  // Seed default PDF designs
+  // Seed & Update default PDF designs with correct theme colors
   try {
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
-      VALUES ('design-dark-luxury', 'Executive Matte Dark & Lime', 'minimal_dark', '#c6f135', '#161713', 'KINGSLAND HOLIDAYS', 'Modern Grid', 1)`);
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
-      VALUES ('design-royal-burgundy', 'Royal Burgundy & Gold', 'royal', '#991b1b', '#fef3c7', 'KINGSLAND HOLIDAYS', 'Classic Serif', 0)`);
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, is_active)
-      VALUES ('design-emerald-alpine', 'Alpine Emerald Clean', 'emerald', '#059669', '#ecfdf5', 'KINGSLAND HOLIDAYS', 'Split Minimal', 0)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('design-royal-gold', 'Royal Heritage & Gold', 'royal_gold', '#d4af37', '#1e1b18', 'KINGSLAND HOLIDAYS', 'Classic Serif', 'Playfair Display', 1)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('design-dark-luxury', 'Executive Matte Dark & Lime', 'minimal_dark', '#c6f135', '#161713', 'KINGSLAND HOLIDAYS', 'Modern Grid', 'Outfit', 0)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('design-royal-burgundy', 'Royal Burgundy & Gold', 'royal_burgundy', '#e11d48', '#881337', 'KINGSLAND HOLIDAYS', 'Classic Serif', 'Cinzel', 0)`);
+    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('design-emerald-alpine', 'Alpine Emerald Clean', 'emerald_alpine', '#059669', '#064e3b', 'KINGSLAND HOLIDAYS', 'Split Minimal', 'Inter', 0)`);
+
+    // Ensure existing rows get vibrant theme colors
+    execSql(`UPDATE pdf_designs SET primary_color = '#d4af37', secondary_color = '#1e1b18', font_family = 'Playfair Display', theme_preset = 'royal_gold' WHERE LOWER(title) LIKE '%royal heritage%' OR (LOWER(title) LIKE '%gold%' AND LOWER(title) NOT LIKE '%burgundy%')`);
+    execSql(`UPDATE pdf_designs SET primary_color = '#e11d48', secondary_color = '#881337', font_family = 'Cinzel', theme_preset = 'royal_burgundy' WHERE LOWER(title) LIKE '%burgundy%'`);
+    execSql(`UPDATE pdf_designs SET primary_color = '#059669', secondary_color = '#064e3b', font_family = 'Inter', theme_preset = 'emerald_alpine' WHERE LOWER(title) LIKE '%emerald%' OR LOWER(title) LIKE '%alpine%'`);
   } catch (_e) {}
 
   // Seed default agency settings
@@ -228,6 +235,7 @@ export function initializeDatabase(): void {
     execSql(`INSERT OR IGNORE INTO agency_settings (id, company_name, tagline, phone, email, website, default_gst_percent, place_of_supply)
       VALUES ('default_agency_settings', 'Kingsland Holidays', 'Desire to travel', '+91 6376983416', 'support@kingslandholiday.com', 'kingslandholiday.com', 5.0, 'Rajasthan (08)')`);
   } catch (_e) {}
+
 
   // Clean up any legacy demo users from past seeds
   try {

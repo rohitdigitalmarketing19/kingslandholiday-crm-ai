@@ -244,6 +244,46 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [isSavingInstallments, setIsSavingInstallments] = useState(false);
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
+  // PDF Designs & Template Styling State
+  const [pdfDesigns, setPdfDesigns] = useState<any[]>([]);
+  const [selectedDesign, setSelectedDesign] = useState<any>(null);
+
+  useEffect(() => {
+    api.fetchPdfDesigns().then((designs) => {
+      if (Array.isArray(designs) && designs.length > 0) {
+        setPdfDesigns(designs);
+        const active = designs.find((d: any) => d.is_active === 1) || designs[0];
+        setSelectedDesign(active);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const designColors = useMemo(() => {
+    if (!selectedDesign) {
+      return {
+        primary: '#3A6EA5',
+        secondary: '#12233D',
+        textPrimary: '#12233D',
+        fontFamily: "'IBM Plex Serif', Georgia, serif",
+        watermark: 'KINGSLAND HOLIDAYS',
+        bannerUrl: '',
+        stampUrl: ''
+      };
+    }
+    const primary = selectedDesign.primary_color || '#3A6EA5';
+    const secondary = selectedDesign.secondary_color || '#12233D';
+    const font = selectedDesign.font_family || 'IBM Plex Serif';
+    return {
+      primary,
+      secondary,
+      textPrimary: secondary,
+      fontFamily: font.includes('serif') || font.includes('Sans') || font.includes('Display') || font.includes('Outfit') ? `'${font}', serif` : `'${font}', sans-serif`,
+      watermark: selectedDesign.watermark_text || 'KINGSLAND HOLIDAYS',
+      bannerUrl: selectedDesign.header_banner_url || '',
+      stampUrl: selectedDesign.agency_stamp_url || ''
+    };
+  }, [selectedDesign]);
+
   useEffect(() => {
     if (lead?.id) {
       api.fetchLeadInstallments(lead.id).then((instData) => {
@@ -271,6 +311,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       api.fetchPaymentSettings().then(setPaymentSettings);
     }
   }, [lead?.id, currentQuote?.finalSellingPrice]);
+
 
   const handlePresetEMISchedule = (ratio: '30-40-30' | '50-50') => {
     const pkgPrice = currentQuote?.finalSellingPrice || 50000;
@@ -873,7 +914,28 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {pdfDesigns.length > 0 && (
+            <div className="flex items-center gap-2 bg-slate-100 px-3.5 py-2.5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-xs">🎨</span>
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Design:</span>
+              <select
+                value={selectedDesign?.id || ''}
+                onChange={(e) => {
+                  const found = pdfDesigns.find(d => d.id === e.target.value);
+                  if (found) setSelectedDesign(found);
+                }}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+              >
+                {pdfDesigns.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.title} {d.is_active === 1 ? '★ Active' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {!isReadOnly && onDeleteLead && (
             <button
               type="button"
@@ -892,6 +954,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             onClick={handleDownloadPDF} 
             disabled={isDownloading || !currentQuote}
             className="px-6 py-3.5 bg-[#12233D] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50"
+            style={{ backgroundColor: designColors.secondary }}
           >
             {isDownloading ? (
               <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -1523,67 +1586,93 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        </div>
                     </div>
 
-                   <div className="doc-preview-protected bg-white rounded-2xl p-8 md:p-12 border border-slate-200 shadow-xl space-y-8" style={{ fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+                   <div
+                     ref={printRef}
+                     className="doc-preview-protected bg-white rounded-2xl p-8 md:p-12 border shadow-xl space-y-8 relative overflow-hidden"
+                     style={{
+                       borderColor: designColors.primary + '40',
+                       fontFamily: designColors.fontFamily || "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+                     }}
+                   >
+                     {/* Watermark Overlay */}
+                     {designColors.watermark && (
+                       <div
+                         className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none text-[60px] md:text-[80px] font-black uppercase tracking-[16px] rotate-[-28deg] z-0"
+                         style={{ color: designColors.secondary }}
+                       >
+                         {designColors.watermark}
+                       </div>
+                     )}
+
+                     {/* Optional Custom Header Banner */}
+                     {designColors.bannerUrl && (
+                       <div className="w-full h-32 rounded-xl overflow-hidden mb-4 border border-slate-200 avoid-page-break relative z-10">
+                         <img src={designColors.bannerUrl} alt="Header Banner" className="w-full h-full object-cover" />
+                       </div>
+                     )}
                      
                      {/* Letterhead */}
-                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b-[3px] border-[#12233D] gap-4 avoid-page-break">
+                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b-[3px] gap-4 avoid-page-break relative z-10" style={{ borderColor: designColors.secondary }}>
                        <div>
-                         <h2 className="text-2xl sm:text-3xl font-black text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>Kingsland Holidays</h2>
-                         <p className="text-[10px] tracking-[2px] uppercase text-[#5c7291] font-semibold mt-1">Registered Tour Operator · North India Journeys</p>
+                         <h2 className="text-2xl sm:text-3xl font-black" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>Kingsland Holidays</h2>
+                         <p className="text-[10px] tracking-[2px] uppercase font-semibold mt-1" style={{ color: designColors.primary }}>Registered Tour Operator · North India & International Journeys</p>
                        </div>
                        <div className="sm:text-right">
-                         <span className="text-xs font-bold tracking-[2px] uppercase text-[#3A6EA5] block">Travel Quotation</span>
-                         <span className="text-xs text-[#5c7291] mt-1 block">Ref. No. {lead.tripId} · {currentQuote.packageTitle || lead.destination}</span>
+                         <span className="text-xs font-bold tracking-[2px] uppercase block" style={{ color: designColors.primary }}>Travel Quotation</span>
+                         <span className="text-xs text-slate-500 mt-1 block">Ref. No. {lead.tripId} · {currentQuote.packageTitle || lead.destination}</span>
+                         {selectedDesign && (
+                           <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-slate-100 text-slate-600 inline-block mt-1">Theme: {selectedDesign.title}</span>
+                         )}
                        </div>
                      </div>
 
                      {/* Meta Strip */}
-                     <div className="grid grid-cols-2 md:grid-cols-4 border border-[#D7E0EA] rounded-xl overflow-hidden divide-y md:divide-y-0 md:divide-x divide-[#D7E0EA] bg-[#F9FBFC]/50">
+                     <div className="grid grid-cols-2 md:grid-cols-4 border rounded-xl overflow-hidden divide-y md:divide-y-0 md:divide-x bg-[#F9FBFC]/70 relative z-10" style={{ borderColor: designColors.primary + '30' }}>
                        <div className="p-4">
-                         <span className="text-[9px] tracking-wider uppercase text-[#5c7291] block font-bold">Prepared For</span>
-                         <span className="text-sm font-bold text-[#12233D] block mt-1" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>{lead.name}</span>
+                         <span className="text-[9px] tracking-wider uppercase block font-bold text-slate-500">Prepared For</span>
+                         <span className="text-sm font-bold block mt-1" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>{lead.name}</span>
                        </div>
                        <div className="p-4">
-                         <span className="text-[9px] tracking-wider uppercase text-[#5c7291] block font-bold">Package</span>
-                         <span className="text-sm font-bold text-[#12233D] block mt-1" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>{currentQuote.packageTitle || lead.destination}</span>
+                         <span className="text-[9px] tracking-wider uppercase block font-bold text-slate-500">Package</span>
+                         <span className="text-sm font-bold block mt-1" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>{currentQuote.packageTitle || lead.destination}</span>
                        </div>
                        <div className="p-4">
-                         <span className="text-[9px] tracking-wider uppercase text-[#5c7291] block font-bold">Duration</span>
-                         <span className="text-sm font-bold text-[#12233D] block mt-1" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                         <span className="text-[9px] tracking-wider uppercase block font-bold text-slate-500">Duration</span>
+                         <span className="text-sm font-bold block mt-1" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            {currentQuote.nights || (lead.durationDays ? lead.durationDays - 1 : 6)}N / {currentQuote.itinerary?.length || lead.durationDays || 7}D
                          </span>
                        </div>
                        <div className="p-4">
-                         <span className="text-[9px] tracking-wider uppercase text-[#5c7291] block font-bold">Services</span>
-                         <span className="text-sm font-bold text-[#12233D] block mt-1" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                         <span className="text-[9px] tracking-wider uppercase block font-bold text-slate-500">Services</span>
+                         <span className="text-sm font-bold block mt-1" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            Cab, Hotel, Sightseeing{lead.includeFlight === 'Yes' ? ', Flight' : ''}
                          </span>
                        </div>
                      </div>
 
                      {/* Greeting Line */}
-                     <p className="text-sm text-slate-700 leading-relaxed">
-                       Dear <strong className="text-[#12233D]">{lead.name}</strong>, thank you for considering Kingsland Holidays. Please find below our detailed quotation for your requested itinerary.
+                     <p className="text-sm text-slate-700 leading-relaxed relative z-10">
+                       Dear <strong style={{ color: designColors.secondary }}>{lead.name}</strong>, thank you for considering Kingsland Holidays. Please find below our detailed quotation for your requested itinerary.
                      </p>
 
                      {/* Quotebox (Quoted Package Price Hero) */}
-                      <div className="border-2 border-[#12233D] rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-sm avoid-page-break">
+                      <div className="border-2 rounded-2xl overflow-hidden flex flex-col md:flex-row shadow-sm avoid-page-break relative z-10" style={{ borderColor: designColors.secondary }}>
                         <div className="p-5 md:p-6 flex-1 bg-white flex flex-col justify-center">
-                          <span className="text-[10px] tracking-[2px] uppercase text-[#5c7291] font-bold block mb-1">Quoted Package Price</span>
-                          <h3 className="text-xl sm:text-2xl font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                          <span className="text-[10px] tracking-[2px] uppercase font-bold block mb-1" style={{ color: designColors.primary }}>Quoted Package Price</span>
+                          <h3 className="text-xl sm:text-2xl font-bold" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                             {currentQuote.packageTitle || `${lead.destination} Trip Package`}
                           </h3>
-                          <p className="text-xs text-[#5c7291] mt-2 font-medium">
+                          <p className="text-xs text-slate-500 mt-2 font-medium">
                             {lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''} · Private Vehicle & Handpicked Stays
                           </p>
                         </div>
-                        <div className="bg-[#12233D] text-white p-4 md:p-5 flex flex-col items-center justify-center text-center md:min-w-[220px]">
+                        <div className="text-white p-4 md:p-5 flex flex-col items-center justify-center text-center md:min-w-[220px]" style={{ backgroundColor: designColors.secondary }}>
                           {pricingData.discount > 0 ? (
                             <div className="w-full">
-                              <span className="inline-block bg-[#3A6EA5] text-white text-[9px] font-extrabold tracking-wider px-3 py-1 rounded mb-1.5">
+                              <span className="inline-block text-white text-[9px] font-extrabold tracking-wider px-3 py-1 rounded mb-1.5" style={{ backgroundColor: designColors.primary }}>
                                 {pricingData.discount}% DISCOUNT APPLIED
                               </span>
-                              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-none" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-none" style={{ fontFamily: designColors.fontFamily }}>
                                 ₹{pricingData.finalPrice.toLocaleString()}
                               </div>
                               <div className="text-xs text-slate-300 line-through mt-1.5 leading-tight">
@@ -1592,10 +1681,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             </div>
                           ) : (
                             <div className="w-full">
-                              <span className="inline-block bg-[#3A6EA5] text-white text-[9px] font-extrabold tracking-wider px-3 py-1 rounded mb-1.5">
+                              <span className="inline-block text-white text-[9px] font-extrabold tracking-wider px-3 py-1 rounded mb-1.5" style={{ backgroundColor: designColors.primary }}>
                                 ALL-INCLUSIVE QUOTE
                               </span>
-                              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-none" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                              <div className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-none" style={{ fontFamily: designColors.fontFamily }}>
                                 ₹{pricingData.finalPrice.toLocaleString()}
                               </div>
                             </div>
@@ -1604,33 +1693,33 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       </div>
 
                      {/* Trust Strip */}
-                     <div className="grid grid-cols-2 md:grid-cols-4 border border-[#D7E0EA] rounded-xl bg-[#F4F7FA] divide-y md:divide-y-0 md:divide-x divide-[#D7E0EA] text-center avoid-page-break">
+                     <div className="grid grid-cols-2 md:grid-cols-4 border rounded-xl bg-[#F4F7FA] divide-y md:divide-y-0 md:divide-x text-center avoid-page-break relative z-10" style={{ borderColor: designColors.primary + '30' }}>
                        <div className="p-4">
-                         <div className="text-lg font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>12,000+</div>
-                         <div className="text-[9px] tracking-wider uppercase text-[#5c7291] font-semibold mt-0.5">Trips Delivered</div>
+                         <div className="text-lg font-bold" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>12,000+</div>
+                         <div className="text-[9px] tracking-wider uppercase text-slate-500 font-semibold mt-0.5">Trips Delivered</div>
                        </div>
                        <div className="p-4">
-                         <div className="text-lg font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>4.8/5</div>
-                         <div className="text-[9px] tracking-wider uppercase text-[#5c7291] font-semibold mt-0.5">2,140+ Reviews</div>
+                         <div className="text-lg font-bold" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>4.8/5</div>
+                         <div className="text-[9px] tracking-wider uppercase text-slate-500 font-semibold mt-0.5">2,140+ Reviews</div>
                        </div>
                        <div className="p-4">
-                         <div className="text-lg font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>98%</div>
-                         <div className="text-[9px] tracking-wider uppercase text-[#5c7291] font-semibold mt-0.5">Super Reviews</div>
+                         <div className="text-lg font-bold" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>98%</div>
+                         <div className="text-[9px] tracking-wider uppercase text-slate-500 font-semibold mt-0.5">Super Reviews</div>
                        </div>
                        <div className="p-4">
-                         <div className="text-lg font-bold text-[#12233D]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>11 Yrs</div>
-                         <div className="text-[9px] tracking-wider uppercase text-[#5c7291] font-semibold mt-0.5">In Operation</div>
+                         <div className="text-lg font-bold" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>11 Yrs</div>
+                         <div className="text-[9px] tracking-wider uppercase text-slate-500 font-semibold mt-0.5">In Operation</div>
                        </div>
                      </div>
 
                      {/* Accommodation Schedule */}
                      {currentQuote.hotels && currentQuote.hotels.length > 0 && (
-                       <div className="space-y-4 avoid-page-break">
-                         <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                       <div className="space-y-4 avoid-page-break relative z-10">
+                         <h4 className="text-base font-bold uppercase tracking-wider pb-2 border-b" style={{ color: designColors.secondary, borderColor: designColors.primary + '40', fontFamily: designColors.fontFamily }}>
                            Accommodation Schedule
                          </h4>
-                         <div className="border border-[#D7E0EA] rounded-xl overflow-hidden shadow-sm">
-                           <div className="hidden sm:grid grid-cols-12 bg-[#12233D] text-white text-[10px] tracking-wider uppercase font-bold px-5 py-3">
+                         <div className="border rounded-xl overflow-hidden shadow-sm" style={{ borderColor: designColors.primary + '30' }}>
+                           <div className="hidden sm:grid grid-cols-12 text-white text-[10px] tracking-wider uppercase font-bold px-5 py-3" style={{ backgroundColor: designColors.secondary }}>
                              <div className="col-span-2">Night</div>
                              <div className="col-span-3">Region / City</div>
                              <div className="col-span-4">Hotel Property</div>
@@ -1641,11 +1730,11 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                const nightStr = (hotel.selectedNightIndices || []).map(n => n + 1).join(' & ');
                                return (
                                  <div key={hIdx} className={`p-4 sm:px-5 sm:py-3.5 grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-0 items-center text-xs ${hIdx % 2 === 1 ? 'bg-[#F9FBFC]' : 'bg-white'}`}>
-                                   <div className="sm:col-span-2 font-bold text-[#12233D]">Night {nightStr || hIdx + 1}</div>
-                                   <div className="sm:col-span-3 text-[#5c7291] font-medium">{hotel.city || lead.destination}</div>
+                                   <div className="sm:col-span-2 font-bold" style={{ color: designColors.secondary }}>Night {nightStr || hIdx + 1}</div>
+                                   <div className="sm:col-span-3 text-slate-500 font-medium">{hotel.city || lead.destination}</div>
                                    <div className="sm:col-span-4">
-                                     <span className="font-bold text-[#12233D] block">{hotel.hotelName || 'Selected Property'}</span>
-                                     <span className="text-[10px] text-[#3A6EA5] font-semibold">{hotel.category || '4 Star'}</span>
+                                     <span className="font-bold block" style={{ color: designColors.secondary }}>{hotel.hotelName || 'Selected Property'}</span>
+                                     <span className="text-[10px] font-semibold" style={{ color: designColors.primary }}>{hotel.category || '4 Star'}</span>
                                      {hotel.comments && (
                                        <span className="block text-[11px] text-amber-700 font-medium mt-0.5">
                                          ✨ {hotel.comments}
@@ -1666,18 +1755,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                      {/* Day-Wise Itinerary */}
                      {currentQuote.itinerary && currentQuote.itinerary.length > 0 && (
-                       <div className="space-y-4">
-                         <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                       <div className="space-y-4 relative z-10">
+                         <h4 className="text-base font-bold uppercase tracking-wider pb-2 border-b" style={{ color: designColors.secondary, borderColor: designColors.primary + '40', fontFamily: designColors.fontFamily }}>
                            Day-Wise Itinerary
                          </h4>
                          <div className="space-y-4">
                            {currentQuote.itinerary.map((day, dIdx) => (
                              <div key={dIdx} className="flex gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-all avoid-page-break">
-                               <div className="shrink-0 w-16 text-[#3A6EA5] font-bold text-sm" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                               <div className="shrink-0 w-16 font-bold text-sm" style={{ color: designColors.primary, fontFamily: designColors.fontFamily }}>
                                  Day {String(day.day || dIdx + 1).padStart(2, '0')}
                                </div>
                                <div className="space-y-1">
-                                 <h5 className="text-sm font-bold text-[#12233D]">
+                                 <h5 className="text-sm font-bold" style={{ color: designColors.secondary }}>
                                    {getCleanDayTitle(day, dIdx, currentQuote.itinerary.length, lead.destination)}
                                  </h5>
                                  <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{day.description}</p>
@@ -1689,21 +1778,21 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      )}
 
                      {/* Testimonial Quote */}
-                     <div className="bg-[#F4F7FA] border-l-4 border-[#3A6EA5] p-5 rounded-r-xl text-xs italic text-slate-700 avoid-page-break">
+                     <div className="bg-[#F4F7FA] border-l-4 p-5 rounded-r-xl text-xs italic text-slate-700 avoid-page-break relative z-10" style={{ borderColor: designColors.primary }}>
                        “Every hotel, cab and guide was exactly as promised — Kingsland made our trip effortless and truly memorable.”
-                       <div className="mt-2 font-bold not-italic text-[10px] text-[#5c7291]">
+                       <div className="mt-2 font-bold not-italic text-[10px] text-slate-500">
                          — Verified Client Review · Kingsland Holidays
                       </div>
                      </div>
 
                      {/* Inclusions & Exclusions */}
-                     <div className="space-y-4 avoid-page-break">
-                       <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                     <div className="space-y-4 avoid-page-break relative z-10">
+                       <h4 className="text-base font-bold uppercase tracking-wider pb-2 border-b" style={{ color: designColors.secondary, borderColor: designColors.primary + '40', fontFamily: designColors.fontFamily }}>
                          Inclusions & Exclusions
                        </h4>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                         <div className="border border-[#D7E0EA] rounded-xl p-5 bg-white space-y-3">
-                           <h5 className="text-xs font-bold uppercase tracking-wider text-[#12233D]">INCLUDED</h5>
+                         <div className="border rounded-xl p-5 bg-white space-y-3" style={{ borderColor: designColors.primary + '30' }}>
+                           <h5 className="text-xs font-bold uppercase tracking-wider" style={{ color: designColors.secondary }}>INCLUDED</h5>
                            <ul className="space-y-2 text-xs text-slate-700">
                              <li><span className="text-emerald-600 font-bold mr-1.5">✓</span> {getAccommodationInclusion(currentQuote)}</li>
                              <li><span className="text-emerald-600 font-bold mr-1.5">✓</span> {getMealInclusion(currentQuote)}</li>
@@ -1715,8 +1804,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                              ))}
                            </ul>
                          </div>
-                         <div className="border border-[#D7E0EA] rounded-xl p-5 bg-white space-y-3">
-                           <h5 className="text-xs font-bold uppercase tracking-wider text-[#12233D]">EXCLUDED</h5>
+                         <div className="border rounded-xl p-5 bg-white space-y-3" style={{ borderColor: designColors.primary + '30' }}>
+                           <h5 className="text-xs font-bold uppercase tracking-wider" style={{ color: designColors.secondary }}>EXCLUDED</h5>
                            <ul className="space-y-2 text-xs text-slate-700">
                              <li><span className="text-rose-600 font-bold mr-1.5">✕</span> Personal Expenses (Laundry, Drinks, Tips)</li>
                              <li><span className="text-rose-600 font-bold mr-1.5">✕</span> Optional Tours & Activities</li>
@@ -1730,58 +1819,58 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                      {/* Guarantee Strip */}
-                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 avoid-page-break">
-                       <div className="border border-[#D7E0EA] rounded-xl p-4 text-center bg-[#F4F7FA]">
-                         <div className="text-xs font-bold text-[#12233D]">Best Price Guarantee</div>
-                         <div className="text-[10px] text-[#5c7291] mt-0.5">We'll match a lower quote</div>
+                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 avoid-page-break relative z-10">
+                       <div className="border rounded-xl p-4 text-center bg-[#F4F7FA]" style={{ borderColor: designColors.primary + '30' }}>
+                         <div className="text-xs font-bold" style={{ color: designColors.secondary }}>Best Price Guarantee</div>
+                         <div className="text-[10px] text-slate-500 mt-0.5">We'll match a lower quote</div>
                        </div>
-                       <div className="border border-[#D7E0EA] rounded-xl p-4 text-center bg-[#F4F7FA]">
-                         <div className="text-xs font-bold text-[#12233D]">Free Cancellation</div>
-                         <div className="text-[10px] text-[#5c7291] mt-0.5">Free cancellation up to 30 days before travel</div>
+                       <div className="border rounded-xl p-4 text-center bg-[#F4F7FA]" style={{ borderColor: designColors.primary + '30' }}>
+                         <div className="text-xs font-bold" style={{ color: designColors.secondary }}>Free Cancellation</div>
+                         <div className="text-[10px] text-slate-500 mt-0.5">Free cancellation up to 30 days before travel</div>
                        </div>
-                       <div className="border border-[#D7E0EA] rounded-xl p-4 text-center bg-[#F4F7FA]">
-                         <div className="text-xs font-bold text-[#12233D]">Secure Payments</div>
-                         <div className="text-[10px] text-[#5c7291] mt-0.5">Secure payments via UPI, Cards & Net Banking</div>
+                       <div className="border rounded-xl p-4 text-center bg-[#F4F7FA]" style={{ borderColor: designColors.primary + '30' }}>
+                         <div className="text-xs font-bold" style={{ color: designColors.secondary }}>Secure Payments</div>
+                         <div className="text-[10px] text-slate-500 mt-0.5">Secure payments via UPI, Cards & Net Banking</div>
                        </div>
                      </div>
 
                      {/* Terms & Cancellation Policy */}
-                     <div className="space-y-4 avoid-page-break">
-                       <h4 className="text-base font-bold uppercase tracking-wider text-[#12233D] pb-2 border-b border-[#D7E0EA]" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                     <div className="space-y-4 avoid-page-break relative z-10">
+                       <h4 className="text-base font-bold uppercase tracking-wider pb-2 border-b" style={{ color: designColors.secondary, borderColor: designColors.primary + '40', fontFamily: designColors.fontFamily }}>
                          Terms & Cancellation Policy
                        </h4>
                        <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={false} />
                      </div>
 
                      {/* Hotel Partners & Travel Partners */}
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 avoid-page-break">
-                       <div className="border border-[#D7E0EA] rounded-xl p-4 bg-[#F9FBFC]">
-                         <span className="text-[10px] font-bold tracking-wider uppercase text-[#12233D] block mb-3" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 avoid-page-break relative z-10">
+                       <div className="border rounded-xl p-4 bg-[#F9FBFC]" style={{ borderColor: designColors.primary + '30' }}>
+                         <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            Our Hotel Partner Network
                          </span>
                          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">Taj Hotels</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">Oberoi</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">ITC Hotels</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">Radisson</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">The Leela</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">Marriott</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Taj Hotels</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Oberoi</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>ITC Hotels</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Radisson</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>The Leela</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Marriott</div>
                          </div>
                        </div>
-                       <div className="border border-[#D7E0EA] rounded-xl p-4 bg-[#F9FBFC]">
-                         <span className="text-[10px] font-bold tracking-wider uppercase text-[#12233D] block mb-3" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif" }}>
+                       <div className="border rounded-xl p-4 bg-[#F9FBFC]" style={{ borderColor: designColors.primary + '30' }}>
+                         <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            Working With Travel Partners
                          </span>
                          <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">MakeMyTrip</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">TravelTriangle</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold text-[#12233D]">TripAdvisor</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>MakeMyTrip</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>TravelTriangle</div>
+                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>TripAdvisor</div>
                          </div>
                        </div>
                      </div>
 
                      {/* Footer Banner */}
-                     <div className="bg-[#12233D] text-white p-5 rounded-xl flex flex-col sm:flex-row justify-between items-center text-xs gap-3">
+                     <div className="text-white p-5 rounded-xl flex flex-col sm:flex-row justify-between items-center text-xs gap-3 relative z-10 shadow-md" style={{ backgroundColor: designColors.secondary }}>
                        <div>
                          <span className="text-slate-300">Trip Advisor:</span> <strong>{agentName}</strong> · Senior Trip Advisor
                        </div>
@@ -1791,6 +1880,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                    </div>
+
                  </div>
                ) : (
                  <div className="py-32 flex flex-col items-center justify-center text-center px-12 bg-white rounded-2xl border border-dashed border-slate-200">

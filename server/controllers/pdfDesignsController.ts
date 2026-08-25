@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { queryAll, queryOne, runQuery } from '../db/connection';
 
+const DESIGN_COLUMNS = `id, title, page_count, field_mappings, theme_preset, primary_color, secondary_color, header_banner_url, agency_stamp_url, signature_url, watermark_text, font_family, cover_style, is_active, created_at`;
+
 export function getAllPdfDesigns() {
-  return queryAll(`SELECT id, title, page_count, field_mappings, is_active, created_at FROM pdf_designs ORDER BY is_active DESC, created_at DESC`);
+  return queryAll(`SELECT ${DESIGN_COLUMNS} FROM pdf_designs ORDER BY is_active DESC, created_at DESC`);
 }
 
 export function getActivePdfDesign() {
@@ -52,14 +54,14 @@ export function savePdfDesign(data: {
         data.pdf_file_data || '',
         data.page_count || 0,
         data.field_mappings || '[]',
-        data.theme_preset || 'minimal_dark',
-        data.primary_color || '#c6f135',
-        data.secondary_color || '#161713',
+        data.theme_preset || 'royal_gold',
+        data.primary_color || '#d4af37',
+        data.secondary_color || '#1e1b18',
         data.header_banner_url || '',
         data.agency_stamp_url || '',
         data.signature_url || '',
         data.watermark_text || 'KINGSLAND HOLIDAYS',
-        data.font_family || 'Inter',
+        data.font_family || 'Playfair Display',
         data.cover_style || 'Modern Grid',
         isActive,
         id
@@ -75,14 +77,14 @@ export function savePdfDesign(data: {
         data.pdf_file_data || '',
         data.page_count || 0,
         data.field_mappings || '[]',
-        data.theme_preset || 'minimal_dark',
-        data.primary_color || '#c6f135',
-        data.secondary_color || '#161713',
+        data.theme_preset || 'royal_gold',
+        data.primary_color || '#d4af37',
+        data.secondary_color || '#1e1b18',
         data.header_banner_url || '',
         data.agency_stamp_url || '',
         data.signature_url || '',
         data.watermark_text || 'KINGSLAND HOLIDAYS',
-        data.font_family || 'Inter',
+        data.font_family || 'Playfair Display',
         data.cover_style || 'Modern Grid',
         isActive,
         now
@@ -90,27 +92,27 @@ export function savePdfDesign(data: {
     );
   }
 
-  // Return without pdf_file_data (too large for list response)
-  return queryOne(`SELECT id, title, page_count, field_mappings, is_active, created_at FROM pdf_designs WHERE id = ?`, [id]);
+  return queryOne(`SELECT ${DESIGN_COLUMNS} FROM pdf_designs WHERE id = ?`, [id]);
 }
 
 export function updateFieldMappings(id: string, fieldMappings: string) {
   runQuery(`UPDATE pdf_designs SET field_mappings = ? WHERE id = ?`, [fieldMappings, id]);
-  return queryOne(`SELECT id, title, page_count, field_mappings, is_active, created_at FROM pdf_designs WHERE id = ?`, [id]);
+  return queryOne(`SELECT ${DESIGN_COLUMNS} FROM pdf_designs WHERE id = ?`, [id]);
 }
 
 export function setActivePdfDesign(id: string) {
   runQuery(`UPDATE pdf_designs SET is_active = 0`);
   runQuery(`UPDATE pdf_designs SET is_active = 1 WHERE id = ?`, [id]);
-  return queryOne(`SELECT id, title, page_count, field_mappings, is_active, created_at FROM pdf_designs WHERE id = ?`, [id]);
+  return queryOne(`SELECT ${DESIGN_COLUMNS} FROM pdf_designs WHERE id = ?`, [id]);
 }
 
 export function deactivatePdfDesign(id: string) {
   runQuery(`UPDATE pdf_designs SET is_active = 0 WHERE id = ?`, [id]);
-  return queryOne(`SELECT id, title, page_count, field_mappings, is_active, created_at FROM pdf_designs WHERE id = ?`, [id]);
+  return queryOne(`SELECT ${DESIGN_COLUMNS} FROM pdf_designs WHERE id = ?`, [id]);
 }
 
 export function deletePdfDesign(id: string) {
   runQuery(`DELETE FROM pdf_designs WHERE id = ?`, [id]);
   return { success: true, id };
 }
+
