@@ -15,6 +15,7 @@ import FollowUpsView from './components/FollowUpsView';
 import { AccountsView } from './components/AccountsView';
 import { HotelVouchersView } from './components/HotelVouchersView';
 import { UserManagementView } from './components/UserManagementView';
+import SalesDeskView from './components/SalesDeskView';
 import MastersView from './components/MastersView';
 import PdfDesignsView from './components/PdfDesignsView';
 import SettingsView from './components/SettingsView';
@@ -55,7 +56,13 @@ import {
   Database,
   Palette,
   Settings,
-  Calendar
+  Calendar,
+  Users2,
+  Camera,
+  Upload,
+  Edit2,
+  Phone,
+  Mail
 } from 'lucide-react';
 
 // NavItem props
@@ -172,6 +179,7 @@ const App: React.FC = () => {
       'Accounts',
       'Analytics',
       'Sales Team',
+      'Sales Desk',
       'User Management'
     ],
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -211,7 +219,7 @@ const App: React.FC = () => {
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
-    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings'
+    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings'
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
@@ -220,7 +228,7 @@ const App: React.FC = () => {
     return 'Dashboard';
   });
 
-  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings') => {
+  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings') => {
     setViewState(newView);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kingsland_active_view', newView);
@@ -485,9 +493,48 @@ const App: React.FC = () => {
   const [previewAnalysis, setPreviewAnalysis] = useState<Partial<Lead> | null>(null);
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
+  const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentFormData, setAgentFormData] = useState({
-    name: '', specialty: ''
+    name: '',
+    specialty: '',
+    avatar: '',
+    phone: '',
+    email: '',
   });
+
+  const openAddAgentModal = () => {
+    if (currentUser.role !== 'Admin') {
+      alert('🚫 Access Restricted: Only Administrators can add sales representatives.');
+      return;
+    }
+    if (currentUser.accessLevel === 'ViewOnly') {
+      alert('🚫 Access Restricted: Your account is in View-Only mode.');
+      return;
+    }
+    setEditingAgentId(null);
+    setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
+    setIsAddingAgent(true);
+  };
+
+  const openEditAgentModal = (agent: Agent) => {
+    if (currentUser.role !== 'Admin') {
+      alert('🚫 Access Restricted: Only Administrators can edit sales representatives.');
+      return;
+    }
+    if (currentUser.accessLevel === 'ViewOnly') {
+      alert('🚫 Access Restricted: Your account is in View-Only mode.');
+      return;
+    }
+    setEditingAgentId(agent.id);
+    setAgentFormData({
+      name: agent.name,
+      specialty: Array.isArray(agent.specialty) ? agent.specialty.join(', ') : '',
+      avatar: agent.avatar || '',
+      phone: agent.phone || '',
+      email: agent.email || '',
+    });
+    setIsAddingAgent(true);
+  };
 
   // ============================
   // DATA FETCHING
@@ -873,21 +920,66 @@ const App: React.FC = () => {
 
   const handleAddAgent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentUser.role !== 'Admin') {
+      alert('🚫 Access Restricted: Only Administrators can add or edit sales representatives.');
+      return;
+    }
+    if (currentUser.accessLevel === 'ViewOnly') {
+      alert('🚫 Access Restricted: Your account is set to View-Only mode.');
+      return;
+    }
+    if (!agentFormData.name.trim()) {
+      alert('Please enter the full name.');
+      return;
+    }
+    const specialtyArr = agentFormData.specialty
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
     try {
-      await api.createAgent({
-        name: agentFormData.name,
-        specialty: agentFormData.specialty.split(',').map(s => s.trim()),
-      });
-      await loadAgents(); // Refresh agents
-      setAgentFormData({ name: '', specialty: '' });
+      if (editingAgentId) {
+        await api.updateAgent(editingAgentId, {
+          name: agentFormData.name.trim(),
+          specialty: specialtyArr,
+          avatar: agentFormData.avatar,
+          phone: agentFormData.phone.trim(),
+          email: agentFormData.email.trim(),
+        });
+        showToast(`Sales representative "${agentFormData.name}" updated successfully!`, 'success');
+      } else {
+        const newAgent = await api.createAgent({
+          name: agentFormData.name.trim(),
+          specialty: specialtyArr,
+          avatar: agentFormData.avatar,
+          phone: agentFormData.phone.trim(),
+          email: agentFormData.email.trim(),
+        });
+        showToast(`Sales representative "${newAgent.name}" added successfully!`, 'success');
+        // Auto-select in current lead creation form
+        setFormData(prev => ({ ...prev, salesPersonId: newAgent.id }));
+      }
+      await loadAgents();
+      setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
+      setEditingAgentId(null);
       setIsAddingAgent(false);
-    } catch (err) {
-      console.error('Error adding agent:', err);
-      alert('Failed to add agent.');
+    } catch (err: any) {
+      console.error('Error saving agent:', err);
+      alert(err.message || 'Failed to save sales representative.');
     }
   };
 
   const handleDeleteAgent = async (id: string) => {
+    if (currentUser.role !== 'Admin') {
+      alert('🚫 Access Restricted: Only Administrators can remove sales representatives.');
+      setDeletingAgentId(null);
+      return;
+    }
+    if (currentUser.accessLevel === 'ViewOnly') {
+      alert('🚫 Access Restricted: Your account is set to View-Only mode.');
+      setDeletingAgentId(null);
+      return;
+    }
     try {
       await api.deleteAgent(id);
       await loadAgents(); // Refresh agents
@@ -1016,6 +1108,27 @@ const App: React.FC = () => {
                 active={view === 'Follow-ups'} 
                 onClick={() => { setView('Follow-ups'); setDashboardFilter(null); setSelectedAgentFilter(null); }}
                 count={leads.filter((l) => (l.status === 'Follow-up' || Boolean(l.followUpDate)) && !l.followUpCompleted).length}
+              />
+            )}
+
+            {/* Sales Desk */}
+            {hasAccess('Sales Desk') && (
+              <NavItem 
+                id="Sales Desk" 
+                icon={<Briefcase size={18} />} 
+                active={view === 'Sales Desk'} 
+                onClick={() => { setView('Sales Desk'); setDashboardFilter(null); setSelectedAgentFilter(null); }}
+              />
+            )}
+
+            {/* Sales Team */}
+            {(hasAccess('Sales Team') || hasAccess('Leads') || currentUser.role === 'Admin') && (
+              <NavItem 
+                id="Sales Team" 
+                icon={<Users2 size={18} />} 
+                active={view === 'Sales Team'} 
+                onClick={() => { setView('Sales Team'); setDashboardFilter(null); setSelectedAgentFilter(null); }}
+                count={agents.length}
               />
             )}
           </div>
@@ -1208,7 +1321,19 @@ const App: React.FC = () => {
           {/* Sales Experts List */}
           {!sidebarCollapsed && !hasAccess('Accounts') && (hasAccess('Leads') || hasAccess('Sales Team') || currentUser.role === 'Admin') && (
             <div className="space-y-2 mt-4 pt-4 border-t border-zinc-800/80">
-              <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-3">Sales Experts</p>
+              <div className="flex items-center justify-between px-3">
+                <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Sales Experts</p>
+                {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
+                  <button 
+                    onClick={() => openAddAgentModal()}
+                    className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 hover:underline cursor-pointer"
+                    title="Add new sales expert (Admin only)"
+                  >
+                    <Plus size={13} />
+                    <span>Add</span>
+                  </button>
+                )}
+              </div>
               <div className="space-y-0.5">
                 {agents.map((agent) => {
                   const isAgentActive = selectedAgentFilter === agent.id;
@@ -1675,7 +1800,19 @@ const App: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-2">Assigned Sales Representative</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[11px] font-medium text-slate-600">Assigned Sales Representative</label>
+                      {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
+                        <button
+                          type="button"
+                          onClick={() => openAddAgentModal()}
+                          className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline cursor-pointer"
+                        >
+                          <Plus size={13} />
+                          <span>Add New Representative</span>
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                        {agents.map(a => (
                          <button 
@@ -1688,10 +1825,33 @@ const App: React.FC = () => {
                                : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
                            }`}
                          >
-                           <img src={a.avatar} className="w-7 h-7 rounded-full object-cover shrink-0" alt={a.name} />
+                           {a.avatar ? (
+                             <img 
+                               src={a.avatar} 
+                               className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200" 
+                               alt={a.name}
+                               onError={(e) => {
+                                 (e.target as HTMLElement).style.display = 'none';
+                               }}
+                             />
+                           ) : (
+                             <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+                               {a.name.charAt(0).toUpperCase()}
+                             </div>
+                           )}
                            <span className="text-xs font-medium truncate">{a.name}</span>
                          </button>
                        ))}
+                       {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
+                         <button
+                           type="button"
+                           onClick={() => openAddAgentModal()}
+                           className="p-2.5 rounded-lg border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 text-slate-500 hover:text-indigo-600 transition-all flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer"
+                         >
+                           <Plus size={14} />
+                           <span>Add Person</span>
+                         </button>
+                       )}
                     </div>
                   </div>
 
@@ -1942,23 +2102,59 @@ const App: React.FC = () => {
               <div className="flex justify-between items-center pb-4 border-b border-slate-200">
                 <div>
                   <h2 className="text-xl font-semibold text-slate-800">Sales Representatives</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Manage sales team members, assigned destinations, and pipeline metrics.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Manage sales team members, assigned destinations, contact details, and pipeline metrics.</p>
                 </div>
-                <button onClick={() => setIsAddingAgent(true)} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer">
-                  <Plus size={14} />
-                  <span>Add Representative</span>
-                </button>
+                {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
+                  <button 
+                    onClick={() => openAddAgentModal()} 
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add Representative</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {agents.map(agent => (
                   <div key={agent.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <img src={agent.avatar} className="w-11 h-11 rounded-lg object-cover border border-slate-200" alt={agent.name} />
-                        <div>
-                          <h4 className="text-sm font-semibold text-slate-900">{agent.name}</h4>
-                          <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">Sales Expert</span>
+                      <div className="flex items-start gap-3 mb-3">
+                        {agent.avatar ? (
+                          <img 
+                            src={agent.avatar} 
+                            className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 shadow-2xs" 
+                            alt={agent.name}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 font-bold text-base flex items-center justify-center border border-indigo-200 shrink-0">
+                            {agent.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-sm font-semibold text-slate-900 truncate">{agent.name}</h4>
+                            <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 shrink-0">Sales Expert</span>
+                          </div>
+                          {(agent.phone || agent.email) && (
+                            <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                              {agent.phone && (
+                                <p className="flex items-center gap-1.5 truncate">
+                                  <Phone size={11} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{agent.phone}</span>
+                                </p>
+                              )}
+                              {agent.email && (
+                                <p className="flex items-center gap-1.5 truncate">
+                                  <Mail size={11} className="text-slate-400 shrink-0" />
+                                  <span className="truncate">{agent.email}</span>
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1966,11 +2162,15 @@ const App: React.FC = () => {
                         <div>
                           <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-1">Destinations</p>
                           <div className="flex flex-wrap gap-1">
-                            {agent.specialty.map(s => (
-                              <span key={s} className="px-2 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-200">
-                                {s}
-                              </span>
-                            ))}
+                            {agent.specialty && agent.specialty.length > 0 ? (
+                              agent.specialty.map(s => (
+                                <span key={s} className="px-2 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-200">
+                                  {s}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">All Destinations</span>
+                            )}
                           </div>
                         </div>
 
@@ -1988,16 +2188,60 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="pt-3 border-t border-slate-100 flex gap-2">
-                      <button onClick={() => { setView('Leads'); setSelectedAgentFilter(agent.id); }} className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-xs transition-colors cursor-pointer">
+                      <button 
+                        onClick={() => { setView('Leads'); setSelectedAgentFilter(agent.id); }} 
+                        className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-xs transition-colors cursor-pointer text-center"
+                      >
                         View Leads
                       </button>
-                      <button onClick={() => setDeletingAgentId(agent.id)} className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-medium text-xs transition-colors cursor-pointer">
-                        Remove
-                      </button>
+                      {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
+                        <>
+                          <button 
+                            onClick={() => openEditAgentModal(agent)} 
+                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1"
+                            title="Edit representative (Admin only)"
+                          >
+                            <Edit2 size={12} />
+                            <span>Edit</span>
+                          </button>
+                          <button 
+                            onClick={() => setDeletingAgentId(agent.id)} 
+                            className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-medium text-xs transition-colors cursor-pointer"
+                            title="Remove representative (Admin only)"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+          {view === 'Sales Desk' && (
+            <div className="animate-in fade-in duration-300">
+              <SalesDeskView
+                agents={agents}
+                leads={leads}
+                currentUser={currentUser}
+                onSelectLead={(lead) => setSelectedLead(lead)}
+                onViewProposal={(lead) => setProposalLead(lead)}
+                onNewQuote={(lead) => { setQuotingLead(lead); setEditQuoteId(null); }}
+                onUpdateLeadStatus={handleUpdateLeadStatus}
+                onReassignLead={async (leadId, agentId) => {
+                  try {
+                    await api.reassignLead(leadId, agentId);
+                    await loadLeads();
+                    showToast('Lead reassigned successfully!', 'success');
+                  } catch (err: any) {
+                    showToast(err.message || 'Failed to reassign lead', 'error');
+                  }
+                }}
+                onOpenAddAgent={() => openAddAgentModal()}
+                onOpenNewInquiry={() => setView('New Inquiry')}
+                isReadOnly={currentUser.accessLevel === 'ViewOnly'}
+              />
             </div>
           )}
           {view === 'User Management' && (
@@ -2034,45 +2278,196 @@ const App: React.FC = () => {
       {proposalLead && (<LeadProposalView lead={proposalLead} agentName={agents.find(a => a.id === proposalLead.assignedTo)?.name || 'Alex Thompson'} onClose={() => setProposalLead(null)} onUpdateStatus={handleUpdateLeadStatus} onAddNote={handleAddNote} onDeleteLead={handleDeleteLead} onEditQuote={(lead, qId) => { setQuotingLead(lead); setEditQuoteId(qId); setProposalLead(null); }} onNewQuote={(lead) => { setQuotingLead(lead); setEditQuoteId(null); setProposalLead(null); }} onDeleteQuote={(leadId, qId) => { handleDeleteQuote(leadId, qId); }} isReadOnly={currentUser.accessLevel === 'ViewOnly' || view === 'Accounts'} onUpdateLead={(updated) => { setProposalLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
       {selectedLead && (<LeadDetails lead={selectedLead} agentName={agents.find(a => a.id === selectedLead.assignedTo)?.name || ''} onClose={() => setSelectedLead(null)} onUpdateStatus={handleUpdateLeadStatus} onDeleteLead={handleDeleteLead} onUpdateLead={(updated) => { setSelectedLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
       {quotingLead && (<GiveQuoteView lead={quotingLead} allLeads={leads} editQuoteId={editQuoteId} onClose={() => { setQuotingLead(null); setEditQuoteId(null); }} onSave={handleSaveQuote} />)}
-      {/* ADD SALES AGENT MODAL */}
-      {isAddingAgent && (
+      {/* ADD / EDIT SALES AGENT MODAL */}
+      {isAddingAgent && currentUser.role === 'Admin' && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900">Add Sales Representative</h3>
-              <button onClick={() => setIsAddingAgent(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
-                <X size={15} />
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
+                  {editingAgentId ? 'Edit Sales Representative' : 'Add Sales Representative'}
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {editingAgentId ? 'Update representative details, photo, and assigned destinations.' : 'Add a new sales team member with photo and specialties.'}
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setIsAddingAgent(false);
+                  setEditingAgentId(null);
+                  setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
+                }} 
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleAddAgent} className="space-y-3.5">
+
+            <form onSubmit={handleAddAgent} className="space-y-4">
+              {/* Profile Photo Uploader */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+                  Profile Photo / Avatar
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    {agentFormData.avatar ? (
+                      <img 
+                        src={agentFormData.avatar} 
+                        alt="Preview" 
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500 shadow-sm"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-700 border-2 border-indigo-200 flex items-center justify-center font-bold text-xl">
+                        {agentFormData.name ? agentFormData.name.charAt(0).toUpperCase() : <Users2 size={24} className="text-indigo-400" />}
+                      </div>
+                    )}
+                    <label 
+                      htmlFor="agent-avatar-input" 
+                      className="absolute -bottom-1.5 -right-1.5 bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-full shadow-sm cursor-pointer transition-all"
+                      title="Upload photo"
+                    >
+                      <Camera size={12} />
+                    </label>
+                  </div>
+
+                  <div className="flex-1 space-y-1.5">
+                    <input 
+                      id="agent-avatar-input"
+                      type="file" 
+                      accept="image/png, image/jpeg, image/jpg, image/webp" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 4 * 1024 * 1024) {
+                            alert('Image size exceeds 4MB. Please select a smaller photo.');
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setAgentFormData(prev => ({ ...prev, avatar: reader.result as string }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    <div className="flex flex-wrap gap-1.5">
+                      <label 
+                        htmlFor="agent-avatar-input"
+                        className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                      >
+                        <Upload size={12} />
+                        <span>Upload Photo</span>
+                      </label>
+                      {agentFormData.avatar && (
+                        <button 
+                          type="button" 
+                          onClick={() => setAgentFormData(prev => ({ ...prev, avatar: '' }))}
+                          className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500">Supports PNG, JPG, WebP (up to 4MB)</p>
+                  </div>
+                </div>
+
+                {/* Optional Image URL Input */}
+                <div className="pt-1">
+                  <input 
+                    type="url"
+                    placeholder="Or paste image URL (https://...)"
+                    value={agentFormData.avatar.startsWith('data:') ? '' : agentFormData.avatar}
+                    onChange={(e) => setAgentFormData(prev => ({ ...prev, avatar: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+
+              {/* Full Name */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Full Name</label>
+                <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
                 <input 
                   type="text" 
                   required 
-                  placeholder="e.g. John Doe"
+                  placeholder="e.g. Rahul Sharma"
                   value={agentFormData.name} 
                   onChange={e => setAgentFormData({...agentFormData, name: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
                 />
               </div>
+
+              {/* Contact Information (Phone & Email) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-700 mb-1 flex items-center gap-1">
+                    <Phone size={11} className="text-slate-400" />
+                    <span>Phone / WhatsApp</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. +91 98765 43210"
+                    value={agentFormData.phone} 
+                    onChange={e => setAgentFormData({...agentFormData, phone: e.target.value})} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-700 mb-1 flex items-center gap-1">
+                    <Mail size={11} className="text-slate-400" />
+                    <span>Email Address</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    placeholder="e.g. rahul@kingsland.com"
+                    value={agentFormData.email} 
+                    onChange={e => setAgentFormData({...agentFormData, email: e.target.value})} 
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                  />
+                </div>
+              </div>
+
+              {/* Destinations / Specialties */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Destinations (Comma-separated)</label>
+                <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                  Assigned Destinations (Comma-separated)
+                </label>
                 <input 
                   type="text" 
-                  required 
-                  placeholder="e.g. Dubai, Bali, Thailand"
+                  placeholder="e.g. Dubai, Bali, Kashmir, Rajasthan, Thailand"
                   value={agentFormData.specialty} 
                   onChange={e => setAgentFormData({...agentFormData, specialty: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white" 
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
                 />
+                <p className="text-[10px] text-slate-400 mt-1">Separate multiple destinations with commas</p>
               </div>
-              <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setIsAddingAgent(false)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors">
+
+              {/* Form Buttons */}
+              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsAddingAgent(false);
+                    setEditingAgentId(null);
+                    setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
+                  }} 
+                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-lg transition-colors shadow-xs">
-                  Save
+                <button 
+                  type="submit" 
+                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-xl transition-colors shadow-sm hover:shadow cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Save size={13} />
+                  <span>{editingAgentId ? 'Update Representative' : 'Save Representative'}</span>
                 </button>
               </div>
             </form>

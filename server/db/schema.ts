@@ -3,7 +3,7 @@ import { execSql } from './connection';
 export function initializeDatabase(): void {
   // sql.js doesn't support multiple statements in one exec, so we split them
   const statements = [
-    `CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL DEFAULT '[]', avatar TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
+    `CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL DEFAULT '[]', avatar TEXT DEFAULT '', phone TEXT DEFAULT '', email TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS leads (id TEXT PRIMARY KEY, trip_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT DEFAULT '', email TEXT DEFAULT '', raw_inquiry TEXT DEFAULT '', summary TEXT DEFAULT '', score INTEGER DEFAULT 50, intent TEXT DEFAULT 'Information Seeking', destination TEXT DEFAULT '', budget_tier TEXT DEFAULT 'Mid', assigned_to TEXT DEFAULT '', source TEXT DEFAULT 'Website Form', status TEXT DEFAULT 'New', travel_date TEXT DEFAULT '', duration_days INTEGER DEFAULT 7, adults INTEGER DEFAULT 2, children INTEGER DEFAULT 0, child_ages TEXT DEFAULT '[]', other_info TEXT DEFAULT '', include_stay TEXT DEFAULT 'Yes', include_flight TEXT DEFAULT 'No', include_cab TEXT DEFAULT 'Yes', hotel_category TEXT DEFAULT '4/3 Star', english_driver INTEGER DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now')), last_follow_up TEXT NOT NULL DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS quotes (id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, package_title TEXT DEFAULT '', final_selling_price REAL DEFAULT 0, visa_cost REAL DEFAULT 0, flight_cost REAL DEFAULT 0, land_package_cost REAL DEFAULT 0, marketing_fees REAL DEFAULT 0, discount_percentage REAL DEFAULT 0, nights INTEGER DEFAULT 6, hotels_not_included INTEGER DEFAULT 0, flights_not_included INTEGER DEFAULT 0, cabs_not_included INTEGER DEFAULT 0, flight_details TEXT DEFAULT '', cab_details TEXT DEFAULT '', other_inclusions TEXT DEFAULT '', other_exclusions TEXT DEFAULT '', terms_and_conditions TEXT DEFAULT '', use_default_tc INTEGER DEFAULT 1, other_information TEXT DEFAULT '', working_agent_id TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE)`,
     `CREATE TABLE IF NOT EXISTS quote_hotels (id INTEGER PRIMARY KEY AUTOINCREMENT, quote_id TEXT NOT NULL, hotel_name TEXT DEFAULT '', city TEXT DEFAULT '', category TEXT DEFAULT '4 Star', room_type TEXT DEFAULT 'Standard Room', comments TEXT DEFAULT '', nights INTEGER DEFAULT 1, selected_night_indices TEXT DEFAULT '[]', sort_order INTEGER DEFAULT 0, FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE)`,
@@ -147,7 +147,9 @@ export function initializeDatabase(): void {
     `ALTER TABLE agency_settings ADD COLUMN smtp_from_name TEXT DEFAULT 'Kingsland Holidays'`,
     `ALTER TABLE pdf_designs ADD COLUMN pdf_file_data TEXT DEFAULT ''`,
     `ALTER TABLE pdf_designs ADD COLUMN page_count INTEGER DEFAULT 0`,
-    `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`
+    `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`,
+    `ALTER TABLE agents ADD COLUMN phone TEXT DEFAULT ''`,
+    `ALTER TABLE agents ADD COLUMN email TEXT DEFAULT ''`
   ];
 
   for (const mSql of migrations) {

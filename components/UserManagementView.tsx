@@ -33,6 +33,7 @@ interface UserManagementViewProps {
 
 const ALL_SECTIONS: { id: UserPermissionSection; label: string; desc: string; category: 'General' | 'Sales' | 'Operations' | 'Admin' }[] = [
   { id: 'Dashboard', label: 'Executive Dashboard', desc: 'KPI cards, monthly graphs, and overall business overview', category: 'General' },
+  { id: 'Sales Desk', label: 'Sales Desk', desc: 'Representative lead desk, assigned client pipeline, and quote actions', category: 'Sales' },
   { id: 'Leads', label: 'Leads Pipeline', desc: 'Manage lead cards, stages, statuses, and inquiry details', category: 'Sales' },
   { id: 'New Inquiry', label: 'Create New Inquiry', desc: 'Form to submit and parse new client travel inquiries', category: 'Sales' },
   { id: 'Follow-ups', label: 'Follow-ups & Reminders', desc: 'Scheduled client call logs, post-poned date filters, touchpoints', category: 'Sales' },
@@ -122,7 +123,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       department: 'Sales',
       status: 'Active',
       accessLevel: 'Editor',
-      permissions: ['Dashboard', 'Leads', 'New Inquiry', 'Follow-ups', 'Saved Itinerary', 'Analytics']
+      permissions: ['Dashboard', 'Sales Desk', 'Leads', 'New Inquiry', 'Follow-ups', 'Saved Itinerary', 'Analytics']
     });
     setErrorMsg('');
     setShowPassword(false);
@@ -252,7 +253,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
         newPermissions = ['Accounts', 'Invoices', 'Operations'];
         nextAccessLevel = 'ViewOnly';
       } else if (role === 'Sales') {
-        newPermissions = ['Dashboard', 'Leads', 'New Inquiry', 'Follow-ups', 'Saved Itinerary', 'Analytics'];
+        newPermissions = ['Dashboard', 'Sales Desk', 'Leads', 'New Inquiry', 'Follow-ups', 'Saved Itinerary', 'Analytics'];
         nextAccessLevel = 'Editor';
       } else {
         newPermissions = prev.permissions;

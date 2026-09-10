@@ -75,6 +75,7 @@ const ALL_PERMISSIONS = [
   'Invoices',
   'Analytics',
   'Sales Team',
+  'Sales Desk',
   'User Management'
 ];
 
@@ -83,6 +84,7 @@ const SALES_PERMISSIONS = [
   'Leads',
   'New Inquiry',
   'Follow-ups',
+  'Sales Desk',
   'Saved Itinerary',
   'Analytics'
 ];

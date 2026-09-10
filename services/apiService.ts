@@ -7,9 +7,13 @@ const API_BASE = '/api';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const customKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') : null;
+  const activeUserId = typeof window !== 'undefined' ? localStorage.getItem('kingsland_active_user_id') : null;
   const customHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
   if (customKey) {
     customHeaders['x-gemini-api-key'] = customKey;
+  }
+  if (activeUserId) {
+    customHeaders['x-user-id'] = activeUserId;
   }
 
   const res = await fetch(`${API_BASE}${url}`, {
@@ -72,6 +76,13 @@ export async function deleteLead(id: string) {
   return request<any>(`/leads/${id}`, { method: 'DELETE' });
 }
 
+export async function reassignLead(leadId: string, assignedTo: string) {
+  return request<any>(`/leads/${leadId}/reassign`, {
+    method: 'PATCH',
+    body: JSON.stringify({ assignedTo }),
+  });
+}
+
 export async function updateLeadTravelers(
   id: string,
   adults: number,
@@ -100,9 +111,16 @@ export async function fetchAgents() {
   return request<any[]>('/agents');
 }
 
-export async function createAgent(data: { name: string; specialty: string[] }) {
+export async function createAgent(data: { name: string; specialty: string[]; avatar?: string; phone?: string; email?: string }) {
   return request<any>('/agents', {
     method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateAgent(id: string, data: { name?: string; specialty?: string[]; avatar?: string; phone?: string; email?: string }) {
+  return request<any>(`/agents/${id}`, {
+    method: 'PUT',
     body: JSON.stringify(data),
   });
 }

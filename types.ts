@@ -64,6 +64,8 @@ export interface Agent {
   specialty: string[];
   activeLeads: number;
   avatar: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface HotelEntry {
@@ -183,6 +185,7 @@ export type UserRole = 'Admin' | 'Sales' | 'Operations' | 'Accounts' | 'Custom';
 
 export type UserPermissionSection = 
   | 'Dashboard' 
+  | 'Sales Desk'
   | 'Leads' 
   | 'New Inquiry' 
   | 'Follow-ups' 

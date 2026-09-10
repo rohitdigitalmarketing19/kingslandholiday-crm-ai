@@ -187,5 +187,12 @@ export function deleteLead(id: string) {
   const res = runQuery('DELETE FROM leads WHERE id = ? OR trip_id = ?', [leadId, tripId]);
   return res.changes > 0 || !!target;
 }
+
+export function reassignLead(id: string, assignedTo: string) {
+  runQuery('UPDATE leads SET assigned_to = ? WHERE id = ?', [assignedTo, id]);
+  return getLeadById(id);
+}
+
 export { hydrateQuote };
+
 

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, updateLeadAccounts, updateLeadTravelers } from '../controllers/leadsController';
+import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, updateLeadAccounts, updateLeadTravelers, reassignLead } from '../controllers/leadsController';
 
 const router = Router();
 
@@ -68,6 +68,19 @@ router.patch('/:id/travelers', (req: Request, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to update travelers details' });
+  }
+});
+
+router.patch('/:id/reassign', (req: Request, res: Response) => {
+  try {
+    const { assignedTo } = req.body;
+    if (!assignedTo) return res.status(400).json({ error: 'assignedTo is required' });
+    const lead = reassignLead(req.params.id as string, assignedTo);
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+    res.json(lead);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to reassign lead' });
   }
 });
 
