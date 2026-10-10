@@ -149,7 +149,14 @@ export function initializeDatabase(): void {
     `ALTER TABLE pdf_designs ADD COLUMN page_count INTEGER DEFAULT 0`,
     `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`,
     `ALTER TABLE agents ADD COLUMN phone TEXT DEFAULT ''`,
-    `ALTER TABLE agents ADD COLUMN email TEXT DEFAULT ''`
+    `ALTER TABLE agents ADD COLUMN email TEXT DEFAULT ''`,
+    `ALTER TABLE quotes ADD COLUMN cover_image TEXT DEFAULT ''`,
+    `ALTER TABLE quotes ADD COLUMN day_images TEXT DEFAULT '[]'`,
+    `ALTER TABLE quote_itinerary_days ADD COLUMN image_url TEXT DEFAULT ''`,
+    `CREATE TABLE IF NOT EXISTS destination_photos (id TEXT PRIMARY KEY, city TEXT NOT NULL, title TEXT DEFAULT '', image_url TEXT NOT NULL, tags TEXT DEFAULT '', is_default INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
+    `CREATE INDEX IF NOT EXISTS idx_dest_photos_city ON destination_photos(city)`,
+    `CREATE TABLE IF NOT EXISTS partner_brands (id TEXT PRIMARY KEY, category TEXT NOT NULL DEFAULT 'hotel', name TEXT NOT NULL, tagline TEXT DEFAULT '', brand_color TEXT DEFAULT '#b8860b', logo_url TEXT DEFAULT '', svg_icon TEXT DEFAULT '', is_active INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
+    `CREATE INDEX IF NOT EXISTS idx_partner_brands_cat ON partner_brands(category)`
   ];
 
   for (const mSql of migrations) {
@@ -159,6 +166,60 @@ export function initializeDatabase(): void {
       // Column or table already exists
     }
   }
+
+  // Seed default Destination Photos & Partner Brands
+  try {
+    const defaultPartners = [
+      { id: 'taj', category: 'hotel', name: 'Taj Hotels', tagline: 'IHCL Group', brand_color: '#B8860B', sort_order: 1 },
+      { id: 'oberoi', category: 'hotel', name: 'Oberoi', tagline: 'Luxury Collection', brand_color: '#C49A45', sort_order: 2 },
+      { id: 'itc', category: 'hotel', name: 'ITC Hotels', tagline: 'Responsible Luxury', brand_color: '#8C1D40', sort_order: 3 },
+      { id: 'radisson', category: 'hotel', name: 'Radisson', tagline: 'Hotel Group', brand_color: '#1E5AA8', sort_order: 4 },
+      { id: 'leela', category: 'hotel', name: 'The Leela', tagline: 'Palaces & Resorts', brand_color: '#8A5D28', sort_order: 5 },
+      { id: 'marriott', category: 'hotel', name: 'Marriott', tagline: 'Bonvoy Network', brand_color: '#B8283B', sort_order: 6 },
+      { id: 'makemytrip', category: 'travel', name: 'MakeMyTrip', tagline: 'Verified Seller', brand_color: '#D8232A', sort_order: 7 },
+      { id: 'traveltriangle', category: 'travel', name: 'TravelTriangle', tagline: 'Certified Partner', brand_color: '#10967A', sort_order: 8 },
+      { id: 'tripadvisor', category: 'travel', name: 'TripAdvisor', tagline: 'Traveller Reviewed', brand_color: '#00AF87', sort_order: 9 }
+    ];
+
+    for (const p of defaultPartners) {
+      execSql(`INSERT OR IGNORE INTO partner_brands (id, category, name, tagline, brand_color, sort_order, is_active)
+        VALUES ('${p.id}', '${p.category}', '${p.name}', '${p.tagline}', '${p.brand_color}', ${p.sort_order}, 1)`);
+    }
+
+    const defaultPhotos = [
+      // Kashmir
+      { id: 'img-kashmir-1', city: 'Kashmir', title: 'Dal Lake Shikara Sunrise', url: 'https://images.unsplash.com/photo-1595815771614-ade9d652a65d?auto=format&fit=crop&w=800&q=80', tags: 'srinagar, dal lake, shikara' },
+      { id: 'img-kashmir-2', city: 'Kashmir', title: 'Gulmarg Snow Peaks & Gondola', url: 'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80', tags: 'gulmarg, snow, mountains' },
+      { id: 'img-kashmir-3', city: 'Kashmir', title: 'Pahalgam Pine Valley & River', url: 'https://images.unsplash.com/photo-1626014303757-646633789e5a?auto=format&fit=crop&w=800&q=80', tags: 'pahalgam, valley, river' },
+      { id: 'img-kashmir-4', city: 'Kashmir', title: 'Sonamarg Meadow of Gold', url: 'https://images.unsplash.com/photo-1598091383021-15ddea10925d?auto=format&fit=crop&w=800&q=80', tags: 'sonamarg, glacier, meadows' },
+      // Himachal / Manali / Shimla
+      { id: 'img-manali-1', city: 'Manali', title: 'Solang Valley Snowy Slopes', url: 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=800&q=80', tags: 'solang valley, himachal, snow' },
+      { id: 'img-manali-2', city: 'Manali', title: 'Hadimba Wooden Temple', url: 'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80', tags: 'manali, temple, cedar' },
+      { id: 'img-himachal-1', city: 'Himachal', title: 'Himalayan Mountain Vista', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', tags: 'himachal, shimla, mountains' },
+      { id: 'img-shimla-1', city: 'Shimla', title: 'The Ridge & Christ Church', url: 'https://images.unsplash.com/photo-1588714477688-cf28a50e94f7?auto=format&fit=crop&w=800&q=80', tags: 'shimla, ridge, heritage' },
+      // Goa
+      { id: 'img-goa-1', city: 'Goa', title: 'Palolem Palm Beach Sunset', url: 'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80', tags: 'goa, beach, sunset' },
+      { id: 'img-goa-2', city: 'Goa', title: 'Calangute & Baga Shoreline', url: 'https://images.unsplash.com/photo-1587922546307-776227941871?auto=format&fit=crop&w=800&q=80', tags: 'baga, north goa, coastline' },
+      // Kerala
+      { id: 'img-kerala-1', city: 'Kerala', title: 'Alleppey Backwaters Houseboat', url: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80', tags: 'alleppey, backwaters, kerala' },
+      { id: 'img-kerala-2', city: 'Kerala', title: 'Munnar Lush Tea Gardens', url: 'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=800&q=80', tags: 'munnar, tea plantations, hills' },
+      // Rajasthan / Jaipur / Udaipur
+      { id: 'img-jaipur-1', city: 'Jaipur', title: 'Hawa Mahal Palace of Winds', url: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80', tags: 'jaipur, hawa mahal, rajasthan' },
+      { id: 'img-udaipur-1', city: 'Udaipur', title: 'Lake Pichola City Palace', url: 'https://images.unsplash.com/photo-1615836245337-f5b9b2303f10?auto=format&fit=crop&w=800&q=80', tags: 'udaipur, lake pichola, palace' },
+      { id: 'img-rajasthan-1', city: 'Rajasthan', title: 'Thar Desert Sand Dunes', url: 'https://images.unsplash.com/photo-1577083552431-6e5fd01aa342?auto=format&fit=crop&w=800&q=80', tags: 'jaisalmer, desert, camel safari' },
+      // Ladakh
+      { id: 'img-ladakh-1', city: 'Ladakh', title: 'Pangong Tso Blue Waters', url: 'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80', tags: 'ladakh, pangong, leh' },
+      // Dubai & International
+      { id: 'img-dubai-1', city: 'Dubai', title: 'Burj Khalifa & Downtown Skyline', url: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=800&q=80', tags: 'dubai, downtown, burj khalifa' },
+      { id: 'img-bali-1', city: 'Bali', title: 'Ubud Emerald Rice Terraces', url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80', tags: 'bali, ubud, tropical' },
+      { id: 'img-swiss-1', city: 'Switzerland', title: 'Alpine Peaks & Green Meadows', url: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80', tags: 'switzerland, alps, europe' }
+    ];
+
+    for (const ph of defaultPhotos) {
+      execSql(`INSERT OR IGNORE INTO destination_photos (id, city, title, image_url, tags, is_default)
+        VALUES ('${ph.id}', '${ph.city}', '${ph.title.replace(/'/g, "''")}', '${ph.url}', '${ph.tags}', 1)`);
+    }
+  } catch (_e) {}
 
   // Seed default Masters data if empty
   try {
@@ -215,21 +276,25 @@ export function initializeDatabase(): void {
     }
   } catch (_e) {}
 
-  // Seed & Update default PDF designs with correct theme colors
+  // Seed & Synchronize the 5 authoritative quote designs from Kingsland-Quote-Designs.html
   try {
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
-      VALUES ('design-royal-gold', 'Royal Heritage & Gold', 'royal_gold', '#d4af37', '#1e1b18', 'KINGSLAND HOLIDAYS', 'Classic Serif', 'Playfair Display', 1)`);
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
-      VALUES ('design-dark-luxury', 'Executive Matte Dark & Lime', 'minimal_dark', '#c6f135', '#161713', 'KINGSLAND HOLIDAYS', 'Modern Grid', 'Outfit', 0)`);
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
-      VALUES ('design-royal-burgundy', 'Royal Burgundy & Gold', 'royal_burgundy', '#e11d48', '#881337', 'KINGSLAND HOLIDAYS', 'Classic Serif', 'Cinzel', 0)`);
-    execSql(`INSERT OR IGNORE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
-      VALUES ('design-emerald-alpine', 'Alpine Emerald Clean', 'emerald_alpine', '#059669', '#064e3b', 'KINGSLAND HOLIDAYS', 'Split Minimal', 'Inter', 0)`);
+    // Remove obsolete legacy demo designs that do not match the reference designs
+    execSql(`DELETE FROM pdf_designs WHERE id NOT IN ('royal', 'alpine', 'sunset', 'editorial', 'playful', 'design-royal-gold', 'design-alpine-teal', 'design-sunset-coral', 'design-editorial', 'design-playful-violet')`);
 
-    // Ensure existing rows get vibrant theme colors
-    execSql(`UPDATE pdf_designs SET primary_color = '#d4af37', secondary_color = '#1e1b18', font_family = 'Playfair Display', theme_preset = 'royal_gold' WHERE LOWER(title) LIKE '%royal heritage%' OR (LOWER(title) LIKE '%gold%' AND LOWER(title) NOT LIKE '%burgundy%')`);
-    execSql(`UPDATE pdf_designs SET primary_color = '#e11d48', secondary_color = '#881337', font_family = 'Cinzel', theme_preset = 'royal_burgundy' WHERE LOWER(title) LIKE '%burgundy%'`);
-    execSql(`UPDATE pdf_designs SET primary_color = '#059669', secondary_color = '#064e3b', font_family = 'Inter', theme_preset = 'emerald_alpine' WHERE LOWER(title) LIKE '%emerald%' OR LOWER(title) LIKE '%alpine%'`);
+    // Ensure the 5 official designs exist
+    execSql(`INSERT OR REPLACE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('royal', 'Royal Gold', 'royal', '#d4af37', '#12213f', 'KINGSLAND HOLIDAYS', 'Royal Heritage', 'Playfair Display', 1)`);
+    execSql(`INSERT OR REPLACE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('alpine', 'Alpine Teal', 'alpine', '#0f4c4a', '#f2a93b', 'KINGSLAND HOLIDAYS', 'Alpine Split', 'DM Serif Display', 0)`);
+    execSql(`INSERT OR REPLACE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('sunset', 'Sunset Coral', 'sunset', '#ff5e4d', '#231f2b', 'KINGSLAND HOLIDAYS', 'Sunset Waves', 'Outfit', 0)`);
+    execSql(`INSERT OR REPLACE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('editorial', 'Editorial', 'editorial', '#111111', '#e5431f', 'KINGSLAND HOLIDAYS', 'High Contrast', 'Bricolage Grotesque', 0)`);
+    execSql(`INSERT OR REPLACE INTO pdf_designs (id, title, theme_preset, primary_color, secondary_color, watermark_text, cover_style, font_family, is_active)
+      VALUES ('playful', 'Playful Violet', 'playful', '#4a2fe0', '#ffb996', 'KINGSLAND HOLIDAYS', 'Playful Modern', 'Baloo 2', 0)`);
+
+    // Ensure at least one design is active
+    execSql(`UPDATE pdf_designs SET is_active = 1 WHERE id = 'royal' AND NOT EXISTS (SELECT 1 FROM pdf_designs WHERE is_active = 1)`);
   } catch (_e) {}
 
   // Seed default agency settings

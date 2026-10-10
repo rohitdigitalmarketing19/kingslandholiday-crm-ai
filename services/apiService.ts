@@ -560,6 +560,8 @@ export async function activatePdfDesign(id: string) {
   });
 }
 
+export const setActivePdfDesign = activatePdfDesign;
+
 export async function deactivatePdfDesign(id: string) {
   return request<any>(`/pdf-designs/${id}/deactivate`, {
     method: 'PATCH',
@@ -575,6 +577,87 @@ export async function updatePdfDesignMappings(id: string, fieldMappings: any[]) 
 
 export async function deletePdfDesign(id: string) {
   return request<any>(`/pdf-designs/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ============================================
+// PARTNER BRANDS & DESTINATION CITY PHOTOS API
+// ============================================
+
+export interface PartnerBrandItem {
+  id: string;
+  category: 'hotel' | 'travel';
+  name: string;
+  tagline: string;
+  brand_color?: string;
+  brandColor?: string;
+  logo_url?: string;
+  logoUrl?: string;
+  svg_icon?: string;
+  svgIcon?: string;
+  is_active?: number;
+  sort_order?: number;
+}
+
+export async function fetchPartnerBrands(): Promise<PartnerBrandItem[]> {
+  const data = await request<any[]>('/pdf-designs/partners/all');
+  return (data || []).map(p => ({
+    ...p,
+    tagline: p.tagline || (p.category === 'hotel' ? 'Hotel Partner' : 'Working Partner'),
+    brandColor: p.brand_color || p.brandColor || '#b8860b',
+    brand_color: p.brand_color || p.brandColor || '#b8860b',
+    logoUrl: p.logo_url || p.logoUrl || '',
+    logo_url: p.logo_url || p.logoUrl || '',
+    svgIcon: p.svg_icon || p.svgIcon || ''
+  }));
+}
+
+export async function createPartnerBrand(data: Partial<PartnerBrandItem>): Promise<PartnerBrandItem> {
+  const p = await request<any>('/pdf-designs/partners', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return {
+    ...p,
+    tagline: p.tagline || (p.category === 'hotel' ? 'Hotel Partner' : 'Working Partner'),
+    brandColor: p.brand_color || p.brandColor || '#b8860b',
+    brand_color: p.brand_color || p.brandColor || '#b8860b',
+    logoUrl: p.logo_url || p.logoUrl || '',
+    logo_url: p.logo_url || p.logoUrl || '',
+    svgIcon: p.svg_icon || p.svgIcon || ''
+  };
+}
+
+export async function deletePartnerBrand(id: string): Promise<{ success: boolean; id: string }> {
+  return request<{ success: boolean; id: string }>(`/pdf-designs/partners/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export interface DestinationPhotoItem {
+  id: string;
+  city: string;
+  title?: string;
+  image_url: string;
+  tags?: string;
+  is_default?: number;
+}
+
+export async function fetchDestinationPhotos(city?: string): Promise<DestinationPhotoItem[]> {
+  const query = city ? `?city=${encodeURIComponent(city)}` : '';
+  return request<DestinationPhotoItem[]>(`/pdf-designs/photos/all${query}`);
+}
+
+export async function createDestinationPhoto(data: { city: string; title?: string; image_url: string; tags?: string }): Promise<DestinationPhotoItem> {
+  return request<DestinationPhotoItem>('/pdf-designs/photos', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteDestinationPhoto(id: string): Promise<{ success: boolean; id: string }> {
+  return request<{ success: boolean; id: string }>(`/pdf-designs/photos/${id}`, {
     method: 'DELETE',
   });
 }

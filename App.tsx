@@ -1523,19 +1523,19 @@ const App: React.FC = () => {
               </div>
 
               {/* EMI & Installments Tracker */}
-              <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div className="bg-white dark:bg-[#161713] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
                   <div>
                     <div className="flex items-center gap-2">
-                      <CreditCard size={18} className="text-slate-400" />
-                      <h3 className="text-base font-semibold text-slate-800">Payment & EMI Tracker</h3>
+                      <CreditCard size={18} className="text-slate-400 dark:text-zinc-400" />
+                      <h3 className="text-base font-semibold text-slate-800 dark:text-zinc-100">Payment & EMI Tracker</h3>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 ml-7">EMI schedules, due dates, overdue alerts, and collected revenue</p>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 ml-7">EMI schedules, due dates, overdue alerts, and collected revenue</p>
                   </div>
 
                   <button
                     onClick={() => { setView('Payments'); setPaymentTab('Installments'); }}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium text-xs transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-lime-400/10 dark:hover:bg-lime-400/20 text-indigo-600 dark:text-lime-400 font-medium text-xs transition-colors"
                   >
                     Open EMI Management →
                   </button>
@@ -1545,41 +1545,41 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   
                   {/* Card 1: Total EMIs Created */}
-                  <div className="px-4 py-3 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 block">Total EMIs</span>
+                  <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-zinc-900/40 border border-slate-100 dark:border-zinc-800 space-y-1">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-zinc-400 block">Total EMIs</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-slate-800 tabular-nums">{emiStats.createdCount}</span>
-                      <span className="text-xs font-mono text-slate-500 tabular-nums">₹{emiStats.createdAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-slate-800 dark:text-zinc-100 tabular-nums">{emiStats.createdCount}</span>
+                      <span className="text-xs font-mono text-slate-500 dark:text-zinc-400 tabular-nums">₹{emiStats.createdAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 2: EMIs Due */}
-                  <div className="px-4 py-3 rounded-lg bg-amber-50 border border-amber-100 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-amber-600 block">Due (Upcoming)</span>
+                  <div className="px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 space-y-1">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400 block">Due (Upcoming)</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-amber-700 tabular-nums">{emiStats.dueCount}</span>
-                      <span className="text-xs font-mono text-amber-600 tabular-nums">₹{emiStats.dueAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-amber-700 dark:text-amber-400 tabular-nums">{emiStats.dueCount}</span>
+                      <span className="text-xs font-mono text-amber-600 dark:text-amber-400 tabular-nums">₹{emiStats.dueAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 3: EMIs Overdue */}
-                  <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-red-600 block flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-rose-500/10 border border-red-200 dark:border-rose-500/20 space-y-1">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-red-600 dark:text-rose-400 block flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-rose-400"></span>
                       Overdue
                     </span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-red-700 tabular-nums">{emiStats.overdueCount}</span>
-                      <span className="text-xs font-mono text-red-600 tabular-nums">₹{emiStats.overdueAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-red-700 dark:text-rose-400 tabular-nums">{emiStats.overdueCount}</span>
+                      <span className="text-xs font-mono text-red-600 dark:text-rose-400 tabular-nums">₹{emiStats.overdueAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 4: EMIs Collected */}
-                  <div className="px-4 py-3 rounded-lg bg-emerald-50 border border-emerald-100 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-600 block">Collected</span>
+                  <div className="px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 space-y-1">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400 block">Collected</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-emerald-700 tabular-nums">{emiStats.paidCount}</span>
-                      <span className="text-xs font-mono text-emerald-600 tabular-nums">₹{emiStats.paidAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{emiStats.paidCount}</span>
+                      <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">₹{emiStats.paidAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
@@ -1587,19 +1587,19 @@ const App: React.FC = () => {
 
                 {/* Overdue EMI Alerts */}
                 {emiStats.overdueItems.length > 0 && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200 space-y-2 text-xs">
-                    <h4 className="font-semibold text-red-700 text-xs uppercase tracking-wide flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <div className="p-3 rounded-lg bg-red-50 dark:bg-rose-500/10 border border-red-200 dark:border-rose-500/20 space-y-2 text-xs">
+                    <h4 className="font-semibold text-red-700 dark:text-rose-400 text-xs uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-rose-400"></span>
                       Overdue EMI Alerts ({emiStats.overdueItems.length})
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                       {emiStats.overdueItems.map((item: any, idx: number) => (
-                        <div key={idx} className="p-2.5 rounded-md bg-white border border-red-100 flex items-center justify-between">
+                        <div key={idx} className="p-2.5 rounded-md bg-white dark:bg-zinc-900/60 border border-red-100 dark:border-rose-500/30 flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-slate-800 text-xs">{item.customerName}</p>
-                            <p className="text-[10px] text-slate-500">{item.title} · Due: <strong className="text-red-600">{item.dueDate}</strong></p>
+                            <p className="font-medium text-slate-800 dark:text-zinc-100 text-xs">{item.customerName}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-zinc-400">{item.title} · Due: <strong className="text-red-600 dark:text-rose-400">{item.dueDate}</strong></p>
                           </div>
-                          <span className="font-mono font-semibold text-red-600 text-sm tabular-nums">₹{item.amount?.toLocaleString('en-IN')}</span>
+                          <span className="font-mono font-semibold text-red-600 dark:text-rose-400 text-sm tabular-nums">₹{item.amount?.toLocaleString('en-IN')}</span>
                         </div>
                       ))}
                     </div>
@@ -1609,8 +1609,8 @@ const App: React.FC = () => {
 
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-200 h-[380px] flex flex-col">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-4 pb-3 border-b border-slate-100">Conversion Pipeline</h3>
+                <div className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 h-[380px] flex flex-col">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-zinc-100 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">Conversion Pipeline</h3>
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                       <BarChart data={funnelData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
@@ -1623,8 +1623,8 @@ const App: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="bg-white p-5 rounded-xl border border-slate-200 h-[380px] flex flex-col">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-4 pb-3 border-b border-slate-100">Market Intent</h3>
+                <div className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 h-[380px] flex flex-col">
+                  <h3 className="text-sm font-semibold text-slate-700 dark:text-zinc-100 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">Market Intent</h3>
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                       <PieChart>
@@ -1634,9 +1634,9 @@ const App: React.FC = () => {
                     </ResponsiveContainer>
                   </div>
                   <div className="flex justify-center gap-6 mt-2">
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-indigo-500 rounded-sm"></div><span className="text-xs text-slate-500 font-medium">High Intent</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></div><span className="text-xs text-slate-500 font-medium">Info Seeking</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-amber-500 rounded-sm"></div><span className="text-xs text-slate-500 font-medium">Urgent</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-indigo-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">High Intent</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Info Seeking</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-amber-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Urgent</span></div>
                   </div>
                 </div>
               </div>
@@ -1646,28 +1646,28 @@ const App: React.FC = () => {
 
           {view === 'New Inquiry' && (
             <div className="max-w-4xl mx-auto animate-in fade-in duration-300 space-y-8">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-zinc-800">
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-800">New Inquiry Center</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">Register new travel inquiries, calculate AI intent score, and generate instant quotes.</p>
+                    <h2 className="text-xl font-semibold text-slate-800 dark:text-zinc-100">New Inquiry Center</h2>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Register new travel inquiries, calculate AI intent score, and generate instant quotes.</p>
                   </div>
                </div>
 
-               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-6">
-                  <h3 className="text-sm font-semibold text-slate-800 pb-3 border-b border-slate-100 flex items-center gap-2">
-                    <Plus size={16} className="text-indigo-600" />
+               <div className="bg-white dark:bg-[#161713] p-6 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs space-y-6">
+                  <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-100 pb-3 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-2">
+                    <Plus size={16} className="text-indigo-600 dark:text-lime-400" />
                     <span>Inquiry Registration Form</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Trip ID (Auto / Custom)</label>
-                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="Auto (Leaves format to Settings)" />
+                      <input type="text" className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-mono font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="Auto (Leaves format to Settings)" />
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Lead Source</label>
-                      <select className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer" value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})}>
+                      <select className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all cursor-pointer" value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})}>
                         <option value="Google Ads">Google Ads</option>
                         <option value="Meta Ads">Meta Ads</option>
                         <option value="Website">Website</option>
@@ -1679,24 +1679,24 @@ const App: React.FC = () => {
 
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Customer Full Name *</label>
-                      <input type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                      <input type="text" required className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Phone / WhatsApp</label>
-                      <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="+91 00000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                      <input type="text" className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="+91 00000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Destination *</label>
-                      <input type="text" required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="e.g. Kashmir / Dubai / Bali" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
+                      <input type="text" required className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="e.g. Kashmir / Dubai / Bali" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
                     </div>
 
                     <div>
                       <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Date</label>
                       <div className="relative flex items-center">
                         <Calendar className="w-4 h-4 text-slate-400 dark:text-lime-400 absolute left-3 pointer-events-none z-10" />
-                        <input type="date" min={todayStr} className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
+                        <input type="date" min={todayStr} className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
                       </div>
                     </div>
 
@@ -1729,17 +1729,17 @@ const App: React.FC = () => {
                     </div>
 
                     {formData.children > 0 && (
-                      <div className="col-span-1 md:col-span-2 bg-indigo-50/40 p-3 rounded-lg border border-indigo-100 space-y-2">
-                        <label className="block text-[11px] font-medium text-indigo-700">Child Ages (for hotel / flight pricing)</label>
+                      <div className="col-span-1 md:col-span-2 bg-indigo-50/40 dark:bg-lime-400/10 p-3 rounded-lg border border-indigo-100 dark:border-lime-400/20 space-y-2">
+                        <label className="block text-[11px] font-medium text-indigo-700 dark:text-lime-400">Child Ages (for hotel / flight pricing)</label>
                         <div className="flex flex-wrap gap-2">
                           {formData.childAges.map((age, index) => (
-                            <div key={index} className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-md border border-indigo-100 shadow-2xs">
-                              <span className="text-xs text-slate-600">Child {index + 1}:</span>
+                            <div key={index} className="flex items-center gap-1.5 bg-white dark:bg-zinc-900/60 px-2.5 py-1 rounded-md border border-indigo-100 dark:border-lime-400/20 shadow-2xs">
+                              <span className="text-xs text-slate-600 dark:text-zinc-300">Child {index + 1}:</span>
                               <input
                                 type="number"
                                 min="0"
                                 max="17"
-                                className="w-12 bg-slate-50 p-1 text-xs font-semibold rounded border border-slate-200 outline-none text-center"
+                                className="w-12 bg-slate-50 dark:bg-zinc-900 p-1 text-xs text-slate-900 dark:text-zinc-100 font-semibold rounded border border-slate-200 dark:border-zinc-700 outline-none text-center"
                                 value={age}
                                 onChange={(e) => {
                                   const newAges = [...formData.childAges];
@@ -1747,7 +1747,7 @@ const App: React.FC = () => {
                                   setFormData({ ...formData, childAges: newAges });
                                 }}
                               />
-                              <span className="text-[10px] text-slate-400">yrs</span>
+                              <span className="text-[10px] text-slate-400 dark:text-zinc-500">yrs</span>
                             </div>
                           ))}
                         </div>
@@ -1755,9 +1755,9 @@ const App: React.FC = () => {
                     )}
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Hotel Category</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Hotel Category</label>
                       <div className="flex gap-2">
-                        <select className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white" value={formData.hotelCategory} onChange={e => setFormData({...formData, hotelCategory: e.target.value})}>
+                        <select className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900" value={formData.hotelCategory} onChange={e => setFormData({...formData, hotelCategory: e.target.value})}>
                           <option value="5 Star">5 Star Luxury Resort</option>
                           <option value="4 Star">4 Star Premium Hotel</option>
                           <option value="4/3 Star">4/3 Star Comfort (Default)</option>
@@ -1766,7 +1766,7 @@ const App: React.FC = () => {
                           <option value="Heritage Resort">Heritage / Boutique Hotel</option>
                           <option value="Budget Stay">Budget / Standard Hotel</option>
                         </select>
-                        <select className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-medium outline-none" value={formData.includeStay} onChange={e => setFormData({...formData, includeStay: e.target.value})}>
+                        <select className="w-28 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none" value={formData.includeStay} onChange={e => setFormData({...formData, includeStay: e.target.value})}>
                           <option value="Yes">Stay: Yes</option>
                           <option value="No">Stay: No</option>
                         </select>
@@ -1774,13 +1774,13 @@ const App: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Transport Preferences</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Transport Preferences</label>
                       <div className="flex gap-2">
-                        <select className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white" value={formData.includeCab} onChange={e => setFormData({...formData, includeCab: e.target.value})}>
+                        <select className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900" value={formData.includeCab} onChange={e => setFormData({...formData, includeCab: e.target.value})}>
                           <option value="Yes">Private Cab: Included</option>
                           <option value="No">Private Cab: Excluded</option>
                         </select>
-                        <select className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-2 py-2 text-xs font-medium outline-none" value={formData.includeFlight} onChange={e => setFormData({...formData, includeFlight: e.target.value})}>
+                        <select className="w-28 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none" value={formData.includeFlight} onChange={e => setFormData({...formData, includeFlight: e.target.value})}>
                           <option value="No">Flight: No</option>
                           <option value="Yes">Flight: Yes</option>
                         </select>
@@ -1789,24 +1789,24 @@ const App: React.FC = () => {
 
                     <div className="col-span-1 md:col-span-2 space-y-1">
                       <div className="flex items-center justify-between">
-                        <label className="block text-[11px] font-medium text-slate-600">Special Notes & Requirements</label>
-                        <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-600">
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Special Notes & Requirements</label>
+                        <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-600 dark:text-zinc-300">
                           <input type="checkbox" checked={formData.englishDriver} onChange={e => setFormData({...formData, englishDriver: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500" />
                           <span>English-Speaking Driver</span>
                         </label>
                       </div>
-                      <textarea rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" placeholder="Enter special requests, dietary preferences, flight numbers, or budget notes..." value={formData.otherInfo} onChange={e => setFormData({...formData, otherInfo: e.target.value})}></textarea>
+                      <textarea rows={3} className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg p-3 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="Enter special requests, dietary preferences, flight numbers, or budget notes..." value={formData.otherInfo} onChange={e => setFormData({...formData, otherInfo: e.target.value})}></textarea>
                     </div>
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-[11px] font-medium text-slate-600">Assigned Sales Representative</label>
+                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Assigned Sales Representative</label>
                       {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
                         <button
                           type="button"
                           onClick={() => openAddAgentModal()}
-                          className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700 flex items-center gap-1 hover:underline cursor-pointer"
+                          className="text-[11px] font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-700 dark:hover:text-lime-300 flex items-center gap-1 hover:underline cursor-pointer"
                         >
                           <Plus size={13} />
                           <span>Add New Representative</span>
@@ -1815,14 +1815,14 @@ const App: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                        {agents.map(a => (
-                         <button 
-                           key={a.id} 
-                           type="button" 
-                           onClick={() => setFormData({...formData, salesPersonId: a.id})} 
+                         <button
+                           key={a.id}
+                           type="button"
+                           onClick={() => setFormData({...formData, salesPersonId: a.id})}
                            className={`p-2.5 rounded-lg border transition-all flex items-center gap-2.5 text-left cursor-pointer ${
-                             formData.salesPersonId === a.id 
-                               ? 'bg-slate-900 text-white border-slate-900 shadow-xs' 
-                               : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                             formData.salesPersonId === a.id
+                               ? 'bg-slate-900 dark:bg-lime-400/20 text-white dark:text-lime-400 border-slate-900 dark:border-lime-400/30 shadow-xs'
+                               : 'bg-slate-50 dark:bg-zinc-900/40 border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300'
                            }`}
                          >
                            {a.avatar ? (
@@ -1855,21 +1855,21 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-100">
-                    <button 
-                      type="button" 
-                      onClick={() => handleFinalizeInquiry(false)} 
-                      className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-lg font-medium text-xs hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                  <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => handleFinalizeInquiry(false)}
+                      className="flex-1 py-2.5 bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 rounded-lg font-medium text-xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                     >
-                      <Save size={14} className="text-slate-500" />
+                      <Save size={14} className="text-slate-500 dark:text-zinc-400" />
                       <span>Save Lead</span>
                     </button>
 
-                    <button 
-                      type="button" 
-                      disabled={isAnalyzing} 
-                      onClick={handleAIAssessment} 
-                      className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                    <button
+                      type="button"
+                      disabled={isAnalyzing}
+                      onClick={handleAIAssessment}
+                      className="flex-1 py-2.5 bg-slate-900 dark:bg-zinc-800 hover:bg-slate-800 dark:hover:bg-zinc-700 text-white rounded-lg font-medium text-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
                       {isAnalyzing ? (
                         <>
@@ -1878,16 +1878,16 @@ const App: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Sparkles size={14} className="text-indigo-300" />
+                          <Sparkles size={14} className="text-indigo-300 dark:text-lime-400" />
                           <span>Preview AI Score</span>
                         </>
                       )}
                     </button>
 
-                    <button 
-                      type="button" 
-                      onClick={() => handleFinalizeInquiry(true)} 
-                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                    <button
+                      type="button"
+                      onClick={() => handleFinalizeInquiry(true)}
+                      className="flex-1 py-2.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black rounded-lg font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
                       <FileText size={14} />
                       <span>Save & Give Quote</span>
@@ -1895,49 +1895,49 @@ const App: React.FC = () => {
                   </div>
 
                   {previewAnalysis && (
-                    <div className="p-4 bg-indigo-50/60 rounded-xl border border-indigo-100 flex flex-col sm:flex-row items-center gap-5 animate-in fade-in duration-300">
+                    <div className="p-4 bg-indigo-50/60 dark:bg-lime-400/10 rounded-xl border border-indigo-100 dark:border-lime-400/20 flex flex-col sm:flex-row items-center gap-5 animate-in fade-in duration-300">
                        <div className="text-center sm:text-left shrink-0">
-                          <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wide">Intent Score</p>
+                          <p className="text-[10px] font-semibold text-indigo-500 dark:text-lime-400 uppercase tracking-wide">Intent Score</p>
                           <div className="flex items-center gap-2">
-                             <span className="text-3xl font-bold text-indigo-700">{previewAnalysis.score}</span>
+                             <span className="text-3xl font-bold text-indigo-700 dark:text-lime-400">{previewAnalysis.score}</span>
                              <div className="flex flex-col text-left">
-                                <span className="text-xs font-semibold text-indigo-600">{previewAnalysis.intent}</span>
-                                <span className="text-[10px] text-indigo-400 font-medium">{previewAnalysis.budgetTier} Tier</span>
+                                <span className="text-xs font-semibold text-indigo-600 dark:text-lime-300">{previewAnalysis.intent}</span>
+                                <span className="text-[10px] text-indigo-400 dark:text-lime-500/80 font-medium">{previewAnalysis.budgetTier} Tier</span>
                              </div>
                           </div>
                        </div>
-                       <div className="flex-1 border-t sm:border-t-0 sm:border-l border-indigo-100 sm:pl-5 pt-3 sm:pt-0">
-                          <p className="text-[10px] font-semibold text-indigo-500 uppercase tracking-wide mb-0.5">AI Summary</p>
-                          <p className="text-xs text-indigo-900/90 leading-relaxed font-medium italic">"{previewAnalysis.summary}"</p>
+                       <div className="flex-1 border-t sm:border-t-0 sm:border-l border-indigo-100 dark:border-lime-400/20 sm:pl-5 pt-3 sm:pt-0">
+                          <p className="text-[10px] font-semibold text-indigo-500 dark:text-lime-400 uppercase tracking-wide mb-0.5">AI Summary</p>
+                          <p className="text-xs text-indigo-900/90 dark:text-zinc-100 leading-relaxed font-medium italic">"{previewAnalysis.summary}"</p>
                        </div>
                     </div>
                   )}
                </div>
 
                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                     <h3 className="text-sm font-semibold text-slate-800">Unquoted Inquiries</h3>
-                     <span className="text-[10px] font-medium text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-zinc-800">
+                     <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-100">Unquoted Inquiries</h3>
+                     <span className="text-[10px] font-medium text-indigo-700 dark:text-lime-400 bg-indigo-50 dark:bg-lime-400/10 px-2 py-0.5 rounded border border-indigo-100 dark:border-lime-400/20">
                         {unquotedLeads.length} Unquoted
                      </span>
                   </div>
-                  
+
                   <div className="space-y-3">
                      {unquotedLeads.length > 0 ? (
                        unquotedLeads.map((lead) => (
-                         <LeadCard 
-                           key={lead.id} 
-                           lead={lead} 
-                           onClick={setQuotingLead} 
-                           onViewProposal={setProposalLead} 
-                           agentName={agents.find(a => a.id === lead.assignedTo)?.name} 
+                         <LeadCard
+                           key={lead.id}
+                           lead={lead}
+                           onClick={setQuotingLead}
+                           onViewProposal={setProposalLead}
+                           agentName={agents.find(a => a.id === lead.assignedTo)?.name}
                            showGiveQuote
-                           displayIndex={unquotedLeads.length - unquotedLeads.indexOf(lead)} 
+                           displayIndex={unquotedLeads.length - unquotedLeads.indexOf(lead)}
                          />
                        ))
                      ) : (
-                       <div className="py-12 text-center bg-white rounded-xl border border-dashed border-slate-200">
-                          <p className="text-slate-400 text-xs font-medium">No unquoted leads currently.</p>
+                       <div className="py-12 text-center bg-white dark:bg-[#161713] rounded-xl border border-dashed border-slate-200 dark:border-zinc-800">
+                          <p className="text-slate-400 dark:text-zinc-500 text-xs font-medium">No unquoted leads currently.</p>
                        </div>
                      )}
                   </div>
@@ -1974,19 +1974,19 @@ const App: React.FC = () => {
                   </div>
                </div>
 
-               <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+               <div className="bg-white dark:bg-[#161713] p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 flex-1">
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                        <span className="text-[11px] font-medium text-slate-500">Destination:</span>
-                        <select value={filterDestination} onChange={e => setFilterDestination(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Destination:</span>
+                        <select value={filterDestination} onChange={e => setFilterDestination(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
                            <option value="All">All Destinations</option>
                            {uniqueDestinations.map(d => (<option key={d} value={d}>{d}</option>))}
                         </select>
                      </div>
 
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                        <span className="text-[11px] font-medium text-slate-500">Travel Month:</span>
-                        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Travel Month:</span>
+                        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
                            <option value="All">All Months</option>
                            <option value="01">January</option>
                            <option value="02">February</option>
@@ -2003,9 +2003,9 @@ const App: React.FC = () => {
                         </select>
                      </div>
 
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                        <span className="text-[11px] font-medium text-slate-500">Source:</span>
-                        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Source:</span>
+                        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
                            <option value="All">All Sources</option>
                            <option value="Google Ads">Google Ads</option>
                            <option value="Meta Ads">Meta Ads</option>
@@ -2018,7 +2018,7 @@ const App: React.FC = () => {
                   </div>
 
                   {(filterDestination !== 'All' || filterMonth !== 'All' || filterSource !== 'All') && (
-                     <button onClick={() => { setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="text-xs font-medium text-rose-600 hover:underline">
+                     <button onClick={() => { setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="text-xs font-medium text-rose-600 dark:text-rose-400 hover:underline">
                         Reset Filters
                      </button>
                   )}
@@ -2027,24 +2027,24 @@ const App: React.FC = () => {
                <div className="grid grid-cols-1 gap-2">
                   {filteredLeads.length > 0 ? (
                     filteredLeads.map(lead => (
-                      <LeadCard 
-                        key={lead.id} 
-                        lead={lead} 
-                        onClick={setQuotingLead} 
-                        onViewProposal={setProposalLead} 
-                        onDeleteLead={handleDeleteLead} 
-                        agentName={agents.find(a => a.id === lead.assignedTo)?.name} 
-                        showGiveQuote 
+                      <LeadCard
+                        key={lead.id}
+                        lead={lead}
+                        onClick={setQuotingLead}
+                        onViewProposal={setProposalLead}
+                        onDeleteLead={handleDeleteLead}
+                        agentName={agents.find(a => a.id === lead.assignedTo)?.name}
+                        showGiveQuote
                       />
                     ))
                   ) : (
-                    <div className="py-16 flex flex-col items-center justify-center text-center px-6 bg-white border border-slate-200 rounded-xl shadow-xs">
-                      <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center mb-3 text-slate-400">
+                    <div className="py-16 flex flex-col items-center justify-center text-center px-6 bg-white dark:bg-[#161713] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xs">
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-zinc-900/40 rounded-lg flex items-center justify-center mb-3 text-slate-400 dark:text-zinc-500">
                         <Search size={18} />
                       </div>
-                      <h4 className="text-sm font-semibold text-slate-800 mb-1">No Matching Leads</h4>
-                      <p className="text-xs text-slate-400 max-w-sm font-medium">Adjust your filters or search keywords to find leads.</p>
-                      <button onClick={() => { setGlobalSearch(''); setDashboardFilter(null); setSelectedAgentFilter(null); setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="mt-3 text-xs font-medium text-indigo-600 hover:underline">Clear all filters</button>
+                      <h4 className="text-sm font-semibold text-slate-800 dark:text-zinc-100 mb-1">No Matching Leads</h4>
+                      <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm font-medium">Adjust your filters or search keywords to find leads.</p>
+                      <button onClick={() => { setGlobalSearch(''); setDashboardFilter(null); setSelectedAgentFilter(null); setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="mt-3 text-xs font-medium text-indigo-600 dark:text-lime-400 hover:underline">Clear all filters</button>
                     </div>
                   )}
                </div>
@@ -2099,15 +2099,15 @@ const App: React.FC = () => {
           )}
           {view === 'Sales Team' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+              <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-zinc-800">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-800">Sales Representatives</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Manage sales team members, assigned destinations, contact details, and pipeline metrics.</p>
+                  <h2 className="text-xl font-semibold text-slate-800 dark:text-zinc-100">Sales Representatives</h2>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Manage sales team members, assigned destinations, contact details, and pipeline metrics.</p>
                 </div>
                 {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
-                  <button 
-                    onClick={() => openAddAgentModal()} 
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  <button
+                    onClick={() => openAddAgentModal()}
+                    className="px-4 py-2 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <Plus size={14} />
                     <span>Add Representative</span>
@@ -2117,7 +2117,7 @@ const App: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {agents.map(agent => (
-                  <div key={agent.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                  <div key={agent.id} className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
                     <div>
                       <div className="flex items-start gap-3 mb-3">
                         {agent.avatar ? (
@@ -2130,26 +2130,26 @@ const App: React.FC = () => {
                             }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-700 font-bold text-base flex items-center justify-center border border-indigo-200 shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 font-bold text-base flex items-center justify-center border border-indigo-200 dark:border-lime-400/20 shrink-0">
                             {agent.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-sm font-semibold text-slate-900 truncate">{agent.name}</h4>
-                            <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 shrink-0">Sales Expert</span>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 truncate">{agent.name}</h4>
+                            <span className="text-[10px] font-medium text-indigo-600 dark:text-lime-400 bg-indigo-50 dark:bg-lime-400/10 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-lime-400/20 shrink-0">Sales Expert</span>
                           </div>
                           {(agent.phone || agent.email) && (
-                            <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+                            <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-zinc-400">
                               {agent.phone && (
                                 <p className="flex items-center gap-1.5 truncate">
-                                  <Phone size={11} className="text-slate-400 shrink-0" />
+                                  <Phone size={11} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                   <span className="truncate">{agent.phone}</span>
                                 </p>
                               )}
                               {agent.email && (
                                 <p className="flex items-center gap-1.5 truncate">
-                                  <Mail size={11} className="text-slate-400 shrink-0" />
+                                  <Mail size={11} className="text-slate-400 dark:text-zinc-500 shrink-0" />
                                   <span className="truncate">{agent.email}</span>
                                 </p>
                               )}
@@ -2160,37 +2160,37 @@ const App: React.FC = () => {
 
                       <div className="space-y-3 mb-4">
                         <div>
-                          <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wide mb-1">Destinations</p>
+                          <p className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wide mb-1">Destinations</p>
                           <div className="flex flex-wrap gap-1">
                             {agent.specialty && agent.specialty.length > 0 ? (
                               agent.specialty.map(s => (
-                                <span key={s} className="px-2 py-0.5 bg-slate-50 text-slate-600 text-[10px] font-medium rounded border border-slate-200">
+                                <span key={s} className="px-2 py-0.5 bg-slate-50 dark:bg-zinc-900/40 text-slate-600 dark:text-zinc-300 text-[10px] font-medium rounded border border-slate-200 dark:border-zinc-700">
                                   {s}
                                 </span>
                               ))
                             ) : (
-                              <span className="text-[10px] text-slate-400 italic">All Destinations</span>
+                              <span className="text-[10px] text-slate-400 dark:text-zinc-500 italic">All Destinations</span>
                             )}
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                            <p className="text-[10px] text-slate-500 font-medium">Active Leads</p>
-                            <p className="text-base font-semibold text-slate-800">{leads.filter(l => l.assignedTo === agent.id).length}</p>
+                          <div className="bg-slate-50 dark:bg-zinc-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-zinc-800">
+                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Active Leads</p>
+                            <p className="text-base font-semibold text-slate-800 dark:text-zinc-100">{leads.filter(l => l.assignedTo === agent.id).length}</p>
                           </div>
-                          <div className="bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-100">
-                            <p className="text-[10px] text-emerald-700 font-medium">Conversion</p>
-                            <p className="text-base font-semibold text-emerald-800">12%</p>
+                          <div className="bg-emerald-50/60 dark:bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">Conversion</p>
+                            <p className="text-base font-semibold text-emerald-800 dark:text-emerald-400">12%</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 flex gap-2">
-                      <button 
-                        onClick={() => { setView('Leads'); setSelectedAgentFilter(agent.id); }} 
-                        className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-xs transition-colors cursor-pointer text-center"
+                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                      <button
+                        onClick={() => { setView('Leads'); setSelectedAgentFilter(agent.id); }}
+                        className="flex-1 py-2 bg-slate-900 dark:bg-lime-400/20 hover:bg-slate-800 dark:hover:bg-lime-400/30 text-white dark:text-lime-400 rounded-lg font-medium text-xs transition-colors cursor-pointer text-center"
                       >
                         View Leads
                       </button>
@@ -2280,24 +2280,24 @@ const App: React.FC = () => {
       {quotingLead && (<GiveQuoteView lead={quotingLead} allLeads={leads} editQuoteId={editQuoteId} onClose={() => { setQuotingLead(null); setEditQuoteId(null); }} onSave={handleSaveQuote} />)}
       {/* ADD / EDIT SALES AGENT MODAL */}
       {isAddingAgent && currentUser.role === 'Admin' && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#161713] rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">
                   {editingAgentId ? 'Edit Sales Representative' : 'Add Sales Representative'}
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
                   {editingAgentId ? 'Update representative details, photo, and assigned destinations.' : 'Add a new sales team member with photo and specialties.'}
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setIsAddingAgent(false);
                   setEditingAgentId(null);
                   setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
-                }} 
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                }}
+                className="p-1.5 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -2305,8 +2305,8 @@ const App: React.FC = () => {
 
             <form onSubmit={handleAddAgent} className="space-y-4">
               {/* Profile Photo Uploader */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5">
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
+              <div className="p-3 bg-slate-50 dark:bg-zinc-900/40 rounded-xl border border-slate-200/80 dark:border-zinc-800 space-y-2.5">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
                   Profile Photo / Avatar
                 </label>
                 <div className="flex items-center gap-4">
@@ -2321,13 +2321,13 @@ const App: React.FC = () => {
                         }}
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-700 border-2 border-indigo-200 flex items-center justify-center font-bold text-xl">
-                        {agentFormData.name ? agentFormData.name.charAt(0).toUpperCase() : <Users2 size={24} className="text-indigo-400" />}
+                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 border-2 border-indigo-200 dark:border-lime-400/20 flex items-center justify-center font-bold text-xl">
+                        {agentFormData.name ? agentFormData.name.charAt(0).toUpperCase() : <Users2 size={24} className="text-indigo-400 dark:text-lime-400/60" />}
                       </div>
                     )}
-                    <label 
-                      htmlFor="agent-avatar-input" 
-                      className="absolute -bottom-1.5 -right-1.5 bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-full shadow-sm cursor-pointer transition-all"
+                    <label
+                      htmlFor="agent-avatar-input"
+                      className="absolute -bottom-1.5 -right-1.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black p-1.5 rounded-full shadow-sm cursor-pointer transition-all"
                       title="Upload photo"
                     >
                       <Camera size={12} />
@@ -2335,11 +2335,11 @@ const App: React.FC = () => {
                   </div>
 
                   <div className="flex-1 space-y-1.5">
-                    <input 
+                    <input
                       id="agent-avatar-input"
-                      type="file" 
-                      accept="image/png, image/jpeg, image/jpg, image/webp" 
-                      className="hidden" 
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
@@ -2356,115 +2356,115 @@ const App: React.FC = () => {
                       }}
                     />
                     <div className="flex flex-wrap gap-1.5">
-                      <label 
+                      <label
                         htmlFor="agent-avatar-input"
-                        className="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-indigo-300 text-slate-700 hover:text-indigo-600 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                        className="px-2.5 py-1.5 bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-lime-400 text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-lime-400 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
                       >
                         <Upload size={12} />
                         <span>Upload Photo</span>
                       </label>
                       {agentFormData.avatar && (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => setAgentFormData(prev => ({ ...prev, avatar: '' }))}
-                          className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition-colors"
+                          className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 rounded-lg text-xs font-medium transition-colors"
                         >
                           Remove
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-500">Supports PNG, JPG, WebP (up to 4MB)</p>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-500">Supports PNG, JPG, WebP (up to 4MB)</p>
                   </div>
                 </div>
 
                 {/* Optional Image URL Input */}
                 <div className="pt-1">
-                  <input 
+                  <input
                     type="url"
                     placeholder="Or paste image URL (https://...)"
                     value={agentFormData.avatar.startsWith('data:') ? '' : agentFormData.avatar}
                     onChange={(e) => setAgentFormData(prev => ({ ...prev, avatar: e.target.value }))}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 outline-none focus:border-indigo-400 placeholder:text-slate-400"
+                    className="w-full bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-zinc-100 outline-none focus:border-indigo-400 dark:focus:border-lime-400 placeholder:text-slate-400 dark:placeholder:text-zinc-500"
                   />
                 </div>
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 mb-1">
-                  Full Name <span className="text-rose-500">*</span>
+                <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                  Full Name <span className="text-rose-500 dark:text-rose-400">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  required 
+                <input
+                  type="text"
+                  required
                   placeholder="e.g. Rahul Sharma"
-                  value={agentFormData.name} 
-                  onChange={e => setAgentFormData({...agentFormData, name: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                  value={agentFormData.name}
+                  onChange={e => setAgentFormData({...agentFormData, name: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
                 />
               </div>
 
               {/* Contact Information (Phone & Email) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-700 mb-1 flex items-center gap-1">
-                    <Phone size={11} className="text-slate-400" />
+                  <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
+                    <Phone size={11} className="text-slate-400 dark:text-zinc-500" />
                     <span>Phone / WhatsApp</span>
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g. +91 98765 43210"
-                    value={agentFormData.phone} 
-                    onChange={e => setAgentFormData({...agentFormData, phone: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                    value={agentFormData.phone}
+                    onChange={e => setAgentFormData({...agentFormData, phone: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-700 mb-1 flex items-center gap-1">
-                    <Mail size={11} className="text-slate-400" />
+                  <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
+                    <Mail size={11} className="text-slate-400 dark:text-zinc-500" />
                     <span>Email Address</span>
                   </label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     placeholder="e.g. rahul@kingsland.com"
-                    value={agentFormData.email} 
-                    onChange={e => setAgentFormData({...agentFormData, email: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                    value={agentFormData.email}
+                    onChange={e => setAgentFormData({...agentFormData, email: e.target.value})}
+                    className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
                   />
                 </div>
               </div>
 
               {/* Destinations / Specialties */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
                   Assigned Destinations (Comma-separated)
                 </label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Dubai, Bali, Kashmir, Rajasthan, Thailand"
-                  value={agentFormData.specialty} 
-                  onChange={e => setAgentFormData({...agentFormData, specialty: e.target.value})} 
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white transition-all" 
+                  value={agentFormData.specialty}
+                  onChange={e => setAgentFormData({...agentFormData, specialty: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Separate multiple destinations with commas</p>
+                <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">Separate multiple destinations with commas</p>
               </div>
 
               {/* Form Buttons */}
-              <div className="flex gap-2 pt-2 border-t border-slate-100">
-                <button 
-                  type="button" 
+              <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+                <button
+                  type="button"
                   onClick={() => {
                     setIsAddingAgent(false);
                     setEditingAgentId(null);
                     setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
-                  }} 
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                  }}
+                  className="flex-1 py-2.5 bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-xl transition-colors shadow-sm hover:shadow cursor-pointer flex items-center justify-center gap-1.5"
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black text-xs font-medium rounded-xl transition-colors shadow-sm hover:shadow cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Save size={13} />
                   <span>{editingAgentId ? 'Update Representative' : 'Save Representative'}</span>
@@ -2477,20 +2477,20 @@ const App: React.FC = () => {
 
       {/* DEACTIVATE AGENT MODAL */}
       {deletingAgentId && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4 text-center">
-            <div className="w-10 h-10 mx-auto rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#161713] rounded-xl shadow-xl w-full max-w-sm p-6 border border-slate-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 space-y-4 text-center">
+            <div className="w-10 h-10 mx-auto rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
               <AlertTriangle size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-900">Remove Representative?</h3>
-              <p className="text-xs text-slate-500 mt-1">This will remove this sales expert from the active assignment roster.</p>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Remove Representative?</h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">This will remove this sales expert from the active assignment roster.</p>
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setDeletingAgentId(null)} className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors">
+              <button onClick={() => setDeletingAgentId(null)} className="flex-1 py-2 bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium rounded-lg transition-colors">
                 Cancel
               </button>
-              <button onClick={() => handleDeleteAgent(deletingAgentId)} className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded-lg transition-colors shadow-xs">
+              <button onClick={() => handleDeleteAgent(deletingAgentId)} className="flex-1 py-2 bg-rose-600 dark:bg-rose-500 hover:bg-rose-700 dark:hover:bg-rose-600 text-white text-xs font-medium rounded-lg transition-colors shadow-xs">
                 Confirm Remove
               </button>
             </div>
@@ -2500,57 +2500,57 @@ const App: React.FC = () => {
 
       {/* LEAD DELETE CONFIRMATION DIALOG */}
       {leadToDelete && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#161713] rounded-xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-zinc-800 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
                 <Trash2 size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-slate-900">Delete Lead Inquiry?</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">Delete Lead Inquiry?</h3>
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
                   This action cannot be undone. Please confirm you want to delete this lead.
                 </p>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => !isDeletingLead && setLeadToDelete(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-md transition-colors"
+                className="p-1 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-md transition-colors"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800 text-xs space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Inquiry ID:</span>
-                <span className="font-mono font-semibold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">#{leadToDelete.tripId}</span>
+                <span className="text-slate-500 dark:text-zinc-400 font-medium">Inquiry ID:</span>
+                <span className="font-mono font-semibold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900/60 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700">#{leadToDelete.tripId}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 font-medium">Guest Name:</span>
-                <span className="font-semibold text-slate-800">{leadToDelete.name}</span>
+                <span className="text-slate-500 dark:text-zinc-400 font-medium">Guest Name:</span>
+                <span className="font-semibold text-slate-800 dark:text-zinc-100">{leadToDelete.name}</span>
               </div>
               {leadToDelete.destination && (
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 font-medium">Destination:</span>
-                  <span className="text-slate-700 font-medium">{leadToDelete.destination}</span>
+                  <span className="text-slate-500 dark:text-zinc-400 font-medium">Destination:</span>
+                  <span className="text-slate-700 dark:text-zinc-200 font-medium">{leadToDelete.destination}</span>
                 </div>
               )}
             </div>
 
-            <div className="p-3 rounded-lg bg-rose-50/70 border border-rose-200/80 text-xs text-rose-800 flex items-start gap-2">
-              <AlertTriangle size={15} className="text-rose-600 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-lg bg-rose-50/70 dark:bg-rose-500/10 border border-rose-200/80 dark:border-rose-500/30 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2">
+              <AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
               <p className="leading-relaxed">
                 Deleting this inquiry will permanently remove all associated quotes, custom itinerary days, notes, follow-up schedules, and payment desk links.
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 disabled={isDeletingLead}
                 onClick={() => setLeadToDelete(null)}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -2558,7 +2558,7 @@ const App: React.FC = () => {
                 type="button"
                 disabled={isDeletingLead}
                 onClick={handleConfirmDeleteLead}
-                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-rose-600 dark:bg-rose-500 hover:bg-rose-700 dark:hover:bg-rose-600 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingLead ? (
                   <>

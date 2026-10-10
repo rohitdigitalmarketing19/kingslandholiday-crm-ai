@@ -83,6 +83,26 @@ for (const item of includeItems) {
   }
 }
 
+// Add PM2 ecosystem config
+const ecosystemConfigContent = `module.exports = {
+  apps: [
+    {
+      name: 'kingsland-crm',
+      script: 'server.js',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        PORT: process.env.PORT || 5000
+      }
+    }
+  ]
+};
+`;
+fs.writeFileSync(path.join(stagingDir, 'ecosystem.config.cjs'), ecosystemConfigContent);
+
 // Add a deployment guide in the package
 const deployGuideContent = `# Kingsland AI CRM — Server Deployment Guide
 
@@ -101,7 +121,8 @@ cd kingsland-crm
 ### 3. Setup Environment Variables
 \`\`\`bash
 cp .env.example .env
-# Edit .env to set PORT, DATABASE_PATH, etc.
+# Edit .env to set your desired PORT, ADMIN credentials, and SMTP settings
+nano .env
 \`\`\`
 
 ### 4. Install Dependencies
@@ -110,40 +131,38 @@ npm install --omit=dev
 \`\`\`
 
 ### 5. Start Production Server
-\`\`\`bash
-npm start
-\`\`\`
-*(Or using PM2 for 24/7 background process management)*
+**Option A: Using PM2 (Recommended for 24/7 background uptime & auto-restart):**
 \`\`\`bash
 npm install -g pm2
-pm2 start server.js --name "kingsland-crm"
+pm2 start ecosystem.config.cjs
 pm2 save
 pm2 startup
 \`\`\`
 
----
-## ⚠️  DATABASE SAFETY — IMPORTANT
-
-The deploy zip does **NOT** include \`kingsland.db\`.
-This is intentional — your server already has its own live production database.
-
-- On **first deploy**: The server will automatically create a fresh \`kingsland.db\`
-  (in the folder set by \`DATABASE_PATH\` in your .env, or next to server.js).
-- On **every subsequent deploy**: Simply extract and restart. The existing
-  \`kingsland.db\` on the server is left completely untouched.
-- **Never manually copy your local \`kingsland.db\` to the server** unless you
-  intend to fully replace production data.
-
-To backup the server database before deploying:
+**Option B: Direct Node start:**
 \`\`\`bash
-cp kingsland.db kingsland.db.backup-$(date +%Y%m%d)
+npm start
 \`\`\`
 
 ---
-## 🌐 Accessing the CRM
-- **CRM Dashboard & Sales Pipeline**: \`http://your-server-ip:5000/\`
-- **Operations Desk Portal**: \`http://your-server-ip:5000/ops\`
-- **Health Check**: \`http://your-server-ip:5000/api/health\`
+## ⚠️  DATABASE SAFETY — ZERO OVERWRITE RISK
+
+The deploy zip intentionally excludes \`kingsland.db\`.
+Your server's live data is 100% safe:
+
+- **First Deploy**: Server will automatically generate fresh SQLite schema tables on first run.
+- **Updates / Upgrades**: Simply extract this zip over your folder and restart PM2 (\`pm2 restart kingsland-crm\`). Your live database and existing bookings/leads remain untouched.
+
+*(Optional Pre-update Backup)*:
+\`\`\`bash
+cp kingsland.db kingsland.db.backup-$(date +%Y%m%d_%H%M%S)
+\`\`\`
+
+---
+## 🌐 Portals & URLs
+- **Main CRM & Sales Pipeline**: \`http://your-server-ip:5000/\`
+- **Operations Team Desk**: \`http://your-server-ip:5000/ops\`
+- **System Health API**: \`http://your-server-ip:5000/api/health\`
 `;
 
 fs.writeFileSync(path.join(stagingDir, 'DEPLOY_GUIDE.md'), deployGuideContent);

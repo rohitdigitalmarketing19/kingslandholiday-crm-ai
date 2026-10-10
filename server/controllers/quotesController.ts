@@ -39,7 +39,10 @@ function saveHotels(quoteId: string, hotels: any[]) {
 function saveItineraryDays(quoteId: string, itinerary: any[]) {
   if (!Array.isArray(itinerary)) return;
   runQuery('DELETE FROM quote_itinerary_days WHERE quote_id = ?', [quoteId]);
-  itinerary.forEach((d) => runQuery('INSERT INTO quote_itinerary_days (quote_id, day_number, title, description) VALUES (?,?,?,?)', [quoteId, d.day || 1, d.title || '', d.description || '']));
+  itinerary.forEach((d) => {
+    const img = d.imageUrl || d.image_url || d.img || '';
+    runQuery('INSERT INTO quote_itinerary_days (quote_id, day_number, title, description, image_url) VALUES (?,?,?,?,?)', [quoteId, d.day || 1, d.title || '', d.description || '', img]);
+  });
 }
 
 export function createQuote(leadId: string, data: any) {

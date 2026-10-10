@@ -3,23 +3,13 @@ import html2canvas from 'html2canvas';
 
 export interface PdfExportOptions {
   filename?: string;
-  margin?: number; // margin in mm (default 8mm)
+  margin?: number; // margin in mm
   width?: number;  // container width in px (default 794px = A4 at 96dpi)
   scale?: number;  // canvas resolution multiplier (default 2)
 }
 
 /**
- * High-fidelity, gap-free PDF generator.
- *
- * Strategy:
- *  1. Clone the element into an off-screen fixed container (no DOM spacers).
- *  2. Inject a <style> that marks key sections as break-inside:avoid so
- *     html2canvas renders them as complete blocks.
- *  3. Capture one tall canvas at 2× resolution.
- *  4. Slice the canvas into exact A4 page heights.
- *  5. For each page slice, fill a new canvas with white then blit the slice.
- *     This guarantees NO blank white gaps — the white fill is the background,
- *     not an empty spacer void.
+ * Intelligent, gap-free, section-aware PDF generator for Operations Portal.
  */
 export async function exportElementToPdf(
   element: HTMLElement,
@@ -27,12 +17,14 @@ export async function exportElementToPdf(
 ): Promise<void> {
   const {
     filename = 'document.pdf',
-    margin = 8,
+    margin = 0,
     width = 794,
     scale = 2,
   } = options;
 
-  // ── 1. Off-screen container ──────────────────────────────────────────────
+  const directSheets = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
+  const isSheetBased = directSheets.length > 0;
+
   const container = document.createElement('div');
   container.style.cssText = `
     position: fixed;
@@ -59,75 +51,28 @@ export async function exportElementToPdf(
   `;
   container.appendChild(clone);
 
-  // ── 2. Inject break-inside:avoid + dark-mode neutralizer ─────────────────
   const breakStyle = document.createElement('style');
   breakStyle.textContent = `
-    /* Page-break control */
-    .meta-strip, .quotebox, .trust-strip, .hrow, .hstays, .day, .box, .two-col,
-    .guarantee-strip, .terms-box, .trow, .partners, .partner-row, .signblock,
-    .footer, .testimonial, .section-title, .avoid-page-break,
-    .invoice-avoid-break, .invoice-header, .invoice-meta-bar,
+    .avoid-page-break, .invoice-avoid-break, .invoice-header, .invoice-meta-bar,
     .invoice-guest-pkg-cards, .invoice-milestones-section,
     .invoice-milestone-card, .invoice-receipts-section,
     .invoice-summary-cards, .invoice-notice-box, .invoice-terms-box,
-    .invoice-signatures-footer, tr {
+    .invoice-signatures-footer, tr, section {
       break-inside: avoid !important;
       page-break-inside: avoid !important;
     }
-    .hhead, .section-title {
-      break-after: avoid !important;
-      page-break-after: avoid !important;
-    }
-
-    /* ── Dark-mode neutralizer ──────────────────────────────────────────────
-       html.dark global rules can still affect elements appended to body.
-       Force all document-style content to white background + dark text.     */
     * {
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
       color-scheme: light !important;
     }
-    /* Reset any dark-mode tailwind overrides that affect bg/text */
-    [class*="bg-slate-900"],
-    [class*="bg-zinc-900"],
-    [class*="bg-zinc-950"],
-    [class*="dark:bg-"] {
-      background-color: #ffffff !important;
-    }
-    [class*="text-zinc-100"],
-    [class*="text-zinc-200"],
-    [class*="text-zinc-300"],
-    [class*="dark:text-"] {
-      color: #0f172a !important;
-    }
-    /* Ensure the root document container always renders white */
-    div, section, article, header, footer, table, td, th, tr, p, span, li {
-      background-color: transparent;
-    }
   `;
   container.appendChild(breakStyle);
-
   document.body.appendChild(container);
 
-  // Short settle time for layout & fonts
-  await new Promise(resolve => setTimeout(resolve, 80));
+  await new Promise(resolve => setTimeout(resolve, 100));
 
   try {
-    // ── 3. Capture full-height canvas ─────────────────────────────────────
-    const canvas = await html2canvas(container, {
-      scale,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#ffffff',
-      width,
-      windowWidth: width,
-      scrollX: 0,
-      scrollY: 0,
-      // Do NOT use foreignObjectRendering — it causes blank areas in some browsers
-      allowTaint: false,
-    });
-
-    // ── 4. Build A4 PDF, slicing the canvas page by page ─────────────────
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -135,41 +80,106 @@ export async function exportElementToPdf(
       compress: true,
     });
 
-    const pdfW  = pdf.internal.pageSize.getWidth();  // 210 mm
-    const pdfH  = pdf.internal.pageSize.getHeight(); // 297 mm
-    const printW = pdfW - margin * 2;
-    const printH = pdfH - margin * 2;
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
 
-    // How many canvas pixels correspond to one PDF page height?
-    // canvas.width corresponds to printW (mm) → 1 mm = canvas.width / printW px
-    const canvasPageH = Math.floor((canvas.width * printH) / printW);
-    const totalPages  = Math.max(1, Math.ceil(canvas.height / canvasPageH));
+    const clonedSheets = Array.from(clone.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
+    if (isSheetBased && clonedSheets.length > 0) {
+      for (let i = 0; i < clonedSheets.length; i++) {
+        const sheetEl = clonedSheets[i];
+        if (i > 0) pdf.addPage();
 
-    for (let page = 0; page < totalPages; page++) {
-      if (page > 0) pdf.addPage();
+        const canvas = await html2canvas(sheetEl, {
+          scale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: sheetEl.offsetWidth || width,
+          height: sheetEl.offsetHeight || 1123,
+          scrollX: 0,
+          scrollY: 0,
+          allowTaint: false,
+        });
 
-      const srcY = page * canvasPageH;
-      const srcH = Math.min(canvasPageH, canvas.height - srcY);
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+      }
+    } else {
+      const effectiveMargin = options.margin !== undefined ? options.margin : 8;
+      const printW = pdfW - effectiveMargin * 2;
+      const printH = pdfH - effectiveMargin * 2;
 
-      // Create a page-sized canvas and fill it white first
-      const pageCanvas = document.createElement('canvas');
-      pageCanvas.width  = canvas.width;
-      pageCanvas.height = canvasPageH; // always full page height
+      const canvas = await html2canvas(container, {
+        scale,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width,
+        windowWidth: width,
+        scrollX: 0,
+        scrollY: 0,
+        allowTaint: false,
+      });
 
-      const ctx = pageCanvas.getContext('2d')!;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      const standardPageCanvasH = Math.floor((canvas.width * printH) / printW);
 
-      // Blit only the real content rows into this page canvas
-      ctx.drawImage(
-        canvas,
-        0, srcY, canvas.width, srcH,  // source rect
-        0, 0,    canvas.width, srcH   // dest rect (same size, top-aligned)
+      const containerRect = clone.getBoundingClientRect();
+      const breakableElements = Array.from(
+        clone.querySelectorAll<HTMLElement>(
+          '.avoid-page-break, .invoice-avoid-break, .invoice-header, .invoice-milestone-card, tr, section'
+        )
       );
-      // Remaining pixels below srcH stay white — no gap, no black bar
 
-      const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-      pdf.addImage(imgData, 'JPEG', margin, margin, printW, printH, undefined, 'FAST');
+      const elementBoxes = breakableElements.map(el => {
+        const r = el.getBoundingClientRect();
+        const topY = Math.max(0, Math.round((r.top - containerRect.top) * scale));
+        const bottomY = Math.round((r.bottom - containerRect.top) * scale);
+        return { topY, bottomY, height: bottomY - topY };
+      }).filter(b => b.height > 0 && b.topY < canvas.height);
+
+      let currentStartY = 0;
+      let pageIndex = 0;
+
+      while (currentStartY < canvas.height) {
+        if (pageIndex > 0) pdf.addPage();
+
+        let targetEndY = currentStartY + standardPageCanvasH;
+
+        if (targetEndY < canvas.height) {
+          const straddling = elementBoxes.find(b =>
+            b.topY < targetEndY &&
+            b.bottomY > targetEndY &&
+            b.topY > currentStartY &&
+            (targetEndY - b.topY) > 10
+          );
+
+          if (straddling) {
+            targetEndY = straddling.topY;
+          }
+        }
+
+        const sliceH = Math.min(targetEndY - currentStartY, canvas.height - currentStartY);
+
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = standardPageCanvasH;
+
+        const ctx = pageCanvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+
+        ctx.drawImage(
+          canvas,
+          0, currentStartY, canvas.width, sliceH,
+          0, 0, canvas.width, sliceH
+        );
+
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+        pdf.addImage(imgData, 'JPEG', effectiveMargin, effectiveMargin, printW, printH, undefined, 'FAST');
+
+        currentStartY = targetEndY;
+        pageIndex++;
+      }
     }
 
     const finalName = filename.toLowerCase().endsWith('.pdf')

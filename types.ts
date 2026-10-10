@@ -125,7 +125,10 @@ export interface QuoteData {
     day: number;
     title: string;
     description: string;
+    imageUrl?: string;
+    img?: string;
   }[];
+  coverImage?: string;
   termsAndConditions: string;
   useDefaultTC: boolean;
   otherInformation: string;

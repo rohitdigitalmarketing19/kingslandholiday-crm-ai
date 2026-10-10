@@ -1,8 +1,10 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Image as ImageIcon, X, Upload, Search } from 'lucide-react';
 import { Lead, QuoteData, HotelEntry, InclusionEntry } from '../types';
 import { generateItinerary } from '../services/geminiService';
 import * as api from '../services/apiService';
+import { DestinationPhotoItem } from '../services/apiService';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface GiveQuoteViewProps {
   lead: Lead;
@@ -235,12 +237,31 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   });
 
   const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
+  const [photoPickerDayIndex, setPhotoPickerDayIndex] = useState<number | null>(null);
+  const [libraryPhotos, setLibraryPhotos] = useState<DestinationPhotoItem[]>([]);
+  const [photoSearchQuery, setPhotoSearchQuery] = useState('');
 
   useEffect(() => {
     api.fetchTemplates()
       .then(data => setSavedTemplates(Array.isArray(data) ? data : []))
       .catch(err => console.warn('Failed to load saved templates in GiveQuoteView:', err));
+
+    api.fetchDestinationPhotos('')
+      .then(data => {
+        if (Array.isArray(data)) setLibraryPhotos(data);
+      })
+      .catch(err => console.warn('Failed to load destination photos in GiveQuoteView:', err));
   }, []);
+
+  const displayedInlinePhotos = useMemo(() => {
+    if (!photoSearchQuery.trim()) return libraryPhotos;
+    const q = photoSearchQuery.toLowerCase().trim();
+    return libraryPhotos.filter(p =>
+      (p.city && p.city.toLowerCase().includes(q)) ||
+      (p.title && p.title.toLowerCase().includes(q)) ||
+      (p.tags && p.tags.toLowerCase().includes(q))
+    );
+  }, [libraryPhotos, photoSearchQuery]);
 
   const searchResults = useMemo(() => {
     if (!itinerarySearch.trim()) return [];
@@ -400,6 +421,36 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
       alert("AI Generation failed.");
     } finally {
       setIsGeneratingAI(false);
+    }
+  };
+
+  const handleDirectDayUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, WebP).');
+      return;
+    }
+    try {
+      const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 900, quality: 0.85 });
+      setQuote(prev => {
+        const newItin = prev.itinerary.map((d, i) =>
+          i === idx ? { ...d, imageUrl: compressed, img: compressed } : d
+        );
+        return { ...prev, itinerary: newItin };
+      });
+      setPhotoPickerDayIndex(null);
+      const title = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ') || `Day ${idx + 1} Photo`;
+      api.createDestinationPhoto({
+        title,
+        city: lead.destination || title,
+        image_url: compressed,
+        tags: `${lead.destination || ''} ${title}`
+      }).then(created => {
+        if (created) setLibraryPhotos(prev => [created, ...prev]);
+      }).catch(err => console.warn('Saved day photo to library:', err));
+    } catch (err) {
+      console.error('Failed to compress/attach day image:', err);
     }
   };
 
@@ -726,17 +777,222 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                              setQuote({...quote, itinerary: newItin});
                            }} 
                           />
-                          {quote.itinerary.length > 1 && (
+                          <div className="flex items-center gap-2 shrink-0">
                             <button
                               type="button"
-                              onClick={() => handleRemoveDay(idx)}
-                              className="px-3 py-1.5 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shrink-0"
-                              title="Delete this day"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setPhotoPickerDayIndex(idx);
+                              }}
+                              className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                                (day as any).imageUrl || (day as any).img
+                                  ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300'
+                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
+                              }`}
+                              title="Search saved images by city name and attach to Day"
                             >
-                              🗑️ Remove Day
+                              <ImageIcon className="w-3.5 h-3.5" />
+                              <span>{(day as any).imageUrl || (day as any).img ? 'Change Image' : '+ Add Image'}</span>
                             </button>
-                          )}
+
+                            <label
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer flex items-center justify-center shrink-0 border border-slate-200 dark:border-zinc-700"
+                              title="Upload image directly from device for this day"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleDirectDayUpload(idx, e)}
+                                className="hidden"
+                              />
+                            </label>
+
+                            {quote.itinerary.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveDay(idx);
+                                }}
+                                className="px-3 py-1.5 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer"
+                                title="Delete this day"
+                              >
+                                🗑️ Remove Day
+                              </button>
+                            )}
+                          </div>
                        </div>
+
+                       {/* INLINE PHOTO PICKER (Opens right inside this day card where Add Image button is) */}
+                       {photoPickerDayIndex === idx && (
+                         <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                           {/* Inline Header */}
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800">
+                             <div className="flex items-center gap-2">
+                               <span className="w-2 h-2 rounded-full bg-lime-400"></span>
+                               <span className="text-xs font-black uppercase tracking-wider text-white">
+                                 Select Photo for Day {day.day}
+                                </span>
+                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400/20 text-lime-400 font-bold border border-lime-400/30">
+                                 Click Photo to Attach
+                               </span>
+                             </div>
+
+                             <div className="flex items-center gap-2">
+                               <label className="px-3 py-1 rounded-xl bg-lime-400 hover:bg-lime-300 text-black text-[11px] font-black cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs">
+                                 <Upload className="w-3.5 h-3.5" />
+                                 <span>Upload New</span>
+                                 <input type="file" accept="image/*" onChange={(e) => handleDirectDayUpload(idx, e)} className="hidden" />
+                               </label>
+                               <button
+                                 type="button"
+                                 onClick={(e) => {
+                                   e.preventDefault();
+                                   e.stopPropagation();
+                                   setPhotoPickerDayIndex(null);
+                                 }}
+                                 className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                                 title="Close picker"
+                               >
+                                 <X className="w-4 h-4" />
+                               </button>
+                             </div>
+                           </div>
+
+                           {/* Search & Quick Pills */}
+                           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                             <div className="relative flex-1">
+                               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                               <input
+                                 type="text"
+                                 placeholder="Search by city or title (e.g. Manali, Kashmir, Goa, Taj Mahal)..."
+                                 value={photoSearchQuery}
+                                 onChange={(e) => setPhotoSearchQuery(e.target.value)}
+                                 className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-lime-400"
+                                 autoFocus
+                               />
+                               {photoSearchQuery && (
+                                 <button
+                                   type="button"
+                                   onClick={() => setPhotoSearchQuery('')}
+                                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                 >
+                                   <X className="w-3 h-3" />
+                                 </button>
+                               )}
+                             </div>
+
+                             <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
+                               {['All', lead.destination, 'Kashmir', 'Manali', 'Goa', 'Jaipur', 'Kerala', 'Ladakh']
+                                 .filter(Boolean)
+                                 .filter((c, i, a) => a.indexOf(c) === i)
+                                 .map((c) => (
+                                   <button
+                                     key={c}
+                                     type="button"
+                                     onClick={() => setPhotoSearchQuery(c === 'All' ? '' : c!)}
+                                     className={`px-2 py-0.5 rounded-lg text-[10px] font-bold shrink-0 transition-colors ${
+                                       (c === 'All' && !photoSearchQuery) || photoSearchQuery.toLowerCase() === c!.toLowerCase()
+                                         ? 'bg-lime-400 text-black'
+                                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                     }`}
+                                   >
+                                     {c}
+                                   </button>
+                                 ))}
+                             </div>
+                           </div>
+
+                           {/* Inline Photos Grid */}
+                           <div className="max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                             {displayedInlinePhotos.length === 0 ? (
+                               <div className="py-6 text-center text-slate-400 text-xs space-y-1">
+                                 <p>No photos found matching "{photoSearchQuery}".</p>
+                                 <button
+                                   type="button"
+                                   onClick={() => setPhotoSearchQuery('')}
+                                   className="text-lime-400 underline font-bold"
+                                 >
+                                   Show all saved photos ({libraryPhotos.length})
+                                 </button>
+                               </div>
+                             ) : (
+                               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                 {displayedInlinePhotos.map((item) => (
+                                   <div
+                                     key={item.id}
+                                     onClick={(e) => {
+                                       e.preventDefault();
+                                       e.stopPropagation();
+                                       const newItin = quote.itinerary.map((d, i) =>
+                                         i === idx ? { ...d, imageUrl: item.image_url, img: item.image_url } : d
+                                       );
+                                       setQuote({ ...quote, itinerary: newItin });
+                                       setPhotoPickerDayIndex(null);
+                                     }}
+                                     className="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-lime-400 bg-slate-800/80 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col"
+                                   >
+                                     <div className="aspect-video relative overflow-hidden bg-slate-900">
+                                       <img
+                                         src={item.image_url}
+                                         alt={item.title || item.city}
+                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                         loading="lazy"
+                                       />
+                                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
+                                       <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] font-bold text-lime-400">
+                                         {item.city}
+                                       </span>
+                                       <span className="absolute bottom-1 left-1.5 right-1.5 text-[10px] font-bold text-white truncate drop-shadow-sm">
+                                         {item.title || item.city}
+                                       </span>
+                                     </div>
+                                     <div className="p-1 bg-slate-800/95 text-center">
+                                       <span className="text-[10px] font-black text-lime-400 group-hover:underline">
+                                         ✓ Add to Day {day.day}
+                                       </span>
+                                     </div>
+                                   </div>
+                                 ))}
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       )}
+
+                       {Boolean((day as any).imageUrl || (day as any).img) && (
+                         <div className="flex items-center gap-3 p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 animate-in fade-in">
+                           <img
+                             src={(day as any).imageUrl || (day as any).img}
+                             alt={day.title || `Day ${day.day}`}
+                             className="w-16 h-12 object-cover rounded-xl border border-indigo-200 shrink-0 shadow-2xs"
+                           />
+                           <div className="flex-1 min-w-0">
+                             <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">Photo Attached</span>
+                             <span className="text-[11px] text-slate-500 truncate block">Will be displayed on Day {day.day} in PDF proposal</span>
+                           </div>
+                           <button
+                             type="button"
+                             onClick={(e) => {
+                               e.preventDefault();
+                               e.stopPropagation();
+                               setQuote(prev => ({
+                                 ...prev,
+                                 itinerary: prev.itinerary.map((d, i) =>
+                                   i === idx ? { ...d, imageUrl: '', img: '' } : d
+                                 )
+                               }));
+                             }}
+                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                             title="Remove photo from this day"
+                           >
+                             <X className="w-4 h-4" />
+                           </button>
+                         </div>
+                       )}
                        <textarea 
                         placeholder="Activity details..." 
                         className="w-full text-sm text-slate-500 font-medium outline-none h-20 resize-none bg-slate-50/50 p-4 rounded-2xl" 

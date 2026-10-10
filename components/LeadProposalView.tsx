@@ -3,6 +3,8 @@ import { Trash2 } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
 import { exportElementToPdf } from '../utils/pdfExport';
+import { QuoteDataModel, HotelItemModel, renderCompleteProposalHtml, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
+import { PartnerBrand } from '../utils/partnerLogos';
 
 interface LeadProposalViewProps {
   lead: Lead;
@@ -245,17 +247,68 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [paymentSettings, setPaymentSettings] = useState<any>(null);
 
   // PDF Designs & Template Styling State
-  const [pdfDesigns, setPdfDesigns] = useState<any[]>([]);
-  const [selectedDesign, setSelectedDesign] = useState<any>(null);
+  const [pdfDesigns, setPdfDesigns] = useState<any[]>(
+    AVAILABLE_QUOTE_DESIGNS.map(d => ({
+      id: d.id,
+      title: d.name,
+      primary_color: d.dot,
+      is_active: d.id === 'royal' ? 1 : 0
+    }))
+  );
+  const [selectedDesign, setSelectedDesign] = useState<any>(() => {
+    const savedId = typeof window !== 'undefined' ? localStorage.getItem('active_pdf_design') : null;
+    const def = (savedId && AVAILABLE_QUOTE_DESIGNS.find(d => d.id === savedId)) || AVAILABLE_QUOTE_DESIGNS[0];
+    return {
+      id: def.id,
+      title: def.name,
+      primary_color: def.dot,
+      is_active: 1
+    };
+  });
+
+  // Partner Brands List for PDF proposals
+  const [partnerBrandsList, setPartnerBrandsList] = useState<PartnerBrand[]>([]);
 
   useEffect(() => {
-    api.fetchPdfDesigns().then((designs) => {
-      if (Array.isArray(designs) && designs.length > 0) {
-        setPdfDesigns(designs);
-        const active = designs.find((d: any) => d.is_active === 1) || designs[0];
-        setSelectedDesign(active);
+    api.fetchPartnerBrands().then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        setPartnerBrandsList(data);
       }
     }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const syncDesigns = async () => {
+      try {
+        const designs = await api.fetchPdfDesigns();
+        if (Array.isArray(designs) && designs.length > 0) {
+          setPdfDesigns(designs);
+          const savedId = typeof window !== 'undefined' ? localStorage.getItem('active_pdf_design') : null;
+          const active = (savedId && designs.find((d: any) => d.id === savedId)) ||
+                         designs.find((d: any) => d.is_active === 1) ||
+                         designs[0];
+          if (active) {
+            setSelectedDesign(active);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('active_pdf_design', active.id);
+            }
+          }
+        }
+      } catch {}
+    };
+    syncDesigns();
+
+    const handleDesignChanged = (e: any) => {
+      const newId = e.detail;
+      if (newId) {
+        const found = AVAILABLE_QUOTE_DESIGNS.find(d => d.id === newId);
+        if (found) {
+          setSelectedDesign({ id: found.id, title: found.name, primary_color: found.dot, is_active: 1 });
+        }
+      }
+    };
+    window.addEventListener('pdf-design-changed', handleDesignChanged);
+    return () => window.removeEventListener('pdf-design-changed', handleDesignChanged);
   }, []);
 
   const designColors = useMemo(() => {
@@ -507,12 +560,13 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
     setIsDownloading(true);
     try {
-      const filename = `Kingsland-Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
+      const designTitle = selectedDesign?.title || 'Proposal';
+      const filename = `Kingsland-${designTitle.replace(/\s+/g, '-')}-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
       await exportElementToPdf(printRef.current, {
         filename,
-        margin: 8,
+        margin: 0,
         width: 794,
-        scale: 3
+        scale: 2
       });
     } catch (err) {
       console.error('PDF Generation Error:', err);
@@ -565,371 +619,159 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
     return { mrp, finalPrice, savings, discount };
   }, [currentQuote]);
 
+  // Transform current quote into the authoritative QuoteDataModel matching Kingsland-Quote-Designs.html
+  const currentQuoteDataModel = useMemo<QuoteDataModel | null>(() => {
+    if (!currentQuote || !lead) return null;
+
+    const incList: string[] = [];
+    if (currentQuote.inclusions?.accommodation) incList.push(getAccommodationInclusion(currentQuote));
+    if (currentQuote.inclusions?.mealPlan) incList.push(getMealInclusion(currentQuote));
+    if (lead.includeCab === 'Yes') {
+      incList.push('Transport: Private Vehicle Included');
+    }
+    if (currentQuote.inclusions?.sightseeing) {
+      incList.push('Sightseeing as per day itinerary');
+    }
+    if (currentQuote.otherInclusions) {
+      incList.push(...parseCustomItems(currentQuote.otherInclusions));
+    }
+    if (incList.length === 0) {
+      incList.push('Accommodation on double sharing', 'Breakfast & dinner at all hotels', 'Private AC vehicle for all transfers', 'All toll taxes, state permits & driver allowance');
+    }
+
+    const excList: string[] = [];
+    if (currentQuote.otherExclusions) {
+      excList.push(...parseCustomItems(currentQuote.otherExclusions));
+    }
+    if (excList.length === 0) {
+      excList.push('Airfare / train tickets', 'Personal expenses (laundry, beverages)', 'Monument entry fees & camera permits', 'GST as applicable', 'Tips to driver & guides');
+    }
+
+    const mappedHotels: HotelItemModel[] = (currentQuote.hotels && currentQuote.hotels.length > 0)
+      ? currentQuote.hotels.map((h, i) => {
+          const nightIndices = (h.selectedNightIndices && h.selectedNightIndices.length > 0)
+            ? h.selectedNightIndices
+            : [i];
+          const nightsText = nightIndices.length > 0
+            ? `Night ${nightIndices.map((n: number) => n + 1).join(' & ')}`
+            : (h.nights ? `${h.nights} Night${h.nights > 1 ? 's' : ''}` : `Stay ${i + 1}`);
+
+          return {
+            nights: nightsText,
+            name: h.hotelName || 'Handpicked Premium Hotel',
+            type: h.category || lead.hotelCategory || '4 Star Premium',
+            room: h.roomType || 'Standard Deluxe Room',
+            rooms: h.comments || `${lead.travelers?.adults || 2} Adults with breakfast & dinner`,
+            city: h.city || lead.destination || ''
+          };
+        })
+      : [
+          {
+            nights: 'All Nights',
+            name: 'Handpicked Premium Hotel',
+            type: lead.hotelCategory || '4 Star Premium',
+            room: 'Standard Deluxe Room',
+            rooms: `${lead.travelers?.adults || 2} Adults with breakfast & dinner`,
+            city: lead.destination || ''
+          }
+        ];
+
+    const formattedDays = (currentQuote.itinerary && currentQuote.itinerary.length > 0)
+      ? currentQuote.itinerary.map((d, i) => ({
+          title: getCleanDayTitle(d, i, currentQuote.itinerary.length, lead.destination),
+          text: d.description || 'Full day excursion and sightseeing as per plan.',
+          img: (d as any).imageUrl || (d as any).img || ''
+        }))
+      : [
+          { title: 'Arrival & Welcome', text: 'Arrive at destination, transfer to hotel and relax.', img: '' },
+          { title: 'Local Sightseeing & Experiences', text: 'Full day local sightseeing and exploration.', img: '' },
+          { title: 'Departure with Memories', text: 'Check-out and transfer for onward journey.', img: '' }
+        ];
+
+    return {
+      client: lead.name,
+      ref: lead.tripId,
+      packageName: currentQuote.packageTitle || `${lead.destination} Tour Package`,
+      longDuration: `${currentQuote.nights || (lead.durationDays ? lead.durationDays - 1 : 4)} Nights / ${currentQuote.itinerary?.length || lead.durationDays || 5} Days`,
+      duration: `${currentQuote.nights || 4}N / ${currentQuote.itinerary?.length || 5}D`,
+      city: lead.destination || 'North India',
+      services: `Cab, Hotel, Sightseeing${lead.includeFlight === 'Yes' ? ', Flight' : ''}`,
+      travellers: `${lead.travelers?.adults || 2} Adults${lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}`,
+      priceNote: 'Private Vehicle & Handpicked Stays',
+      price: `₹${(pricingData.finalPrice || currentQuote.finalSellingPrice || 50000).toLocaleString()}`,
+      rawPrice: pricingData.finalPrice || currentQuote.finalSellingPrice || 50000,
+      discountPercent: pricingData.discount || 0,
+      coverImage: (currentQuote as any)?.coverImage || (lead as any)?.coverImage || '',
+      hotel: mappedHotels[0],
+      hotels: mappedHotels,
+      advisor: {
+        name: agentName || 'Mohit Ahlawat',
+        role: 'Senior Trip Advisor',
+        phones: '+91 6376983416 · +91 7014939068',
+        email: 'official.kingslandholidays@gmail.com'
+      },
+      stats: [
+        ['12,000+', 'Trips delivered'],
+        ['4.8/5', '2,140+ reviews'],
+        ['98%', 'Super reviews'],
+        ['11 Yrs', 'In operation']
+      ],
+      included: incList,
+      excluded: excList,
+      note: currentQuote.otherInformation || '',
+      days: formattedDays
+    };
+  }, [currentQuote, lead, agentName, pricingData]);
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
-      {/* Printable PDF Template container (Styled strictly as Kingsland-Proposal-Design5-CorporateQuotation.html) */}
-      <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}>
-        <div ref={printRef} style={{ width: '794px', minWidth: '794px', maxWidth: '794px', boxSizing: 'border-box', fontFamily: "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", color: '#1B2A41', background: '#ffffff', backgroundColor: '#ffffff', fontSize: '11.8px', lineHeight: '1.55', padding: '24px 30px' }}>
-          {currentQuote && lead && (
-            <div>
-              <style>{`
-                .meta-strip, .quotebox, .trust-strip, .hrow, .hstays, .day, .box, .two-col,
-                .guarantee-strip, .terms-box, .trow, .partners, .partner-row, .signblock,
-                .footer, .testimonial, .section-title, .avoid-page-break { break-inside: avoid !important; page-break-inside: avoid !important; }
-                .hhead, .section-title { break-after: avoid !important; page-break-after: avoid !important; }
-              `}</style>
-
-              {/* Letterhead */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '3px solid #12233D', paddingBottom: '14px' }}>
-                <div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '22px', color: '#12233D' }}>Kingsland Holidays</div>
-                  <div style={{ fontFamily: "'Work Sans', sans-serif", fontSize: '9.5px', letterSpacing: '2px', textTransform: 'uppercase', color: '#5c7291', marginTop: '3px' }}>
-                    Registered Tour Operator · North India Journeys
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', letterSpacing: '2px', textTransform: 'uppercase', color: '#3A6EA5', fontWeight: 700 }}>Travel Quotation</div>
-                  <div style={{ fontSize: '10.5px', color: '#5c7291', marginTop: '4px' }}>
-                    Ref. No. {lead.tripId} · {currentQuote.packageTitle || lead.destination}
-                  </div>
-                </div>
-              </div>
-
-              {/* Meta Strip */}
-              <div className="meta-strip" style={{ display: 'flex', marginTop: '14px', border: '1px solid #D7E0EA', borderRadius: '4px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div style={{ flex: 1, padding: '10px 14px', borderRight: '1px solid #D7E0EA' }}>
-                  <div style={{ fontSize: '8.5px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#5c7291' }}>Prepared For</div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13px', marginTop: '2px', color: '#12233D' }}>{lead.name}</div>
-                </div>
-                <div style={{ flex: 1, padding: '10px 14px', borderRight: '1px solid #D7E0EA' }}>
-                  <div style={{ fontSize: '8.5px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#5c7291' }}>Package</div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13px', marginTop: '2px', color: '#12233D' }}>{currentQuote.packageTitle || lead.destination}</div>
-                </div>
-                <div style={{ flex: 1, padding: '10px 14px', borderRight: '1px solid #D7E0EA' }}>
-                  <div style={{ fontSize: '8.5px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#5c7291' }}>Duration</div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13px', marginTop: '2px', color: '#12233D' }}>
-                    {currentQuote.nights || (lead.durationDays ? lead.durationDays - 1 : 6)} Nights / {currentQuote.itinerary?.length || lead.durationDays || 7} Days
-                  </div>
-                </div>
-                <div style={{ flex: 1, padding: '10px 14px' }}>
-                  <div style={{ fontSize: '8.5px', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#5c7291' }}>Services</div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', marginTop: '2px', color: '#12233D' }}>
-                    Cab, Hotel, Sightseeing{lead.includeFlight === 'Yes' ? ', Flight' : ''}
-                  </div>
-                </div>
-              </div>
-
-              {/* Greeting Line */}
-              <div style={{ marginTop: '16px', fontSize: '12px', color: '#1B2A41' }}>
-                Dear <b style={{ color: '#12233D' }}>{lead.name}</b>, thank you for considering Kingsland Holidays. Please find below our detailed quotation for your requested itinerary.
-              </div>
-
-              {/* Quotebox (Price Hero matching Kingsland-Proposal-FIXED.html) */}
-              <div className="quotebox" style={{ marginTop: '14px', border: '2px solid #12233D', borderRadius: '6px', display: 'flex', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="qleft" style={{ flex: 1, padding: '14px 18px' }}>
-                  <div style={{ fontSize: '9px', letterSpacing: '2px', textTransform: 'uppercase', color: '#5c7291' }}>Quoted Package Price</div>
-                  <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontSize: '15px', fontWeight: 700, marginTop: '3px', color: '#12233D' }}>
-                    {currentQuote.packageTitle || `${lead.destination} Trip Package`} — {lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''} · Private Tour
-                  </div>
-                </div>
-                <div className="qright" style={{ width: '190px', flexShrink: 0, background: '#12233D', color: '#ffffff', padding: '14px 18px', textAlign: 'center' }}>
-                  {pricingData.discount > 0 ? (
-                    <div>
-                      <div style={{ background: '#3A6EA5', fontSize: '9px', letterSpacing: '1px', padding: '2px 8px', borderRadius: '3px', display: 'inline-block', marginBottom: '6px', fontWeight: 700 }}>
-                        {pricingData.discount}% DISCOUNT APPLIED
-                      </div>
-                      <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '24px' }}>
-                        ₹{pricingData.finalPrice.toLocaleString()}
-                      </div>
-                      <div style={{ fontSize: '10px', textDecoration: 'line-through', color: '#9ab0c9' }}>
-                        ₹{pricingData.mrp.toLocaleString()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ background: '#3A6EA5', fontSize: '9px', letterSpacing: '1px', padding: '2px 8px', borderRadius: '3px', display: 'inline-block', marginBottom: '6px', fontWeight: 700 }}>
-                        ALL-INCLUSIVE QUOTE
-                      </div>
-                      <div style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '24px' }}>
-                        ₹{pricingData.finalPrice.toLocaleString()}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Trust Strip */}
-              <div className="trust-strip" style={{ display: 'flex', marginTop: '14px', background: '#F4F7FA', border: '1px solid #D7E0EA', borderRadius: '4px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="trust-item" style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRight: '1px solid #D7E0EA' }}>
-                  <div className="num" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '15px', color: '#12233D' }}>12,000+</div>
-                  <div className="lbl" style={{ fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase', color: '#5c7291', marginTop: '2px' }}>Trips Delivered</div>
-                </div>
-                <div className="trust-item" style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRight: '1px solid #D7E0EA' }}>
-                  <div className="num" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '15px', color: '#12233D' }}>4.8/5</div>
-                  <div className="lbl" style={{ fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase', color: '#5c7291', marginTop: '2px' }}>2,140+ Reviews</div>
-                </div>
-                <div className="trust-item" style={{ flex: 1, textAlign: 'center', padding: '10px 6px', borderRight: '1px solid #D7E0EA' }}>
-                  <div className="num" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '15px', color: '#12233D' }}>98%</div>
-                  <div className="lbl" style={{ fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase', color: '#5c7291', marginTop: '2px' }}>Super Reviews</div>
-                </div>
-                <div className="trust-item" style={{ flex: 1, textAlign: 'center', padding: '10px 6px' }}>
-                  <div className="num" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '15px', color: '#12233D' }}>11 Yrs</div>
-                  <div className="lbl" style={{ fontSize: '8px', letterSpacing: '1px', textTransform: 'uppercase', color: '#5c7291', marginTop: '2px' }}>In Operation</div>
-                </div>
-              </div>
-
-              {/* Accommodation Schedule Table */}
-              {currentQuote.hotels && currentQuote.hotels.length > 0 && (
-                <div style={{ marginTop: '18px' }}>
-                  <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Accommodation Schedule
-                  </div>
-                  <div className="hstays" style={{ border: '1px solid #D7E0EA', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div className="hhead" style={{ display: 'flex', background: '#12233D', color: '#ffffff', fontSize: '9px', letterSpacing: '1px', textTransform: 'uppercase', padding: '8px 14px', pageBreakAfter: 'avoid', breakAfter: 'avoid' }}>
-                      <div className="c1" style={{ width: '70px', flexShrink: 0, fontWeight: 700 }}>Night</div>
-                      <div className="c2" style={{ width: '100px', flexShrink: 0 }}>Region / City</div>
-                      <div className="c3" style={{ flex: 1, fontWeight: 700 }}>Hotel</div>
-                      <div className="c4" style={{ width: '90px', flexShrink: 0 }}>Category</div>
-                      <div className="c5" style={{ width: '170px', flexShrink: 0, textAlign: 'right' }}>Room Type</div>
-                    </div>
-                    {currentQuote.hotels.map((hotel, hIdx) => {
-                      const nightStr = (hotel.selectedNightIndices || []).map(n => n + 1).join(' & ');
-                      return (
-                        <div key={hIdx} className="hrow" style={{ display: 'flex', padding: '8px 14px', borderBottom: hIdx === currentQuote.hotels.length - 1 ? 'none' : '1px solid #EEF2F6', fontSize: '11px', background: hIdx % 2 === 1 ? '#F9FBFC' : '#ffffff', alignItems: 'center', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                          <div className="c1" style={{ width: '70px', flexShrink: 0, fontWeight: 700, color: '#12233D' }}>Night {nightStr || hIdx + 1}</div>
-                          <div className="c2" style={{ width: '100px', flexShrink: 0, color: '#5c7291' }}>{hotel.city || lead.destination}</div>
-                          <div className="c3" style={{ flex: 1, fontWeight: 700, color: '#12233D' }}>
-                            <div>{hotel.hotelName || 'Selected Property'}</div>
-                            {hotel.comments && (
-                              <div style={{ fontSize: '9px', color: '#B45309', fontWeight: 600, marginTop: '2px' }}>
-                                ✨ {hotel.comments}
-                              </div>
-                            )}
-                          </div>
-                          <div className="c4" style={{ width: '90px', flexShrink: 0, color: '#3A6EA5', fontWeight: 600 }}>{hotel.category || '4 Star'}</div>
-                          <div className="c5" style={{ width: '170px', flexShrink: 0, textAlign: 'right', color: '#5c7291' }}>
-                            <div style={{ fontWeight: 600, color: '#12233D' }}>{hotel.roomType || 'Standard Room'}</div>
-                            <div style={{ fontSize: '9px', color: '#5c7291' }}>{lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Child` : ''}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Day-Wise Itinerary */}
-              {currentQuote.itinerary && currentQuote.itinerary.length > 0 && (
-                <div style={{ marginTop: '18px' }}>
-                  <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Day-Wise Itinerary
-                  </div>
-                  {currentQuote.itinerary.map((day, dIdx) => (
-                    <div key={dIdx} className="day" style={{ display: 'flex', gap: '14px', padding: '9px 0', borderBottom: '1px solid #EEF2F6', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                      <div className="dtag" style={{ width: '60px', flexShrink: 0, fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#3A6EA5' }}>
-                        Day {String(day.day || dIdx + 1).padStart(2, '0')}
-                      </div>
-                      <div className="dbody" style={{ flex: 1 }}>
-                        <h3 style={{ margin: '0 0 3px 0', fontSize: '12.5px', fontWeight: 700, color: '#12233D' }}>
-                          {getCleanDayTitle(day, dIdx, currentQuote.itinerary.length, lead.destination)}
-                        </h3>
-                        <p style={{ margin: 0, fontSize: '10.8px', color: '#3d4f66', lineHeight: 1.55 }}>{day.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Testimonial Box */}
-              <div className="testimonial" style={{ marginTop: '14px', background: '#F4F7FA', borderLeft: '3px solid #3A6EA5', padding: '12px 16px', fontSize: '11.5px', fontStyle: 'italic', color: '#1B2A41', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                “Every hotel, cab and guide was exactly as promised — Kingsland made our trip effortless and truly memorable.”
-                <div className="auth" style={{ marginTop: '4px', fontSize: '9.5px', color: '#5c7291', fontStyle: 'normal', fontWeight: 700 }}>
-                  — Verified Client Review · Kingsland Holidays
-                </div>
-              </div>
-
-              {/* Inclusions & Exclusions */}
-              <div className="avoid-page-break" style={{ marginTop: '18px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Inclusions & Exclusions
-                </div>
-                <div className="two-col" style={{ display: 'flex', gap: '14px', marginTop: '6px' }}>
-                  <div className="box inc" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '12px 16px', background: '#ffffff', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '10.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#12233D', fontWeight: 700 }}>INCLUDED</h4>
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: '10.8px' }}>
-                      <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> {getAccommodationInclusion(currentQuote)}</li>
-                      <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> {getMealInclusion(currentQuote)}</li>
-                      {currentQuote.inclusions?.transfer?.arrival?.included && <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> Airport / Station Transfers Included</li>}
-                      {currentQuote.inclusions?.sightseeing?.included && <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> All Sightseeing as per itinerary</li>}
-                      {currentQuote.inclusions?.taxes?.included && <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> Government Taxes & Service Charges</li>}
-                      {currentQuote.otherInclusions && parseCustomItems(currentQuote.otherInclusions).map((inc, i) => (
-                        <li key={i} style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#2E7D32', fontWeight: 700, marginRight: '4px' }}>✓</span> {inc}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="box exc" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '12px 16px', background: '#ffffff', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '10.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#12233D', fontWeight: 700 }}>EXCLUDED</h4>
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, fontSize: '10.8px' }}>
-                      <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#C62828', fontWeight: 700, marginRight: '4px' }}>✕</span> Personal Expenses (Laundry, Drinks, Tips)</li>
-                      <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#C62828', fontWeight: 700, marginRight: '4px' }}>✕</span> Optional Tours & Activities</li>
-                      {currentQuote.flightsNotIncluded && <li style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#C62828', fontWeight: 700, marginRight: '4px' }}>✕</span> Airfare / Train Tickets</li>}
-                      {currentQuote.otherExclusions && parseCustomItems(currentQuote.otherExclusions).map((exc, i) => (
-                        <li key={i} style={{ marginBottom: '4px', color: '#1B2A41' }}><span style={{ color: '#C62828', fontWeight: 700, marginRight: '4px' }}>✕</span> {exc}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              {/* Guarantee Strip */}
-              <div className="guarantee-strip avoid-page-break" style={{ display: 'flex', gap: '10px', marginTop: '14px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="gitem" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '9px 12px', textAlign: 'center', background: '#F4F7FA' }}>
-                  <div className="gt" style={{ fontWeight: 700, fontSize: '10.5px', color: '#12233D' }}>Best Price Guarantee</div>
-                  <div className="gs" style={{ fontSize: '8.5px', color: '#5c7291', marginTop: '2px' }}>We'll match a lower quote</div>
-                </div>
-                <div className="gitem" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '9px 12px', textAlign: 'center', background: '#F4F7FA' }}>
-                  <div className="gt" style={{ fontWeight: 700, fontSize: '10.5px', color: '#12233D' }}>Free Cancellation</div>
-                  <div className="gs" style={{ fontSize: '8.5px', color: '#5c7291', marginTop: '2px' }}>Free cancellation up to 30 days before travel</div>
-                </div>
-                <div className="gitem" style={{ flex: 1, border: '1px solid #D7E0EA', borderRadius: '4px', padding: '9px 12px', textAlign: 'center', background: '#F4F7FA' }}>
-                  <div className="gt" style={{ fontWeight: 700, fontSize: '10.5px', color: '#12233D' }}>Secure Payments</div>
-                  <div className="gs" style={{ fontSize: '8.5px', color: '#5c7291', marginTop: '2px' }}>Secure payments via UPI, Cards & Net Banking</div>
-                </div>
-              </div>
-
-              {/* Terms & Cancellation Policy */}
-              <div className="avoid-page-break" style={{ marginTop: '18px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Terms & Cancellation Policy
-                </div>
-                <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={true} />
-              </div>
-
-              {/* Our Hotel Partner Network */}
-              <div className="partners" style={{ marginTop: '18px', border: '1px solid #D7E0EA', borderRadius: '4px', padding: '12px 14px', background: '#F9FBFC', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Our Hotel Partner Network
-                </div>
-                <div className="partner-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>TAJ HOTELS</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>IHCL Group</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>OBEROI</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Luxury Collection</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>ITC HOTELS</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Responsible Luxury</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>RADISSON</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Hotel Group</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>THE LEELA</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Palaces & Resorts</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '8px 4px' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>MARRIOTT</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Bonvoy Network</div>
-                  </div>
-                </div>
-                <div className="pnote" style={{ textAlign: 'center', fontSize: '8.5px', color: '#8fa0b5', marginTop: '8px' }}>
-                  Indicative hotel partners; final property confirmed at booking.
-                </div>
-              </div>
-
-              {/* Working With Travel Partners */}
-              <div className="partners" style={{ marginTop: '16px', border: '1px solid #D7E0EA', borderRadius: '4px', padding: '12px 14px', background: '#F9FBFC', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="section-title" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '13.5px', color: '#12233D', marginBottom: '8px', paddingBottom: '4px', borderBottom: '1px solid #D7E0EA', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Working With Travel Partners
-                </div>
-                <div className="partner-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>MakeMyTrip</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Verified Seller</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #E4EAF0' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>Travel Triangle</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Certified Partner Agent</div>
-                  </div>
-                  <div className="partner-badge" style={{ flex: 1, textAlign: 'center', padding: '6px 4px' }}>
-                    <div className="pname" style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontWeight: 700, fontSize: '12px', color: '#12233D' }}>TripAdvisor</div>
-                    <div className="ptag" style={{ fontSize: '7.5px', letterSpacing: '1px', textTransform: 'uppercase', color: '#8fa0b5', marginTop: '2px' }}>Traveller Reviewed</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Signature Block */}
-              <div className="signblock" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '22px', padding: '0 8px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div className="sign" style={{ width: '220px' }}>
-                  <b style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontSize: '12px', color: '#12233D', display: 'block' }}>For {lead.name}</b>
-                  <div className="line" style={{ borderTop: '1px solid #12233D', marginTop: '28px', paddingTop: '4px', fontSize: '9.5px', color: '#5c7291' }}>
-                    Client Acceptance & Signature
-                  </div>
-                </div>
-                <div className="sign" style={{ width: '220px', textAlign: 'right' }}>
-                  <b style={{ fontFamily: "'IBM Plex Serif', Georgia, serif", fontSize: '12px', color: '#12233D', display: 'block' }}>For Kingsland Holidays</b>
-                  <div className="line" style={{ borderTop: '1px solid #12233D', marginTop: '28px', paddingTop: '4px', fontSize: '9.5px', color: '#5c7291' }}>
-                    Authorised Signatory ({agentName})
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="footer" style={{ marginTop: '18px', background: '#12233D', color: '#ffffff', padding: '14px 18px', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '10.5px', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-                <div>
-                  <span style={{ color: '#9ab0c9' }}>Trip Advisor:</span> <strong>{agentName}</strong> · Senior Trip Advisor
-                </div>
-                <div>
-                  <span style={{ color: '#9ab0c9' }}>Contact:</span> +91 6376983416, +91 7014939068 · official.kingslandholidays@gmail.com
-                </div>
-              </div>
-              <div className="license" style={{ textAlign: 'center', fontSize: '8.5px', color: '#8a94a3', marginTop: '8px' }}>
-                Regd. No. RAJ/TRVL/2019/00842 · Govt. Recognised Tour Operator · www.kingslandholidays.com
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Main Top Header Bar */}
-      <header className="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-sm shrink-0">
+      <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-8 py-5 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-6">
-          <button onClick={onClose} className="p-3 bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 rounded-2xl transition-all">
+          <button onClick={onClose} className="p-3 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700 hover:text-slate-800 dark:hover:text-zinc-100 rounded-2xl transition-all cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
                 PROPOSAL VIEWER
               </span>
               <span className="text-xs font-black text-slate-400">#{lead?.tripId}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">{lead?.name} — {lead?.destination}</h1>
+            <h1 className="text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight mt-1">{lead?.name} — {lead?.destination}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           {pdfDesigns.length > 0 && (
-            <div className="flex items-center gap-2 bg-slate-100 px-3.5 py-2.5 rounded-2xl border border-slate-200 shadow-xs">
-              <span className="text-xs">🎨</span>
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Design:</span>
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-800 px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-zinc-700 shadow-xs">
+              <span
+                className="w-3 h-3 rounded-full border border-black/20"
+                style={{ backgroundColor: selectedDesign?.primary_color || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.dot) || '#d4af37' }}
+              />
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">Design:</span>
               <select
-                value={selectedDesign?.id || ''}
+                value={selectedDesign?.id || 'royal'}
                 onChange={(e) => {
-                  const found = pdfDesigns.find(d => d.id === e.target.value);
-                  if (found) setSelectedDesign(found);
+                  const newId = e.target.value;
+                  const found = pdfDesigns.find(d => d.id === newId) || AVAILABLE_QUOTE_DESIGNS.find(d => d.id === newId);
+                  if (found) {
+                    const updated = { ...found, title: found.title || (found as any).name || newId, primary_color: found.primary_color || (found as any).dot };
+                    setSelectedDesign(updated);
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('active_pdf_design', newId);
+                      window.dispatchEvent(new CustomEvent('pdf-design-changed', { detail: newId }));
+                    }
+                    api.setActivePdfDesign(newId).catch(() => {});
+                  }
                 }}
-                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+                className="text-xs font-bold text-slate-800 dark:text-zinc-200 bg-transparent outline-none cursor-pointer"
               >
-                {pdfDesigns.map(d => (
-                  <option key={d.id} value={d.id}>
-                    {d.title} {d.is_active === 1 ? '★ Active' : ''}
+                {AVAILABLE_QUOTE_DESIGNS.map(d => (
+                  <option key={d.id} value={d.id} className="text-slate-900 bg-white dark:bg-zinc-800 dark:text-zinc-100">
+                    {d.name} {selectedDesign?.id === d.id ? '✓' : ''}
                   </option>
                 ))}
               </select>
@@ -1586,14 +1428,65 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        </div>
                     </div>
 
-                   <div
-                     ref={printRef}
-                     className="doc-preview-protected bg-white rounded-2xl p-8 md:p-12 border shadow-xl space-y-8 relative overflow-hidden"
-                     style={{
-                       borderColor: designColors.primary + '40',
-                       fontFamily: designColors.fontFamily || "'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-                     }}
-                   >
+                    {/* PROPOSAL PRESENTATION STAGE */}
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                            style={{ backgroundColor: selectedDesign?.primary_color || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.dot) || '#d4af37' }}
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-900 dark:text-zinc-100 uppercase tracking-tight">
+                                {selectedDesign?.title || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.name) || 'Royal Gold'}
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                Live A4 Document
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                              Exact multi-page layout from Kingsland Quote Designer with SVG partner brand icons
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleDownloadPDF}
+                          disabled={isDownloading}
+                          className="px-4 py-2 bg-[#12233D] hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          {isDownloading ? (
+                            <>
+                              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              <span>Generating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                              <span>Export PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="flex justify-center p-4 sm:p-8 bg-slate-100 dark:bg-zinc-950/80 rounded-3xl border border-slate-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
+                        <div
+                          ref={printRef}
+                          className="live-proposal-sheets-container flex flex-col gap-10 shadow-2xl"
+                          style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}
+                          dangerouslySetInnerHTML={{
+                            __html: currentQuoteDataModel
+                              ? renderCompleteProposalHtml(currentQuoteDataModel, selectedDesign?.id || 'royal', partnerBrandsList)
+                              : ''
+                          }}
+                        />
+                      </div>
+                    </div>
+                   <div style={{ display: 'none' }}>
                      {/* Watermark Overlay */}
                      {designColors.watermark && (
                        <div
@@ -1896,6 +1789,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
          </div>
       </div>
+
     </div>
   );
 };

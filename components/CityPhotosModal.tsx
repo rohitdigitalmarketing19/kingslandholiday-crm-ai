@@ -1,0 +1,543 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Upload, Image as ImageIcon, Check, X, Trash2, MapPin, Plus } from 'lucide-react';
+import {
+  fetchDestinationPhotos,
+  createDestinationPhoto,
+  deleteDestinationPhoto,
+  DestinationPhotoItem
+} from '../services/apiService';
+import { compressImageFile } from '../utils/imageCompressor';
+
+export interface CityPhotosModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  destinationCity?: string;
+  totalDays?: number;
+  targetDay?: number | null; // e.g. 1, 2, 3... for Day-wise pick mode
+  mode?: 'manage' | 'pick';  // 'pick' when choosing for itinerary day, 'manage' in PDF Design library
+  onSelectPhoto?: (imageUrl: string) => void;
+  onSelectPhotoWithTarget?: (target: 'cover' | number, imageUrl: string) => void;
+}
+
+export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
+  isOpen,
+  onClose,
+  destinationCity = '',
+  totalDays = 5,
+  targetDay = null,
+  mode = 'manage',
+  onSelectPhoto,
+  onSelectPhotoWithTarget
+}) => {
+  const [photos, setPhotos] = useState<DestinationPhotoItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTarget, setSelectedTarget] = useState<'cover' | number>(targetDay || 'cover');
+  const [showUploadForm, setShowUploadForm] = useState(false);
+
+  // New photo form state
+  const [newCity, setNewCity] = useState(destinationCity || '');
+  const [newTitle, setNewTitle] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newTags, setNewTags] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery('');
+      loadPhotos(''); // Always load ALL saved photos immediately on open
+      if (targetDay !== null && targetDay !== undefined) {
+        setSelectedTarget(targetDay);
+      }
+    }
+  }, [isOpen, targetDay]);
+
+  const loadPhotos = async (cityQuery: string = '') => {
+    setLoading(true);
+    try {
+      const data = await fetchDestinationPhotos(cityQuery.trim());
+      setPhotos(data || []);
+    } catch (err) {
+      console.error('Failed to load destination photos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Real-time instant filtering as user types or picks a city
+  const displayedPhotos = useMemo(() => {
+    if (!searchQuery.trim()) return photos;
+    const q = searchQuery.toLowerCase().trim();
+    return photos.filter(p =>
+      (p.city && p.city.toLowerCase().includes(q)) ||
+      (p.title && p.title.toLowerCase().includes(q)) ||
+      (p.tags && p.tags.toLowerCase().includes(q))
+    );
+  }, [photos, searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      loadPhotos(searchQuery);
+    } else {
+      loadPhotos('');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, WebP).');
+      return;
+    }
+
+    try {
+      const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 900, quality: 0.85 });
+      setNewImageUrl(compressed);
+      if (!newTitle.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        setNewTitle(cleanName);
+      }
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          setNewImageUrl(reader.result);
+          if (!newTitle.trim()) {
+            const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+            setNewTitle(cleanName);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveCustomPhoto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newImageUrl.trim()) {
+      alert('Please upload an image file or enter an image URL.');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const cityVal = newCity.trim() || destinationCity.trim() || 'Custom Destination';
+      const titleVal = newTitle.trim() || `${cityVal} Photo`;
+
+      const created = await createDestinationPhoto({
+        city: cityVal,
+        title: titleVal,
+        image_url: newImageUrl.trim(),
+        tags: newTags.trim() || cityVal
+      });
+
+      setPhotos(prev => [created, ...prev]);
+      setShowUploadForm(false);
+      setNewImageUrl('');
+      setNewTitle('');
+      setNewTags('');
+
+      // If in pick mode, automatically select newly uploaded photo
+      if (mode === 'pick' && onSelectPhoto) {
+        onSelectPhoto(created.image_url);
+        onClose();
+        return;
+      }
+    } catch (err) {
+      console.error('Error saving photo:', err);
+      alert('Failed to save photo.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to remove this photo?')) return;
+    try {
+      await deleteDestinationPhoto(id);
+      setPhotos(prev => prev.filter(p => p.id !== id));
+    } catch (err) {
+      console.error('Error deleting photo:', err);
+    }
+  };
+
+  const handleApplyPhoto = (photoUrl: string) => {
+    if (mode === 'pick' && onSelectPhoto) {
+      onSelectPhoto(photoUrl);
+      onClose();
+      return;
+    }
+
+    if (onSelectPhotoWithTarget) {
+      onSelectPhotoWithTarget(selectedTarget, photoUrl);
+      alert(
+        selectedTarget === 'cover'
+          ? 'Cover hero photo updated!'
+          : `Day ${selectedTarget} itinerary photo updated!`
+      );
+    } else if (onSelectPhoto) {
+      onSelectPhoto(photoUrl);
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const isPickMode = mode === 'pick';
+
+  return (
+    <div className="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+      <div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+        
+        {/* Modal Header */}
+        <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+                <span>{isPickMode ? `Select Photo for Day ${targetDay || 1}` : 'Destination & City Photo Library'}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                  {isPickMode ? 'Click to Attach' : 'Saved Photos & Upload'}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400">
+                {isPickMode
+                  ? 'Search by city name or title and click to attach this photo to Day ' + (targetDay || 1)
+                  : 'Add and organize destination photos used in day-wise proposal PDFs'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 cursor-pointer transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Target Selector Toolbar (shown in manage mode) */}
+        {!isPickMode && (
+          <div className="px-6 py-3 bg-white dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+                Preview Target:
+              </span>
+              <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTarget('cover')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    selectedTarget === 'cover'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  Cover Hero
+                </button>
+                {Array.from({ length: totalDays }).map((_, idx) => {
+                  const dayNum = idx + 1;
+                  return (
+                    <button
+                      key={dayNum}
+                      type="button"
+                      onClick={() => setSelectedTarget(dayNum)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedTarget === dayNum
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      }`}
+                    >
+                      Day {dayNum}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              className="px-3.5 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-300 text-black text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
+              <span>{showUploadForm ? 'Cancel' : 'Add New Photo'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* When in pick mode, allow uploading as well */}
+        {isPickMode && (
+          <div className="px-6 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
+            <span className="text-xs text-indigo-900 dark:text-indigo-200 font-bold">
+              Tip: Click any photo below to instantly add it to Day {targetDay || 1}.
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
+              <span>{showUploadForm ? 'Cancel Upload' : 'Upload New Photo'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* Upload Form Accordion */}
+        {showUploadForm && (
+          <form
+            onSubmit={handleSaveCustomPhoto}
+            className="p-5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 space-y-4 shrink-0"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                  City / Destination Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Manali, Kashmir, Goa, Jaipur"
+                  value={newCity}
+                  onChange={(e) => setNewCity(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                  Photo Title / Landmark *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Hadimba Temple, Solang Snow Peaks, Dal Lake"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                  Choose Photo File or Paste Image URL *
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="https://... or click browse"
+                    value={newImageUrl.startsWith('data:') ? '[Local Image Loaded]' : newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none truncate"
+                  />
+                  <label className="px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Browse</span>
+                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadForm(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isUploading ? 'Saving...' : 'Save Photo to Library'}
+                </button>
+              </div>
+            </div>
+
+            {newImageUrl && (
+              <div className="flex items-center gap-3 p-2 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
+                <img
+                  src={newImageUrl}
+                  alt="Preview"
+                  className="w-16 h-12 object-cover rounded-lg border border-slate-200 dark:border-zinc-700"
+                />
+                <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                  Ready to save for {newCity || 'destination'}
+                </span>
+              </div>
+            )}
+          </form>
+        )}
+
+        {/* Search Bar */}
+        <div className="px-6 py-3 bg-slate-50/70 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3 shrink-0">
+          <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search via city name or title (e.g. Manali, Kashmir, Goa, Kerala, Jaipur)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer transition-colors"
+            >
+              Search
+            </button>
+          </form>
+
+          {/* Quick city filter pills */}
+          <div className="hidden lg:flex items-center gap-1.5">
+            {['All', destinationCity, 'Kashmir', 'Manali', 'Goa', 'Kerala', 'Jaipur', 'Ladakh']
+              .filter(Boolean)
+              .filter((c, idx, arr) => arr.indexOf(c) === idx)
+              .map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    const q = c === 'All' ? '' : c;
+                    setSearchQuery(q);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
+                    (c === 'All' && !searchQuery) || searchQuery.toLowerCase() === c.toLowerCase()
+                      ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-xs'
+                      : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+          </div>
+        </div>
+
+        {/* Photos Grid */}
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
+              <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs font-semibold">Loading destination photos...</span>
+            </div>
+          ) : displayedPhotos.length === 0 ? (
+            <div className="py-16 text-center text-slate-400 space-y-3">
+              <MapPin className="w-10 h-10 mx-auto text-slate-300 dark:text-zinc-600 stroke-[1.5]" />
+              <p className="text-sm font-bold text-slate-700 dark:text-zinc-300">
+                No photos found matching "{searchQuery}"
+              </p>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
+                Clear the search query to see all saved photos or upload a new photo above.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  loadPhotos('');
+                }}
+                className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold cursor-pointer transition-colors"
+              >
+                Show All Saved Photos ({photos.length})
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {displayedPhotos.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleApplyPhoto(item.image_url)}
+                  className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:shadow-lg transition-all flex flex-col cursor-pointer"
+                >
+                  <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-zinc-800">
+                    <img
+                      src={item.image_url}
+                      alt={item.title || item.city}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-80" />
+
+                    <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-lime-400" />
+                      <span>{item.city}</span>
+                    </div>
+
+                    {!item.is_default && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(item.id, e)}
+                        className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer"
+                        title="Delete photo"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
+                      <p className="text-xs font-bold truncate drop-shadow-sm">{item.title || item.city}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white dark:bg-zinc-900 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 truncate">
+                      {item.city}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApplyPhoto(item.image_url);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white dark:bg-indigo-950/60 dark:hover:bg-indigo-600 dark:text-indigo-300 dark:hover:text-white text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>
+                        {isPickMode ? `Add to Day ${targetDay || 1}` : 'Apply'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="px-6 py-3.5 bg-slate-50 dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+          <span>{photos.length} destination photos in library</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-black font-bold cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};

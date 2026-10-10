@@ -53,7 +53,14 @@ function hydrateQuote(row: any): any {
     if (sub && quote.inclusions[cat]?.[sub]) { quote.inclusions[cat][sub].included = !!inc.included; quote.inclusions[cat][sub].comments = inc.comments || ''; }
     else if (!sub && quote.inclusions[cat]) { quote.inclusions[cat].included = !!inc.included; quote.inclusions[cat].comments = inc.comments || ''; }
   }
-  quote.itinerary = queryAll('SELECT * FROM quote_itinerary_days WHERE quote_id = ? ORDER BY day_number ASC', [row.id]).map((d: any) => ({ day: d.day_number, title: d.title || '', description: d.description || '' }));
+  quote.itinerary = queryAll('SELECT * FROM quote_itinerary_days WHERE quote_id = ? ORDER BY day_number ASC', [row.id]).map((d: any) => ({
+    day: d.day_number,
+    title: d.title || '',
+    description: d.description || '',
+    imageUrl: d.image_url || '',
+    img: d.image_url || ''
+  }));
+  quote.coverImage = row.cover_image || '';
   return quote;
 }
 
