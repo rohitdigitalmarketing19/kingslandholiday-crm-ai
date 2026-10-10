@@ -261,6 +261,23 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                   );
                 })}
               </div>
+
+              {/* Delete / Remove Image from Target button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectPhotoWithTarget) {
+                    onSelectPhotoWithTarget(selectedTarget, '');
+                  } else if (onSelectPhoto) {
+                    onSelectPhoto('');
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ml-1"
+                title={`Remove attached image from ${selectedTarget === 'cover' ? 'Cover Hero' : `Day ${selectedTarget}`}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove Image from {selectedTarget === 'cover' ? 'Cover' : `Day ${selectedTarget}`}</span>
+              </button>
             </div>
 
             <button
@@ -274,20 +291,34 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
           </div>
         )}
 
-        {/* When in pick mode, allow uploading as well */}
+        {/* When in pick mode, allow uploading as well as removing current image */}
         {isPickMode && (
-          <div className="px-6 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between">
+          <div className="px-6 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between gap-3">
             <span className="text-xs text-indigo-900 dark:text-indigo-200 font-bold">
-              Tip: Click any photo below to instantly add it to Day {targetDay || 1}.
+              Tip: Click any photo below to attach to Day {targetDay || 1}, or click Remove Image to use default artwork.
             </span>
-            <button
-              type="button"
-              onClick={() => setShowUploadForm(!showUploadForm)}
-              className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
-              <span>{showUploadForm ? 'Cancel Upload' : 'Upload New Photo'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onSelectPhoto) onSelectPhoto('');
+                  onClose();
+                }}
+                className="px-3 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Remove attached image and use default scenic artwork"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove Image</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUploadForm(!showUploadForm)}
+                className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
+                <span>{showUploadForm ? 'Cancel Upload' : 'Upload New Photo'}</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -345,6 +376,17 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     <span>Browse</span>
                     <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
                   </label>
+                  {newImageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setNewImageUrl('')}
+                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold cursor-pointer flex items-center gap-1"
+                      title="Delete / Clear chosen image"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -367,15 +409,31 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
             </div>
 
             {newImageUrl && (
-              <div className="flex items-center gap-3 p-2 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
-                <img
-                  src={newImageUrl}
-                  alt="Preview"
-                  className="w-16 h-12 object-cover rounded-lg border border-slate-200 dark:border-zinc-700"
-                />
-                <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                  Ready to save for {newCity || 'destination'}
-                </span>
+              <div className="flex items-center justify-between gap-3 p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={newImageUrl}
+                    alt="Preview"
+                    className="w-16 h-12 object-cover rounded-lg border border-slate-200 dark:border-zinc-700 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate block">
+                      {newTitle || 'Ready to save'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 dark:text-zinc-500 truncate block">
+                      Destination: {newCity || 'Default'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNewImageUrl('')}
+                  className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                  title="Remove image"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remove Image</span>
+                </button>
               </div>
             )}
           </form>
@@ -485,16 +543,14 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                       <span>{item.city}</span>
                     </div>
 
-                    {!item.is_default && (
-                      <button
-                        type="button"
-                        onClick={(e) => handleDelete(item.id, e)}
-                        className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer"
-                        title="Delete photo"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(item.id, e)}
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer opacity-80 group-hover:opacity-100"
+                      title="Delete photo from library"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
 
                     <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
                       <p className="text-xs font-bold truncate drop-shadow-sm">{item.title || item.city}</p>

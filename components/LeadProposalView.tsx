@@ -4,7 +4,7 @@ import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
 import { exportElementToPdf } from '../utils/pdfExport';
 import { QuoteDataModel, HotelItemModel, renderCompleteProposalHtml, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
-import { PartnerBrand } from '../utils/partnerLogos';
+import { PartnerBrand, HOTEL_PARTNERS, TRAVEL_PARTNERS, renderPartnerBadgeHtml } from '../utils/partnerLogos';
 
 interface LeadProposalViewProps {
   lead: Lead;
@@ -1735,29 +1735,42 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={false} />
                      </div>
 
-                     {/* Hotel Partners & Travel Partners */}
+                     {/* Hotel Working Partners & Working Partners (Two Different Containers) */}
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 avoid-page-break relative z-10">
                        <div className="border rounded-xl p-4 bg-[#F9FBFC]" style={{ borderColor: designColors.primary + '30' }}>
                          <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
-                           Our Hotel Partner Network
+                           Hotel Working Partners
                          </span>
-                         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Taj Hotels</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Oberoi</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>ITC Hotels</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Radisson</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>The Leela</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>Marriott</div>
+                         <div className="flex flex-wrap items-center gap-1.5">
+                           {((partnerBrandsList && partnerBrandsList.filter(p => p.category === 'hotel').length > 0)
+                             ? partnerBrandsList.filter(p => p.category === 'hotel')
+                             : HOTEL_PARTNERS
+                           ).map(brand => (
+                             <div
+                               key={brand.id}
+                               dangerouslySetInnerHTML={{
+                                 __html: renderPartnerBadgeHtml(brand, { showTag: false })
+                               }}
+                             />
+                           ))}
                          </div>
                        </div>
                        <div className="border rounded-xl p-4 bg-[#F9FBFC]" style={{ borderColor: designColors.primary + '30' }}>
                          <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
-                           Working With Travel Partners
+                           Working Partners
                          </span>
-                         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>MakeMyTrip</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>TravelTriangle</div>
-                           <div className="p-2 bg-white rounded-lg border border-slate-100 font-bold" style={{ color: designColors.secondary }}>TripAdvisor</div>
+                         <div className="flex flex-wrap items-center gap-1.5">
+                           {((partnerBrandsList && partnerBrandsList.filter(p => p.category === 'travel').length > 0)
+                             ? partnerBrandsList.filter(p => p.category === 'travel')
+                             : TRAVEL_PARTNERS
+                           ).map(brand => (
+                             <div
+                               key={brand.id}
+                               dangerouslySetInnerHTML={{
+                                 __html: renderPartnerBadgeHtml(brand, { showTag: false })
+                               }}
+                             />
+                           ))}
                          </div>
                        </div>
                      </div>

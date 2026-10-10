@@ -159,14 +159,14 @@ export const TH: Record<string, any> = {
    ===================================================================== */
 export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartners?: PartnerBrand[]): string {
   const th = TH[thKey] || TH.royal;
-  const base = `font-family:${th.head};font-size:14px;font-weight:700;margin-bottom:8px;`;
-  let sec = base + `color:${th.ink};text-transform:uppercase;letter-spacing:1px;border-bottom:2px solid ${th.accent};padding-bottom:5px;`;
-  if (th.sec === 'pill') sec = base + `display:inline-block;background:${th.accent};color:${th.onAccent};padding:3px 12px;border-radius:999px;`;
-  if (th.sec === 'bar') sec = base + `color:${th.ink};border-left:5px solid ${th.accent};padding-left:10px;`;
+  const base = `font-family:${th.head};font-size:12px;font-weight:700;margin-bottom:5px;`;
+  let sec = base + `color:${th.ink};text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid ${th.accent};padding-bottom:3px;`;
+  if (th.sec === 'pill') sec = base + `display:inline-block;background:${th.accent};color:${th.onAccent};padding:2px 9px;border-radius:999px;`;
+  if (th.sec === 'bar') sec = base + `color:${th.ink};border-left:3px solid ${th.accent};padding-left:7px;`;
 
-  const bl = (arr: string[]) => arr.map((t) => `<div style="display:flex;gap:7px"><span style="color:${th.accent};flex:none">●</span><span>${e(t)}</span></div>`).join('');
-  const col = (arr: string[]) => `<div style="display:flex;flex-direction:column;gap:5px;font-size:11.5px;line-height:1.4;color:${th.muted}">${bl(arr)}</div>`;
-  const fees = DEFAULT_TERMS.fees.map((f) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid ${th.line}"><span>${e(f[0])}</span><b>${e(f[1])}</b></div>`).join('');
+  const bl = (arr: string[]) => arr.map((t) => `<div style="display:flex;gap:5px"><span style="color:${th.accent};flex:none">●</span><span>${e(t)}</span></div>`).join('');
+  const col = (arr: string[]) => `<div style="display:flex;flex-direction:column;gap:3px;font-size:10px;line-height:1.3;color:${th.muted}">${bl(arr)}</div>`;
+  const fees = DEFAULT_TERMS.fees.map((f) => `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10.5px;padding:2.5px 0;border-bottom:1px solid ${th.line}"><span>${e(f[0])}</span><b>${e(f[1])}</b></div>`).join('');
 
   // Support custom manually added partners or fallback to curated partner network
   const hotelsToRender = (customPartners && customPartners.filter(p => p.category === 'hotel').length > 0)
@@ -177,61 +177,80 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
     ? customPartners.filter(p => p.category === 'travel')
     : TRAVEL_PARTNERS;
 
-  const hotelBadges = hotelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink })).join('');
-  const travelBadges = travelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink })).join('');
+  // Render badges with logo and brand name ONLY (tag not shown)
+  const hotelBadges = hotelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false })).join('');
+  const travelBadges = travelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false })).join('');
 
-  return pg(`padding:40px 46px;background:${th.bg};color:${th.ink};font-family:${th.body}`, `
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:${th.head};font-size:20px;font-weight:700">${BRAND}</div>
-      <div style="font-size:12px;color:${th.muted}">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
-    </div>
-    <div style="font-family:${th.head};font-size:26px;font-weight:700;margin:12px 0 14px;line-height:1.15">Terms &amp; Cancellation Policy</div>
-    
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px">
-      <div>
-        <div style="${sec}">Cancellation policy · land package</div>
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:4px 12px">${fees}</div>
-        <div style="margin-top:8px">${col(DEFAULT_TERMS.feeNotes)}</div>
+  // Use flex column layout so content and footer never overlap.
+  // The outer page wrapper (pg) provides the 1123px fixed height.
+  // Content fills remaining space, footer is pinned at bottom via flex.
+  return pg(`padding:0;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column`, `
+    <div style="flex:1;padding:28px 40px 0;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:${th.head};font-size:17px;font-weight:700">${BRAND}</div>
+        <div style="font-size:10.5px;color:${th.muted}">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
-      <div>
-        <div style="${sec}">Hotels &amp; accommodation</div>
-        ${col(DEFAULT_TERMS.hotels)}
+      <div style="font-family:${th.head};font-size:20px;font-weight:700;margin:8px 0 8px;line-height:1.15">Terms &amp; Cancellation Policy</div>
+      
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+        <div>
+          <div style="${sec}">Cancellation policy · land package</div>
+          <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:2px 8px">${fees}</div>
+          <div style="margin-top:4px">${col(DEFAULT_TERMS.feeNotes)}</div>
+        </div>
+        <div>
+          <div style="${sec}">Hotels &amp; accommodation</div>
+          ${col(DEFAULT_TERMS.hotels)}
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px">
+        <div>
+          <div style="${sec}">Important information</div>
+          ${col(DEFAULT_TERMS.important)}
+        </div>
+        <div>
+          <div style="${sec}">Pure agent declaration</div>
+          ${col(DEFAULT_TERMS.agent)}
+        </div>
+      </div>
+
+      <!-- Two Separate Distinct Containers: Hotel Working Partners & Working Partners -->
+      <div data-last="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px">
+        <!-- 1st Box: Hotel Working Partners -->
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 10px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
+            <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+            <span>Hotel Working Partners</span>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px">
+            ${hotelBadges}
+          </div>
+        </div>
+
+        <!-- 2nd Box: Working Partners -->
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 10px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
+            <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+            <span>Working Partners</span>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px">
+            ${travelBadges}
+          </div>
+        </div>
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:14px">
+    <!-- Advisor Footer — inside flex flow so it never overlaps content -->
+    <div data-foot="1" style="flex:none;margin:0 40px 24px;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px">
       <div>
-        <div style="${sec}">Important information</div>
-        ${col(DEFAULT_TERMS.important)}
+        <div style="font-size:10px;opacity:.85">Your trip advisor</div>
+        <div style="font-family:${th.head};font-size:14px;font-weight:700;margin-top:1px">${e(Q.advisor.name)}</div>
+        <div style="font-size:10px;opacity:.85">${e(Q.advisor.role)}</div>
       </div>
-      <div>
-        <div style="${sec}">Pure agent declaration</div>
-        ${col(DEFAULT_TERMS.agent)}
-      </div>
-    </div>
-
-    <!-- Partner Brand Icons instead of plain names -->
-    <div data-last="1" style="margin-top:14px;background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:10px 14px;display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:11.5px;font-weight:700;width:145px;color:${th.ink}">Hotel partner network</span>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${hotelBadges}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px dashed ${th.line};padding-top:6px">
-        <span style="font-size:11.5px;font-weight:700;width:145px;color:${th.ink}">Travel partners</span>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">${travelBadges}</div>
-      </div>
-    </div>
-
-    <!-- Advisor Footer -->
-    <div data-foot="1" style="position:absolute;left:46px;right:46px;bottom:36px;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px">
-      <div>
-        <div style="font-size:11px;opacity:.85">Your trip advisor</div>
-        <div style="font-family:${th.head};font-size:17px;font-weight:700;margin-top:2px">${e(Q.advisor.name)}</div>
-        <div style="font-size:11px;opacity:.85">${e(Q.advisor.role)}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600">
-        <div style="display:flex;align-items:center;gap:8px">${ico('phone', 14)}${e(Q.advisor.phones)}</div>
-        <div style="display:flex;align-items:center;gap:8px">${ico('mail', 14)}${e(Q.advisor.email)}</div>
+      <div style="display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:600">
+        <div style="display:flex;align-items:center;gap:6px">${ico('phone', 12)}${e(Q.advisor.phones)}</div>
+        <div style="display:flex;align-items:center;gap:6px">${ico('mail', 12)}${e(Q.advisor.email)}</div>
       </div>
     </div>
   `);
@@ -325,9 +344,9 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
             <div style="font-size:11px;color:#5f6985;margin-top:1px">${e(h.city || Q.city)}</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <div style="font-size:${(Q.hotels && Q.hotels.length > 1) ? '13.5px' : '15px'};font-weight:800">${e(h.name)}</div>
-              <div style="background:#f4ecd2;color:#6b4f10;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:8px">${e(h.type)}</div>
+            <div style="margin-top:1px;line-height:1.25">
+              <span style="font-size:${(Q.hotels && Q.hotels.length > 1) ? '13.5px' : '15px'};font-weight:800;display:inline;margin-right:8px">${e(h.name)}</span>
+              <span style="background:#f4ecd2;color:#6b4f10;font-size:10px;font-weight:700;padding:1.5px 7px;border-radius:6px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
             </div>
             ${h.rooms ? `
             <div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:#3b455f;margin-top:2px">
@@ -371,18 +390,22 @@ export function royalDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: stri
     <div style="display:flex;flex-direction:column;gap:10px">
       ${daysSlice.map((d, i) => {
         const dayNum = startIdx + i + 1;
+        const textLen = (d.text || '').length;
+        const imgH = textLen > 600 ? 185 : (textLen > 350 ? 155 : 126);
         return `
           <div style="display:flex;gap:14px;align-items:stretch">
             <div style="width:42px;flex:none;display:flex;flex-direction:column;align-items:center">
               <div style="width:38px;height:38px;border-radius:19px;background:#12213f;color:#d4af37;font-family:${rH};font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center">${String(dayNum).padStart(2, '0')}</div>
               ${i < n - 1 ? '<div style="width:2px;flex:1;background:#d4af37;margin-top:4px"></div>' : ''}
             </div>
-            <div style="flex:1;display:flex;gap:14px;background:#fff;border:1px solid #e8e1cf;border-radius:14px;padding:13px;box-shadow:0 4px 12px rgba(18,33,63,.06)">
+            <div style="flex:1;display:flex;gap:14px;background:#fff;border:1px solid #e8e1cf;border-radius:14px;padding:12px 14px;box-shadow:0 3px 10px rgba(18,33,63,.05);align-items:center">
               <div style="flex:1;min-width:0">
                 <div style="font-family:${rH};font-size:15px;font-weight:700;line-height:1.25">Day ${dayNum}: ${e(d.title)}</div>
-                <div style="font-size:12px;line-height:1.45;color:#3b455f;margin-top:5px">${e(d.text)}</div>
+                <div style="font-size:11.5px;line-height:1.45;color:#3b455f;margin-top:5px;word-break:break-word">${e(d.text)}</div>
               </div>
-              ${scBox(190, 126, d, startIdx + i, 'royal', 'border-radius:10px')}
+              <div style="width:190px;height:${imgH}px;flex:none;border-radius:10px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06);transition:height 0.2s ease">
+                ${scene(d, startIdx + i, 'royal')}
+              </div>
             </div>
           </div>
         `;
@@ -471,9 +494,9 @@ export function alpineCoverSheet(Q: QuoteDataModel): string {
             <div style="width:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '42px'};height:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '42px'};border-radius:10px;background:#0f4c4a;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', (Q.hotels && Q.hotels.length > 1) ? 16 : 20)}</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:10px;letter-spacing:1px;color:#3f5a58;font-weight:700">ACCOMMODATION · ${e(h.nights.toUpperCase())} · ${e((h.city || Q.city).toUpperCase())}</div>
-              <div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap">
-                <div style="font-family:${aH};font-size:${(Q.hotels && Q.hotels.length > 1) ? '16px' : '19px'}">${e(h.name)}</div>
-                <div style="background:#fff;color:#0f4c4a;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px">${e(h.type)}</div>
+              <div style="margin-top:1px;line-height:1.25">
+                <span style="font-family:${aH};font-size:${(Q.hotels && Q.hotels.length > 1) ? '15px' : '18px'};display:inline;margin-right:8px">${e(h.name)}</span>
+                <span style="background:#fff;color:#0f4c4a;font-size:10px;font-weight:700;padding:1.5px 7px;border-radius:999px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
               </div>
               <div style="font-size:11.5px;color:#3f5a58;margin-top:2px">${e(h.room)}${h.rooms ? ` · ${e(h.rooms)}` : ''}</div>
             </div>
@@ -498,8 +521,7 @@ export function alpineCoverSheet(Q: QuoteDataModel): string {
 }
 
 export function alpineDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: string; text: string; img?: string }>, startIdx: number): string {
-  const ds = daysSlice, last = ds.length - 1;
-  const pill = (i: number) => `<div style="position:absolute;left:12px;top:12px;background:#f2a93b;color:#2a1c00;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 10px;border-radius:999px">DAY ${startIdx + i + 1}</div>`;
+  const pill = (i: number) => `<div style="position:absolute;left:10px;top:10px;background:#f2a93b;color:#2a1c00;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:999px">DAY ${startIdx + i + 1}</div>`;
 
   return pg(`padding:38px 46px;background:#fbfdfc;font-family:${aF};color:#12302f`, `
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -510,43 +532,28 @@ export function alpineDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: str
     </div>
     <div style="margin:12px 0 16px">
       <div style="font-size:11.5px;letter-spacing:3px;color:#b36b00;font-weight:700">${e(Q.longDuration.toUpperCase().replace('/', '·'))}</div>
-      <div style="font-family:${aH};font-size:34px;line-height:1.1;color:#0f4c4a;margin-top:2px">Your journey, day by day</div>
+      <div style="font-family:${aH};font-size:32px;line-height:1.1;color:#0f4c4a;margin-top:2px">Your journey, day by day</div>
     </div>
 
-    ${ds.length === 4 ? `
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
-        ${ds.map((d, i) => `
-          <div style="background:#fff;border:1px solid #cfe5e1;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(15,76,74,.08)">
-            <div style="height:114px;position:relative">${scBox('100%', 114, d, startIdx + i, 'alpine')}${pill(i)}</div>
-            <div style="padding:11px 14px 13px">
-              <div style="font-family:${aH};font-size:16px;line-height:1.2;color:#0f4c4a">${e(d.title)}</div>
-              <div style="font-size:12px;line-height:1.45;color:#3f5a58;margin-top:5px">${e(d.text)}</div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      ${daysSlice.map((d, i) => {
+        const dayNum = startIdx + i + 1;
+        const textLen = (d.text || '').length;
+        const imgH = textLen > 600 ? 180 : (textLen > 350 ? 150 : 124);
+        return `
+          <div style="display:flex;gap:14px;background:#fff;border:1px solid #cfe5e1;border-radius:16px;padding:12px 14px;box-shadow:0 3px 10px rgba(15,76,74,.06);align-items:center">
+            <div style="width:190px;height:${imgH}px;flex:none;position:relative;border-radius:12px;overflow:hidden">
+              ${scene(d, startIdx + i, 'alpine')}
+              ${pill(i)}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:${aH};font-size:17px;line-height:1.2;color:#0f4c4a">Day ${dayNum}: ${e(d.title)}</div>
+              <div style="font-size:11.5px;line-height:1.45;color:#3f5a58;margin-top:5px;word-break:break-word">${e(d.text)}</div>
             </div>
           </div>
-        `).join('')}
-      </div>
-    ` : `
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
-        ${ds.slice(0, last).map((d, i) => `
-          <div style="background:#fff;border:1px solid #cfe5e1;border-radius:18px;overflow:hidden;box-shadow:0 4px 14px rgba(15,76,74,.08)">
-            <div style="height:114px;position:relative">${scBox('100%', 114, d, startIdx + i, 'alpine')}${pill(i)}</div>
-            <div style="padding:11px 14px 13px">
-              <div style="font-family:${aH};font-size:16px;line-height:1.2;color:#0f4c4a">${e(d.title)}</div>
-              <div style="font-size:12px;line-height:1.45;color:#3f5a58;margin-top:5px">${e(d.text)}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-      ${last >= 0 ? `
-        <div style="margin-top:14px;display:flex;background:#0f4c4a;color:#fff;border-radius:18px;overflow:hidden">
-          <div style="width:220px;height:144px;flex:none;position:relative">${scBox(220, 144, ds[last], startIdx + last, 'alpine')}${pill(last)}</div>
-          <div style="padding:14px 18px;flex:1">
-            <div style="font-family:${aH};font-size:18px;line-height:1.2">${e(ds[last].title)}</div>
-            <div style="font-size:12px;line-height:1.45;color:#d7ece8;margin-top:5px">${e(ds[last].text)}</div>
-          </div>
-        </div>
-      ` : ''}
-    `}
+        `;
+      }).join('')}
+    </div>
 
     <div style="position:absolute;left:46px;right:46px;bottom:30px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#4a6462">
       <span style="color:#0f4c4a">${ico('shield', 14)}</span>${note()}
@@ -561,89 +568,97 @@ const sF = "'Nunito Sans',sans-serif", sH = "'Outfit',sans-serif";
 
 export function sunsetCoverSheet(Q: QuoteDataModel): string {
   const chips = Q.services.split(',').map((s) => s.trim()).filter(Boolean).map((s, i) => `
-    <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.24);border-radius:999px;padding:4px 11px;font-size:12px;font-weight:700">
-      ${ico(svcIcons[i % 3], 14, 2.2)}${e(s)}
+    <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.24);border-radius:999px;padding:3px 9px;font-size:11px;font-weight:700">
+      ${ico(svcIcons[i % 3], 12, 2.2)}${e(s)}
     </div>`).join('');
 
   const item = (t: string, c: string, ic: string) => `
-    <div style="display:flex;gap:7px;align-items:flex-start;font-size:12px;line-height:1.35">
-      <span style="color:${c};margin-top:1px">${ico(ic, 13, 3)}</span><span>${e(t)}</span>
+    <div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.3">
+      <span style="color:${c};margin-top:1px">${ico(ic, 12, 2.8)}</span><span>${e(t)}</span>
     </div>`;
 
+  const hotelList = (Q.hotels && Q.hotels.length > 0) ? Q.hotels : [Q.hotel];
+  const isMulti = hotelList.length > 1;
+
   return pg(`background:#fffaf6;font-family:${sF};color:#231f2b`, `
-    <div style="position:relative;height:320px;background:linear-gradient(135deg,#ff5e4d 0%,#ff8a3d 60%,#ffb347 100%);border-bottom-left-radius:60px;overflow:hidden;padding:32px 46px;color:#fff">
+    <div style="position:relative;height:255px;background:linear-gradient(135deg,#ff5e4d 0%,#ff8a3d 60%,#ffb347 100%);border-bottom-left-radius:48px;overflow:hidden;padding:26px 46px;color:#fff">
       ${Q.coverImage ? `<img src="${Q.coverImage}" alt="${e(Q.city)}" style="position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;opacity:0.25;mix-blend-mode:luminosity" />` : ''}
       <svg viewBox="0 0 794 140" preserveAspectRatio="none" style="position:absolute;left:0;bottom:0;width:794px;height:140px" aria-hidden="true">
         <path d="M0 140V80L110 30l80 50 90-60 100 70 90-40 130 60 80-30 114 50v30z" fill="rgba(255,255,255,.16)"/>
         <path d="M0 140v-30l120-34 90 40 110-46 120 44 120-30 120 36v20z" fill="rgba(255,255,255,.14)"/>
       </svg>
       <div style="position:relative;display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:38px;height:38px;border-radius:12px;background:#fff;color:#ff5e4d;display:flex;align-items:center;justify-content:center">${ico('mountain', 20, 2.2)}</div>
-          <div style="font-family:${sH};font-size:21px;font-weight:700">${BRAND}</div>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:34px;height:34px;border-radius:10px;background:#fff;color:#ff5e4d;display:flex;align-items:center;justify-content:center">${ico('mountain', 18, 2.2)}</div>
+          <div style="font-family:${sH};font-size:19px;font-weight:700">${BRAND}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:11.5px;letter-spacing:3px;font-weight:800">TRAVEL QUOTATION</div>
-          <div style="font-size:12.5px;margin-top:2px">Ref. No. ${e(Q.ref)}</div>
+          <div style="font-size:11px;letter-spacing:2.5px;font-weight:800">TRAVEL QUOTATION</div>
+          <div style="font-size:11.5px;margin-top:2px;opacity:.9">Ref. No. ${e(Q.ref)}</div>
         </div>
       </div>
-      <div style="position:relative;margin-top:34px">
-        <div style="font-size:11.5px;letter-spacing:3px;font-weight:800">${e(Q.longDuration.toUpperCase().replace('/', '·'))} · ${e(Q.city.toUpperCase())}</div>
-        <div style="font-family:${sH};font-size:54px;font-weight:800;line-height:1.02;margin-top:6px">${brk(Q.packageName)}</div>
+      <div style="position:relative;margin-top:18px">
+        <div style="font-size:11px;letter-spacing:2px;font-weight:800">${e(Q.longDuration.toUpperCase().replace('/', '·'))} · ${e(Q.city.toUpperCase())}</div>
+        <div style="font-family:${sH};font-size:38px;font-weight:800;line-height:1.06;margin-top:4px">${brk(Q.packageName)}</div>
       </div>
-      <div style="position:relative;display:flex;gap:7px;margin-top:14px">${chips}</div>
+      <div style="position:relative;display:flex;gap:6px;margin-top:10px">${chips}</div>
     </div>
 
-    <div style="position:absolute;right:46px;top:230px;width:170px;height:170px;border-radius:85px;background:#fff;border:6px solid #ffe3cf;box-shadow:0 12px 28px rgba(35,31,43,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
-      <div style="font-size:11px;letter-spacing:1px;font-weight:800;color:#c2410c">ALL-INCLUSIVE</div>
-      <div style="font-family:${sH};font-size:30px;font-weight:800;line-height:1.1;color:#231f2b">${e(Q.price)}</div>
-      <div style="font-size:11.5px;color:#5a5262;font-weight:600">${e(Q.travellers)}</div>
+    <!-- Floating Price Stamp -->
+    <div style="position:absolute;right:46px;top:180px;width:146px;height:146px;border-radius:73px;background:#fff;border:5px solid #ffe3cf;box-shadow:0 10px 24px rgba(35,31,43,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:10">
+      <div style="font-size:10px;letter-spacing:1px;font-weight:800;color:#c2410c">ALL-INCLUSIVE</div>
+      <div style="font-family:${sH};font-size:26px;font-weight:800;line-height:1.1;color:#231f2b;margin:2px 0">${e(Q.price)}</div>
+      <div style="font-size:11px;color:#5a5262;font-weight:600">${e(Q.travellers)}</div>
     </div>
 
-    <div style="padding:20px 46px 0;width:510px">
-      <div style="font-size:11.5px;letter-spacing:2px;font-weight:800;color:#c2410c">PREPARED FOR</div>
-      <div style="font-family:${sH};font-size:26px;font-weight:700;margin-top:2px">${e(Q.client)}</div>
-      <div style="font-size:12.5px;line-height:1.55;color:#4a4352;margin-top:6px">${greeting(Q)}</div>
+    <!-- Client Greeting Section -->
+    <div style="padding:14px 46px 0;width:520px">
+      <div style="font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:#c2410c">PREPARED FOR</div>
+      <div style="font-family:${sH};font-size:22px;font-weight:700;margin-top:1px">${e(Q.client)}</div>
+      <div style="font-size:12px;line-height:1.45;color:#4a4352;margin-top:4px">${greeting(Q)}</div>
     </div>
 
-    <div style="margin:${(Q.hotels && Q.hotels.length > 1) ? '12px' : '16px'} 46px 0;display:flex;flex-direction:column;gap:6px">
-      ${((Q.hotels && Q.hotels.length > 0) ? Q.hotels : [Q.hotel]).map(h => `
-        <div style="background:#ffe9d9;border-radius:16px;padding:${(Q.hotels && Q.hotels.length > 1) ? '8px 14px' : '12px 18px'};display:flex;align-items:center;gap:12px">
-          <div style="width:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '44px'};height:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '44px'};border-radius:12px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', (Q.hotels && Q.hotels.length > 1) ? 17 : 22)}</div>
+    <!-- Hotel Accommodations -->
+    <div style="margin:${isMulti ? '10px' : '14px'} 46px 0;display:flex;flex-direction:column;gap:5px">
+      ${hotelList.map(h => `
+        <div style="background:#ffe9d9;border-radius:14px;padding:${isMulti ? '6px 12px' : '10px 16px'};display:flex;align-items:center;gap:11px">
+          <div style="width:${isMulti ? '32px' : '40px'};height:${isMulti ? '32px' : '40px'};border-radius:10px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', isMulti ? 16 : 20)}</div>
           <div style="flex:1;min-width:0">
-            <div style="font-size:10px;letter-spacing:1px;font-weight:800;color:#c2410c">${e(h.nights.toUpperCase())} · ${e((h.city || Q.city).toUpperCase())}</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap">
-              <div style="font-family:${sH};font-size:${(Q.hotels && Q.hotels.length > 1) ? '16px' : '19px'};font-weight:700">${e(h.name)}</div>
-              <div style="background:#231f2b;color:#fff;font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px">${e(h.type)}</div>
+            <div style="font-size:9.5px;letter-spacing:1px;font-weight:800;color:#c2410c">${e(h.nights.toUpperCase())} · ${e((h.city || Q.city).toUpperCase())}</div>
+            <div style="margin-top:1px;line-height:1.25">
+              <span style="font-family:${sH};font-size:${isMulti ? '14.5px' : '17.5px'};font-weight:700;display:inline;margin-right:8px">${e(h.name)}</span>
+              <span style="background:#231f2b;color:#fff;font-size:9.5px;font-weight:700;padding:1.5px 7px;border-radius:999px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
             </div>
-            <div style="font-size:11.5px;color:#4a4352;margin-top:2px">${e(h.room)}${h.rooms ? ` · ${e(h.rooms)}` : ''}</div>
+            <div style="font-size:11px;color:#4a4352;margin-top:1px">${e(h.room)}${h.rooms ? ` · ${e(h.rooms)}` : ''}</div>
           </div>
         </div>
       `).join('')}
     </div>
 
-    <div style="margin:14px 46px 0;background:#231f2b;color:#fff;border-radius:18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:68px">
+    <!-- Operational Stats Strip -->
+    <div style="margin:10px 46px 0;background:#231f2b;color:#fff;border-radius:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:54px">
       ${Q.stats.map((s, i) => `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;${i ? 'border-left:1px solid #4a4352' : ''}">
-          <div style="font-family:${sH};font-size:21px;font-weight:700;color:#ffb347">${e(s[0])}</div>
-          <div style="font-size:11.5px;color:#e6e1ee">${e(s[1])}</div>
+          <div style="font-family:${sH};font-size:18px;font-weight:700;color:#ffb347;line-height:1">${e(s[0])}</div>
+          <div style="font-size:10.5px;color:#e6e1ee;margin-top:2px">${e(s[1])}</div>
         </div>
       `).join('')}
     </div>
 
-    <div style="margin:16px 46px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
-      <div style="background:#e8f7ee;border-radius:18px;padding:14px 18px">
-        <div style="display:flex;align-items:center;gap:8px;font-family:${sH};font-size:17px;font-weight:700;color:#14573a;margin-bottom:8px">
-          <span style="width:24px;height:24px;border-radius:12px;background:#1f8a5b;color:#fff;display:flex;align-items:center;justify-content:center">${ico('check', 14, 3)}</span>Included
+    <!-- Inclusions & Exclusions -->
+    <div style="margin:12px 46px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+      <div style="background:#e8f7ee;border-radius:14px;padding:10px 14px">
+        <div style="display:flex;align-items:center;gap:6px;font-family:${sH};font-size:15px;font-weight:700;color:#14573a;margin-bottom:6px">
+          <span style="width:20px;height:20px;border-radius:10px;background:#1f8a5b;color:#fff;display:flex;align-items:center;justify-content:center">${ico('check', 12, 3)}</span>Included
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px">${Q.included.slice(0, 8).map((t) => item(t, '#1f8a5b', 'check')).join('')}</div>
+        <div style="display:flex;flex-direction:column;gap:4.5px">${Q.included.slice(0, isMulti && hotelList.length > 2 ? 5 : 6).map((t) => item(t, '#1f8a5b', 'check')).join('')}</div>
       </div>
-      <div style="background:#fdeaea;border-radius:18px;padding:14px 18px">
-        <div style="display:flex;align-items:center;gap:8px;font-family:${sH};font-size:17px;font-weight:700;color:#9c2b22;margin-bottom:8px">
-          <span style="width:24px;height:24px;border-radius:12px;background:#c0392b;color:#fff;display:flex;align-items:center;justify-content:center">${ico('x', 14, 3)}</span>Not included
+      <div style="background:#fdeaea;border-radius:14px;padding:10px 14px">
+        <div style="display:flex;align-items:center;gap:6px;font-family:${sH};font-size:15px;font-weight:700;color:#9c2b22;margin-bottom:6px">
+          <span style="width:20px;height:20px;border-radius:10px;background:#c0392b;color:#fff;display:flex;align-items:center;justify-content:center">${ico('x', 12, 3)}</span>Not included
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px">${Q.excluded.slice(0, 6).map((t) => item(t, '#c0392b', 'x')).join('')}</div>
-        ${Q.note ? `<div style="margin-top:8px;font-size:11.5px;line-height:1.4;color:#7a3a00;background:#ffe9c7;border-radius:10px;padding:7px 9px">${e(Q.note)}</div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:4.5px">${Q.excluded.slice(0, 4).map((t) => item(t, '#c0392b', 'x')).join('')}</div>
+        ${Q.note ? `<div style="margin-top:6px;font-size:10.5px;line-height:1.35;color:#7a3a00;background:#ffe9c7;border-radius:8px;padding:5px 8px">${e(Q.note)}</div>` : ''}
       </div>
     </div>
   `);
@@ -657,31 +672,35 @@ export function sunsetDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: str
       </div>
       <div style="font-size:12px;color:#5a5262">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
     </div>
-    <div style="display:flex;align-items:flex-end;gap:14px;margin:14px 0 18px">
-      <div style="font-family:${sH};font-size:38px;font-weight:800;line-height:1">Day by day</div>
-      <div style="font-size:12.5px;font-weight:700;color:#c2410c;padding-bottom:4px;letter-spacing:2px">${e(Q.longDuration.toUpperCase().replace('/', '·'))}</div>
-      <div style="flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#ff5e4d,#ffb347);margin-bottom:6px"></div>
+    <div style="display:flex;align-items:flex-end;gap:14px;margin:12px 0 16px">
+      <div style="font-family:${sH};font-size:34px;font-weight:800;line-height:1">Day by day</div>
+      <div style="font-size:12px;font-weight:700;color:#c2410c;padding-bottom:3px;letter-spacing:2px">${e(Q.longDuration.toUpperCase().replace('/', '·'))}</div>
+      <div style="flex:1;height:3px;border-radius:2px;background:linear-gradient(90deg,#ff5e4d,#ffb347);margin-bottom:5px"></div>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:11px">
       ${daysSlice.map((d, i) => {
         const dayNum = startIdx + i + 1;
+        const textLen = (d.text || '').length;
+        const imgH = textLen > 600 ? 180 : (textLen > 350 ? 150 : 126);
         return `
-          <div style="display:flex;flex-direction:${i % 2 ? 'row-reverse' : 'row'};gap:20px;align-items:center">
-            ${scBox(260, 142, d, startIdx + i, 'sunset', 'border-radius:22px;box-shadow:6px 6px 0 #ffd9b8')}
+          <div style="display:flex;flex-direction:${i % 2 ? 'row-reverse' : 'row'};gap:16px;align-items:center;background:#fff;border-radius:18px;padding:12px 14px;border:1px solid #f3d9c8;box-shadow:0 3px 8px rgba(255,106,61,.05)">
+            <div style="width:220px;height:${imgH}px;flex:none;border-radius:14px;overflow:hidden;box-shadow:3px 3px 0 #ffd9b8">
+              ${scene(d, startIdx + i, 'sunset')}
+            </div>
             <div style="flex:1;min-width:0">
-              <div style="display:flex;align-items:center;gap:10px">
-                <div style="font-family:${sH};font-size:36px;font-weight:800;line-height:1;color:#ff6a3d">${String(dayNum).padStart(2, '0')}</div>
-                <div style="font-family:${sH};font-size:16px;font-weight:700;line-height:1.2">${e(d.title)}</div>
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="font-family:${sH};font-size:30px;font-weight:800;line-height:1;color:#ff6a3d">${String(dayNum).padStart(2, '0')}</div>
+                <div style="font-family:${sH};font-size:15.5px;font-weight:700;line-height:1.2">Day ${dayNum}: ${e(d.title)}</div>
               </div>
-              <div style="font-size:12px;line-height:1.45;color:#4a4352;margin-top:6px">${e(d.text)}</div>
+              <div style="font-size:11.5px;line-height:1.45;color:#4a4352;margin-top:5px;word-break:break-word">${e(d.text)}</div>
             </div>
           </div>
         `;
       }).join('')}
     </div>
 
-    <div style="position:absolute;left:46px;right:46px;bottom:30px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#5a5262">
+    <div style="position:absolute;left:46px;right:46px;bottom:28px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#5a5262">
       <span style="color:#ff5e4d">${ico('shield', 14)}</span>${note()}
     </div>
   `);
@@ -758,9 +777,9 @@ export function editorialCoverSheet(Q: QuoteDataModel): string {
           <div style="font-size:12.5px;font-weight:700">${e(h.nights)}</div>
           <div style="font-size:12px">${e(h.city || Q.city)}</div>
           <div>
-            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-              <span style="font-size:13.5px;font-weight:700">${e(h.name)}</span>
-              <span style="font-size:10px;font-weight:700;color:#e5431f;border:1px solid #e5431f;padding:0 5px">${e(h.type)}</span>
+            <div style="line-height:1.25">
+              <span style="font-size:13.5px;font-weight:700;display:inline;margin-right:8px">${e(h.name)}</span>
+              <span style="font-size:10px;font-weight:700;color:#e5431f;border:1px solid #e5431f;padding:0 5px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
             </div>
             ${h.rooms ? `<div style="font-size:11.5px;color:#33332f;margin-top:1px">${e(h.rooms)}</div>` : ''}
           </div>
@@ -789,9 +808,9 @@ export function editorialCoverSheet(Q: QuoteDataModel): string {
 export function editorialDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: string; text: string; img?: string }>, startIdx: number): string {
   return pg(`padding:34px 46px 32px;background:#f7f7f4;font-family:${eF};color:#111`, `
     ${editorialBar('' + e(Q.packageName.toUpperCase()) + ' · NO. ' + e(Q.ref))}
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin:20px 0 12px">
-      <div style="font-family:${eH};font-size:54px;font-weight:800;line-height:.95;letter-spacing:-1.5px">The<br>itinerary</div>
-      <div style="text-align:right;font-size:11.5px;letter-spacing:2px;font-weight:700;color:#c2371a;line-height:1.6">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin:16px 0 10px">
+      <div style="font-family:${eH};font-size:46px;font-weight:800;line-height:.95;letter-spacing:-1.5px">The<br>itinerary</div>
+      <div style="text-align:right;font-size:11px;letter-spacing:2px;font-weight:700;color:#c2371a;line-height:1.5">
         ${e(Q.longDuration.toUpperCase().replace(' / ', '<br>'))}<br>1 BASE · ${e(Q.city.toUpperCase())}
       </div>
     </div>
@@ -799,21 +818,25 @@ export function editorialDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: 
     <div style="border-top:2px solid #111">
       ${daysSlice.map((d, i) => {
         const dayNum = startIdx + i + 1;
+        const textLen = (d.text || '').length;
+        const imgH = textLen > 600 ? 175 : (textLen > 350 ? 145 : 120);
         return `
-          <div style="display:flex;gap:16px;align-items:center;padding:11px 0;border-bottom:1px solid #cfcfca">
-            <div style="width:68px;flex:none;font-family:${eH};font-size:52px;font-weight:800;line-height:1;color:#e5431f;letter-spacing:-2px">${String(dayNum).padStart(2, '0')}</div>
+          <div style="display:flex;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid #cfcfca">
+            <div style="width:58px;flex:none;font-family:${eH};font-size:44px;font-weight:800;line-height:1;color:#e5431f;letter-spacing:-2px">${String(dayNum).padStart(2, '0')}</div>
             <div style="flex:1;min-width:0">
-              <div style="font-family:${eH};font-size:16px;font-weight:700;line-height:1.2">Day ${dayNum}: ${e(d.title)}</div>
-              <div style="font-size:12px;line-height:1.45;color:#33332f;margin-top:4px">${e(d.text)}</div>
+              <div style="font-family:${eH};font-size:15px;font-weight:700;line-height:1.2">Day ${dayNum}: ${e(d.title)}</div>
+              <div style="font-size:11.5px;line-height:1.45;color:#33332f;margin-top:4px;word-break:break-word">${e(d.text)}</div>
             </div>
-            ${scBox(126, 126, d, startIdx + i, 'editorial', 'border:1px solid #111')}
+            <div style="width:140px;height:${imgH}px;flex:none;border:1px solid #111;overflow:hidden">
+              ${scene(d, startIdx + i, 'editorial')}
+            </div>
           </div>
         `;
       }).join('')}
     </div>
 
-    <div style="position:absolute;left:46px;right:46px;bottom:30px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:#555550">
-      <span style="color:#e5431f">${ico('shield', 14)}</span>${note()}
+    <div style="position:absolute;left:46px;right:46px;bottom:26px;display:flex;align-items:center;gap:8px;font-size:11px;color:#555550">
+      <span style="color:#e5431f">${ico('shield', 13)}</span>${note()}
     </div>
   `);
 }
@@ -901,9 +924,9 @@ export function playfulCoverSheet(Q: QuoteDataModel): string {
           <div style="width:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '42px'};height:${(Q.hotels && Q.hotels.length > 1) ? '34px' : '42px'};border-radius:12px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', (Q.hotels && Q.hotels.length > 1) ? 18 : 22)}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:10px;letter-spacing:1px;font-weight:800;color:#3c2a8a">${e(h.nights.toUpperCase())} · ${e((h.city || Q.city).toUpperCase())}</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:1px;flex-wrap:wrap">
-              <div style="font-family:${pH};font-size:${(Q.hotels && Q.hotels.length > 1) ? '16px' : '19px'};font-weight:700;line-height:1.2">${e(h.name)}</div>
-              <div style="background:#ffe58a;color:#5e3d00;font-size:10px;font-weight:800;padding:1px 8px;border-radius:999px">${e(h.type)}</div>
+            <div style="margin-top:1px;line-height:1.25">
+              <span style="font-family:${pH};font-size:${(Q.hotels && Q.hotels.length > 1) ? '15px' : '18px'};font-weight:700;display:inline;margin-right:8px">${e(h.name)}</span>
+              <span style="background:#ffe58a;color:#5e3d00;font-size:10px;font-weight:800;padding:1.5px 8px;border-radius:999px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
             </div>
             <div style="font-size:11.5px;color:#4a4670;margin-top:2px">${e(h.room)}${h.rooms ? ` · ${e(h.rooms)}` : ''}</div>
           </div>
@@ -946,15 +969,17 @@ export function playfulDaysSheet(Q: QuoteDataModel, daysSlice: Array<{ title: st
     <div style="display:flex;flex-direction:column;gap:9px">
       ${daysSlice.map((d, i) => {
         const dayNum = startIdx + i + 1;
+        const textLen = (d.text || '').length;
+        const imgH = textLen > 600 ? 175 : (textLen > 350 ? 150 : 124);
         return `
-          <div style="display:flex;gap:16px;align-items:center;background:${tints[(startIdx + i) % 5]};border-radius:26px;padding:10px">
-            <div style="width:180px;height:130px;flex:none;border-radius:20px;overflow:hidden;position:relative">
+          <div style="display:flex;gap:14px;align-items:center;background:${tints[(startIdx + i) % 5]};border-radius:22px;padding:10px 12px">
+            <div style="width:175px;height:${imgH}px;flex:none;border-radius:16px;overflow:hidden;position:relative">
               ${scene(d, startIdx + i, 'playful')}
-              <div style="position:absolute;left:8px;top:8px;background:#fff;color:#4a2fe0;font-family:${pH};font-size:13px;font-weight:800;padding:0 10px;border-radius:999px">DAY ${dayNum}</div>
+              <div style="position:absolute;left:7px;top:7px;background:#fff;color:#4a2fe0;font-family:${pH};font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px">DAY ${dayNum}</div>
             </div>
-            <div style="flex:1;min-width:0;padding-right:10px">
-              <div style="font-family:${pH};font-size:17px;font-weight:700;line-height:1.2">${e(d.title)}</div>
-              <div style="font-size:12px;line-height:1.45;color:#2f2b52;margin-top:4px;font-weight:500">${e(d.text)}</div>
+            <div style="flex:1;min-width:0;padding-right:8px">
+              <div style="font-family:${pH};font-size:16px;font-weight:700;line-height:1.2">${e(d.title)}</div>
+              <div style="font-size:11.5px;line-height:1.45;color:#2f2b52;margin-top:4px;font-weight:500;word-break:break-word">${e(d.text)}</div>
             </div>
           </div>
         `;
@@ -978,6 +1003,57 @@ export const AVAILABLE_QUOTE_DESIGNS = [
   { id: 'playful', name: 'Playful Violet', dot: '#4a2fe0', font: 'Baloo 2 + Nunito', desc: 'Vibrant modern purple & peach colors with rounded cards and playful curves.' }
 ];
 
+/**
+ * Smart content-aware dynamic pagination for itinerary days.
+ * Calculates exact estimated card heights based on text character count and title length.
+ * Accurately fits cards onto 1123px A4 pages without slicing or cutting off cards.
+ */
+export function chunkItineraryDays(
+  days: Array<{ title: string; text: string; img?: string }>,
+  _key = 'royal'
+): Array<{ slice: Array<{ title: string; text: string; img?: string }>; startIdx: number }> {
+  // A4 Page Height = 1123px. Overhead is ~240px (header, footer, padding).
+  // Available budget is ~820px to ensure zero clipping across all browser engines.
+  const maxPageBudget = 820;
+  const result: Array<{ slice: Array<{ title: string; text: string; img?: string }>; startIdx: number }> = [];
+
+  let currentSlice: Array<{ title: string; text: string; img?: string }> = [];
+  let currentSliceStartIdx = 0;
+  let currentBudget = 0;
+
+  for (let i = 0; i < days.length; i++) {
+    const d = days[i];
+    const textLen = (d.text || '').length;
+    const titleLen = (d.title || '').length;
+
+    // Estimate lines based on text column width (~65 chars per line)
+    const lines = Math.ceil(textLen / 65) + (titleLen > 40 ? 1 : 0);
+    const textH = lines * 17.5;
+    const imgH = textLen > 600 ? 185 : (textLen > 350 ? 155 : 126);
+
+    // Height of this card = content + padding + gap
+    const cardH = Math.max(textH + 45, imgH + 26) + 12;
+
+    // If adding this card exceeds the budget and we already have at least 1 card in this slice:
+    // or if we already have 4 cards in this slice (never cram more than 4 cards on an A4 sheet):
+    if (currentSlice.length > 0 && (currentBudget + cardH > maxPageBudget || currentSlice.length >= 4)) {
+      result.push({ slice: currentSlice, startIdx: currentSliceStartIdx });
+      currentSlice = [d];
+      currentSliceStartIdx = i;
+      currentBudget = cardH;
+    } else {
+      currentSlice.push(d);
+      currentBudget += cardH;
+    }
+  }
+
+  if (currentSlice.length > 0) {
+    result.push({ slice: currentSlice, startIdx: currentSliceStartIdx });
+  }
+
+  return result;
+}
+
 export function renderCompleteProposalHtml(Q: QuoteDataModel, designId = 'royal', customPartners?: PartnerBrand[]): string {
   const normId = (designId || 'royal').toLowerCase();
   let key = 'royal';
@@ -994,22 +1070,20 @@ export function renderCompleteProposalHtml(Q: QuoteDataModel, designId = 'royal'
   else if (key === 'sunset') pages.push(sunsetCoverSheet(Q));
   else if (key === 'editorial') pages.push(editorialCoverSheet(Q));
   else if (key === 'playful') pages.push(playfulCoverSheet(Q));
-
-  // 2. Day-wise Itinerary Pages (smart chunking to ensure NO day is cut across pages)
-  const daysPerPage = key === 'alpine' ? 4 : 5;
+  // 2. Day-wise Itinerary Pages (smart content-aware chunking so NO day is cut across pages)
   const totalDays = Q.days.length > 0 ? Q.days : [
     { title: 'Arrival & Hotel Check-in', text: 'Arrive at destination, private transfer to hotel and evening leisure.' },
     { title: 'Local Sightseeing & Experiences', text: 'Full day sightseeing tour exploring key heritage landmarks and markets.' },
     { title: 'Departure with Cherished Memories', text: 'Breakfast at hotel and seamless transfer to airport / railway station.' }
   ];
 
-  for (let i = 0; i < totalDays.length; i += daysPerPage) {
-    const chunk = totalDays.slice(i, i + daysPerPage);
-    if (key === 'royal') pages.push(royalDaysSheet(Q, chunk, i));
-    else if (key === 'alpine') pages.push(alpineDaysSheet(Q, chunk, i));
-    else if (key === 'sunset') pages.push(sunsetDaysSheet(Q, chunk, i));
-    else if (key === 'editorial') pages.push(editorialDaysSheet(Q, chunk, i));
-    else if (key === 'playful') pages.push(playfulDaysSheet(Q, chunk, i));
+  const chunks = chunkItineraryDays(totalDays, key);
+  for (const c of chunks) {
+    if (key === 'royal') pages.push(royalDaysSheet(Q, c.slice, c.startIdx));
+    else if (key === 'alpine') pages.push(alpineDaysSheet(Q, c.slice, c.startIdx));
+    else if (key === 'sunset') pages.push(sunsetDaysSheet(Q, c.slice, c.startIdx));
+    else if (key === 'editorial') pages.push(editorialDaysSheet(Q, c.slice, c.startIdx));
+    else if (key === 'playful') pages.push(playfulDaysSheet(Q, c.slice, c.startIdx));
   }
 
   // 3. Terms & Policy Page (with custom or default hotel and travel partner badges)

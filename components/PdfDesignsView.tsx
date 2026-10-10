@@ -716,6 +716,17 @@ export const PdfDesignsView: React.FC = () => {
                   <span>Browse</span>
                   <input type="file" accept="image/*" onChange={handlePhotoFileBrowse} className="hidden" />
                 </label>
+                {newPhotoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => { setNewPhotoUrl(''); setNewPhotoTitle(''); }}
+                    className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                    title="Delete / Clear chosen image"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Image</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -814,16 +825,14 @@ export const PdfDesignsView: React.FC = () => {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
 
-                      {!photo.is_default && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeletePhoto(photo.id, e)}
-                          className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer"
-                          title="Delete photo"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeletePhoto(photo.id, e)}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-md bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer"
+                        title="Delete photo from library"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
 
                       <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
                         <span className="text-[10px] font-bold truncate block drop-shadow-sm">
@@ -954,6 +963,65 @@ export const PdfDesignsView: React.FC = () => {
               </div>
             </div>
 
+            {/* Attached Images Control & Delete Strip */}
+            {(sampleCoverImage || Object.keys(sampleDayImages).length > 0) && (
+              <div className="px-6 py-2.5 bg-amber-50/70 dark:bg-amber-950/20 border-b border-amber-200 dark:border-amber-900/30 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                    Attached Custom Images:
+                  </span>
+                  {sampleCoverImage && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-800 text-xs font-bold text-slate-800 dark:text-zinc-200 shadow-2xs">
+                      <span>Cover Hero Image</span>
+                      <button
+                        type="button"
+                        onClick={() => setSampleCoverImage('')}
+                        className="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer"
+                        title="Delete / Remove cover image"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {Object.entries(sampleDayImages).map(([dayIdxStr, imgUrl]) => {
+                    const dayNum = parseInt(dayIdxStr, 10) + 1;
+                    return (
+                      <div key={dayIdxStr} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white dark:bg-zinc-900 border border-amber-200 dark:border-amber-800 text-xs font-bold text-slate-800 dark:text-zinc-200 shadow-2xs">
+                        <span>Day {dayNum} Photo</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSampleDayImages(prev => {
+                              const next = { ...prev };
+                              delete next[parseInt(dayIdxStr, 10)];
+                              return next;
+                            });
+                          }}
+                          className="text-rose-500 hover:text-rose-700 p-0.5 rounded cursor-pointer"
+                          title={`Delete / Remove Day ${dayNum} photo`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSampleCoverImage('');
+                    setSampleDayImages({});
+                    showMsg('✓ All custom images removed from preview.');
+                  }}
+                  className="px-3 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Remove All Images</span>
+                </button>
+              </div>
+            )}
+
             {/* Modal page preview body */}
             <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center custom-scrollbar">
               <div
@@ -1030,6 +1098,17 @@ export const PdfDesignsView: React.FC = () => {
                     <span>Browse</span>
                     <input type="file" accept="image/*" onChange={handlePhotoFileBrowse} className="hidden" />
                   </label>
+                  {newPhotoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => { setNewPhotoUrl(''); setNewPhotoTitle(''); }}
+                      className="px-3.5 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                      title="Delete / Clear chosen image"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete</span>
+                    </button>
+                  )}
                 </div>
               </div>
 

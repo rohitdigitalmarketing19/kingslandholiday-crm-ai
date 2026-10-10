@@ -155,33 +155,50 @@ export function getPartnerById(id: string): PartnerBrand | undefined {
 
 /**
  * Returns an HTML string rendering partner brand chips with their authentic SVG or image logos.
+ * In PDF mode (default): Only the brand logo and brand name are displayed (no tag).
  */
-export function renderPartnerBadgeHtml(brand: PartnerBrand, theme: { line?: string; bg?: string; card?: string; ink?: string } = {}): string {
+export function renderPartnerBadgeHtml(
+  brand: PartnerBrand,
+  theme: { line?: string; bg?: string; card?: string; ink?: string; showTag?: boolean } = {}
+): string {
   const line = theme.line || '#e2e8f0';
   const card = theme.card || '#ffffff';
   const ink = theme.ink || '#1b2033';
-  const color = brand.brandColor || '#b8860b';
+  const color = brand.brandColor || brand.brand_color || '#b8860b';
+  const showTag = theme.showTag ?? false;
 
+  const logoSrc = brand.logoUrl || brand.logo_url;
   let logoHtml = '';
-  if (brand.logoUrl) {
-    logoHtml = `<img src="${brand.logoUrl}" alt="${brand.name}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;display:block" />`;
+  if (logoSrc) {
+    logoHtml = `<img src="${logoSrc}" alt="${brand.name}" style="width:18px;height:18px;object-fit:contain;border-radius:4px;display:block;flex:none" />`;
   } else if (brand.svgIcon) {
-    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center">${brand.svgIcon}</div>`;
+    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center;width:18px;height:18px">${brand.svgIcon}</div>`;
   } else {
     logoHtml = `
-      <div style="width:22px;height:22px;border-radius:6px;background:${color}20;border:1px solid ${color}40;color:${color};font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
+      <div style="width:18px;height:18px;border-radius:5px;background:${color}18;border:1px solid ${color}35;color:${color};font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
         ${(brand.name || 'P').slice(0, 2).toUpperCase()}
       </div>
     `;
   }
 
-  return `
-    <div style="display:inline-flex;align-items:center;gap:7px;border:1px solid ${line};border-radius:10px;padding:4px 10px;background:${card};box-shadow:0 1px 4px rgba(0,0,0,0.04);margin-right:4px;margin-bottom:4px">
-      ${logoHtml}
-      <div style="display:flex;flex-direction:column;line-height:1.15">
-        <span style="font-size:11.5px;font-weight:700;color:${ink};letter-spacing:0.2px">${brand.name}</span>
-        <span style="font-size:8.5px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:0.6px">${brand.tagline || 'Partner'}</span>
+  if (showTag) {
+    return `
+      <div style="display:inline-flex;align-items:center;gap:7px;border:1px solid ${line};border-radius:9px;padding:3px 9px;background:${card};box-shadow:0 1px 3px rgba(0,0,0,0.03);margin-right:4px;margin-bottom:4px">
+        ${logoHtml}
+        <div style="display:flex;flex-direction:column;line-height:1.15">
+          <span style="font-size:11px;font-weight:700;color:${ink};letter-spacing:0.1px">${brand.name}</span>
+          <span style="font-size:8px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:0.5px">${brand.tagline || 'Partner'}</span>
+        </div>
       </div>
+    `;
+  }
+
+  // PDF Output: ONLY brand logo and brand name (tag not shown)
+  return `
+    <div style="display:inline-flex;align-items:center;gap:5px;border:1px solid ${line};border-radius:7px;padding:2.5px 7px;background:${card};box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-right:3px;margin-bottom:3px">
+      ${logoHtml}
+      <span style="font-size:10px;font-weight:700;color:${ink};letter-spacing:0.1px;white-space:nowrap">${brand.name}</span>
     </div>
   `;
 }
+
