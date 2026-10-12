@@ -187,9 +187,9 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
     ? customPartners.filter(p => p.category === 'travel')
     : TRAVEL_PARTNERS;
 
-  // Render badges with logo and brand name ONLY (tag not shown)
-  const hotelBadges = hotelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false })).join('');
-  const travelBadges = travelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false })).join('');
+  // Render badges with brand logo ONLY (names not shown with logo as requested)
+  const hotelBadges = hotelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false, showName: false })).join('');
+  const travelBadges = travelsToRender.map(b => renderPartnerBadgeHtml(b, { line: th.line, card: th.card, ink: th.ink, showTag: false, showName: false })).join('');
 
   // Use flex column layout so content and footer never overlap.
   // The outer page wrapper (pg) provides the 1123px fixed height.
@@ -228,23 +228,23 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
       <!-- Two Separate Distinct Containers: Hotel Working Partners & Working Partners -->
       <div data-last="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px">
         <!-- 1st Box: Hotel Working Partners -->
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:3px">
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:4px">
           <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
             <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
             <span>Hotel Working Partners</span>
           </div>
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
             ${hotelBadges}
           </div>
         </div>
 
         <!-- 2nd Box: Working Partners -->
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:3px">
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:4px">
           <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
             <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
             <span>Working Partners</span>
           </div>
-          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:3px">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
             ${travelBadges}
           </div>
         </div>

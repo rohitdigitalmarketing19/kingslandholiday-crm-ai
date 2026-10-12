@@ -155,27 +155,28 @@ export function getPartnerById(id: string): PartnerBrand | undefined {
 
 /**
  * Returns an HTML string rendering partner brand chips with their authentic SVG or image logos.
- * In PDF mode (default): Only the brand logo and brand name are displayed (no tag).
+ * In PDF mode (default): Only the brand logo is displayed (no names or tags shown with logo).
  */
 export function renderPartnerBadgeHtml(
   brand: PartnerBrand,
-  theme: { line?: string; bg?: string; card?: string; ink?: string; showTag?: boolean } = {}
+  theme: { line?: string; bg?: string; card?: string; ink?: string; showTag?: boolean; showName?: boolean } = {}
 ): string {
   const line = theme.line || '#e2e8f0';
   const card = theme.card || '#ffffff';
   const ink = theme.ink || '#1b2033';
   const color = brand.brandColor || brand.brand_color || '#b8860b';
   const showTag = theme.showTag ?? false;
+  const showName = theme.showName ?? false;
 
   const logoSrc = brand.logoUrl || brand.logo_url;
   let logoHtml = '';
   if (logoSrc) {
-    logoHtml = `<img src="${logoSrc}" alt="${brand.name}" style="width:18px;height:18px;object-fit:contain;border-radius:4px;display:block;flex:none" />`;
+    logoHtml = `<img src="${logoSrc}" alt="${brand.name}" title="${brand.name}" style="max-height:22px;max-width:44px;width:auto;height:auto;object-fit:contain;border-radius:3px;display:block;flex:none" />`;
   } else if (brand.svgIcon) {
-    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center;width:18px;height:18px">${brand.svgIcon}</div>`;
+    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px">${brand.svgIcon}</div>`;
   } else {
     logoHtml = `
-      <div style="width:18px;height:18px;border-radius:5px;background:${color}18;border:1px solid ${color}35;color:${color};font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
+      <div style="width:24px;height:24px;border-radius:5px;background:${color}18;border:1px solid ${color}35;color:${color};font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
         ${(brand.name || 'P').slice(0, 2).toUpperCase()}
       </div>
     `;
@@ -193,11 +194,19 @@ export function renderPartnerBadgeHtml(
     `;
   }
 
-  // PDF Output: ONLY brand logo and brand name (tag not shown)
+  if (showName) {
+    return `
+      <div style="display:inline-flex;align-items:center;gap:5px;border:1px solid ${line};border-radius:7px;padding:2.5px 7px;background:${card};box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-right:3px;margin-bottom:3px">
+        ${logoHtml}
+        <span style="font-size:10px;font-weight:700;color:${ink};letter-spacing:0.1px;white-space:nowrap">${brand.name}</span>
+      </div>
+    `;
+  }
+
+  // PDF Output: ONLY brand logo (no names shown with logo)
   return `
-    <div style="display:inline-flex;align-items:center;gap:5px;border:1px solid ${line};border-radius:7px;padding:2.5px 7px;background:${card};box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-right:3px;margin-bottom:3px">
+    <div title="${brand.name}" style="display:inline-flex;align-items:center;justify-content:center;border:1px solid ${line};border-radius:7px;padding:3px 8px;background:${card};box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-right:4px;margin-bottom:4px;min-height:26px;min-width:30px">
       ${logoHtml}
-      <span style="font-size:10px;font-weight:700;color:${ink};letter-spacing:0.1px;white-space:nowrap">${brand.name}</span>
     </div>
   `;
 }
