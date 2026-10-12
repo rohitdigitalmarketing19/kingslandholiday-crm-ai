@@ -8,9 +8,56 @@ export interface PdfExportOptions {
   scale?: number;  // canvas resolution multiplier (default 2)
 }
 
-/**
- * Intelligent, gap-free, section-aware PDF generator for Operations Portal.
- */
+const CORE_QUOTE_FONTS = [
+  '600 16px "Playfair Display"',
+  '700 16px "Playfair Display"',
+  '800 16px "Playfair Display"',
+  '400 16px "Manrope"',
+  '600 16px "Manrope"',
+  '700 16px "Manrope"',
+  '800 16px "Manrope"',
+  '400 16px "DM Serif Display"',
+  '400 16px "DM Sans"',
+  '600 16px "DM Sans"',
+  '700 16px "DM Sans"',
+  '400 16px "Outfit"',
+  '600 16px "Outfit"',
+  '700 16px "Outfit"',
+  '800 16px "Outfit"',
+  '400 16px "Nunito Sans"',
+  '600 16px "Nunito Sans"',
+  '700 16px "Nunito Sans"',
+  '800 16px "Nunito Sans"',
+  '500 16px "Bricolage Grotesque"',
+  '700 16px "Bricolage Grotesque"',
+  '800 16px "Bricolage Grotesque"',
+  '400 16px "Hanken Grotesk"',
+  '600 16px "Hanken Grotesk"',
+  '700 16px "Hanken Grotesk"',
+  '600 16px "Baloo 2"',
+  '700 16px "Baloo 2"',
+  '800 16px "Baloo 2"',
+  '400 16px "Nunito"',
+  '600 16px "Nunito"',
+  '700 16px "Nunito"',
+  '800 16px "Nunito"',
+  '400 16px "Inter"',
+  '600 16px "Inter"',
+  '700 16px "Inter"'
+];
+
+export async function ensureAllQuoteFontsLoaded(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return;
+  try {
+    await Promise.allSettled(CORE_QUOTE_FONTS.map(f => document.fonts.load(f)));
+  } catch (e) {
+    // Ignore individual font errors
+  }
+  try {
+    await document.fonts.ready;
+  } catch (e) {}
+}
+
 export async function exportElementToPdf(
   element: HTMLElement,
   options: PdfExportOptions = {}
@@ -21,6 +68,8 @@ export async function exportElementToPdf(
     width = 794,
     scale = 2,
   } = options;
+
+  await ensureAllQuoteFontsLoaded();
 
   const directSheets = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
   const isSheetBased = directSheets.length > 0;
@@ -69,6 +118,12 @@ export async function exportElementToPdf(
   `;
   container.appendChild(breakStyle);
   document.body.appendChild(container);
+
+  const h2cFix = document.createElement('style');
+  h2cFix.setAttribute('data-h2c-fix', '1');
+  h2cFix.textContent =
+    'body > div[style*="visibility: hidden"] > img { display: inline-block !important; }';
+  document.head.appendChild(h2cFix);
 
   await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -188,6 +243,7 @@ export async function exportElementToPdf(
     await pdf.save(finalName, { returnPromise: true });
 
   } finally {
+    h2cFix.remove();
     if (container.parentNode) container.parentNode.removeChild(container);
   }
 }

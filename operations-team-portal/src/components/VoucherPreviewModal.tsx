@@ -57,6 +57,12 @@ export const VoucherPreviewModal: React.FC<VoucherPreviewModalProps> = ({
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
+    const h2cFix = document.createElement('style');
+    h2cFix.setAttribute('data-h2c-fix', '1');
+    h2cFix.textContent =
+      'body > div[style*="visibility: hidden"] > img { display: inline-block !important; }';
+    document.head.appendChild(h2cFix);
+
     try {
       const pdfFunc = typeof html2pdf === 'function' ? html2pdf : (window as any).html2pdf;
       if (pdfFunc) {
@@ -67,6 +73,8 @@ export const VoucherPreviewModal: React.FC<VoucherPreviewModalProps> = ({
     } catch (e) {
       console.error('PDF export error, falling back to print:', e);
       window.print();
+    } finally {
+      h2cFix.remove();
     }
   };
 

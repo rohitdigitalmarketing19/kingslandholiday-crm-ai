@@ -111,7 +111,7 @@ const IC: Record<string, string> = {
   shield: '<path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'
 };
 
-const ico = (n: string, s = 16, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block;flex:none">${IC[n] || ''}</svg>`;
+const ico = (n: string, s = 16, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.15em;flex:none;width:${s}px;height:${s}px">${IC[n] || ''}</svg>`;
 
 const greeting = (Q: QuoteDataModel) => `Dear <b>${e(Q.client)}</b>, thank you for considering ${BRAND}. Please find below our detailed quotation for your requested itinerary.`;
 
@@ -185,14 +185,14 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
   // The outer page wrapper (pg) provides the 1123px fixed height.
   // Content fills remaining space, footer is pinned at bottom via flex.
   return pg(`padding:0;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column`, `
-    <div style="flex:1;padding:28px 40px 0;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+    <div style="flex:1;padding:24px 40px 0;display:flex;flex-direction:column;min-height:0;overflow:hidden">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="font-family:${th.head};font-size:17px;font-weight:700">${BRAND}</div>
         <div style="font-size:10.5px;color:${th.muted}">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
-      <div style="font-family:${th.head};font-size:20px;font-weight:700;margin:8px 0 8px;line-height:1.15">Terms &amp; Cancellation Policy</div>
+      <div style="font-family:${th.head};font-size:20px;font-weight:700;margin:6px 0 6px;line-height:1.15">Terms &amp; Cancellation Policy</div>
       
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
         <div>
           <div style="${sec}">Cancellation policy · land package</div>
           <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:2px 8px">${fees}</div>
@@ -204,7 +204,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:8px">
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px">
         <div>
           <div style="${sec}">Important information</div>
           ${col(DEFAULT_TERMS.important)}
@@ -216,9 +216,9 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
       </div>
 
       <!-- Two Separate Distinct Containers: Hotel Working Partners & Working Partners -->
-      <div data-last="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px">
+      <div data-last="1" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px">
         <!-- 1st Box: Hotel Working Partners -->
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 10px;display:flex;flex-direction:column;gap:4px">
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:3px">
           <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
             <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
             <span>Hotel Working Partners</span>
@@ -229,7 +229,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
         </div>
 
         <!-- 2nd Box: Working Partners -->
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 10px;display:flex;flex-direction:column;gap:4px">
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 10px;display:flex;flex-direction:column;gap:3px">
           <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
             <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
             <span>Working Partners</span>
@@ -242,7 +242,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey: string, customPartner
     </div>
 
     <!-- Advisor Footer — inside flex flow so it never overlaps content -->
-    <div data-foot="1" style="flex:none;margin:0 40px 24px;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px">
+    <div data-foot="1" style="flex:none;margin:8px 40px 18px;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:14px">
       <div>
         <div style="font-size:10px;opacity:.85">Your trip advisor</div>
         <div style="font-family:${th.head};font-size:14px;font-weight:700;margin-top:1px">${e(Q.advisor.name)}</div>
@@ -263,10 +263,10 @@ const rF = "'Manrope',sans-serif", rH = "'Playfair Display',serif";
 
 export function royalCoverSheet(Q: QuoteDataModel): string {
   const tile = (ic: string, l: string, v: string) => `
-    <div style="background:#fff;border:1px solid #e8e1cf;border-radius:14px;padding:12px 14px;height:104px;box-shadow:0 4px 16px rgba(18,33,63,.1)">
-      <div style="width:28px;height:28px;border-radius:14px;background:#f4ecd2;color:#8a6a1c;display:flex;align-items:center;justify-content:center">${ico(ic, 15)}</div>
-      <div style="font-size:11px;letter-spacing:1px;color:#5f6985;margin-top:6px;font-weight:600">${l}</div>
-      <div style="font-size:13.5px;font-weight:800;margin-top:2px">${e(v)}</div>
+    <div style="background:#fff;border:1px solid #e8e1cf;border-radius:14px;padding:12px 14px;min-height:104px;box-sizing:border-box;box-shadow:0 4px 16px rgba(18,33,63,.1);display:flex;flex-direction:column;justify-content:flex-start">
+      <div style="width:28px;height:28px;border-radius:14px;background:#f4ecd2;color:#8a6a1c;display:flex;align-items:center;justify-content:center;flex:none">${ico(ic, 15)}</div>
+      <div style="font-size:11px;letter-spacing:1px;color:#5f6985;margin-top:6px;font-weight:600;flex:none">${l}</div>
+      <div style="font-size:13.5px;font-weight:800;margin-top:2px;line-height:1.25;word-break:break-word">${e(v)}</div>
     </div>`;
 
   const item = (t: string, c: string, ic: string) => `
@@ -285,7 +285,7 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
         <div style="display:flex;align-items:center;gap:12px">
           <div style="width:42px;height:42px;border-radius:21px;border:1.5px solid #d4af37;display:flex;align-items:center;justify-content:center;color:#d4af37">${ico('mountain', 20)}</div>
           <div>
-            <div style="font-family:${rH};font-size:26px;font-weight:700;color:#fff;line-height:1.1">${BRAND}</div>
+            <div style="font-family:${rH};font-size:26px;font-weight:700;color:#fff;line-height:1.2">${BRAND}</div>
             <div style="font-size:11px;letter-spacing:1.6px;color:#d4af37;font-weight:600;margin-top:2px">REGISTERED TOUR OPERATOR</div>
           </div>
         </div>
@@ -294,9 +294,9 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
           <div style="font-size:12.5px;color:#cfd6e6;margin-top:3px">Ref. No. ${e(Q.ref)}</div>
         </div>
       </div>
-      <div style="position:relative;margin-top:30px">
-        <div style="font-family:${rH};font-size:42px;font-weight:700;color:#fff;line-height:1.1">${e(Q.packageName)}</div>
-        <div style="font-size:13.5px;color:#dfe5f2;margin-top:6px">${e(Q.longDuration)} · ${e(Q.city)} · ${e(Q.priceNote)}</div>
+      <div style="position:relative;margin-top:28px">
+        <div style="font-family:${rH};font-size:42px;font-weight:700;color:#fff;line-height:1.2">${e(Q.packageName)}</div>
+        <div style="font-size:13.5px;color:#dfe5f2;margin-top:6px;line-height:1.3">${e(Q.longDuration)} · ${e(Q.city)} · ${e(Q.priceNote)}</div>
       </div>
     </div>
 
@@ -309,15 +309,15 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
 
     <div style="margin:16px 46px 0;font-size:13px;line-height:1.5;color:#3b455f">${greeting(Q)}</div>
 
-    <div style="margin:14px 46px 0;display:flex;height:98px;border-radius:14px;overflow:hidden;border:1.5px solid #12213f">
-      <div style="flex:1;padding:16px 22px;background:#fff">
+    <div style="margin:14px 46px 0;display:flex;min-height:98px;border-radius:14px;overflow:hidden;border:1.5px solid #12213f">
+      <div style="flex:1;padding:16px 22px;background:#fff;display:flex;flex-direction:column;justify-content:center">
         <div style="font-size:11px;letter-spacing:2px;color:#8a6a1c;font-weight:800">QUOTED PACKAGE PRICE</div>
-        <div style="font-family:${rH};font-size:24px;font-weight:700;margin-top:3px">${e(Q.packageName)}</div>
-        <div style="font-size:12.5px;color:#5f6985;margin-top:2px">${e(Q.travellers)} · ${e(Q.priceNote)}</div>
+        <div style="font-family:${rH};font-size:24px;font-weight:700;margin-top:3px;line-height:1.25">${e(Q.packageName)}</div>
+        <div style="font-size:12.5px;color:#5f6985;margin-top:2px;line-height:1.3">${e(Q.travellers)} · ${e(Q.priceNote)}</div>
       </div>
-      <div style="width:220px;background:#12213f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">
-        <div style="background:#d4af37;color:#12213f;font-size:11px;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:4px">ALL-INCLUSIVE QUOTE</div>
-        <div style="font-family:${rH};font-size:36px;font-weight:700;color:#fff;line-height:1">${e(Q.price)}</div>
+      <div style="width:220px;background:#12213f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px">
+        <div style="background:#d4af37;color:#12213f;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:4px;line-height:1.2;display:inline-flex;align-items:center;justify-content:center">ALL-INCLUSIVE QUOTE</div>
+        <div style="font-family:${rH};font-size:36px;font-weight:700;color:#fff;line-height:1.15;margin-top:2px">${e(Q.price)}</div>
       </div>
     </div>
 
@@ -344,13 +344,13 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
             <div style="font-size:11px;color:#5f6985;margin-top:1px">${e(h.city || Q.city)}</div>
           </div>
           <div style="flex:1;min-width:0">
-            <div style="margin-top:1px;line-height:1.25">
+            <div style="margin-top:1px;line-height:1.3">
               <span style="font-size:${(Q.hotels && Q.hotels.length > 1) ? '13.5px' : '15px'};font-weight:800;display:inline;margin-right:8px">${e(h.name)}</span>
-              <span style="background:#f4ecd2;color:#6b4f10;font-size:10px;font-weight:700;padding:1.5px 7px;border-radius:6px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
+              <span style="background:#f4ecd2;color:#6b4f10;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;display:inline-block;vertical-align:middle;white-space:nowrap">${e(h.type)}</span>
             </div>
             ${h.rooms ? `
-            <div style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:#3b455f;margin-top:2px">
-              <span style="color:#8a6a1c">${ico('food', 13)}</span>${e(h.rooms)}
+            <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#3b455f;margin-top:3px;line-height:1.35">
+              <span style="color:#8a6a1c;display:inline-flex;align-items:center;flex:none;width:13px;height:13px">${ico('food', 13)}</span><span style="min-width:0">${e(h.rooms)}</span>
             </div>` : ''}
           </div>
           <div style="text-align:right;flex-shrink:0">
