@@ -60,6 +60,9 @@ const SAMPLE_QUOTE_DATA: QuoteDataModel = {
   travellers: "6 Adults",
   priceNote: "Private Vehicle & Handpicked Stays",
   price: "₹52,500",
+  rawPrice: 52500,
+  discountPercent: 5,
+  cutPrice: "₹55,125",
   hotel: {
     nights: "Night 1 & 2",
     name: "Hotel Katson Blue",

@@ -37,6 +37,7 @@ export interface QuoteDataModel {
   price: string;
   rawPrice?: number;
   discountPercent?: number;
+  cutPrice?: string;
   coverImage?: string;
   hotel: HotelItemModel;
   hotels?: HotelItemModel[];
@@ -114,6 +115,15 @@ const IC: Record<string, string> = {
 const ico = (n: string, s = 16, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.15em;flex:none;width:${s}px;height:${s}px">${IC[n] || ''}</svg>`;
 
 const greeting = (Q: QuoteDataModel) => `Dear <b>${e(Q.client)}</b>, thank you for considering ${BRAND}. Please find below our detailed quotation for your requested itinerary.`;
+
+export const getCutPrice = (Q: QuoteDataModel): string | null => {
+  if (Q.cutPrice) return Q.cutPrice;
+  if (!Q.discountPercent || Q.discountPercent <= 0) return null;
+  const num = Q.rawPrice || parseFloat(String(Q.price).replace(/[^0-9.]/g, '')) || 0;
+  if (!num) return null;
+  const cut = Math.round(num + (num * (Q.discountPercent / 100)));
+  return `₹${cut.toLocaleString('en-IN')}`;
+};
 
 const brk = (s: string) => e(s).replace(' ', '<br>');
 const svcIcons = ['car', 'bed', 'pin'];
@@ -315,9 +325,15 @@ export function royalCoverSheet(Q: QuoteDataModel): string {
         <div style="font-family:${rH};font-size:24px;font-weight:700;margin-top:3px;line-height:1.25">${e(Q.packageName)}</div>
         <div style="font-size:12.5px;color:#5f6985;margin-top:2px;line-height:1.3">${e(Q.travellers)} · ${e(Q.priceNote)}</div>
       </div>
-      <div style="width:220px;background:#12213f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px">
-        <div style="background:#d4af37;color:#12213f;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:4px;line-height:1.2;display:inline-flex;align-items:center;justify-content:center">ALL-INCLUSIVE QUOTE</div>
-        <div style="font-family:${rH};font-size:36px;font-weight:700;color:#fff;line-height:1.15;margin-top:2px">${e(Q.price)}</div>
+      <div style="width:220px;background:#12213f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 10px">
+        ${(Q.discountPercent && Q.discountPercent > 0) ? `
+          <div style="background:#d4af37;color:#12213f;font-size:10px;font-weight:800;letter-spacing:1px;padding:2px 8px;border-radius:4px;line-height:1.2;display:inline-flex;align-items:center;justify-content:center">${Q.discountPercent}% OFF</div>
+          <div style="font-family:${rH};font-size:32px;font-weight:700;color:#fff;line-height:1.1">${e(Q.price)}</div>
+          <div style="font-size:12px;color:#cfd6e6;text-decoration:line-through;opacity:0.85;line-height:1">${e(getCutPrice(Q) || '')}</div>
+        ` : `
+          <div style="background:#d4af37;color:#12213f;font-size:11px;font-weight:800;letter-spacing:1px;padding:4px 10px;border-radius:4px;line-height:1.2;display:inline-flex;align-items:center;justify-content:center">ALL-INCLUSIVE QUOTE</div>
+          <div style="font-family:${rH};font-size:36px;font-weight:700;color:#fff;line-height:1.15;margin-top:2px">${e(Q.price)}</div>
+        `}
       </div>
     </div>
 
@@ -482,9 +498,16 @@ export function alpineCoverSheet(Q: QuoteDataModel): string {
       </div>
       <div style="background:#f2a93b;border-radius:18px;padding:18px 22px;color:#2a1c00">
         <div style="font-size:11px;letter-spacing:2px;font-weight:700">QUOTED PACKAGE PRICE</div>
-        <div style="font-family:${aH};font-size:52px;line-height:1.05;margin-top:4px">${e(Q.price)}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin-top:4px">
+          <div style="font-family:${aH};font-size:48px;line-height:1.05">${e(Q.price)}</div>
+          ${(Q.discountPercent && Q.discountPercent > 0) ? `
+            <div style="font-size:18px;font-weight:700;text-decoration:line-through;opacity:0.65">${e(getCutPrice(Q) || '')}</div>
+          ` : ''}
+        </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12.5px;font-weight:600">
-          <span style="background:#2a1c00;color:#f2a93b;font-size:11px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:999px">ALL-INCLUSIVE</span>
+          <span style="background:#2a1c00;color:#f2a93b;font-size:11px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:999px">
+            ${(Q.discountPercent && Q.discountPercent > 0) ? `${Q.discountPercent}% OFF` : 'ALL-INCLUSIVE'}
+          </span>
           ${e(Q.travellers)} · ${e(Q.priceNote)}
         </div>
       </div>
@@ -605,10 +628,17 @@ export function sunsetCoverSheet(Q: QuoteDataModel): string {
     </div>
 
     <!-- Floating Price Stamp -->
-    <div style="position:absolute;right:46px;top:180px;width:146px;height:146px;border-radius:73px;background:#fff;border:5px solid #ffe3cf;box-shadow:0 10px 24px rgba(35,31,43,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:10">
-      <div style="font-size:10px;letter-spacing:1px;font-weight:800;color:#c2410c">ALL-INCLUSIVE</div>
-      <div style="font-family:${sH};font-size:26px;font-weight:800;line-height:1.1;color:#231f2b;margin:2px 0">${e(Q.price)}</div>
-      <div style="font-size:11px;color:#5a5262;font-weight:600">${e(Q.travellers)}</div>
+    <div style="position:absolute;right:46px;top:180px;width:146px;height:146px;border-radius:73px;background:#fff;border:5px solid #ffe3cf;box-shadow:0 10px 24px rgba(35,31,43,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:10;padding:6px">
+      ${(Q.discountPercent && Q.discountPercent > 0) ? `
+        <div style="font-size:9.5px;letter-spacing:1px;font-weight:800;color:#c2410c">${Q.discountPercent}% OFF</div>
+        <div style="font-family:${sH};font-size:24px;font-weight:800;line-height:1.1;color:#231f2b;margin:1px 0">${e(Q.price)}</div>
+        <div style="font-size:11.5px;color:#8f2f2a;text-decoration:line-through;font-weight:700;line-height:1">${e(getCutPrice(Q) || '')}</div>
+        <div style="font-size:10px;color:#5a5262;font-weight:600;margin-top:2px">${e(Q.travellers)}</div>
+      ` : `
+        <div style="font-size:10px;letter-spacing:1px;font-weight:800;color:#c2410c">ALL-INCLUSIVE</div>
+        <div style="font-family:${sH};font-size:26px;font-weight:800;line-height:1.1;color:#231f2b;margin:2px 0">${e(Q.price)}</div>
+        <div style="font-size:11px;color:#5a5262;font-weight:600">${e(Q.travellers)}</div>
+      `}
     </div>
 
     <!-- Client Greeting Section -->
@@ -750,10 +780,17 @@ export function editorialCoverSheet(Q: QuoteDataModel): string {
     <div style="margin-top:14px;display:flex;align-items:center;gap:22px;border-top:3px solid #111;border-bottom:1px solid #111;padding:10px 0">
       <div>
         <div style="font-size:11.5px;letter-spacing:2px;font-weight:700">QUOTED PACKAGE PRICE</div>
-        <div style="font-family:${eH};font-size:74px;font-weight:800;line-height:1;color:#e5431f;letter-spacing:-2px">${e(Q.price)}</div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-top:2px">
+          <div style="font-family:${eH};font-size:${(Q.discountPercent && Q.discountPercent > 0) ? '62px' : '74px'};font-weight:800;line-height:1;color:#e5431f;letter-spacing:-2px">${e(Q.price)}</div>
+          ${(Q.discountPercent && Q.discountPercent > 0) ? `
+            <div style="font-family:${eH};font-size:24px;font-weight:700;color:#777;text-decoration:line-through">${e(getCutPrice(Q) || '')}</div>
+          ` : ''}
+        </div>
       </div>
       <div style="flex:1;border-left:1px solid #111;padding-left:18px">
-        <div style="display:inline-block;background:#111;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 9px">ALL-INCLUSIVE QUOTE</div>
+        <div style="display:inline-block;background:#111;color:#fff;font-size:11px;font-weight:700;letter-spacing:1px;padding:3px 9px">
+          ${(Q.discountPercent && Q.discountPercent > 0) ? `${Q.discountPercent}% OFF · ALL-INCLUSIVE` : 'ALL-INCLUSIVE QUOTE'}
+        </div>
         <div style="font-size:13.5px;font-weight:600;margin-top:6px;line-height:1.4">${e(Q.travellers)}<br>${e(Q.priceNote)}</div>
       </div>
     </div>
@@ -892,10 +929,15 @@ export function playfulCoverSheet(Q: QuoteDataModel): string {
       <div style="width:230px;flex:none;background:#ffb996;border-radius:30px;padding:22px 20px;display:flex;flex-direction:column;justify-content:space-between">
         <div>
           <div style="font-size:11px;letter-spacing:1.5px;font-weight:800;color:#5a2a10">QUOTED PACKAGE PRICE</div>
-          <div style="font-family:${pH};font-size:42px;font-weight:800;line-height:1.1;margin-top:4px;color:#2a1240">${e(Q.price)}</div>
+          <div style="font-family:${pH};font-size:${(Q.discountPercent && Q.discountPercent > 0) ? '36px' : '42px'};font-weight:800;line-height:1.1;margin-top:4px;color:#2a1240">${e(Q.price)}</div>
+          ${(Q.discountPercent && Q.discountPercent > 0) ? `
+            <div style="font-size:14px;font-weight:700;color:#7a3518;text-decoration:line-through;margin-top:2px;line-height:1.1">${e(getCutPrice(Q) || '')}</div>
+          ` : ''}
         </div>
         <div>
-          <div style="display:inline-block;background:#2a1240;color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:999px">ALL-INCLUSIVE QUOTE</div>
+          <div style="display:inline-block;background:#2a1240;color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;padding:3px 10px;border-radius:999px">
+            ${(Q.discountPercent && Q.discountPercent > 0) ? `${Q.discountPercent}% OFF · ALL-INCLUSIVE` : 'ALL-INCLUSIVE QUOTE'}
+          </div>
           <div style="font-size:12.5px;font-weight:700;line-height:1.35;margin-top:6px;color:#3d1f10">${e(Q.priceNote)}</div>
         </div>
       </div>

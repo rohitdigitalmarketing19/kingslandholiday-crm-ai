@@ -610,13 +610,13 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   };
 
   const pricingData = useMemo(() => {
-    if (!currentQuote) return { mrp: 0, finalPrice: 0, savings: 0, discount: 0 };
+    if (!currentQuote) return { mrp: 0, cutPrice: 0, finalPrice: 0, savings: 0, discount: 0 };
     const finalPrice = currentQuote.finalSellingPrice || 0;
     const discount = currentQuote.discountPercentage || 0;
-    const factor = 1 - (discount / 100);
-    const mrp = factor > 0 ? Math.round(finalPrice / factor) : finalPrice;
-    const savings = mrp - finalPrice;
-    return { mrp, finalPrice, savings, discount };
+    // Calculate cut price: add discount percent of package price to the package cost
+    const cutPrice = discount > 0 ? Math.round(finalPrice + (finalPrice * (discount / 100))) : finalPrice;
+    const savings = cutPrice - finalPrice;
+    return { mrp: cutPrice, cutPrice, finalPrice, savings, discount };
   }, [currentQuote]);
 
   // Transform current quote into the authoritative QuoteDataModel matching Kingsland-Quote-Designs.html
@@ -698,9 +698,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       services: `Cab, Hotel, Sightseeing${lead.includeFlight === 'Yes' ? ', Flight' : ''}`,
       travellers: `${lead.travelers?.adults || 2} Adults${lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}`,
       priceNote: 'Private Vehicle & Handpicked Stays',
-      price: `₹${(pricingData.finalPrice || currentQuote.finalSellingPrice || 50000).toLocaleString()}`,
+      price: `₹${(pricingData.finalPrice || currentQuote.finalSellingPrice || 50000).toLocaleString('en-IN')}`,
       rawPrice: pricingData.finalPrice || currentQuote.finalSellingPrice || 50000,
       discountPercent: pricingData.discount || 0,
+      cutPrice: pricingData.discount > 0 ? `₹${pricingData.cutPrice.toLocaleString('en-IN')}` : undefined,
       coverImage: (currentQuote as any)?.coverImage || (lead as any)?.coverImage || '',
       hotel: mappedHotels[0],
       hotels: mappedHotels,

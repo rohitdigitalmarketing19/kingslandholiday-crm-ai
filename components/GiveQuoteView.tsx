@@ -574,8 +574,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
               {(() => {
                 const finalP = quote.finalSellingPrice || 0;
                 const disc = quote.discountPercentage || 0;
-                const factor = 1 - (disc / 100);
-                const mrp = disc > 0 && factor > 0 ? Math.round(finalP / factor) : finalP;
+                const mrp = disc > 0 ? Math.round(finalP + (finalP * (disc / 100))) : finalP;
                 const savings = mrp - finalP;
                 if (disc <= 0) return null;
                 return (
