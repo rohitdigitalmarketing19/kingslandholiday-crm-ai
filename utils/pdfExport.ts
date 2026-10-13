@@ -233,6 +233,35 @@ export async function exportElementToPdf(
           }
           await new Promise(r => setTimeout(r, 60));
 
+          // Check for sheet overflow (scrollHeight > 1123)
+          const scrollH = Math.max(sheetEl.scrollHeight, singleSheetClone.scrollHeight);
+          if (scrollH > 1123) {
+            const overflow = scrollH - 1123;
+            console.error(
+              `[PdfExport Overflow Error] Sheet #${i + 1} overflow detected: scrollHeight=${scrollH}px exceeds 1123px by ${overflow}px. Content is clipped!`
+            );
+            if (typeof document !== 'undefined') {
+              const toast = document.createElement('div');
+              toast.style.cssText = `
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                background: #dc2626;
+                color: #ffffff;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-size: 13px;
+                font-weight: 600;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.35);
+                z-index: 9999999;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+              `;
+              toast.textContent = `[PDF Overflow] Sheet #${i + 1} content overflow by ${overflow}px!`;
+              document.body.appendChild(toast);
+              setTimeout(() => toast.remove(), 4000);
+            }
+          }
+
           const canvas = await html2canvas(singleSheetClone, {
             scale,
             useCORS: true,

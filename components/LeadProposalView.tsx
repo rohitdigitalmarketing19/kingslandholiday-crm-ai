@@ -1737,12 +1737,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
 
                      {/* Hotel Working Partners & Working Partners (Two Different Containers) */}
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 avoid-page-break relative z-10">
+                     <div className="flex flex-col gap-3 pt-2 avoid-page-break relative z-10">
                        <div className="border rounded-xl p-4 bg-[#F9FBFC]" style={{ borderColor: designColors.primary + '30' }}>
                          <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            Hotel Working Partners
                          </span>
-                         <div className="flex flex-wrap items-center gap-1.5">
+                         <div className="flex flex-wrap items-center gap-2.5">
                            {((partnerBrandsList && partnerBrandsList.filter(p => p.category === 'hotel').length > 0)
                              ? partnerBrandsList.filter(p => p.category === 'hotel')
                              : HOTEL_PARTNERS
@@ -1760,7 +1760,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                          <span className="text-[10px] font-bold tracking-wider uppercase block mb-3" style={{ color: designColors.secondary, fontFamily: designColors.fontFamily }}>
                            Working Partners
                          </span>
-                         <div className="flex flex-wrap items-center gap-1.5">
+                         <div className="flex flex-wrap items-center gap-2.5">
                            {((partnerBrandsList && partnerBrandsList.filter(p => p.category === 'travel').length > 0)
                              ? partnerBrandsList.filter(p => p.category === 'travel')
                              : TRAVEL_PARTNERS

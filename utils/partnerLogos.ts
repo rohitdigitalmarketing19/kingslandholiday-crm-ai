@@ -23,7 +23,7 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'IHCL Group',
     brandColor: '#B8860B',
     // Authentic Taj heritage palace arch insignia
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M14 2C13.5 4 11 6 8 7C10 9 10.5 12 10.5 14C8 14 6 15.5 6 18C6 21 8.5 23 14 25C19.5 23 22 21 22 18C22 15.5 20 14 17.5 14C17.5 12 18 9 20 7C17 6 14.5 4 14 2Z" fill="#B8860B" fill-opacity="0.18"/>
       <path d="M14 3L15 5.5C17.5 6.5 19.5 8.5 20 11C18 11.5 16.5 13 16.5 15C18.5 15.5 20 17 20 19C20 22 17.5 24 14 25C10.5 24 8 22 8 19C8 17 9.5 15.5 11.5 15C11.5 13 10 11.5 8 11C8.5 8.5 10.5 6.5 13 5.5L14 3Z" stroke="#B8860B" stroke-width="1.6" stroke-linejoin="round"/>
       <path d="M11 20H17M14 9V17M12 13H16" stroke="#B8860B" stroke-width="1.4" stroke-linecap="round"/>
@@ -36,7 +36,7 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Luxury Collection',
     brandColor: '#C49A45',
     // Radiant Oberoi sunburst / lotus crest
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="14" cy="14" r="5" fill="#C49A45" fill-opacity="0.2"/>
       <circle cx="14" cy="14" r="3.5" stroke="#C49A45" stroke-width="1.5"/>
       <path d="M14 2V5M14 23V26M2 14H5M23 14H26M5.5 5.5L7.6 7.6M20.4 20.4L22.5 22.5M5.5 22.5L7.6 20.4M20.4 7.6L22.5 5.5" stroke="#C49A45" stroke-width="1.5" stroke-linecap="round"/>
@@ -50,11 +50,10 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Responsible Luxury',
     brandColor: '#8C1D40',
     // ITC signature crest
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="4" y="4" width="20" height="20" rx="4" fill="#8C1D40" fill-opacity="0.12"/>
-      <path d="M14 4L22 10V18L14 24L6 18V10L14 4Z" stroke="#8C1D40" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M10 14L14 10L18 14L14 18L10 14Z" fill="#8C1D40" fill-opacity="0.4" stroke="#8C1D40" stroke-width="1.2"/>
-      <circle cx="14" cy="14" r="1.5" fill="#8C1D40"/>
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="3" y="3" width="22" height="22" rx="4" fill="#8C1D40" fill-opacity="0.12"/>
+      <path d="M14 4L22 9.5V18.5L14 24L6 18.5V9.5L14 4Z" stroke="#8C1D40" stroke-width="1.4" stroke-linejoin="round"/>
+      <text x="14" y="16.5" font-family="'Arial Black',sans-serif" font-size="6.5" font-weight="900" fill="#8C1D40" text-anchor="middle" letter-spacing="0.3">ITC</text>
     </svg>`
   },
   {
@@ -64,7 +63,7 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Hotel Group',
     brandColor: '#0058A3',
     // Radisson signature emblem
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="14" cy="14" r="11" fill="#0058A3" fill-opacity="0.12" stroke="#0058A3" stroke-width="1.4"/>
       <path d="M10 8H15.5C17.4 8 19 9.3 19 11.2C19 12.8 17.8 14 16.2 14.3L19.5 20H16.8L13.8 14.8H12.2V20H10V8ZM12.2 12.8H15.2C16.1 12.8 16.8 12.1 16.8 11.2C16.8 10.3 16.1 9.8 15.2 9.8H12.2V12.8Z" fill="#0058A3"/>
     </svg>`
@@ -76,7 +75,7 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Palaces & Resorts',
     brandColor: '#936639',
     // The Leela royal lotus & swan crown emblem
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M14 4C14 4 18 8 18 13C18 16 16.5 19 14 21C11.5 19 10 16 10 13C10 8 14 4 14 4Z" fill="#936639" fill-opacity="0.2" stroke="#936639" stroke-width="1.4"/>
       <path d="M7 11C7 11 10.5 13 11 17C9 18 7 17 6 15C5 13 7 11 7 11Z" stroke="#936639" stroke-width="1.3" fill="#936639" fill-opacity="0.15"/>
       <path d="M21 11C21 11 17.5 13 17 17C19 18 21 17 22 15C23 13 21 11 21 11Z" stroke="#936639" stroke-width="1.3" fill="#936639" fill-opacity="0.15"/>
@@ -91,8 +90,8 @@ export const HOTEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Bonvoy Network',
     brandColor: '#B00020',
     // Marriott signature 'M' insignia
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="3" width="22" height="22" rx="4" fill="#B00020" fill-opacity="0.1"/>
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="1" width="26" height="26" rx="4" fill="#B00020" fill-opacity="0.1"/>
       <path d="M7 20L9.5 8H11.8L14 14.5L16.2 8H18.5L21 20H18.8L17.2 12.2L15 18H13L10.8 12.2L9.2 20H7Z" fill="#B00020"/>
     </svg>`
   }
@@ -106,7 +105,7 @@ export const TRAVEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Verified Seller',
     brandColor: '#E42529',
     // Iconic MakeMyTrip red & blue badge
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="14" cy="14" r="12" fill="#E42529"/>
       <path d="M8 17V11C8 10.4 8.4 10 9 10C9.6 10 10 10.4 10 11V17H8Z" fill="#FFFFFF"/>
       <path d="M12 17V11C12 9.9 12.9 9 14 9C15.1 9 16 9.9 16 11V17H14V11.5C14 11.2 13.8 11 13.5 11C13.2 11 13 11.2 13 11.5V17H12Z" fill="#FFFFFF"/>
@@ -121,7 +120,7 @@ export const TRAVEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Certified Partner',
     brandColor: '#00BFA5',
     // TravelTriangle signature delta pyramid emblem
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M14 4L24 22H4L14 4Z" fill="#00BFA5" fill-opacity="0.18" stroke="#00BFA5" stroke-width="1.8" stroke-linejoin="round"/>
       <path d="M14 9L19.5 19H8.5L14 9Z" fill="#00BFA5"/>
       <circle cx="14" cy="15" r="1.8" fill="#FFFFFF"/>
@@ -134,7 +133,7 @@ export const TRAVEL_PARTNERS: PartnerBrand[] = [
     tagline: 'Traveller Reviewed',
     brandColor: '#00AF87',
     // TripAdvisor owl face emblem
-    svgIcon: `<svg viewBox="0 0 28 28" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    svgIcon: `<svg viewBox="0 0 28 28" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="14" cy="14" r="12" fill="#00AF87" fill-opacity="0.12"/>
       <circle cx="9.5" cy="14.5" r="4.5" stroke="#00AF87" stroke-width="1.6"/>
       <circle cx="18.5" cy="14.5" r="4.5" stroke="#00AF87" stroke-width="1.6"/>
@@ -148,9 +147,86 @@ export const TRAVEL_PARTNERS: PartnerBrand[] = [
 
 export const ALL_PARTNERS: PartnerBrand[] = [...HOTEL_PARTNERS, ...TRAVEL_PARTNERS];
 
+export function matchBuiltInPartner(brandOrId: string | { id?: string; name?: string; category?: string }): PartnerBrand | undefined {
+  const brand = typeof brandOrId === 'string' ? { id: brandOrId, name: brandOrId } : brandOrId;
+  const normId = (brand.id || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const normName = (brand.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // 1. Exact match by id
+  let matched = ALL_PARTNERS.find(p => p.id === normId || p.id === normName);
+  if (matched) return matched;
+
+  // 2. Exact match by normalized name
+  matched = ALL_PARTNERS.find(p => {
+    const pNorm = p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return pNorm === normName || pNorm === normId;
+  });
+  if (matched) return matched;
+
+  // 3. startsWith match (at least 3 characters to prevent false positives like 'tr', 'ma')
+  if (normName.length >= 3) {
+    matched = ALL_PARTNERS.find(p => {
+      const pNorm = p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (
+        normName.startsWith(p.id) ||
+        p.id.startsWith(normName) ||
+        normName.startsWith(pNorm) ||
+        pNorm.startsWith(normName)
+      );
+    });
+    if (matched) return matched;
+  }
+  if (normId.length >= 3) {
+    matched = ALL_PARTNERS.find(p => {
+      const pNorm = p.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return (
+        normId.startsWith(p.id) ||
+        p.id.startsWith(normId) ||
+        normId.startsWith(pNorm) ||
+        pNorm.startsWith(normId)
+      );
+    });
+    if (matched) return matched;
+  }
+
+  return undefined;
+}
+
 export function getPartnerById(id: string): PartnerBrand | undefined {
-  const norm = id.toLowerCase().replace(/[^a-z]/g, '');
-  return ALL_PARTNERS.find(p => p.id === norm || norm.includes(p.id) || p.name.toLowerCase().replace(/[^a-z]/g, '').includes(norm));
+  return matchBuiltInPartner(id);
+}
+
+export function resolvePartner(brand: PartnerBrand): PartnerBrand {
+  if (!brand.logoUrl && !brand.logo_url && !brand.svgIcon) {
+    const builtIn = matchBuiltInPartner(brand);
+    if (builtIn) {
+      return {
+        ...builtIn,
+        ...brand,
+        id: builtIn.id,
+        name: brand.name || builtIn.name,
+        category: brand.category || builtIn.category,
+        tagline: brand.tagline || builtIn.tagline,
+        brandColor: brand.brandColor || brand.brand_color || builtIn.brandColor,
+        svgIcon: builtIn.svgIcon,
+      };
+    }
+  }
+  return brand;
+}
+
+export function deduplicatePartners(brands: PartnerBrand[]): PartnerBrand[] {
+  const seen = new Set<string>();
+  const result: PartnerBrand[] = [];
+  for (const b of brands) {
+    const resolved = resolvePartner(b);
+    const key = (resolved.id || resolved.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(resolved);
+    }
+  }
+  return result;
 }
 
 /**
@@ -158,9 +234,10 @@ export function getPartnerById(id: string): PartnerBrand | undefined {
  * In PDF mode (default): Only the brand logo is displayed (no names or tags shown with logo).
  */
 export function renderPartnerBadgeHtml(
-  brand: PartnerBrand,
+  rawBrand: PartnerBrand,
   theme: { line?: string; bg?: string; card?: string; ink?: string; showTag?: boolean; showName?: boolean } = {}
 ): string {
+  const brand = resolvePartner(rawBrand);
   const line = theme.line || '#e2e8f0';
   const card = theme.card || '#ffffff';
   const ink = theme.ink || '#1b2033';
@@ -171,12 +248,13 @@ export function renderPartnerBadgeHtml(
   const logoSrc = brand.logoUrl || brand.logo_url;
   let logoHtml = '';
   if (logoSrc) {
-    logoHtml = `<img src="${logoSrc}" alt="${brand.name}" title="${brand.name}" style="max-height:22px;max-width:44px;width:auto;height:auto;object-fit:contain;border-radius:3px;display:block;flex:none" />`;
+    logoHtml = `<img src="${logoSrc}" crossOrigin="anonymous" alt="${brand.name}" title="${brand.name}" style="max-height:34px;max-width:80px;width:auto;height:auto;object-fit:contain;border-radius:4px;display:block;flex:none" />`;
   } else if (brand.svgIcon) {
-    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px">${brand.svgIcon}</div>`;
+    const scaledSvg = brand.svgIcon.replace(/width="\d+" height="\d+"/, 'width="34" height="34"');
+    logoHtml = `<div style="flex:none;display:flex;align-items:center;justify-content:center;width:34px;height:34px">${scaledSvg}</div>`;
   } else {
     logoHtml = `
-      <div style="width:24px;height:24px;border-radius:5px;background:${color}18;border:1px solid ${color}35;color:${color};font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
+      <div style="width:34px;height:34px;border-radius:7px;background:${color}18;border:1px solid ${color}35;color:${color};font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:none">
         ${(brand.name || 'P').slice(0, 2).toUpperCase()}
       </div>
     `;
@@ -203,9 +281,9 @@ export function renderPartnerBadgeHtml(
     `;
   }
 
-  // PDF Output: ONLY brand logo (no names shown with logo)
+  // PDF Output: ONLY brand logo (prominently sized, no names shown with logo)
   return `
-    <div title="${brand.name}" style="display:inline-flex;align-items:center;justify-content:center;border:1px solid ${line};border-radius:7px;padding:3px 8px;background:${card};box-shadow:0 1px 2px rgba(0,0,0,0.03);margin-right:4px;margin-bottom:4px;min-height:26px;min-width:30px">
+    <div title="${brand.name}" style="display:inline-flex;align-items:center;justify-content:center;border:1px solid ${line};border-radius:9px;padding:6px 14px;background:${card};box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-right:6px;margin-bottom:6px;min-height:44px;min-width:62px">
       ${logoHtml}
     </div>
   `;
