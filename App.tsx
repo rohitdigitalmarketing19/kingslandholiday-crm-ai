@@ -481,6 +481,8 @@ const App: React.FC = () => {
   const [proposalLead, setProposalLead] = useState<Lead | null>(null);
 
   // Form State for Lead
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+
   const [formData, setFormData] = useState({
     tripId: '',
     name: '', phone: '', email: '', days: 10, nights: 9, travelDate: '',
@@ -772,6 +774,7 @@ const App: React.FC = () => {
         includeStay: 'Yes', includeFlight: 'No', includeCab: 'Yes', 
         hotelCategory: '4/3 Star', englishDriver: true 
       });
+      setIsCustomCategory(false);
       setPreviewAnalysis(null);
 
       alert(`✅ Lead for ${newLead.name} saved successfully!`);
@@ -1755,17 +1758,48 @@ const App: React.FC = () => {
                     )}
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Hotel Category</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Hotel Category</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomCategory(!isCustomCategory)}
+                          className="text-[10px] font-bold text-indigo-600 dark:text-lime-400 hover:underline cursor-pointer"
+                        >
+                          {isCustomCategory ? 'Select from list' : '+ Type custom category'}
+                        </button>
+                      </div>
                       <div className="flex gap-2">
-                        <select className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900" value={formData.hotelCategory} onChange={e => setFormData({...formData, hotelCategory: e.target.value})}>
-                          <option value="5 Star">5 Star Luxury Resort</option>
-                          <option value="4 Star">4 Star Premium Hotel</option>
-                          <option value="4/3 Star">4/3 Star Comfort (Default)</option>
-                          <option value="3 Star">3 Star Deluxe Hotel</option>
-                          <option value="Luxury Villa">Luxury Private Villa</option>
-                          <option value="Heritage Resort">Heritage / Boutique Hotel</option>
-                          <option value="Budget Stay">Budget / Standard Hotel</option>
-                        </select>
+                        {isCustomCategory ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            placeholder="e.g. 5 Star Luxury, Boutique Heritage, Swiss Tent..."
+                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-indigo-400 dark:border-lime-400 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:bg-white dark:focus:bg-zinc-900"
+                            value={formData.hotelCategory}
+                            onChange={e => setFormData({ ...formData, hotelCategory: e.target.value })}
+                          />
+                        ) : (
+                          <select
+                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900"
+                            value={['5 Star', '4 Star', '4/3 Star', '3 Star', 'Luxury Villa', 'Heritage Resort', 'Budget Stay'].includes(formData.hotelCategory) ? formData.hotelCategory : '__custom__'}
+                            onChange={e => {
+                              if (e.target.value === '__custom__') {
+                                setIsCustomCategory(true);
+                              } else {
+                                setFormData({ ...formData, hotelCategory: e.target.value });
+                              }
+                            }}
+                          >
+                            <option value="5 Star">5 Star Luxury Resort</option>
+                            <option value="4 Star">4 Star Premium Hotel</option>
+                            <option value="4/3 Star">4/3 Star Comfort (Default)</option>
+                            <option value="3 Star">3 Star Deluxe Hotel</option>
+                            <option value="Luxury Villa">Luxury Private Villa</option>
+                            <option value="Heritage Resort">Heritage / Boutique Hotel</option>
+                            <option value="Budget Stay">Budget / Standard Hotel</option>
+                            <option value="__custom__">✏️ + Custom (Type manually)...</option>
+                          </select>
+                        )}
                         <select className="w-28 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none" value={formData.includeStay} onChange={e => setFormData({...formData, includeStay: e.target.value})}>
                           <option value="Yes">Stay: Yes</option>
                           <option value="No">Stay: No</option>

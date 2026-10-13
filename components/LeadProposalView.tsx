@@ -174,6 +174,9 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [tempIncludeCab, setTempIncludeCab] = useState(lead?.includeCab || 'Yes');
   const [tempHotelCategory, setTempHotelCategory] = useState(lead?.hotelCategory || '4/3 Star');
   const [tempOtherInfo, setTempOtherInfo] = useState(lead?.otherInfo || '');
+  const [isCustomHotelCategory, setIsCustomHotelCategory] = useState(
+    Boolean(lead?.hotelCategory && !['2 Star', '3 Star', '4/3 Star', '4 Star', '5 Star', 'Luxury Villa', 'Heritage Resort', 'Budget Stay'].includes(lead.hotelCategory))
+  );
 
   useEffect(() => {
     if (lead) {
@@ -186,6 +189,9 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       setTempIncludeCab(lead.includeCab || 'Yes');
       setTempHotelCategory(lead.hotelCategory || '4/3 Star');
       setTempOtherInfo(lead.otherInfo || '');
+      setIsCustomHotelCategory(
+        Boolean(lead.hotelCategory && !['2 Star', '3 Star', '4/3 Star', '4 Star', '5 Star', 'Luxury Villa', 'Heritage Resort', 'Budget Stay'].includes(lead.hotelCategory))
+      );
     }
   }, [lead]);
 
@@ -1083,18 +1089,48 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                            </select>
                          </div>
                          <div>
-                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Hotel Category</label>
-                           <select
-                             value={tempHotelCategory}
-                             onChange={(e) => setTempHotelCategory(e.target.value)}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
-                           >
-                             <option value="2 Star">2 Star</option>
-                             <option value="3 Star">3 Star</option>
-                             <option value="4/3 Star">4/3 Star</option>
-                             <option value="4 Star">4 Star</option>
-                             <option value="5 Star">5 Star</option>
-                           </select>
+                           <div className="flex items-center justify-between mb-1">
+                             <label className="block text-[9px] font-black text-slate-400 uppercase">Hotel Category</label>
+                             <button
+                               type="button"
+                               onClick={() => setIsCustomHotelCategory(!isCustomHotelCategory)}
+                               className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                             >
+                               {isCustomHotelCategory ? "Select list" : "+ Type custom"}
+                             </button>
+                           </div>
+                           {isCustomHotelCategory ? (
+                             <input
+                               type="text"
+                               autoFocus
+                               value={tempHotelCategory}
+                               onChange={(e) => setTempHotelCategory(e.target.value)}
+                               placeholder="e.g. 5 Star Luxury, Boutique..."
+                               className="w-full bg-slate-50 border border-indigo-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                             />
+                           ) : (
+                             <select
+                               value={tempHotelCategory}
+                               onChange={(e) => {
+                                 if (e.target.value === "__custom__") {
+                                   setIsCustomHotelCategory(true);
+                                 } else {
+                                   setTempHotelCategory(e.target.value);
+                                 }
+                               }}
+                               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                             >
+                               <option value="2 Star">2 Star</option>
+                               <option value="3 Star">3 Star</option>
+                               <option value="4/3 Star">4/3 Star</option>
+                               <option value="4 Star">4 Star</option>
+                               <option value="5 Star">5 Star</option>
+                               <option value="Luxury Villa">Luxury Villa</option>
+                               <option value="Heritage Resort">Heritage Resort</option>
+                               <option value="Budget Stay">Budget Stay</option>
+                               <option value="__custom__">✏️ + Custom (Type manually)...</option>
+                             </select>
+                           )}
                          </div>
                        </div>
 

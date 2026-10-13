@@ -240,6 +240,23 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   const [photoPickerDayIndex, setPhotoPickerDayIndex] = useState<number | null>(null);
   const [libraryPhotos, setLibraryPhotos] = useState<DestinationPhotoItem[]>([]);
   const [photoSearchQuery, setPhotoSearchQuery] = useState('');
+  const [customCategoryIndices, setCustomCategoryIndices] = useState<Record<number, boolean>>({});
+
+  const STANDARD_HOTEL_CATEGORIES = [
+    '3 Star',
+    '4 Star',
+    '5 Star',
+    'Luxury',
+    'Heritage',
+    'Deluxe',
+    'Boutique Heritage',
+    'Luxury Villa',
+    'Premium Houseboat',
+    'Swiss Luxury Tent',
+    'Eco Resort & Camp',
+    'Budget Stay',
+    'Homestay',
+  ];
 
   useEffect(() => {
     api.fetchTemplates()
@@ -625,15 +642,58 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                         <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.city} onChange={e => handleHotelChange(idx, 'city', e.target.value)} placeholder="e.g. Gangtok" />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Hotel Category</label>
-                        <select className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.category} onChange={e => handleHotelChange(idx, 'category', e.target.value)}>
-                          <option value="3 Star">3 Star Standard</option>
-                          <option value="4 Star">4 Star Premium</option>
-                          <option value="5 Star">5 Star Luxury</option>
-                          <option value="Luxury">Luxury Resort</option>
-                          <option value="Heritage">Heritage Property</option>
-                          <option value="Deluxe">Deluxe Hotel</option>
-                        </select>
+                        <div className="flex items-center justify-between">
+                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Hotel Category</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cur = Boolean(customCategoryIndices[idx] || (hotel.category && !STANDARD_HOTEL_CATEGORIES.includes(hotel.category)));
+                              setCustomCategoryIndices(prev => ({ ...prev, [idx]: !cur }));
+                            }}
+                            className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                          >
+                            {(customCategoryIndices[idx] || (hotel.category && !STANDARD_HOTEL_CATEGORIES.includes(hotel.category)))
+                              ? 'Select list'
+                              : '+ Type custom'}
+                          </button>
+                        </div>
+                        {(customCategoryIndices[idx] || (hotel.category && !STANDARD_HOTEL_CATEGORIES.includes(hotel.category))) ? (
+                          <input
+                            type="text"
+                            autoFocus
+                            className="w-full bg-white border border-indigo-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 placeholder:font-normal placeholder:text-slate-400"
+                            value={hotel.category}
+                            onChange={e => handleHotelChange(idx, 'category', e.target.value)}
+                            placeholder="e.g. 5 Star Luxury, Boutique Heritage, Swiss Tent"
+                          />
+                        ) : (
+                          <select
+                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                            value={STANDARD_HOTEL_CATEGORIES.includes(hotel.category) ? hotel.category : '__custom__'}
+                            onChange={e => {
+                              if (e.target.value === '__custom__') {
+                                setCustomCategoryIndices(prev => ({ ...prev, [idx]: true }));
+                              } else {
+                                handleHotelChange(idx, 'category', e.target.value);
+                              }
+                            }}
+                          >
+                            <option value="3 Star">3 Star Standard</option>
+                            <option value="4 Star">4 Star Premium</option>
+                            <option value="5 Star">5 Star Luxury</option>
+                            <option value="Luxury">Luxury Resort</option>
+                            <option value="Heritage">Heritage Property</option>
+                            <option value="Deluxe">Deluxe Hotel</option>
+                            <option value="Boutique Heritage">Boutique Heritage</option>
+                            <option value="Luxury Villa">Luxury Villa</option>
+                            <option value="Premium Houseboat">Premium Houseboat</option>
+                            <option value="Swiss Luxury Tent">Swiss Luxury Tent</option>
+                            <option value="Eco Resort & Camp">Eco Resort & Camp</option>
+                            <option value="Budget Stay">Budget Stay</option>
+                            <option value="Homestay">Homestay</option>
+                            <option value="__custom__">✏️ + Custom (Type manually)...</option>
+                          </select>
+                        )}
                       </div>
                     </div>
 
