@@ -1,0 +1,20 @@
+<!-- Diwali Theme Pack: Inner Page Slot Template -->
+<div class="pdf-inner-sheet" style="padding: 44px 50px 32px; display: flex; flex-direction: column; justify-content: flex-start; height: 1123px; box-sizing: border-box; position: relative;">
+  <div class="theme-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid rgba(255, 153, 0, 0.2); padding-bottom: 12px; margin-bottom: 20px;">
+    <div style="font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #FF9900;">
+      ✨ Kingsland Holidays · Festive Edition
+    </div>
+    <div style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #E65100; text-transform: uppercase;">
+      {{slot.subtitle}}
+    </div>
+  </div>
+
+  <div class="theme-content-area" style="flex: 1; display: flex; flex-direction: column;">
+    {{{slot.content}}}
+  </div>
+
+  <div class="theme-footer" style="margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(27, 11, 46, 0.1); display: flex; justify-content: space-between; font-size: 11px; color: #1B0B2E; opacity: 0.65;">
+    <div>🪔 Celebrating the Joy of Travel · Certified Rajasthan Tourism Partner</div>
+    <div style="font-weight: 700;">{{slot.pageLabel}}</div>
+  </div>
+</div>

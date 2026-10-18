@@ -1,0 +1,30 @@
+<div class="pdf-cover-sheet" style="padding:44px 50px 32px;display:flex;flex-direction:column;justify-content:flex-start;height:1123px;box-sizing:border-box;position:relative">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;color:#FF6B35">Kingsland Holidays</div>
+    <div style="background:rgba(255,107,53,0.12);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;color:#D9582B">{{package.destination}}</div>
+  </div>
+  <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(20,20,43,0.12)">
+    <img src="{{package.heroImage}}" alt="{{package.title}}" style="width:100%;height:100%;object-fit:cover;border-radius:16px" />
+    {{#if package.badge}}
+    <div style="position:absolute;bottom:0;left:0;right:0;background:#14142B;color:#ffffff;padding:8px 18px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700">
+      <span style="color:#FF6B35">🔥</span>
+      <span>{{package.badge}}</span>
+    </div>
+    {{/if}}
+  </div>
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:13px;font-weight:800;letter-spacing:2px;color:#FF6B35">{{package.duration}} · EXCLUSIVE ITINERARY PROPOSAL</div>
+    <h1 style="font-family:'Playfair Display',serif;font-size:34px;line-height:1.15;color:#D9582B;margin:0;font-weight:800">{{package.title}}</h1>
+    <p style="font-size:13px;line-height:1.55;color:#14142B;opacity:0.85;margin:4px 0 0">{{package.summary}}</p>
+  </div>
+  <div style="margin-top:18px;background:#ffffff;border:1.5px solid rgba(255,107,53,0.25);border-radius:14px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:11px;text-transform:uppercase;font-weight:700;color:rgba(20,20,43,0.6)">Total Land Package Price</div>
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:800;color:#14142B">{{package.price}}</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:rgba(20,20,43,0.7)">
+      <div style="font-weight:700;color:#FF6B35">All Inclusive Offer</div>
+      <div>Hotels · Private Cab · Meals · Taxes</div>
+    </div>
+  </div>
+</div>

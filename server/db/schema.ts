@@ -156,7 +156,30 @@ export function initializeDatabase(): void {
     `CREATE TABLE IF NOT EXISTS destination_photos (id TEXT PRIMARY KEY, city TEXT NOT NULL, title TEXT DEFAULT '', image_url TEXT NOT NULL, tags TEXT DEFAULT '', is_default INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
     `CREATE INDEX IF NOT EXISTS idx_dest_photos_city ON destination_photos(city)`,
     `CREATE TABLE IF NOT EXISTS partner_brands (id TEXT PRIMARY KEY, category TEXT NOT NULL DEFAULT 'hotel', name TEXT NOT NULL, tagline TEXT DEFAULT '', brand_color TEXT DEFAULT '#b8860b', logo_url TEXT DEFAULT '', svg_icon TEXT DEFAULT '', is_active INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
-    `CREATE INDEX IF NOT EXISTS idx_partner_brands_cat ON partner_brands(category)`
+    `CREATE INDEX IF NOT EXISTS idx_partner_brands_cat ON partner_brands(category)`,
+    `CREATE TABLE IF NOT EXISTS pdf_themes (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      festival TEXT DEFAULT '',
+      type TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      start_date TEXT DEFAULT '',
+      end_date TEXT DEFAULT '',
+      is_default INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      version TEXT DEFAULT '1.0.0',
+      meta TEXT DEFAULT '{}',
+      created_by TEXT DEFAULT 'Admin',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_pdf_themes_festival ON pdf_themes(festival)`,
+    `CREATE INDEX IF NOT EXISTS idx_pdf_themes_status ON pdf_themes(status)`,
+    `CREATE INDEX IF NOT EXISTS idx_pdf_themes_dates ON pdf_themes(start_date, end_date)`,
+    `ALTER TABLE itinerary_templates ADD COLUMN theme_override_id TEXT DEFAULT NULL`,
+    `ALTER TABLE itinerary_templates ADD COLUMN badge TEXT DEFAULT ''`,
+    `ALTER TABLE quotes ADD COLUMN theme_override_id TEXT DEFAULT NULL`,
+    `ALTER TABLE quotes ADD COLUMN badge TEXT DEFAULT ''`,
+    `ALTER TABLE quotes ADD COLUMN show_detailed_itinerary INTEGER DEFAULT 1`
   ];
 
   for (const mSql of migrations) {
@@ -304,9 +327,29 @@ export function initializeDatabase(): void {
   } catch (_e) {}
 
 
-  // Clean up any legacy demo users from past seeds
+  // Seed default PDF Theme (Brand Defaults: Orange #FF6B35, Navy #14142B, Cream #FFF9F0, Rust #D9582B)
   try {
-    execSql(`DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') OR LOWER(email) IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')`);
+    const defaultMeta = JSON.stringify({
+      name: "Brand Default",
+      festival: "All Season",
+      version: "1.0.0",
+      colors: {
+        primary: "#FF6B35",
+        accent: "#D9582B",
+        background: "#FFF9F0",
+        text: "#14142B",
+        navy: "#14142B"
+      },
+      fonts: {
+        heading: "Playfair Display",
+        body: "Nunito"
+      },
+      safeMargin: 12,
+      imageRadius: 16
+    });
+
+    execSql(`INSERT OR IGNORE INTO pdf_themes (id, name, festival, type, file_path, start_date, end_date, is_default, status, version, meta, created_by)
+      VALUES ('brand-default', 'Kingsland Brand Default', 'All Season', 'pack', 'storage/pdf-themes/brand-default', '', '', 1, 'active', '1.0.0', '${defaultMeta.replace(/'/g, "''")}', 'Admin')`);
   } catch (_e) {}
 
   console.log('✅ Database schema & migrations initialized.');

@@ -6,6 +6,7 @@ export interface PdfExportOptions {
   margin?: number; // margin in mm (default 0 for sheet designs, 8mm for generic continuous pages)
   width?: number;  // container width in px (default 794px = A4 at 96dpi)
   scale?: number;  // canvas resolution multiplier (default 2)
+  onOverflow?: (sheetIndex: number, overflowPx: number) => void;
 }
 
 const CORE_QUOTE_FONTS = [
@@ -233,15 +234,38 @@ export async function exportElementToPdf(
           }
           await new Promise(r => setTimeout(r, 60));
 
-          // Check for sheet overflow (scrollHeight > 1123)
+          // Check for sheet overflow (scrollHeight > 1123, and check every direct child's bottom edge against 1123 minus bottom padding)
+          const sheetH = 1123;
+          let maxChildBottom = 0;
+          const directChildren = Array.from(singleSheetClone.children) as HTMLElement[];
+          for (const child of directChildren) {
+            const childBottom = child.offsetTop + child.offsetHeight;
+            if (childBottom > maxChildBottom) {
+              maxChildBottom = childBottom;
+            }
+          }
+
+          const computedStyle = (typeof window !== 'undefined' && window.getComputedStyle) ? window.getComputedStyle(singleSheetClone) : null;
+          const paddingBottom = computedStyle ? (parseFloat(computedStyle.paddingBottom) || 0) : 0;
+          const allowedMaxBottom = sheetH - paddingBottom;
+
           const scrollH = Math.max(sheetEl.scrollHeight, singleSheetClone.scrollHeight);
-          if (scrollH > 1123) {
-            const overflow = scrollH - 1123;
+          const scrollOverflow = scrollH > sheetH ? (scrollH - sheetH) : 0;
+          const childOverflow = maxChildBottom > allowedMaxBottom ? (maxChildBottom - allowedMaxBottom) : 0;
+          const overflowPx = Math.max(scrollOverflow, childOverflow);
+
+          const designAttr = singleSheetClone.getAttribute('data-design') || sheetEl.getAttribute('data-design') || '';
+
+          if (overflowPx > 0) {
             console.error(
-              `[PdfExport Overflow Error] Sheet #${i + 1} overflow detected: scrollHeight=${scrollH}px exceeds 1123px by ${overflow}px. Content is clipped!`
+              `[PdfExport Overflow Error] Sheet #${i + 1}${designAttr ? ` (${designAttr})` : ''} overflow detected: scrollHeight=${scrollH}px, maxChildBottom=${maxChildBottom}px (allowed=${allowedMaxBottom}px). Overflows by ${overflowPx}px. Content is clipped!`
             );
+            if (options.onOverflow) {
+              options.onOverflow(i + 1, overflowPx);
+            }
             if (typeof document !== 'undefined') {
               const toast = document.createElement('div');
+              toast.className = 'pdf-overflow-toast';
               toast.style.cssText = `
                 position: fixed;
                 bottom: 24px;
@@ -256,7 +280,7 @@ export async function exportElementToPdf(
                 z-index: 9999999;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
               `;
-              toast.textContent = `[PDF Overflow] Sheet #${i + 1} content overflow by ${overflow}px!`;
+              toast.textContent = `Page ${i + 1} content overflows by ${overflowPx}px`;
               document.body.appendChild(toast);
               setTimeout(() => toast.remove(), 4000);
             }

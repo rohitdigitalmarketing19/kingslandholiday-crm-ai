@@ -23,6 +23,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
+    if (res.status === 500 && !errorData.error && !errorData.message) {
+      throw new Error(`Backend API server is offline or unreachable on port 5000. Please start the backend server with 'npm run dev' or 'npm run server'.`);
+    }
     throw new Error(errorData.error || errorData.message || `Request failed: ${res.status}`);
   }
 
@@ -676,4 +679,159 @@ export async function updateAgencySettings(data: any) {
     body: JSON.stringify(data),
   });
 }
+
+// ========================
+// PDF THEMES & FESTIVAL TEMPLATES
+// ========================
+
+export interface PdfThemeItem {
+  id: string;
+  name: string;
+  festival: string;
+  type: 'pack' | 'artwork' | 'image';
+  filePath?: string;
+  file_path?: string;
+  startDate?: string;
+  start_date?: string;
+  endDate?: string;
+  end_date?: string;
+  isDefault?: boolean;
+  is_default?: number | boolean;
+  coverPreviewUrl?: string;
+  cover_preview_url?: string;
+  status: 'draft' | 'active' | 'archived';
+  version: string;
+  meta: {
+    name: string;
+    festival?: string;
+    version?: string;
+    startDate?: string;
+    endDate?: string;
+    colors: {
+      primary: string;
+      accent: string;
+      background: string;
+      text: string;
+      navy?: string;
+      rust?: string;
+      cream?: string;
+    };
+    fonts: {
+      heading: string;
+      body: string;
+    };
+    safeMargin?: number;
+    imageRadius?: number;
+    badgeStripColor?: string;
+    flameIconColor?: string;
+  };
+  createdBy: string;
+  createdAt: string;
+}
+
+export type PdfThemeRecord = PdfThemeItem;
+
+export async function fetchPdfThemes(): Promise<PdfThemeItem[]> {
+  return request<PdfThemeItem[]>('/pdf-themes');
+}
+
+export async function fetchActivePdfTheme(date?: string): Promise<PdfThemeItem> {
+  const q = date ? `?date=${encodeURIComponent(date)}` : '';
+  return request<PdfThemeItem>(`/pdf-themes/active${q}`);
+}
+
+export async function uploadPdfTheme(formData: FormData): Promise<PdfThemeItem> {
+  const activeUserId = typeof window !== 'undefined' ? localStorage.getItem('kingsland_active_user_id') : null;
+  const customHeaders: Record<string, string> = {};
+  if (activeUserId) customHeaders['x-user-id'] = activeUserId;
+  customHeaders['x-user-role'] = 'Admin';
+
+  const res = await fetch('/api/pdf-themes', {
+    method: 'POST',
+    headers: customHeaders,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    if (res.status === 500 && !errorData.error) {
+      throw new Error(`Backend API server is offline or unreachable on port 5000. Please start the backend server with 'npm run dev' or 'npm run server'.`);
+    }
+    throw new Error(errorData.error || `Upload failed with status ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function activatePdfTheme(id: string): Promise<PdfThemeItem> {
+  return request<PdfThemeItem>(`/pdf-themes/${id}/activate`, { method: 'PUT' });
+}
+
+export async function setDefaultPdfTheme(id: string): Promise<PdfThemeItem> {
+  return request<PdfThemeItem>(`/pdf-themes/${id}/default`, { method: 'PUT' });
+}
+
+export async function archivePdfTheme(id: string): Promise<PdfThemeItem> {
+  return request<PdfThemeItem>(`/pdf-themes/${id}/archive`, { method: 'PUT' });
+}
+
+export async function deletePdfTheme(id: string): Promise<{ success: boolean; id: string }> {
+  return request<{ success: boolean; id: string }>(`/pdf-themes/${id}`, { method: 'DELETE' });
+}
+
+export async function generatePackagePdfBlob(pkgOrOptions: any, themeIdParam?: string): Promise<Blob> {
+  let pkg: any;
+  let themeId: string | undefined = themeIdParam;
+
+  if (pkgOrOptions && typeof pkgOrOptions === 'object' && ('packageId' in pkgOrOptions || 'days' in pkgOrOptions || 'themeId' in pkgOrOptions)) {
+    themeId = pkgOrOptions.themeId;
+    pkg = pkgOrOptions.package || {
+      title: pkgOrOptions.packageTitle || 'Package Itinerary',
+      destination: pkgOrOptions.destination || 'Destination',
+      daysCount: pkgOrOptions.days || 7,
+      showDetailedItinerary: pkgOrOptions.showDetailedItinerary ?? true,
+      packageId: pkgOrOptions.packageId
+    };
+  } else {
+    pkg = pkgOrOptions;
+  }
+
+  const res = await fetch('/api/pdf-themes/generate-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ package: pkg, themeId }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `PDF generation failed: ${res.status}`);
+  }
+
+  return res.blob();
+}
+
+export async function previewPdfThemeHtml(
+  themeIdOrOptions: string | { package?: any; themeId?: string; sampleDays?: number },
+  daysCount?: number
+): Promise<string> {
+  let body: any = {};
+  if (typeof themeIdOrOptions === 'string') {
+    body = { themeId: themeIdOrOptions, sampleDays: daysCount || 7 };
+  } else {
+    body = themeIdOrOptions;
+  }
+
+  const res = await fetch('/api/pdf-themes/preview-html', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to load theme preview: ${res.status}`);
+  }
+
+  return res.text();
+}
+
 

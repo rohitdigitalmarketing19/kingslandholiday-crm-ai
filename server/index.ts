@@ -21,6 +21,7 @@ import opsRouter from './routes/ops';
 import usersRouter from './routes/users';
 import mastersRouter from './routes/masters';
 import pdfDesignsRouter from './routes/pdfDesigns';
+import pdfThemesRouter from './routes/pdfThemes';
 import settingsRouter from './routes/settings';
 
 import { securityHeadersMiddleware, bodySanitizerMiddleware, rateLimiterMiddleware } from './middleware/security';
@@ -59,6 +60,8 @@ app.use('/api/ops', opsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/masters', mastersRouter);
 app.use('/api/pdf-designs', pdfDesignsRouter);
+app.use('/api/pdf-themes', pdfThemesRouter);
+app.use('/api/pdf-themes/media', express.static(path.join(process.cwd(), 'storage', 'uploads')));
 app.use('/api/settings', settingsRouter);
 
 app.get('/api/health', (req, res) => { res.json({ status: 'ok', timestamp: new Date().toISOString() }); });

@@ -18,7 +18,9 @@ import {
   FileText,
   Clock,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Download,
+  RefreshCw
 } from 'lucide-react';
 
 interface DayPlan {
@@ -38,6 +40,13 @@ const ItineraryLibrary: React.FC = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
+
+  // PDF Generation State
+  const [pdfModalTemplate, setPdfModalTemplate] = useState<any | null>(null);
+  const [pdfThemes, setPdfThemes] = useState<any[]>([]);
+  const [selectedThemeId, setSelectedThemeId] = useState<string>('auto');
+  const [detailedItinerary, setDetailedItinerary] = useState<boolean>(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
 
   // Manual Form State
   const [manualTitle, setManualTitle] = useState('');
@@ -75,7 +84,43 @@ const ItineraryLibrary: React.FC = () => {
 
   useEffect(() => {
     loadTemplates();
+    api.fetchPdfThemes().then(themes => setPdfThemes(themes)).catch(console.error);
   }, []);
+
+  const handleOpenPdfModal = (template: any) => {
+    setPdfModalTemplate(template);
+    setSelectedThemeId('auto');
+    setDetailedItinerary(true);
+  };
+
+  const handleGeneratePackagePdf = async () => {
+    if (!pdfModalTemplate) return;
+    try {
+      setIsGeneratingPdf(true);
+      const themeIdParam = selectedThemeId === 'auto' ? undefined : selectedThemeId;
+      const daysCount = (pdfModalTemplate.nights || 1) + 1;
+      const blob = await api.generatePackagePdfBlob({
+        packageId: pdfModalTemplate.id,
+        themeId: themeIdParam,
+        days: daysCount,
+        showDetailedItinerary: detailedItinerary
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanTitle = (pdfModalTemplate.title || 'Package-Itinerary').replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.download = `${cleanTitle}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setPdfModalTemplate(null);
+    } catch (err: any) {
+      alert(`PDF Generation failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
@@ -272,13 +317,23 @@ const ItineraryLibrary: React.FC = () => {
             </div>
 
             <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
-               <button 
-                 onClick={() => setPreviewTemplate(item)}
-                 className="px-3 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
-               >
-                 <Eye size={12} />
-                 <span>View Details</span>
-               </button>
+               <div className="flex items-center gap-1.5">
+                 <button 
+                   onClick={() => setPreviewTemplate(item)}
+                   className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                 >
+                   <Eye size={12} />
+                   <span>View</span>
+                 </button>
+                 <button 
+                   onClick={() => handleOpenPdfModal(item)}
+                   className="px-2.5 py-1.5 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                   title="Generate Themed PDF"
+                 >
+                   <FileText size={12} />
+                   <span>Generate PDF</span>
+                 </button>
+               </div>
 
                <button 
                  onClick={() => handleDeleteTemplate(item.id)}
@@ -555,13 +610,125 @@ const ItineraryLibrary: React.FC = () => {
               ))}
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button 
+                type="button" 
+                onClick={() => {
+                  const curr = previewTemplate;
+                  setPreviewTemplate(null);
+                  handleOpenPdfModal(curr);
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <FileText size={13} />
+                <span>Generate PDF</span>
+              </button>
               <button 
                 type="button" 
                 onClick={() => setPreviewTemplate(null)} 
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer"
               >
                 Close Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: GENERATE PDF WITH THEME DROPDOWN */}
+      {pdfModalTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 uppercase tracking-wider">
+                  PDF Theme Engine
+                </span>
+                <h3 className="text-base font-bold text-slate-900 mt-1">Generate Package PDF</h3>
+                <p className="text-xs text-slate-500">{pdfModalTemplate.title}</p>
+              </div>
+              <button onClick={() => setPdfModalTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Theme Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Select PDF Theme / Skin
+                </label>
+                <select
+                  value={selectedThemeId}
+                  onChange={e => setSelectedThemeId(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-[#FF6B35]"
+                >
+                  <option value="auto">🌟 Auto (Active Festival / Seasonal Window)</option>
+                  <option value="brand-default">🏛️ Kingsland Brand Default</option>
+                  {pdfThemes
+                    .filter(t => t.id !== 'brand-default')
+                    .map(t => (
+                      <option key={t.id} value={t.id}>
+                        🎨 {t.name} ({t.festival}) {t.status === 'active' ? '• Active' : ''}
+                      </option>
+                    ))}
+                </select>
+                <span className="text-[10px] text-slate-500 mt-1 block">
+                  Auto matches active seasonal festival skins (Diwali, Holi, Christmas) based on current date.
+                </span>
+              </div>
+
+              {/* Detailed Itinerary Toggle */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-slate-800 text-xs">Detailed Itinerary</div>
+                  <div className="text-[10px] text-slate-500">
+                    Include full day-by-day sightseeing cards with alternating 3:2 photos.
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  id="detailedItineraryToggle"
+                  checked={detailedItinerary}
+                  onChange={e => setDetailedItinerary(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#FF6B35] focus:ring-[#FF6B35] cursor-pointer"
+                />
+              </div>
+
+              {/* Package Specs Summary */}
+              <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1 text-[11px] text-orange-950">
+                <div className="flex justify-between">
+                  <span className="text-orange-700 font-semibold">Destination:</span>
+                  <span className="font-bold">{pdfModalTemplate.destination}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-orange-700 font-semibold">Duration:</span>
+                  <span className="font-bold">{pdfModalTemplate.nights} Nights / {pdfModalTemplate.nights + 1} Days</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-orange-700 font-semibold">Smart Packing:</span>
+                  <span className="font-bold">Continuous flow &amp; ≤30% empty space filler</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isGeneratingPdf}
+                onClick={() => setPdfModalTemplate(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isGeneratingPdf}
+                onClick={handleGeneratePackagePdf}
+                className="px-5 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+              >
+                {isGeneratingPdf ? <RefreshCw size={13} className="animate-spin" /> : <Download size={13} />}
+                <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
               </button>
             </div>
           </div>

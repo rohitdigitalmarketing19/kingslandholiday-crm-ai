@@ -33,6 +33,7 @@ import { PartnerBrandsModal } from "./PartnerBrandsModal";
 import { exportElementToPdf } from "../utils/pdfExport";
 import { PartnerBrand } from "../utils/partnerLogos";
 import { compressImageFile } from "../utils/imageCompressor";
+import { PdfThemesView } from "./PdfThemesView";
 
 export interface PdfDesign {
   id: string;
@@ -218,6 +219,7 @@ const DESIGN_METADATA: Record<string, {
 };
 
 export const PdfDesignsView: React.FC = () => {
+  const [activePdfSection, setActivePdfSection] = useState<'presets' | 'themes'>('presets');
   const [designs, setDesigns] = useState<PdfDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionMsg, setActionMsg] = useState("");
@@ -243,16 +245,24 @@ export const PdfDesignsView: React.FC = () => {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const modalPrintRef = React.useRef<HTMLDivElement>(null);
 
+  // Agency Profile / Company Logo
+  const [agencySettings, setAgencySettings] = useState<any>(null);
+  const [isLogoModalOpen, setIsLogoModalOpen] = useState(false);
+  const [tempLogoUrl, setTempLogoUrl] = useState('');
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
+
   const dynamicSampleQuote = React.useMemo<QuoteDataModel>(() => {
     return {
       ...SAMPLE_QUOTE_DATA,
+      logoUrl: agencySettings?.logo_url || '',
+      companyName: agencySettings?.company_name || 'Kingsland Holidays',
       coverImage: sampleCoverImage || '',
       days: SAMPLE_QUOTE_DATA.days.map((d, i) => ({
         ...d,
         img: sampleDayImages[i] || d.img || ''
       }))
     };
-  }, [sampleCoverImage, sampleDayImages]);
+  }, [sampleCoverImage, sampleDayImages, agencySettings]);
 
   const showMsg = (msg: string) => {
     setActionMsg(msg);
@@ -298,11 +308,58 @@ export const PdfDesignsView: React.FC = () => {
     }
   };
 
+  const loadAgencySettings = async () => {
+    try {
+      const data = await api.fetchAgencySettings();
+      if (data) {
+        setAgencySettings(data);
+      }
+    } catch (err) {
+      console.error("Error loading agency settings:", err);
+    }
+  };
+
   useEffect(() => {
     loadDesigns();
     loadPartners();
     loadPhotos();
+    loadAgencySettings();
   }, []);
+
+  const handleLogoFileBrowse = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (PNG, JPG, SVG, WebP).');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setTempLogoUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveCompanyLogo = async () => {
+    setIsSavingLogo(true);
+    try {
+      const updated = {
+        ...(agencySettings || {}),
+        logo_url: tempLogoUrl.trim()
+      };
+      await api.updateAgencySettings(updated);
+      setAgencySettings(updated);
+      setIsLogoModalOpen(false);
+      showMsg('✓ Company Logo saved successfully! It will now appear on all PDF proposals.');
+    } catch (err) {
+      console.error('Failed to update company logo:', err);
+      alert('Failed to save company logo.');
+    } finally {
+      setIsSavingLogo(false);
+    }
+  };
 
   const handleSelectPhoto = (target: 'cover' | number, imageUrl: string) => {
     if (target === 'cover') {
@@ -437,7 +494,43 @@ export const PdfDesignsView: React.FC = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-200">
-      {/* Header section */}
+      {/* Top Section Segmented Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-zinc-800 pb-4">
+        <button
+          type="button"
+          onClick={() => setActivePdfSection('presets')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activePdfSection === 'presets'
+              ? 'bg-lime-400 text-black shadow-xs font-black'
+              : 'bg-slate-100 dark:bg-zinc-900/60 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Proposal &amp; Quote Presets (5 Layouts)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActivePdfSection('themes')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activePdfSection === 'themes'
+              ? 'bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white shadow-md shadow-orange-500/20 font-black'
+              : 'bg-slate-100 dark:bg-zinc-900/60 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-zinc-800'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#FF6B35]" />
+          <span>PDF Themes &amp; Festival Skins</span>
+          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 ml-1">
+            New
+          </span>
+        </button>
+      </div>
+
+      {activePdfSection === 'themes' ? (
+        <PdfThemesView />
+      ) : (
+        <>
+          {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <div className="flex items-center gap-2.5">
@@ -502,6 +595,24 @@ export const PdfDesignsView: React.FC = () => {
           >
             <Building2 className="w-4 h-4 text-amber-500" />
             <span>Hotel & Working Partners</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTempLogoUrl(agencySettings?.logo_url || '');
+              setIsLogoModalOpen(true);
+            }}
+            className="px-4 py-2.5 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 hover:border-lime-400 text-slate-800 dark:text-zinc-200 text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs"
+            title="Upload or change the Agency / Company Logo shown on all proposal PDFs"
+          >
+            <ShieldCheck className="w-4 h-4 text-lime-500" />
+            <span>Company Logo</span>
+            {agencySettings?.logo_url ? (
+              <span className="w-2 h-2 rounded-full bg-lime-400" title="Logo Active" />
+            ) : (
+              <span className="text-[10px] text-amber-500 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded">Not Set</span>
+            )}
           </button>
         </div>
       </div>
@@ -1178,6 +1289,122 @@ export const PdfDesignsView: React.FC = () => {
         onClose={() => setIsPartnersModalOpen(false)}
         onPartnersUpdated={loadPartners}
       />
+
+      {/* Company / Agency Logo Modal */}
+      {isLogoModalOpen && (
+        <div className="fixed inset-0 z-[230] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-3xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-5 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-lime-400/20 border border-lime-400/30 flex items-center justify-center text-lime-600 dark:text-lime-400">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-zinc-100">
+                    Company Logo for Proposals &amp; PDFs
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-zinc-400">
+                    Displayed in the header banner of all 6 proposal themes &amp; exports
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLogoModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Logo Preview Box */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 flex flex-col items-center justify-center gap-3 text-center">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Header Logo Preview
+                </span>
+                {tempLogoUrl ? (
+                  <div className="relative group p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-700 shadow-xs flex items-center justify-center max-w-full">
+                    <img
+                      src={tempLogoUrl}
+                      alt="Company Logo Preview"
+                      className="max-h-16 max-w-[200px] object-contain rounded"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTempLogoUrl('')}
+                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md hover:bg-rose-600 cursor-pointer"
+                      title="Remove Logo"
+                    >
+                      <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="py-6 px-8 rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 text-slate-400 dark:text-zinc-500 text-xs flex flex-col items-center gap-2">
+                    <Building2 className="w-8 h-8 opacity-40 text-slate-400" />
+                    <span>No custom logo selected. Default Kingsland vector emblem is used.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload controls */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300">
+                  Upload Logo File (PNG, JPG, SVG, WebP)
+                </label>
+                <label className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-lime-400 hover:bg-lime-300 text-black font-black text-xs rounded-xl cursor-pointer shadow-sm transition-all">
+                  <Upload className="w-4 h-4 stroke-[2.5]" />
+                  <span>Choose Image File from Computer</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoFileBrowse}
+                    className="hidden"
+                  />
+                </label>
+
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1.5">
+                    Or Paste Image URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={tempLogoUrl.startsWith('data:') ? '' : tempLogoUrl}
+                    onChange={(e) => setTempLogoUrl(e.target.value)}
+                    placeholder={tempLogoUrl.startsWith('data:') ? 'Image uploaded from file (data URI)' : 'https://example.com/logo.png'}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-slate-900 dark:text-zinc-100 outline-none focus:border-lime-400"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsLogoModalOpen(false)}
+                  className="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-zinc-700 cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveCompanyLogo}
+                  disabled={isSavingLogo}
+                  className="px-6 py-2.5 rounded-xl bg-lime-400 hover:bg-lime-300 text-black text-xs font-black shadow-md cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSavingLogo ? (
+                    <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  )}
+                  <span>{isSavingLogo ? 'Saving...' : 'Save & Apply Logo'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+        </>
+      )}
     </div>
   );
 };

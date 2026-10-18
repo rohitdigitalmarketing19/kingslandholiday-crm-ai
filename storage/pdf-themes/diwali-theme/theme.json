@@ -1,0 +1,24 @@
+{
+  "name": "Diwali Golden Festival Theme",
+  "festival": "Diwali",
+  "version": "1.0.0",
+  "startDate": "2026-10-15",
+  "endDate": "2026-11-20",
+  "colors": {
+    "primary": "#FF9900",
+    "accent": "#FFD700",
+    "background": "#FFF9EE",
+    "text": "#1A0F2E",
+    "navy": "#1B0B2E",
+    "rust": "#E65100",
+    "cream": "#FFF9EE"
+  },
+  "fonts": {
+    "heading": "Playfair Display",
+    "body": "Nunito"
+  },
+  "safeMargin": 12,
+  "imageRadius": 16,
+  "badgeStripColor": "#1B0B2E",
+  "flameIconColor": "#FFD700"
+}

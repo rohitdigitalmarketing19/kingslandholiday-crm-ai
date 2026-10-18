@@ -1,0 +1,24 @@
+{
+  "name": "Kingsland Brand Default",
+  "festival": "All Season",
+  "version": "1.0.0",
+  "startDate": "",
+  "endDate": "",
+  "colors": {
+    "primary": "#FF6B35",
+    "accent": "#D9582B",
+    "background": "#FFF9F0",
+    "text": "#14142B",
+    "navy": "#14142B",
+    "rust": "#D9582B",
+    "cream": "#FFF9F0"
+  },
+  "fonts": {
+    "heading": "Playfair Display",
+    "body": "Nunito"
+  },
+  "safeMargin": 12,
+  "imageRadius": 16,
+  "badgeStripColor": "#14142B",
+  "flameIconColor": "#FF6B35"
+}

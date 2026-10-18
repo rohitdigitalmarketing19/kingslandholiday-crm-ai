@@ -1,0 +1,28 @@
+/* Diwali Theme Stylesheet */
+:root {
+  --primary-color: #FF9900;
+  --accent-color: #FFD700;
+  --bg-color: #FFF9EE;
+  --text-color: #1A0F2E;
+  --navy-color: #1B0B2E;
+  --border-radius: 16px;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: 'Nunito', sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  color: var(--navy-color);
+}
+
+.festive-border {
+  border: 1.5px solid var(--accent-color);
+}
+
+.festive-glow {
+  box-shadow: 0 4px 16px rgba(255, 153, 0, 0.12);
+}

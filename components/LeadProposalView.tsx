@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Palette, Sparkles, Check, Download } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
 import { exportElementToPdf } from '../utils/pdfExport';
@@ -274,14 +274,88 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
   // Partner Brands List for PDF proposals
   const [partnerBrandsList, setPartnerBrandsList] = useState<PartnerBrand[]>([]);
+  // Uploaded Festival Themes List
+  const [uploadedThemes, setUploadedThemes] = useState<any[]>([]);
+  // Agency / Company Profile Settings (for Company Logo on PDF)
+  const [agencySettings, setAgencySettings] = useState<any>(null);
 
   useEffect(() => {
+    api.fetchAgencySettings().then(setAgencySettings).catch(() => {});
+
     api.fetchPartnerBrands().then(data => {
       if (Array.isArray(data) && data.length > 0) {
         setPartnerBrandsList(data);
       }
     }).catch(() => {});
+
+    api.fetchPdfThemes().then(themes => {
+      if (Array.isArray(themes)) {
+        const filtered = themes.filter((t: any) => t.id !== 'brand-default');
+        setUploadedThemes(filtered);
+
+        // Check if there's an active or default theme to select
+        const savedId = typeof window !== 'undefined' ? localStorage.getItem('active_pdf_design') : null;
+        const matchingTheme = filtered.find((t: any) => t.id === savedId) ||
+                              filtered.find((t: any) => t.is_default === 1 || t.status === 'active');
+        if (matchingTheme && (!savedId || savedId === matchingTheme.id || savedId.startsWith('theme-'))) {
+          const isDiwali = (matchingTheme.festival && matchingTheme.festival.toLowerCase().includes('diwali')) ||
+                           (matchingTheme.name && matchingTheme.name.toLowerCase().includes('diwali'));
+          setSelectedDesign({
+            id: matchingTheme.id,
+            title: matchingTheme.name,
+            primary_color: isDiwali ? '#FF9900' : '#FF6B35',
+            secondary_color: isDiwali ? '#1B0B2E' : '#D9582B',
+            festival: matchingTheme.festival,
+            theme_type: matchingTheme.type,
+            is_active: 1
+          });
+        }
+      }
+    }).catch(() => {});
   }, []);
+
+  const handleSelectDesign = (newId: string) => {
+    const found = AVAILABLE_QUOTE_DESIGNS.find(d => d.id === newId) || pdfDesigns.find(d => d.id === newId);
+    if (found) {
+      const updated = {
+        id: found.id,
+        title: found.title || (found as any).name || newId,
+        primary_color: found.primary_color || (found as any).dot,
+        secondary_color: (found as any).secondary_color,
+        font_family: (found as any).font_family,
+        festival: (found as any).festival || (found.id === 'diwali' ? 'Diwali' : undefined),
+        is_active: 1
+      };
+      setSelectedDesign(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('active_pdf_design', newId);
+        window.dispatchEvent(new CustomEvent('pdf-design-changed', { detail: newId }));
+      }
+      api.setActivePdfDesign(newId).catch(() => {});
+    }
+  };
+
+  const handleSelectUploadedTheme = (themeId: string) => {
+    const found = uploadedThemes.find(t => t.id === themeId);
+    if (found) {
+      const isDiwali = (found.festival && found.festival.toLowerCase().includes('diwali')) ||
+                       (found.name && found.name.toLowerCase().includes('diwali'));
+      const updated = {
+        id: found.id,
+        title: found.name,
+        primary_color: isDiwali ? '#FF9900' : '#FF6B35',
+        secondary_color: isDiwali ? '#1B0B2E' : '#D9582B',
+        festival: found.festival,
+        theme_type: found.type,
+        is_active: 1
+      };
+      setSelectedDesign(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('active_pdf_design', found.id);
+        window.dispatchEvent(new CustomEvent('pdf-design-changed', { detail: found.id }));
+      }
+    }
+  };
 
   useEffect(() => {
     const syncDesigns = async () => {
@@ -290,13 +364,13 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
         if (Array.isArray(designs) && designs.length > 0) {
           setPdfDesigns(designs);
           const savedId = typeof window !== 'undefined' ? localStorage.getItem('active_pdf_design') : null;
-          const active = (savedId && designs.find((d: any) => d.id === savedId)) ||
-                         designs.find((d: any) => d.is_active === 1) ||
-                         designs[0];
-          if (active) {
-            setSelectedDesign(active);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('active_pdf_design', active.id);
+          // Only override if not already an uploaded theme or diwali
+          if (savedId && !savedId.startsWith('theme-') && savedId !== 'diwali') {
+            const active = designs.find((d: any) => d.id === savedId) ||
+                           designs.find((d: any) => d.is_active === 1) ||
+                           designs[0];
+            if (active) {
+              setSelectedDesign(active);
             }
           }
         }
@@ -697,6 +771,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
     return {
       client: lead.name,
       ref: lead.tripId,
+      logoUrl: agencySettings?.logo_url || selectedDesign?.logo_url || '',
+      companyName: agencySettings?.company_name || 'Kingsland Holidays',
       packageName: currentQuote.packageTitle || `${lead.destination} Tour Package`,
       longDuration: `${currentQuote.nights || (lead.durationDays ? lead.durationDays - 1 : 4)} Nights / ${currentQuote.itinerary?.length || lead.durationDays || 5} Days`,
       duration: `${currentQuote.nights || 4}N / ${currentQuote.itinerary?.length || 5}D`,
@@ -728,7 +804,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       note: currentQuote.otherInformation || '',
       days: formattedDays
     };
-  }, [currentQuote, lead, agentName, pricingData]);
+  }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
@@ -1467,47 +1543,90 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                     {/* PROPOSAL PRESENTATION STAGE */}
                     <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-xs">
-                        <div className="flex items-center gap-3">
-                          <span
-                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                            style={{ backgroundColor: selectedDesign?.primary_color || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.dot) || '#d4af37' }}
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black text-slate-900 dark:text-zinc-100 uppercase tracking-tight">
-                                {selectedDesign?.title || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.name) || 'Royal Gold'}
-                              </span>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                Live A4 Document
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
-                              Exact multi-page layout from Kingsland Quote Designer with SVG partner brand icons
-                            </p>
+                      {/* CHOOSE PROPOSAL DESIGN / THEME BAR */}
+                      <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 text-white shadow-xl space-y-3.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400">
+                              <Palette className="w-4 h-4 text-indigo-400" />
+                              <span>CHOOSE PROPOSAL DESIGN / THEME:</span>
+                            </span>
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              Active: {selectedDesign?.title || 'Royal Gold'}
+                            </span>
+                          </div>
+
+                          {/* Export PDF Button */}
+                          <div className="flex items-center gap-3 shrink-0">
+                            <button
+                              type="button"
+                              onClick={handleDownloadPDF}
+                              disabled={isDownloading}
+                              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
+                            >
+                              {isDownloading ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                  <span>Generating...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4 stroke-[2.5]" />
+                                  <span>EXPORT PDF</span>
+                                </>
+                              )}
+                            </button>
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={handleDownloadPDF}
-                          disabled={isDownloading}
-                          className="px-4 py-2 bg-[#12233D] hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
-                        >
-                          {isDownloading ? (
-                            <>
-                              <svg className="animate-spin h-3.5 w-3.5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                              <span>Generating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                              </svg>
-                              <span>Export PDF</span>
-                            </>
-                          )}
-                        </button>
+                        {/* Presets and Uploaded Themes Row */}
+                        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                          {/* Preset buttons */}
+                          {AVAILABLE_QUOTE_DESIGNS.map(def => {
+                            const isSel = selectedDesign?.id === def.id;
+                            return (
+                              <button
+                                key={def.id}
+                                type="button"
+                                onClick={() => handleSelectDesign(def.id)}
+                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                                  isSel
+                                    ? 'bg-amber-400 text-black border-amber-300 shadow-sm font-black'
+                                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700/60'
+                                }`}
+                              >
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: def.dot }} />
+                                <span>{def.name}</span>
+                                {isSel && <Check className="w-3 h-3 stroke-[3]" />}
+                              </button>
+                            );
+                          })}
+
+                          {/* Uploaded Festival Themes Dropdown */}
+                          <div className="flex items-center gap-1.5 sm:ml-auto">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <select
+                              value={uploadedThemes.some(t => t.id === selectedDesign?.id) ? selectedDesign?.id : (selectedDesign?.id === 'diwali' ? 'diwali-preset' : '')}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'diwali-preset') {
+                                  handleSelectDesign('diwali');
+                                } else if (val) {
+                                  handleSelectUploadedTheme(val);
+                                }
+                              }}
+                              className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:border-amber-400 cursor-pointer"
+                            >
+                              <option value="">✨ Choose Festival Theme Pack...</option>
+                              <option value="diwali-preset">🪔 Diwali theme (Diwali) {selectedDesign?.id === 'diwali' ? '✓' : ''}</option>
+                              {uploadedThemes.map(t => (
+                                <option key={t.id} value={t.id}>
+                                  🎨 {t.name} ({t.festival}) {selectedDesign?.id === t.id ? '✓' : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="flex justify-center p-4 sm:p-8 bg-slate-100 dark:bg-zinc-950/80 rounded-3xl border border-slate-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
@@ -1517,7 +1636,16 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                           style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}
                           dangerouslySetInnerHTML={{
                             __html: currentQuoteDataModel
-                              ? renderCompleteProposalHtml(currentQuoteDataModel, selectedDesign?.id || 'royal', partnerBrandsList)
+                              ? renderCompleteProposalHtml(
+                                  currentQuoteDataModel,
+                                  (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
+                                  (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
+                                  selectedDesign?.id === 'diwali' ||
+                                  selectedDesign?.id === 'theme-f4b4ac06'
+                                    ? 'diwali'
+                                    : (selectedDesign?.id || 'royal'),
+                                  partnerBrandsList
+                                )
                               : ''
                           }}
                         />

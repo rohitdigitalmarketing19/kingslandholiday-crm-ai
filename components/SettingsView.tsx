@@ -22,8 +22,10 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import * as api from '../services/apiService';
+import { PdfThemesView } from './PdfThemesView';
 
 export const SettingsView: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'general' | 'pdfThemes'>('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -226,7 +228,42 @@ Cancellation Policy (Land Package):
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('general')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'general'
+              ? 'bg-lime-400 text-black shadow-xs'
+              : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-800'
+          }`}
+        >
+          <Building className="w-4 h-4" />
+          <span>Company &amp; General Settings</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('pdfThemes')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'pdfThemes'
+              ? 'bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white shadow-md shadow-orange-500/20'
+              : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-800'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#FF6B35]" />
+          <span>PDF Themes &amp; Festival Skins</span>
+          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-300 ml-1">
+            New
+          </span>
+        </button>
+      </div>
+
+      {activeTab === 'pdfThemes' ? (
+        <PdfThemesView />
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
         {/* Box 1: Company Profile */}
         <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
           <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
@@ -847,6 +884,7 @@ Cancellation Policy (Land Package):
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 };

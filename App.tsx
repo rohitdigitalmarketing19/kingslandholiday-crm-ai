@@ -18,6 +18,7 @@ import { UserManagementView } from './components/UserManagementView';
 import SalesDeskView from './components/SalesDeskView';
 import MastersView from './components/MastersView';
 import PdfDesignsView from './components/PdfDesignsView';
+import PdfThemesView from './components/PdfThemesView';
 import SettingsView from './components/SettingsView';
 import { LoginModal } from './components/LoginModal';
 import { UserAccount, UserPermissionSection } from './types';
@@ -135,8 +136,30 @@ const NavItem: React.FC<NavItemProps> = ({
 );
 
 const App: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('kingsland_cached_leads');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
+  const [agents, setAgents] = useState<Agent[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('kingsland_cached_agents');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (_) {}
+    }
+    return [];
+  });
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeletingLead, setIsDeletingLead] = useState(false);
@@ -219,7 +242,7 @@ const App: React.FC = () => {
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
-    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings'
+    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings'
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
@@ -228,7 +251,7 @@ const App: React.FC = () => {
     return 'Dashboard';
   });
 
-  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'Settings') => {
+  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings') => {
     setViewState(newView);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kingsland_active_view', newView);
@@ -544,9 +567,25 @@ const App: React.FC = () => {
   const loadLeads = useCallback(async () => {
     try {
       const data = await api.fetchLeads();
-      setLeads(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setLeads(list);
+      if (list.length > 0 && typeof window !== 'undefined') {
+        localStorage.setItem('kingsland_cached_leads', JSON.stringify(list));
+      }
     } catch (err) {
       console.warn('⚠️ Server offline or API failed:', err);
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('kingsland_cached_leads');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setLeads(parsed);
+              return;
+            }
+          } catch (_) {}
+        }
+      }
       setLeads([]);
     }
   }, []);
@@ -554,9 +593,25 @@ const App: React.FC = () => {
   const loadAgents = useCallback(async () => {
     try {
       const data = await api.fetchAgents();
-      setAgents(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setAgents(list);
+      if (list.length > 0 && typeof window !== 'undefined') {
+        localStorage.setItem('kingsland_cached_agents', JSON.stringify(list));
+      }
     } catch (err) {
       console.warn('⚠️ Server offline or API failed:', err);
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('kingsland_cached_agents');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAgents(parsed);
+              return;
+            }
+          } catch (_) {}
+        }
+      }
       setAgents([]);
     }
   }, []);
@@ -569,8 +624,6 @@ const App: React.FC = () => {
         await Promise.all([loadLeads(), loadAgents()]);
       } catch (err) {
         console.error('Data loading error:', err);
-        setLeads([]);
-        setAgents([]);
       } finally {
         setIsLoading(false);
       }
@@ -626,7 +679,7 @@ const App: React.FC = () => {
   };
 
   const filterCriteria = {
-    'Active leads': (l: Lead) => l.status === 'Qualified',
+    'Active leads': (l: Lead) => ['New', 'Contacted', 'Qualified'].includes(l.status),
     'Update lead': (l: Lead) => l.status === 'Updated',
     'Hot Lead': (l: Lead) => l.status === 'Hot',
     'Postponed': (l: Lead) => l.status === 'Postponed',
@@ -1312,6 +1365,7 @@ const App: React.FC = () => {
               <>
                 <NavItem id="Masters" icon={<Database size={18} />} active={view === 'Masters'} onClick={() => setView('Masters')} />
                 <NavItem id="PDF designs" icon={<FileText size={18} />} active={view === 'PDF designs'} onClick={() => setView('PDF designs')} />
+                <NavItem id="PDF Themes" icon={<Sparkles size={18} />} active={view === 'PDF Themes'} onClick={() => setView('PDF Themes')} />
                 <NavItem id="Users" icon={<Shield size={18} />} active={view === 'User Management'} onClick={() => setView('User Management')} />
               </>
             )}
@@ -2298,6 +2352,11 @@ const App: React.FC = () => {
           {view === 'PDF designs' && (
             <div className="animate-in fade-in duration-200">
               <PdfDesignsView />
+            </div>
+          )}
+          {view === 'PDF Themes' && (
+            <div className="animate-in fade-in duration-200">
+              <PdfThemesView />
             </div>
           )}
           {view === 'Settings' && (
