@@ -1,10 +1,12 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Trash2, Palette, Sparkles, Check, Download } from 'lucide-react';
+import { Trash2, Palette, Sparkles, Check, Download, FileText, Users } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
 import { exportElementToPdf } from '../utils/pdfExport';
 import { QuoteDataModel, HotelItemModel, renderCompleteProposalHtml, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
 import { PartnerBrand, HOTEL_PARTNERS, TRAVEL_PARTNERS, renderPartnerBadgeHtml } from '../utils/partnerLogos';
+import { ClientDocumentsSection } from './ClientDocumentsSection';
+import { ClientDetailsSection } from './ClientDetailsSection';
 
 interface LeadProposalViewProps {
   lead: Lead;
@@ -163,6 +165,19 @@ const getCleanDayTitle = (day: any, dIdx: number, totalDays: number, destination
 const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, onClose, onUpdateStatus, onAddNote, onEditQuote, onNewQuote, onDeleteQuote, onDeleteLead, isReadOnly = false, onUpdateLead }) => {
   const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<{ label: string; status: Lead['status']; color: string; bg: string } | null>(null);
+
+  const isConverted = lead?.status === 'Closed Won' || (lead?.status as any) === 'Converted';
+  const [leadViewTab, setLeadViewTab] = useState<'proposal' | 'documents' | 'client_details'>('proposal');
+  const [docsCount, setDocsCount] = useState<number>(0);
+  const [leadTravellers, setLeadTravellers] = useState<api.LeadTraveller[]>([]);
+
+  useEffect(() => {
+    if (isConverted && lead?.id) {
+      api.fetchClientDocuments(lead.id)
+        .then(res => setDocsCount(res.totalCount || 0))
+        .catch(() => {});
+    }
+  }, [lead?.id, isConverted]);
 
   const [isEditingReqs, setIsEditingReqs] = useState(false);
   const [tempAdults, setTempAdults] = useState(lead?.travelers?.adults || 0);
@@ -893,8 +908,81 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
         </div>
       </header>
 
+      {/* Tab Navigation for Converted Leads */}
+      {isConverted && (
+        <div className="bg-slate-100 dark:bg-zinc-800/80 px-8 pt-3 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setLeadViewTab('proposal')}
+            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              leadViewTab === 'proposal'
+                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <FileText size={15} />
+            <span>Proposal & Quotes</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setLeadViewTab('documents')}
+            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              leadViewTab === 'documents'
+                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <FileText size={15} />
+            <span>Client Documents</span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+              leadViewTab === 'documents'
+                ? 'bg-indigo-600 text-white dark:bg-lime-400 dark:text-black'
+                : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300'
+            }`}>
+              {docsCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setLeadViewTab('client_details')}
+            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+              leadViewTab === 'client_details'
+                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
+                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+            }`}
+          >
+            <Users size={15} />
+            <span>Client Details</span>
+          </button>
+        </div>
+      )}
+
       {/* Main Content Workspace */}
       <div className="flex-1 overflow-y-auto p-8 md:p-10 custom-scrollbar">
+        {isConverted && leadViewTab === 'documents' ? (
+          <div className="max-w-7xl mx-auto pb-20">
+            <ClientDocumentsSection
+              leadId={lead.id}
+              leadTripId={lead.tripId}
+              leadName={lead.name}
+              travellers={leadTravellers}
+              onCountChange={setDocsCount}
+            />
+          </div>
+        ) : isConverted && leadViewTab === 'client_details' ? (
+          <div className="max-w-7xl mx-auto pb-20">
+            <ClientDetailsSection
+              leadId={lead.id}
+              leadTripId={lead.tripId}
+              leadName={lead.name}
+              leadPhone={lead.phone}
+              onTravellersUpdated={setLeadTravellers}
+            />
+          </div>
+        ) : (
+          <>
          {/* STATUS CONFIRMATION MODAL */}
          {pendingStatus && (
            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -1966,6 +2054,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             </div>
 
          </div>
+         </>
+        )}
       </div>
 
     </div>

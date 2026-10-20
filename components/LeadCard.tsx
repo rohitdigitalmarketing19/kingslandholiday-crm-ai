@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Eye, FileText, Calendar, Clock, Phone, User, ChevronDown, ChevronRight, MapPin, Users as UsersIcon } from 'lucide-react';
+import { Trash2, Eye, FileText, Calendar, Clock, Phone, User, ChevronDown, ChevronRight, MapPin, Users as UsersIcon, FolderLock, Link as LinkIcon } from 'lucide-react';
 import { Lead } from '../types';
 
 interface LeadCardProps {
@@ -7,6 +7,7 @@ interface LeadCardProps {
   onClick: (lead: Lead) => void;
   onViewProposal?: (lead: Lead) => void;
   onDeleteLead?: (leadId: string) => void;
+  onOpenLeadDetails?: (lead: Lead, tab?: 'overview' | 'documents' | 'client_details') => void;
   agentName?: string;
   showGiveQuote?: boolean; 
   displayIndex?: number;
@@ -25,6 +26,7 @@ const LeadCard: React.FC<LeadCardProps> = ({
   onClick, 
   onViewProposal, 
   onDeleteLead, 
+  onOpenLeadDetails,
   agentName = "Agent", 
   showGiveQuote = false, 
   displayIndex,
@@ -89,7 +91,16 @@ const LeadCard: React.FC<LeadCardProps> = ({
           </span>
 
           {/* Customer Avatar & Name */}
-          <div className="flex items-center gap-1.5 min-w-0 pr-1">
+          <div 
+            onClick={(e) => {
+              if (onOpenLeadDetails) {
+                e.stopPropagation();
+                onOpenLeadDetails(lead, 'overview');
+              }
+            }}
+            className={`flex items-center gap-1.5 min-w-0 pr-1 ${onOpenLeadDetails ? 'hover:underline cursor-pointer' : ''}`}
+            title={onOpenLeadDetails ? 'Click to open full lead details' : undefined}
+          >
             <div className="w-5 h-5 rounded-full bg-lime-400/10 text-lime-400 font-bold text-[10px] flex items-center justify-center shrink-0 border border-lime-400/20">
               {lead.name.charAt(0).toUpperCase()}
             </div>
@@ -131,6 +142,21 @@ const LeadCard: React.FC<LeadCardProps> = ({
               <span>{formatDate(lead.followUpDate)}</span>
             </span>
           )}
+
+          {/* Client Documents indicator for converted leads */}
+          {(lead.status === 'Closed Won' || (lead as any).status === 'Converted') && (
+            <span 
+              className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 shrink-0 border ${
+                (lead.documentsCount ?? 0) > 0
+                  ? 'bg-lime-50 text-lime-900 border-lime-200 dark:bg-lime-500/10 dark:text-lime-300 dark:border-lime-500/20'
+                  : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700'
+              }`}
+              title={`${lead.documentsCount ?? 0} client documents uploaded`}
+            >
+              <FileText size={11} className={lead.documentsCount ? 'text-lime-600 dark:text-lime-400' : 'text-slate-400'} />
+              <span>Docs ({lead.documentsCount ?? 0})</span>
+            </span>
+          )}
         </div>
 
         {/* Right Side: Agent info & Quick Action Buttons */}
@@ -153,6 +179,37 @@ const LeadCard: React.FC<LeadCardProps> = ({
               <Trash2 size={13} />
               <span className="hidden sm:inline">Delete</span>
             </button>
+          )}
+
+          {/* Direct Actions for Converted Leads */}
+          {(lead.status === 'Closed Won' || (lead as any).status === 'Converted') && onOpenLeadDetails && (
+            <>
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenLeadDetails(lead, 'documents');
+                }}
+                className="px-2.5 py-1.5 bg-lime-50 hover:bg-lime-100 text-lime-900 border border-lime-200 dark:bg-lime-400/10 dark:hover:bg-lime-400/20 dark:text-lime-300 dark:border-lime-400/30 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="View & upload client documents (Passports, Visas, KYC)"
+              >
+                <FolderLock size={13} className="text-lime-700 dark:text-lime-400" />
+                <span>Docs</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenLeadDetails(lead, 'client_details');
+                }}
+                className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200 dark:bg-sky-400/10 dark:hover:bg-sky-400/20 dark:text-sky-300 dark:border-sky-400/30 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Generate and share public client details intake link"
+              >
+                <LinkIcon size={13} className="text-sky-600 dark:text-sky-400" />
+                <span>Client Link</span>
+              </button>
+            </>
           )}
 
           <button 

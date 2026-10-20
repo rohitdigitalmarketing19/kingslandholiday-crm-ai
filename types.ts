@@ -56,6 +56,7 @@ export interface Lead {
   accountsRemarks?: string;
   reviewRequestedAt?: string;
   reviewChannel?: string;
+  documentsCount?: number;
 }
 
 export interface Agent {

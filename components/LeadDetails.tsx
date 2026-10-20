@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
-import { Trash2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trash2, X, FileText, Users, Sparkles, Layout } from 'lucide-react';
 import { Lead, Itinerary } from '../types';
 import { generateItinerary, draftFollowUpEmail } from '../services/geminiService';
-import { updateLeadTravelers } from '../services/apiService';
+import { updateLeadTravelers, fetchClientDocuments, LeadTraveller } from '../services/apiService';
+import { ClientDocumentsSection } from './ClientDocumentsSection';
+import { ClientDetailsSection } from './ClientDetailsSection';
 
 interface LeadDetailsProps {
   lead: Lead;
@@ -12,12 +14,26 @@ interface LeadDetailsProps {
   onUpdateStatus: (leadId: string, status: Lead['status']) => void;
   onDeleteLead?: (leadId: string) => void;
   onUpdateLead?: (updatedLead: Lead) => void;
+  initialTab?: 'overview' | 'documents' | 'client_details';
 }
 
-const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onUpdateStatus, onDeleteLead, onUpdateLead }) => {
+const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onUpdateStatus, onDeleteLead, onUpdateLead, initialTab = 'overview' }) => {
   const [loading, setLoading] = useState(false);
   const [itinerary, setItinerary] = useState<Itinerary | null>(null);
   const [emailDraft, setEmailDraft] = useState<string>('');
+
+  const isConverted = lead.status === 'Closed Won' || (lead.status as any) === 'Converted';
+  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'client_details'>(initialTab);
+  const [docsCount, setDocsCount] = useState<number>(0);
+  const [leadTravellers, setLeadTravellers] = useState<LeadTraveller[]>([]);
+
+  useEffect(() => {
+    if (isConverted && lead?.id) {
+      fetchClientDocuments(lead.id)
+        .then(res => setDocsCount(res.totalCount || 0))
+        .catch(() => {});
+    }
+  }, [lead?.id, isConverted]);
 
   const [isEditingTravelers, setIsEditingTravelers] = useState(false);
   const [tempAdults, setTempAdults] = useState(lead.travelers?.adults || 0);
@@ -72,10 +88,17 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
 
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex justify-end">
-      <div className="w-full max-w-2xl bg-white h-full shadow-xl overflow-y-auto flex flex-col">
+      <div className={`w-full ${isConverted ? 'max-w-4xl' : 'max-w-2xl'} bg-white h-full shadow-xl overflow-y-auto flex flex-col transition-all duration-300`}>
         <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
           <div>
-            <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase block mb-1">Inquiry #{lead.tripId}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase">Inquiry #{lead.tripId}</span>
+              {isConverted && (
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Converted Booking ✓
+                </span>
+              )}
+            </div>
             <h2 className="text-2xl font-bold text-slate-800">{lead.name}</h2>
             <p className="text-slate-500 text-sm">{lead.phone || 'No phone'} • {lead.email}</p>
           </div>
@@ -101,6 +124,76 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
           </div>
         </div>
 
+        {/* Tab Navigation for Converted Leads */}
+        {isConverted && (
+          <div className="flex items-center gap-2 px-6 pt-4 border-b border-slate-200 bg-slate-50/50">
+            <button
+              type="button"
+              onClick={() => setActiveTab('overview')}
+              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                activeTab === 'overview'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <Layout size={14} />
+              <span>Overview & AI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('documents')}
+              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                activeTab === 'documents'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <FileText size={14} />
+              <span>Client Documents</span>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                activeTab === 'documents' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-600'
+              }`}>
+                {docsCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('client_details')}
+              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+                activeTab === 'client_details'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <Users size={14} />
+              <span>Client Details</span>
+            </button>
+          </div>
+        )}
+
+        {isConverted && activeTab === 'documents' ? (
+          <div className="p-6">
+            <ClientDocumentsSection
+              leadId={lead.id}
+              leadTripId={lead.tripId}
+              leadName={lead.name}
+              travellers={leadTravellers}
+              onCountChange={setDocsCount}
+            />
+          </div>
+        ) : isConverted && activeTab === 'client_details' ? (
+          <div className="p-6">
+            <ClientDetailsSection
+              leadId={lead.id}
+              leadTripId={lead.tripId}
+              leadName={lead.name}
+              leadPhone={lead.phone}
+              onTravellersUpdated={setLeadTravellers}
+            />
+          </div>
+        ) : (
         <div className="p-6 space-y-8">
           {/* Analysis Section */}
           <section>
@@ -285,6 +378,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             </section>
           )}
         </div>
+        )}
       </div>
     </div>
   );

@@ -834,4 +834,224 @@ export async function previewPdfThemeHtml(
   return res.text();
 }
 
+// ========================
+// CLIENT DOCUMENTS (ADMIN)
+// ========================
+
+export interface ClientDocumentItem {
+  id: string;
+  lead_id: string;
+  doc_type: string;
+  traveller_id: string | null;
+  traveller_name: string | null;
+  traveller_type: string | null;
+  note: string;
+  original_filename: string;
+  mime_type: string;
+  size_bytes: number;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export interface ClientDocumentsResponse {
+  totalCount: number;
+  countsByType: Record<string, number>;
+  documents: ClientDocumentItem[];
+}
+
+export async function fetchClientDocuments(leadId: string): Promise<ClientDocumentsResponse> {
+  return request<ClientDocumentsResponse>(`/leads/${leadId}/documents`);
+}
+
+export async function uploadClientDocuments(
+  leadId: string,
+  files: File[],
+  docType: string,
+  note = '',
+  travellerId?: string | null
+): Promise<{ success: boolean; message: string; documents: any[] }> {
+  const activeUserId = typeof window !== 'undefined' ? localStorage.getItem('kingsland_active_user_id') : null;
+  const formData = new FormData();
+  files.forEach(f => formData.append('files', f));
+  formData.append('doc_type', docType);
+  if (note) formData.append('note', note);
+  if (travellerId) formData.append('traveller_id', travellerId);
+
+  const customHeaders: Record<string, string> = {};
+  if (activeUserId) customHeaders['x-user-id'] = activeUserId;
+  customHeaders['x-user-role'] = 'Admin';
+
+  const res = await fetch(`/api/leads/${leadId}/documents`, {
+    method: 'POST',
+    headers: customHeaders,
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Upload failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function deleteClientDocument(leadId: string, docId: string): Promise<{ success: boolean; message: string }> {
+  return request<{ success: boolean; message: string }>(`/leads/${leadId}/documents/${docId}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function updateClientDocument(
+  leadId: string,
+  docId: string,
+  data: { doc_type?: string; note?: string; traveller_id?: string | null }
+): Promise<{ success: boolean; message: string }> {
+  return request<{ success: boolean; message: string }>(`/leads/${leadId}/documents/${docId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function getClientDocumentSignedToken(leadId: string, docId: string): Promise<{ ticket: string; expiresAt: number }> {
+  return request<{ ticket: string; expiresAt: number }>(`/leads/${leadId}/documents/${docId}/signed-token`);
+}
+
+export async function downloadAllClientDocumentsZip(leadId: string): Promise<Blob> {
+  const activeUserId = typeof window !== 'undefined' ? localStorage.getItem('kingsland_active_user_id') : null;
+  const customHeaders: Record<string, string> = {};
+  if (activeUserId) customHeaders['x-user-id'] = activeUserId;
+  customHeaders['x-user-role'] = 'Admin';
+
+  const res = await fetch(`/api/leads/${leadId}/documents/download-all`, {
+    headers: customHeaders,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to download documents ZIP`);
+  }
+
+  return res.blob();
+}
+
+// ========================
+// CLIENT DETAILS (ADMIN & PUBLIC)
+// ========================
+
+export interface LeadTraveller {
+  id?: string;
+  lead_id?: string;
+  type: 'adult' | 'child';
+  name: string;
+  mobile?: string | null;
+  email?: string | null;
+  is_primary?: boolean;
+}
+
+export interface ClientDetailsAdminResponse {
+  lead: {
+    id: string;
+    trip_id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    status: string;
+    destination: string;
+    travel_date?: string;
+    expected_adults: number;
+    expected_children: number;
+  };
+  link: {
+    id: string;
+    token: string;
+    is_active: boolean;
+    expires_at: string | null;
+    submitted_at: string | null;
+    created_at: string;
+    url_path: string;
+  } | null;
+  travellers: LeadTraveller[];
+}
+
+export async function fetchClientDetails(leadId: string): Promise<ClientDetailsAdminResponse> {
+  return request<ClientDetailsAdminResponse>(`/leads/${leadId}/client-details`);
+}
+
+export async function generateClientDetailsLink(
+  leadId: string,
+  expiresAt?: string | null
+): Promise<{ success: boolean; message: string; link: any }> {
+  return request<{ success: boolean; message: string; link: any }>(`/leads/${leadId}/client-details/generate-link`, {
+    method: 'POST',
+    body: JSON.stringify({ expires_at: expiresAt }),
+  });
+}
+
+export async function toggleClientDetailsLink(
+  leadId: string,
+  isActive: boolean,
+  expiresAt?: string | null
+): Promise<{ success: boolean; message: string; link: any }> {
+  return request<{ success: boolean; message: string; link: any }>(`/leads/${leadId}/client-details/toggle-link`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive, expires_at: expiresAt }),
+  });
+}
+
+export async function updateLeadTravellersByAdmin(
+  leadId: string,
+  travellers: LeadTraveller[]
+): Promise<{ success: boolean; message: string; travellers: LeadTraveller[] }> {
+  return request<{ success: boolean; message: string; travellers: LeadTraveller[] }>(`/leads/${leadId}/client-details/travellers`, {
+    method: 'PUT',
+    body: JSON.stringify({ travellers }),
+  });
+}
+
+export interface PublicClientDetailsResponse {
+  success: boolean;
+  booking: {
+    tripId: string;
+    destination: string;
+    travelDate: string;
+    durationDays: number;
+  };
+  primaryPrefill: {
+    name: string;
+    mobile: string;
+    email: string;
+  };
+  isSubmitted: boolean;
+  submittedAt: string | null;
+  travellers: LeadTraveller[];
+}
+
+export async function fetchPublicClientDetails(token: string): Promise<PublicClientDetailsResponse> {
+  const res = await fetch(`/api/public/client-details/${token}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to load details: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function submitPublicClientDetails(
+  token: string,
+  travellers: LeadTraveller[],
+  botField = ''
+): Promise<{ success: boolean; message: string; travellersCount: number; submittedAt: string }> {
+  const res = await fetch(`/api/public/client-details/${token}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ travellers, bot_field: botField }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || `Submission failed: ${res.status}`);
+  }
+
+  return res.json();
+}
+
 

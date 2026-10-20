@@ -10,6 +10,7 @@ import ItineraryLibrary from './components/ItineraryLibrary';
 import LeadProposalView from './components/LeadProposalView';
 import PaymentManagerModal, { PaymentTab } from './components/PaymentManagerModal';
 import PaymentPageView from './components/PaymentPageView';
+import { PublicClientDetailsView } from './components/PublicClientDetailsView';
 import OperationsPortal from './operations-team-portal/src/App';
 import FollowUpsView from './components/FollowUpsView';
 import { AccountsView } from './components/AccountsView';
@@ -20,6 +21,7 @@ import MastersView from './components/MastersView';
 import PdfDesignsView from './components/PdfDesignsView';
 import PdfThemesView from './components/PdfThemesView';
 import SettingsView from './components/SettingsView';
+import { AdminClientHubView } from './components/AdminClientHubView';
 import { LoginModal } from './components/LoginModal';
 import { UserAccount, UserPermissionSection } from './types';
 import { TabType } from './operations-team-portal/src/types';
@@ -63,7 +65,9 @@ import {
   Upload,
   Edit2,
   Phone,
-  Mail
+  Mail,
+  FolderLock,
+  UserCheck
 } from 'lucide-react';
 
 // NavItem props
@@ -161,6 +165,7 @@ const App: React.FC = () => {
     return [];
   });
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeadTab, setSelectedLeadTab] = useState<'overview' | 'documents' | 'client_details'>('overview');
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [isDeletingLead, setIsDeletingLead] = useState(false);
   const [toastNotification, setToastNotification] = useState<{ id: string; message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -242,7 +247,7 @@ const App: React.FC = () => {
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
-    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings'
+    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details'
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
@@ -251,7 +256,7 @@ const App: React.FC = () => {
     return 'Dashboard';
   });
 
-  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings') => {
+  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details') => {
     setViewState(newView);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kingsland_active_view', newView);
@@ -297,12 +302,31 @@ const App: React.FC = () => {
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  const getClientDetailsTokenFromUrl = (): string | null => {
+    if (typeof window === 'undefined') return null;
+    const path = window.location.pathname || '';
+    const hash = window.location.hash || '';
+    const pathMatch = path.match(/\/client-details\/([a-zA-Z0-9_-]+)/);
+    if (pathMatch && pathMatch[1]) return pathMatch[1];
+    const hashMatch = hash.match(/client-details\/([a-zA-Z0-9_-]+)/);
+    if (hashMatch && hashMatch[1]) return hashMatch[1];
+    if (path.includes('client-details') || hash.includes('client-details')) {
+      const searchStr = window.location.search || (hash.includes('?') ? '?' + hash.split('?')[1] : '');
+      const urlParams = new URLSearchParams(searchStr);
+      const t = urlParams.get('token');
+      if (t) return t;
+    }
+    return null;
+  };
+
   const [isCustomerPaymentView, setIsCustomerPaymentView] = useState(() => typeof window !== 'undefined' && (window.location.hash.includes('payment') || window.location.pathname.includes('payment')));
+  const [clientDetailsToken, setClientDetailsToken] = useState<string | null>(() => getClientDetailsTokenFromUrl());
 
   useEffect(() => {
     const handleHashCheck = () => {
       const isPay = window.location.hash.includes('payment') || window.location.pathname.includes('payment');
       setIsCustomerPaymentView(isPay);
+      setClientDetailsToken(getClientDetailsTokenFromUrl());
     };
     window.addEventListener('hashchange', handleHashCheck);
     window.addEventListener('popstate', handleHashCheck);
@@ -342,7 +366,10 @@ const App: React.FC = () => {
             setCurrentUser(activeUser);
           } else {
             const admin = data.find((u: UserAccount) => u.email === 'rohit.digitalmarketing19@gmail.com' || u.role === 'Admin');
-            if (admin) setCurrentUser(admin);
+            if (admin) {
+              setCurrentUser(admin);
+              localStorage.setItem('kingsland_active_user_id', admin.id);
+            }
           }
         }
       })
@@ -1073,6 +1100,11 @@ const App: React.FC = () => {
     );
   }
 
+  // Render Standalone Public Client Details View
+  if (clientDetailsToken) {
+    return <PublicClientDetailsView token={clientDetailsToken} />;
+  }
+
   // Render Standalone Customer Payment View when accessing payment links
   if (isCustomerPaymentView) {
     return (
@@ -1363,6 +1395,20 @@ const App: React.FC = () => {
 
             {(currentUser.role === 'Admin' || hasAccess('User Management')) && (
               <>
+                <NavItem 
+                  id="Client Documents" 
+                  icon={<FolderLock size={18} />} 
+                  active={view === 'Client Documents'} 
+                  onClick={() => setView('Client Documents')} 
+                  count={leads.filter(l => l.status === 'Closed Won').reduce((acc, l) => acc + (l.documentsCount || 0), 0)} 
+                />
+                <NavItem 
+                  id="Client Details" 
+                  icon={<UserCheck size={18} />} 
+                  active={view === 'Client Details'} 
+                  onClick={() => setView('Client Details')} 
+                  count={leads.filter(l => l.status === 'Closed Won').length} 
+                />
                 <NavItem id="Masters" icon={<Database size={18} />} active={view === 'Masters'} onClick={() => setView('Masters')} />
                 <NavItem id="PDF designs" icon={<FileText size={18} />} active={view === 'PDF designs'} onClick={() => setView('PDF designs')} />
                 <NavItem id="PDF Themes" icon={<Sparkles size={18} />} active={view === 'PDF Themes'} onClick={() => setView('PDF Themes')} />
@@ -2121,6 +2167,10 @@ const App: React.FC = () => {
                         onClick={setQuotingLead}
                         onViewProposal={setProposalLead}
                         onDeleteLead={handleDeleteLead}
+                        onOpenLeadDetails={(lead, tab) => {
+                          setSelectedLead(lead);
+                          setSelectedLeadTab(tab || 'overview');
+                        }}
                         agentName={agents.find(a => a.id === lead.assignedTo)?.name}
                         showGiveQuote
                       />
@@ -2364,12 +2414,32 @@ const App: React.FC = () => {
               <SettingsView />
             </div>
           )}
+          {view === 'Client Documents' && (
+            <div className="animate-in fade-in duration-200">
+              <AdminClientHubView
+                leads={leads}
+                agents={agents}
+                defaultTab="documents"
+                onViewProposal={setProposalLead}
+              />
+            </div>
+          )}
+          {view === 'Client Details' && (
+            <div className="animate-in fade-in duration-200">
+              <AdminClientHubView
+                leads={leads}
+                agents={agents}
+                defaultTab="client_details"
+                onViewProposal={setProposalLead}
+              />
+            </div>
+          )}
         </div>
       </main>
 
 
       {proposalLead && (<LeadProposalView lead={proposalLead} agentName={agents.find(a => a.id === proposalLead.assignedTo)?.name || 'Alex Thompson'} onClose={() => setProposalLead(null)} onUpdateStatus={handleUpdateLeadStatus} onAddNote={handleAddNote} onDeleteLead={handleDeleteLead} onEditQuote={(lead, qId) => { setQuotingLead(lead); setEditQuoteId(qId); setProposalLead(null); }} onNewQuote={(lead) => { setQuotingLead(lead); setEditQuoteId(null); setProposalLead(null); }} onDeleteQuote={(leadId, qId) => { handleDeleteQuote(leadId, qId); }} isReadOnly={currentUser.accessLevel === 'ViewOnly' || view === 'Accounts'} onUpdateLead={(updated) => { setProposalLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
-      {selectedLead && (<LeadDetails lead={selectedLead} agentName={agents.find(a => a.id === selectedLead.assignedTo)?.name || ''} onClose={() => setSelectedLead(null)} onUpdateStatus={handleUpdateLeadStatus} onDeleteLead={handleDeleteLead} onUpdateLead={(updated) => { setSelectedLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
+      {selectedLead && (<LeadDetails lead={selectedLead} initialTab={selectedLeadTab} agentName={agents.find(a => a.id === selectedLead.assignedTo)?.name || ''} onClose={() => { setSelectedLead(null); setSelectedLeadTab('overview'); }} onUpdateStatus={handleUpdateLeadStatus} onDeleteLead={handleDeleteLead} onUpdateLead={(updated) => { setSelectedLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
       {quotingLead && (<GiveQuoteView lead={quotingLead} allLeads={leads} editQuoteId={editQuoteId} onClose={() => { setQuotingLead(null); setEditQuoteId(null); }} onSave={handleSaveQuote} />)}
       {/* ADD / EDIT SALES AGENT MODAL */}
       {isAddingAgent && currentUser.role === 'Admin' && (

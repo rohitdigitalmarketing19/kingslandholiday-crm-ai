@@ -19,7 +19,14 @@ function hydrateLead(row: any): any {
     includeFlight: row.include_flight || 'No', includeCab: row.include_cab || 'Yes',
     hotelCategory: row.hotel_category || '4/3 Star', englishDriver: !!row.english_driver,
     createdAt: row.created_at, lastFollowUp: row.last_follow_up, notes: [], quotes: [],
+    documentsCount: 0,
   };
+  try {
+    const docCountRow = queryOne('SELECT COUNT(*) as count FROM client_documents WHERE lead_id = ? AND deleted_at IS NULL', [lead.id]);
+    lead.documentsCount = docCountRow ? Number(docCountRow.count) : 0;
+  } catch (_e) {
+    lead.documentsCount = 0;
+  }
   lead.notes = queryAll('SELECT * FROM lead_notes WHERE lead_id = ? ORDER BY timestamp ASC', [lead.id]).map((n: any) => ({ id: n.id, text: n.text, type: n.type, timestamp: n.timestamp }));
   lead.quotes = queryAll('SELECT * FROM quotes WHERE lead_id = ? ORDER BY created_at ASC', [lead.id]).map((q: any) => hydrateQuote(q));
   return lead;

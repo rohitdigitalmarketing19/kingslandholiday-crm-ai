@@ -179,7 +179,64 @@ export function initializeDatabase(): void {
     `ALTER TABLE itinerary_templates ADD COLUMN badge TEXT DEFAULT ''`,
     `ALTER TABLE quotes ADD COLUMN theme_override_id TEXT DEFAULT NULL`,
     `ALTER TABLE quotes ADD COLUMN badge TEXT DEFAULT ''`,
-    `ALTER TABLE quotes ADD COLUMN show_detailed_itinerary INTEGER DEFAULT 1`
+    `ALTER TABLE quotes ADD COLUMN show_detailed_itinerary INTEGER DEFAULT 1`,
+    `CREATE TABLE IF NOT EXISTS client_documents (
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      doc_type TEXT NOT NULL,
+      traveller_id TEXT DEFAULT NULL,
+      note TEXT DEFAULT '',
+      original_filename TEXT NOT NULL,
+      stored_path TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      uploaded_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      deleted_at TEXT DEFAULT NULL,
+      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_client_documents_lead_id ON client_documents(lead_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_client_documents_deleted_at ON client_documents(deleted_at)`,
+    `CREATE TABLE IF NOT EXISTS client_document_audit_logs (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      lead_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      user_id TEXT DEFAULT '',
+      user_name TEXT DEFAULT '',
+      ip_address TEXT DEFAULT '',
+      user_agent TEXT DEFAULT '',
+      details TEXT DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_client_doc_audit_lead ON client_document_audit_logs(lead_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_client_doc_audit_doc ON client_document_audit_logs(document_id)`,
+    `CREATE TABLE IF NOT EXISTS client_detail_links (
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      is_active INTEGER DEFAULT 1,
+      expires_at TEXT DEFAULT NULL,
+      submitted_at TEXT DEFAULT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_client_links_lead ON client_detail_links(lead_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_client_links_token ON client_detail_links(token)`,
+    `CREATE TABLE IF NOT EXISTS lead_travellers (
+      id TEXT PRIMARY KEY,
+      lead_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      name TEXT NOT NULL,
+      mobile TEXT DEFAULT NULL,
+      email TEXT DEFAULT NULL,
+      is_primary INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_lead_travellers_lead ON lead_travellers(lead_id)`,
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_lead_travellers_mobile ON lead_travellers(lead_id, mobile) WHERE mobile IS NOT NULL AND mobile != ''`
   ];
 
   for (const mSql of migrations) {
