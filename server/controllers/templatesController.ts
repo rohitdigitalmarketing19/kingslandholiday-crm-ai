@@ -14,3 +14,22 @@ export function createTemplate(data: { title: string; destination: string; night
 }
 
 export function deleteTemplate(id: string) { return runQuery('DELETE FROM itinerary_templates WHERE id = ?', [id]).changes > 0; }
+
+export function updateTemplate(id: string, data: { title?: string; destination?: string; nights?: number; templateData?: any }) {
+  const existing = queryAll('SELECT * FROM itinerary_templates WHERE id = ?', [id])[0];
+  if (!existing) return null;
+  const title = data.title ?? existing.title;
+  const destination = data.destination ?? existing.destination;
+  const nights = data.nights ?? existing.nights;
+  const templateData = data.templateData !== undefined ? JSON.stringify(data.templateData || {}) : existing.template_data;
+  runQuery('UPDATE itinerary_templates SET title = ?, destination = ?, nights = ?, template_data = ? WHERE id = ?', [title, destination, nights, templateData, id]);
+  return {
+    id,
+    title,
+    destination,
+    nights,
+    templateData: JSON.parse(templateData || '{}'),
+    createdAt: existing.created_at
+  };
+}
+

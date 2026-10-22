@@ -1599,11 +1599,22 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             onClick={async () => {
                               try {
                                 const title = currentQuote.packageTitle || `${lead.destination} Itinerary - ${lead.name}`;
+                                const daysWithImages = (currentQuote.itinerary || []).map((d: any, idx: number) => ({
+                                  day: d.day || idx + 1,
+                                  title: d.title || `Day ${idx + 1}`,
+                                  description: d.description || '',
+                                  imageUrl: (d as any).imageUrl || (d as any).img || (d as any).image || '',
+                                  img: (d as any).img || (d as any).imageUrl || (d as any).image || ''
+                                }));
                                 await api.createTemplate({
                                   title: title,
                                   destination: lead.destination || 'Custom',
                                   nights: currentQuote.nights || (currentQuote.itinerary?.length || lead.durationDays || 5),
-                                  templateData: currentQuote
+                                  templateData: {
+                                    ...currentQuote,
+                                    days: daysWithImages,
+                                    itinerary: daysWithImages
+                                  }
                                 });
                                 alert(`✅ Itinerary package saved to "Saved Itineraries" section with title:\n\n"${title}"`);
                               } catch (err) {

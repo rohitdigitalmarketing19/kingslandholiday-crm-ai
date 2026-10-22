@@ -181,6 +181,13 @@ export async function createTemplate(data: { title: string; destination: string;
   });
 }
 
+export async function updateTemplate(id: string, data: { title?: string; destination?: string; nights?: number; templateData?: any }) {
+  return request<any>(`/templates/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function deleteTemplate(id: string) {
   return request<any>(`/templates/${id}`, { method: 'DELETE' });
 }

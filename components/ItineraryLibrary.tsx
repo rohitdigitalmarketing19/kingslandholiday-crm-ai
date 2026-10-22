@@ -20,13 +20,20 @@ import {
   Layers,
   ChevronRight,
   Download,
-  RefreshCw
+  RefreshCw,
+  Image as ImageIcon,
+  Upload,
+  Edit2
 } from 'lucide-react';
+import { CityPhotosModal } from './CityPhotosModal';
+import { compressImageFile } from '../utils/imageCompressor';
 
 interface DayPlan {
   day: number;
   title: string;
   description: string;
+  imageUrl?: string;
+  img?: string;
 }
 
 const ItineraryLibrary: React.FC = () => {
@@ -40,6 +47,16 @@ const ItineraryLibrary: React.FC = () => {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
+
+  // Edit Template State
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDestination, setEditDestination] = useState('');
+  const [editDays, setEditDays] = useState<DayPlan[]>([]);
+
+  // City Photo Picker State
+  const [photoPickerDayIndex, setPhotoPickerDayIndex] = useState<number | null>(null);
+  const [photoPickerTargetForm, setPhotoPickerTargetForm] = useState<'manual' | 'edit'>('manual');
 
   // PDF Generation State
   const [pdfModalTemplate, setPdfModalTemplate] = useState<any | null>(null);
@@ -99,12 +116,32 @@ const ItineraryLibrary: React.FC = () => {
       setIsGeneratingPdf(true);
       const themeIdParam = selectedThemeId === 'auto' ? undefined : selectedThemeId;
       const daysCount = (pdfModalTemplate.nights || 1) + 1;
-      const blob = await api.generatePackagePdfBlob({
+      const rawDays = pdfModalTemplate.templateData?.days || pdfModalTemplate.templateData?.itinerary || [];
+      const mappedItinerary = Array.isArray(rawDays) && rawDays.length > 0
+        ? rawDays.map((d: any, idx: number) => ({
+            dayNumber: d.day || idx + 1,
+            title: d.title || `Day ${idx + 1}`,
+            description: d.description || '',
+            shortSummary: (d.description || '').slice(0, 80) + '...',
+            image: d.imageUrl || d.img || d.image || ''
+          }))
+        : undefined;
+
+      const pkgPayload = {
+        title: pdfModalTemplate.title || 'Package-Itinerary',
+        destination: pdfModalTemplate.destination || 'Custom Destination',
+        duration: `${pdfModalTemplate.nights || 1}N / ${daysCount}D`,
+        nights: pdfModalTemplate.nights || 1,
+        daysCount: daysCount,
+        showDetailedItinerary: detailedItinerary,
         packageId: pdfModalTemplate.id,
-        themeId: themeIdParam,
-        days: daysCount,
-        showDetailedItinerary: detailedItinerary
-      });
+        itinerary: mappedItinerary,
+        price: pdfModalTemplate.templateData?.finalSellingPrice
+          ? `₹${Number(pdfModalTemplate.templateData.finalSellingPrice).toLocaleString('en-IN')}`
+          : undefined
+      };
+
+      const blob = await api.generatePackagePdfBlob(pkgPayload, themeIdParam);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -147,6 +184,65 @@ const ItineraryLibrary: React.FC = () => {
     setManualDays(updated);
   };
 
+  // Direct upload from local disk for a specific day
+  const handleDirectDayUpload = async (targetForm: 'manual' | 'edit', dayIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (PNG, JPG, WebP).');
+      return;
+    }
+    try {
+      const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 900, quality: 0.85 });
+      if (targetForm === 'manual') {
+        const updated = [...manualDays];
+        updated[dayIdx] = { ...updated[dayIdx], imageUrl: compressed, img: compressed };
+        setManualDays(updated);
+      } else {
+        const updated = [...editDays];
+        updated[dayIdx] = { ...updated[dayIdx], imageUrl: compressed, img: compressed };
+        setEditDays(updated);
+      }
+    } catch (err) {
+      console.error('Failed to upload day image:', err);
+      alert('Failed to process image.');
+    }
+  };
+
+  // Select photo picked from CityPhotosModal
+  const handleSelectCityPhoto = (imageUrl: string) => {
+    if (photoPickerDayIndex === null) return;
+    if (photoPickerTargetForm === 'manual') {
+      const updated = [...manualDays];
+      if (updated[photoPickerDayIndex]) {
+        updated[photoPickerDayIndex] = { ...updated[photoPickerDayIndex], imageUrl, img: imageUrl };
+        setManualDays(updated);
+      }
+    } else {
+      const updated = [...editDays];
+      if (updated[photoPickerDayIndex]) {
+        updated[photoPickerDayIndex] = { ...updated[photoPickerDayIndex], imageUrl, img: imageUrl };
+        setEditDays(updated);
+      }
+    }
+    setPhotoPickerDayIndex(null);
+  };
+
+  // Remove photo from a day
+  const handleRemoveDayPhoto = (targetForm: 'manual' | 'edit', dayIdx: number) => {
+    if (targetForm === 'manual') {
+      const updated = [...manualDays];
+      delete updated[dayIdx].imageUrl;
+      delete updated[dayIdx].img;
+      setManualDays(updated);
+    } else {
+      const updated = [...editDays];
+      delete updated[dayIdx].imageUrl;
+      delete updated[dayIdx].img;
+      setEditDays(updated);
+    }
+  };
+
   const handleSaveManualTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualTitle.trim() || !manualDestination.trim()) {
@@ -157,7 +253,9 @@ const ItineraryLibrary: React.FC = () => {
     try {
       const templateData = {
         title: manualTitle.trim(),
+        destination: manualDestination.trim(),
         days: manualDays,
+        itinerary: manualDays,
         totalPrice: 50000,
         bestValueWindow: 'Year-Round'
       };
@@ -173,10 +271,116 @@ const ItineraryLibrary: React.FC = () => {
       setShowManualModal(false);
       setManualTitle('');
       setManualDestination('');
-      alert('Manual itinerary template saved successfully!');
+      setManualDays([
+        { day: 1, title: 'Arrival & Welcome Briefing', description: 'Arrive at destination, airport pickup, transfer to hotel, and welcome briefing.' },
+        { day: 2, title: 'City Tour & Key Landmarks', description: 'Full day guided tour exploring key attractions, historical monuments, and local markets.' },
+        { day: 3, title: 'Leisure & Adventure Activity', description: 'Free morning followed by afternoon excursion and scenic sunset point visit.' },
+        { day: 4, title: 'Departure', description: 'Breakfast at hotel, souvenir shopping, check-out, and private transfer to airport.' },
+      ]);
+      alert('Manual itinerary template saved successfully with images!');
     } catch (err) {
       console.error('Failed to save manual template:', err);
       alert('Failed to save itinerary template.');
+    }
+  };
+
+  const handleStartEditTemplate = (tmpl: any) => {
+    setEditingTemplate(tmpl);
+    setEditTitle(tmpl.title || '');
+    setEditDestination(tmpl.destination || '');
+    const rawDays = tmpl.templateData?.days || tmpl.templateData?.itinerary || [];
+    const formatted = Array.isArray(rawDays) && rawDays.length > 0
+      ? rawDays.map((d: any, i: number) => ({
+          day: d.day || i + 1,
+          title: d.title || `Day ${i + 1}`,
+          description: d.description || '',
+          imageUrl: d.imageUrl || d.img || d.image || '',
+          img: d.img || d.imageUrl || d.image || ''
+        }))
+      : [
+          { day: 1, title: 'Arrival & Welcome Briefing', description: 'Arrive at destination, airport pickup, transfer to hotel.' }
+        ];
+    setEditDays(formatted);
+    setPreviewTemplate(null);
+  };
+
+  const handleAddEditDay = () => {
+    const nextDayNum = editDays.length + 1;
+    setEditDays([
+      ...editDays,
+      { day: nextDayNum, title: `Day ${nextDayNum} Exploration`, description: `Custom activities and sightseeing for day ${nextDayNum}.` }
+    ]);
+  };
+
+  const handleRemoveEditDay = (index: number) => {
+    if (editDays.length <= 1) return;
+    const updated = editDays.filter((_, i) => i !== index).map((d, i) => ({ ...d, day: i + 1 }));
+    setEditDays(updated);
+  };
+
+  const handleSaveEditTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTemplate || !editTitle.trim() || !editDestination.trim()) {
+      alert('Please fill in title and destination.');
+      return;
+    }
+
+    try {
+      const templateData = {
+        ...(editingTemplate.templateData || {}),
+        title: editTitle.trim(),
+        destination: editDestination.trim(),
+        days: editDays,
+        itinerary: editDays
+      };
+
+      const updated = await api.updateTemplate(editingTemplate.id, {
+        title: editTitle.trim(),
+        destination: editDestination.trim(),
+        nights: Math.max(1, editDays.length - 1),
+        templateData
+      });
+
+      setTemplates(templates.map(t => t.id === editingTemplate.id ? updated : t));
+      setEditingTemplate(null);
+      alert('Itinerary template updated successfully with images!');
+    } catch (err) {
+      console.error('Failed to update template:', err);
+      alert('Failed to update itinerary template.');
+    }
+  };
+
+  // Delete single day directly from preview template modal
+  const handleDeletePreviewDay = async (dayIdx: number) => {
+    if (!previewTemplate) return;
+    const rawDays = previewTemplate.templateData?.days || previewTemplate.templateData?.itinerary || [];
+    if (rawDays.length <= 1) {
+      alert('Itinerary template must have at least 1 day.');
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete Day ${dayIdx + 1} from this itinerary template?`)) return;
+
+    try {
+      const updatedDays = rawDays
+        .filter((_: any, i: number) => i !== dayIdx)
+        .map((d: any, i: number) => ({ ...d, day: i + 1 }));
+
+      const updatedTemplateData = {
+        ...(previewTemplate.templateData || {}),
+        days: updatedDays,
+        itinerary: updatedDays
+      };
+
+      const updated = await api.updateTemplate(previewTemplate.id, {
+        nights: Math.max(1, updatedDays.length - 1),
+        templateData: updatedTemplateData
+      });
+
+      setPreviewTemplate(updated);
+      setTemplates(templates.map(t => t.id === previewTemplate.id ? updated : t));
+    } catch (err) {
+      console.error('Failed to delete day from template:', err);
+      alert('Failed to delete day from template.');
     }
   };
 
@@ -227,11 +431,15 @@ const ItineraryLibrary: React.FC = () => {
     }
   };
 
-  const handleDeleteTemplate = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
+  const handleDeleteTemplate = async (id: string, title?: string) => {
+    const label = title ? `"${title}"` : 'this itinerary template';
+    if (!confirm(`Are you sure you want to delete ${label}? This cannot be undone.`)) return;
     try {
       await api.deleteTemplate(id);
       setTemplates(templates.filter(t => t.id !== id));
+      if (previewTemplate?.id === id) setPreviewTemplate(null);
+      if (editingTemplate?.id === id) setEditingTemplate(null);
+      if (pdfModalTemplate?.id === id) setPdfModalTemplate(null);
     } catch (err) {
       console.error('Failed to delete template:', err);
       alert('Failed to delete template.');
@@ -299,52 +507,73 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredTemplates.map((item) => (
-          <div key={item.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-sm transition-all flex flex-col justify-between">
-            <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                  {item.destination}
-                </span>
-                <span className="text-[11px] font-medium text-slate-500">
-                  {item.nights} Nights / {item.nights + 1} Days
-                </span>
+        {filteredTemplates.map((item) => {
+          const days = item.templateData?.days || item.templateData?.itinerary || [];
+          const photoCount = Array.isArray(days) ? days.filter((d: any) => d.imageUrl || d.img || d.image).length : 0;
+          return (
+            <div key={item.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-sm transition-all flex flex-col justify-between">
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                    {item.destination}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {photoCount > 0 && (
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        📷 {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
+                      </span>
+                    )}
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {item.nights}N / {item.nights + 1}D
+                    </span>
+                  </div>
+                </div>
+
+                <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">
+                  {item.title}
+                </h4>
               </div>
 
-              <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">
-                {item.title}
-              </h4>
-            </div>
+              <div className="px-3.5 py-2.5 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+                 <div className="flex flex-wrap items-center gap-1">
+                   <button 
+                     onClick={() => setPreviewTemplate(item)}
+                     className="px-2 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                     title="View Itinerary Details"
+                   >
+                     <Eye size={12} />
+                     <span>View</span>
+                   </button>
+                   <button 
+                     onClick={() => handleStartEditTemplate(item)}
+                     className="px-2 py-1 bg-white hover:bg-amber-50 text-amber-700 border border-slate-200 hover:border-amber-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                     title="Edit Template & Photos"
+                   >
+                     <Edit2 size={12} />
+                     <span>Edit</span>
+                   </button>
+                   <button 
+                     onClick={() => handleOpenPdfModal(item)}
+                     className="px-2 py-1 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                     title="Generate Themed PDF"
+                   >
+                     <FileText size={12} />
+                     <span>PDF</span>
+                   </button>
+                 </div>
 
-            <div className="px-4 py-3 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
-               <div className="flex items-center gap-1.5">
                  <button 
-                   onClick={() => setPreviewTemplate(item)}
-                   className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                   onClick={() => handleDeleteTemplate(item.id, item.title)}
+                   className="px-2 py-1 text-rose-600 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer" 
+                   title="Delete Itinerary Template"
                  >
-                   <Eye size={12} />
-                   <span>View</span>
+                   <Trash2 size={12} />
+                   <span>Delete</span>
                  </button>
-                 <button 
-                   onClick={() => handleOpenPdfModal(item)}
-                   className="px-2.5 py-1.5 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
-                   title="Generate Themed PDF"
-                 >
-                   <FileText size={12} />
-                   <span>Generate PDF</span>
-                 </button>
-               </div>
-
-               <button 
-                 onClick={() => handleDeleteTemplate(item.id)}
-                 className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer" 
-                 title="Delete Template"
-               >
-                 <Trash2 size={13} />
-               </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filteredTemplates.length === 0 && (
           <div className="col-span-full py-16 bg-white border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-center p-6 space-y-2">
@@ -362,8 +591,11 @@ const ItineraryLibrary: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 my-8 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900">Create Itinerary Template</h3>
-              <button onClick={() => setShowManualModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Create Itinerary Template</h3>
+                <p className="text-[11px] text-slate-500">Configure day-by-day plan and attach destination photos.</p>
+              </div>
+              <button onClick={() => setShowManualModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -401,19 +633,26 @@ const ItineraryLibrary: React.FC = () => {
                   <button 
                     type="button" 
                     onClick={handleAddManualDay}
-                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium transition-colors"
+                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium transition-colors cursor-pointer"
                   >
                     + Add Day
                   </button>
                 </div>
 
-                <div className="space-y-2.5 max-h-64 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50/50 custom-scrollbar">
+                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50/50 custom-scrollbar">
                   {manualDays.map((d, idx) => (
-                    <div key={idx} className="p-3 bg-white rounded-lg border border-slate-200 space-y-2">
+                    <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2.5 shadow-2xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-semibold text-indigo-700">Day {d.day}</span>
+                        <span className="text-[11px] font-bold text-indigo-700">Day {d.day}</span>
                         {manualDays.length > 1 && (
-                          <button type="button" onClick={() => handleRemoveManualDay(idx)} className="text-[11px] text-rose-600 hover:underline">Remove</button>
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveManualDay(idx)} 
+                            className="px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Trash2 size={11} />
+                            <span>Remove Day</span>
+                          </button>
                         )}
                       </div>
                       <input 
@@ -424,7 +663,7 @@ const ItineraryLibrary: React.FC = () => {
                           updated[idx].title = e.target.value;
                           setManualDays(updated);
                         }}
-                        placeholder="Day Title"
+                        placeholder="Day Title (e.g. Arrival in Srinagar & Shikara Ride)"
                         className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
                       />
                       <textarea 
@@ -435,19 +674,68 @@ const ItineraryLibrary: React.FC = () => {
                           updated[idx].description = e.target.value;
                           setManualDays(updated);
                         }}
-                        placeholder="Day Activities / Description"
+                        placeholder="Day Activities / Description..."
                         className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white resize-none"
                       />
+
+                      {/* Photo Attachment Bar */}
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        {(d.imageUrl || d.img) ? (
+                          <div className="flex items-center gap-2.5">
+                            <img 
+                              src={d.imageUrl || d.img} 
+                              alt={`Day ${d.day}`} 
+                              className="w-16 h-11 rounded-lg object-cover border border-slate-200 shadow-2xs" 
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                ✓ Photo Attached
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDayPhoto('manual', idx)}
+                                className="text-[11px] text-rose-600 hover:text-rose-700 hover:underline font-medium cursor-pointer"
+                              >
+                                Remove Photo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPhotoPickerTargetForm('manual');
+                                setPhotoPickerDayIndex(idx);
+                              }}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-medium border border-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <ImageIcon size={12} />
+                              <span>+ Add Photo from Library</span>
+                            </button>
+                            <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer">
+                              <Upload size={12} />
+                              <span>Upload Photo</span>
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={e => handleDirectDayUpload('manual', idx, e)} 
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" onClick={() => setShowManualModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors">
+                <button type="button" onClick={() => setShowManualModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer">
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs">
+                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs cursor-pointer">
                   Save Template
                 </button>
               </div>
@@ -590,50 +878,281 @@ const ItineraryLibrary: React.FC = () => {
             <div className="flex justify-between items-start pb-3 border-b border-slate-100">
               <div>
                 <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                  {previewTemplate.destination} · {previewTemplate.nights} Nights
+                  {previewTemplate.destination} · {previewTemplate.nights} Nights / {(previewTemplate.nights || 1) + 1} Days
                 </span>
                 <h3 className="text-base font-semibold text-slate-900 mt-1">{previewTemplate.title}</h3>
               </div>
-              <button onClick={() => setPreviewTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+              <button onClick={() => setPreviewTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-2.5 max-h-96 overflow-y-auto p-1 custom-scrollbar">
-              {(previewTemplate.templateData?.days || []).map((day: any, idx: number) => (
-                <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
-                  <span className="text-[11px] font-bold text-indigo-700 block">
-                    Day {String(day.day || idx + 1).padStart(2, '0')} — {day.title || (idx === 0 ? `Arrival in ${previewTemplate.destination}` : idx === (previewTemplate.templateData?.days?.length || 1) - 1 ? `Departure` : `Sightseeing Tour`)}
-                  </span>
-                  <p className="text-xs text-slate-600 leading-relaxed">{day.description}</p>
-                </div>
-              ))}
+            <div className="space-y-3 max-h-96 overflow-y-auto p-1 custom-scrollbar">
+              {(previewTemplate.templateData?.days || previewTemplate.templateData?.itinerary || []).map((day: any, idx: number, arr: any[]) => {
+                const dayImg = day.imageUrl || day.img || day.image;
+                return (
+                  <div key={idx} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2 relative group">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs font-bold text-indigo-700">
+                        Day {String(day.day || idx + 1).padStart(2, '0')} — {day.title || (idx === 0 ? `Arrival in ${previewTemplate.destination}` : idx === arr.length - 1 ? `Departure` : `Sightseeing Tour`)}
+                      </span>
+                      {arr.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePreviewDay(idx)}
+                          className="px-2 py-0.5 text-[10px] font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 rounded transition-all cursor-pointer flex items-center gap-1"
+                          title="Delete this day from itinerary template"
+                        >
+                          <Trash2 size={11} />
+                          <span>Delete Day</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {dayImg && (
+                      <div className="w-full h-36 rounded-lg overflow-hidden border border-slate-200 shadow-2xs">
+                        <img 
+                          src={dayImg} 
+                          alt={day.title || `Day ${idx + 1}`} 
+                          className="w-full h-full object-cover" 
+                        />
+                      </div>
+                    )}
+
+                    <p className="text-xs text-slate-600 leading-relaxed font-normal">{day.description}</p>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
               <button 
                 type="button" 
-                onClick={() => {
-                  const curr = previewTemplate;
-                  setPreviewTemplate(null);
-                  handleOpenPdfModal(curr);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                onClick={() => handleDeleteTemplate(previewTemplate.id, previewTemplate.title)}
+                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Permanently delete this itinerary template"
               >
-                <FileText size={13} />
-                <span>Generate PDF</span>
+                <Trash2 size={13} />
+                <span>Delete Itinerary</span>
               </button>
-              <button 
-                type="button" 
-                onClick={() => setPreviewTemplate(null)} 
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer"
-              >
-                Close Preview
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => handleStartEditTemplate(previewTemplate)}
+                  className="px-3.5 py-2 bg-white hover:bg-amber-50 text-amber-700 border border-slate-200 hover:border-amber-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Edit2 size={13} />
+                  <span>Edit Itinerary</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const curr = previewTemplate;
+                    setPreviewTemplate(null);
+                    handleOpenPdfModal(curr);
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer hover:opacity-95"
+                >
+                  <FileText size={13} />
+                  <span>Generate PDF</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setPreviewTemplate(null)} 
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* MODAL 5: EDIT ITINERARY TEMPLATE */}
+      {editingTemplate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 my-8 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Edit Itinerary Template</h3>
+                <p className="text-[11px] text-slate-500">Update package details, day-by-day plan, and attach destination photos.</p>
+              </div>
+              <button onClick={() => setEditingTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTemplate} className="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Package Title *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    placeholder="e.g. Kashmir 6N/7D Premium Paradise"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Destination *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={editDestination}
+                    onChange={e => setEditDestination(e.target.value)}
+                    placeholder="e.g. Kashmir"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Day-Wise Plan Editor */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-semibold text-slate-800">Day-Wise Plan ({editDays.length} Days)</h4>
+                  <button 
+                    type="button" 
+                    onClick={handleAddEditDay}
+                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    + Add Day
+                  </button>
+                </div>
+
+                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50/50 custom-scrollbar">
+                  {editDays.map((d, idx) => (
+                    <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2.5 shadow-2xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-indigo-700">Day {d.day}</span>
+                        {editDays.length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveEditDay(idx)} 
+                            className="px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <Trash2 size={11} />
+                            <span>Remove Day</span>
+                          </button>
+                        )}
+                      </div>
+                      <input 
+                        type="text" 
+                        value={d.title}
+                        onChange={e => {
+                          const updated = [...editDays];
+                          updated[idx].title = e.target.value;
+                          setEditDays(updated);
+                        }}
+                        placeholder="Day Title (e.g. Arrival in Srinagar & Shikara Ride)"
+                        className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                      />
+                      <textarea 
+                        rows={2}
+                        value={d.description}
+                        onChange={e => {
+                          const updated = [...editDays];
+                          updated[idx].description = e.target.value;
+                          setEditDays(updated);
+                        }}
+                        placeholder="Day Activities / Description..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white resize-none"
+                      />
+
+                      {/* Photo Attachment Bar */}
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        {(d.imageUrl || d.img) ? (
+                          <div className="flex items-center gap-2.5">
+                            <img 
+                              src={d.imageUrl || d.img} 
+                              alt={`Day ${d.day}`} 
+                              className="w-16 h-11 rounded-lg object-cover border border-slate-200 shadow-2xs" 
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                ✓ Photo Attached
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDayPhoto('edit', idx)}
+                                className="text-[11px] text-rose-600 hover:text-rose-700 hover:underline font-medium cursor-pointer"
+                              >
+                                Remove Photo
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPhotoPickerTargetForm('edit');
+                                setPhotoPickerDayIndex(idx);
+                              }}
+                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-medium border border-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <ImageIcon size={12} />
+                              <span>+ Add Photo from Library</span>
+                            </button>
+                            <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer">
+                              <Upload size={12} />
+                              <span>Upload Photo</span>
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                onChange={e => handleDirectDayUpload('edit', idx, e)} 
+                              />
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => handleDeleteTemplate(editingTemplate.id, editingTemplate.title)}
+                  className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Permanently delete this itinerary template"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete Template</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setEditingTemplate(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer">
+                    Cancel
+                  </button>
+                  <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs cursor-pointer">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CITY PHOTOS PICKER MODAL */}
+      <CityPhotosModal
+        isOpen={photoPickerDayIndex !== null}
+        onClose={() => setPhotoPickerDayIndex(null)}
+        destinationCity={
+          photoPickerTargetForm === 'manual'
+            ? manualDestination
+            : editDestination
+        }
+        mode="pick"
+        targetDay={photoPickerDayIndex !== null ? photoPickerDayIndex + 1 : undefined}
+        onSelectPhoto={handleSelectCityPhoto}
+      />
 
       {/* MODAL 5: GENERATE PDF WITH THEME DROPDOWN */}
       {pdfModalTemplate && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Image as ImageIcon, X, Upload, Search } from 'lucide-react';
+import { Image as ImageIcon, X, Upload, Search, Trash2 } from 'lucide-react';
 import { Lead, QuoteData, HotelEntry, InclusionEntry } from '../types';
 import { generateItinerary } from '../services/geminiService';
 import * as api from '../services/apiService';
@@ -300,7 +300,9 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
         const formattedDays = Array.isArray(rawDays) ? rawDays.map((d: any, idx: number) => ({
           day: d.day || idx + 1,
           title: d.title || `Day ${idx + 1}`,
-          description: d.description || ''
+          description: d.description || '',
+          imageUrl: d.imageUrl || d.img || d.image || '',
+          img: d.img || d.imageUrl || d.image || ''
         })) : [];
 
         return {
@@ -533,39 +535,94 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                 {searchResults.length > 0 && (
                   <div className="absolute z-[130] mt-2 w-full bg-white border border-slate-200 rounded-3xl shadow-xl p-4 space-y-2 animate-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto custom-scrollbar">
                     {searchResults.map((res, i) => (
-                      <button 
-                        key={res.id || i} 
-                        type="button"
-                        onClick={() => {
-                          const tData = res.quoteData;
-                          setQuote(prev => ({
-                            ...prev,
-                            packageTitle: tData.packageTitle || prev.packageTitle,
-                            nights: tData.nights || prev.nights,
-                            itinerary: (tData.itinerary && tData.itinerary.length > 0) ? tData.itinerary : prev.itinerary,
-                            hotels: (tData.hotels && tData.hotels.length > 0) ? tData.hotels : prev.hotels,
-                            inclusions: tData.inclusions || prev.inclusions,
-                            otherInclusions: tData.otherInclusions ?? prev.otherInclusions,
-                            otherExclusions: tData.otherExclusions ?? prev.otherExclusions,
-                            flightDetails: tData.flightDetails ?? prev.flightDetails,
-                            cabDetails: tData.cabDetails ?? prev.cabDetails,
-                            finalSellingPrice: tData.finalSellingPrice || prev.finalSellingPrice,
-                            visaCost: tData.visaCost || prev.visaCost,
-                            flightCost: tData.flightCost || prev.flightCost,
-                            landPackageCost: tData.landPackageCost || prev.landPackageCost,
-                            marketingFees: tData.marketingFees || prev.marketingFees,
-                            discountPercentage: tData.discountPercentage ?? prev.discountPercentage,
-                          }));
-                          setItinerarySearch('');
-                        }}
-                        className="w-full text-left p-4 hover:bg-slate-50 rounded-2xl flex justify-between items-center group transition-colors"
+                      <div 
+                        key={res.id || i}
+                        className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl group transition-colors border border-transparent hover:border-slate-100"
                       >
-                         <div>
-                            <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-1">{res.tagText}</p>
-                            <p className="text-sm font-bold text-slate-800">{res.titleText}</p>
-                         </div>
-                         <span className="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all uppercase">Apply Template</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const tData = res.quoteData;
+                            setQuote(prev => ({
+                              ...prev,
+                              packageTitle: tData.packageTitle || prev.packageTitle,
+                              nights: tData.nights || prev.nights,
+                              itinerary: (tData.itinerary && tData.itinerary.length > 0) ? tData.itinerary : prev.itinerary,
+                              hotels: (tData.hotels && tData.hotels.length > 0) ? tData.hotels : prev.hotels,
+                              inclusions: tData.inclusions || prev.inclusions,
+                              otherInclusions: tData.otherInclusions ?? prev.otherInclusions,
+                              otherExclusions: tData.otherExclusions ?? prev.otherExclusions,
+                              flightDetails: tData.flightDetails ?? prev.flightDetails,
+                              cabDetails: tData.cabDetails ?? prev.cabDetails,
+                              finalSellingPrice: tData.finalSellingPrice || prev.finalSellingPrice,
+                              visaCost: tData.visaCost || prev.visaCost,
+                              flightCost: tData.flightCost || prev.flightCost,
+                              landPackageCost: tData.landPackageCost || prev.landPackageCost,
+                              marketingFees: tData.marketingFees || prev.marketingFees,
+                              discountPercentage: tData.discountPercentage ?? prev.discountPercentage,
+                            }));
+                            setItinerarySearch('');
+                          }}
+                          className="flex-1 text-left cursor-pointer"
+                        >
+                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-0.5">{res.tagText}</p>
+                          <p className="text-sm font-bold text-slate-800">{res.titleText}</p>
+                        </button>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const tData = res.quoteData;
+                              setQuote(prev => ({
+                                ...prev,
+                                packageTitle: tData.packageTitle || prev.packageTitle,
+                                nights: tData.nights || prev.nights,
+                                itinerary: (tData.itinerary && tData.itinerary.length > 0) ? tData.itinerary : prev.itinerary,
+                                hotels: (tData.hotels && tData.hotels.length > 0) ? tData.hotels : prev.hotels,
+                                inclusions: tData.inclusions || prev.inclusions,
+                                otherInclusions: tData.otherInclusions ?? prev.otherInclusions,
+                                otherExclusions: tData.otherExclusions ?? prev.otherExclusions,
+                                flightDetails: tData.flightDetails ?? prev.flightDetails,
+                                cabDetails: tData.cabDetails ?? prev.cabDetails,
+                                finalSellingPrice: tData.finalSellingPrice || prev.finalSellingPrice,
+                                visaCost: tData.visaCost || prev.visaCost,
+                                flightCost: tData.flightCost || prev.flightCost,
+                                landPackageCost: tData.landPackageCost || prev.landPackageCost,
+                                marketingFees: tData.marketingFees || prev.marketingFees,
+                                discountPercentage: tData.discountPercentage ?? prev.discountPercentage,
+                              }));
+                              setItinerarySearch('');
+                            }}
+                            className="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all uppercase cursor-pointer"
+                          >
+                            Apply Template
+                          </button>
+
+                          {res.isSavedTemplate && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const tmplId = res.id.replace('saved-tmpl-', '');
+                                if (!confirm(`Are you sure you want to delete template "${res.titleText}"?`)) return;
+                                try {
+                                  await api.deleteTemplate(tmplId);
+                                  setSavedTemplates(prev => prev.filter(t => String(t.id) !== tmplId));
+                                } catch (err) {
+                                  console.error('Failed to delete template:', err);
+                                  alert('Failed to delete template.');
+                                }
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete this template from library"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1080,16 +1137,27 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
               onClick={async () => {
                 try {
                   const title = quote.packageTitle || `${lead.destination || 'Tour'} Itinerary - ${lead.name}`;
+                  const daysWithImages = (quote.itinerary || []).map((d: any, idx: number) => ({
+                    day: d.day || idx + 1,
+                    title: d.title || `Day ${idx + 1}`,
+                    description: d.description || '',
+                    imageUrl: (d as any).imageUrl || (d as any).img || (d as any).image || '',
+                    img: (d as any).img || (d as any).imageUrl || (d as any).image || ''
+                  }));
                   await api.createTemplate({
                     title: title,
                     destination: lead.destination || 'Custom',
                     nights: quote.nights || (quote.itinerary?.length || 5),
-                    templateData: quote
+                    templateData: {
+                      ...quote,
+                      days: daysWithImages,
+                      itinerary: daysWithImages
+                    }
                   });
-                  alert(`✅ Draft itinerary saved successfully to "Saved Itineraries" section with title:\n\n"${title}"`);
+                  alert(`✅ Draft itinerary saved successfully with attached photos to "Saved Itineraries" section with title:\n\n"${title}"`);
                 } catch (err) {
                   console.error('Failed to save draft to templates:', err);
-                  alert('Saved draft to local storage.');
+                  alert('Failed to save itinerary template.');
                 }
               }} 
               className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
