@@ -255,6 +255,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [isConfirmingCNP, setIsConfirmingCNP] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingB2B, setIsDownloadingB2B] = useState(false);
   const [noteText, setNoteText] = useState('');
   const printRef = useRef<HTMLDivElement>(null);
   
@@ -671,6 +672,58 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
     }
   };
 
+  const handleDownloadB2BPDF = async () => {
+    if (!currentQuoteDataModel || !currentQuote || !lead) return;
+
+    setIsDownloadingB2B(true);
+    try {
+      const designId = (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
+        (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
+        selectedDesign?.id === 'diwali' ||
+        selectedDesign?.id === 'theme-f4b4ac06'
+          ? 'diwali'
+          : (selectedDesign?.id || 'royal');
+
+      const b2bHtml = renderCompleteProposalHtml(
+        currentQuoteDataModel,
+        designId,
+        partnerBrandsList,
+        true
+      );
+
+      const tempContainer = document.createElement('div');
+      tempContainer.className = 'live-proposal-sheets-container flex flex-col gap-10';
+      tempContainer.style.width = '794px';
+      tempContainer.style.minWidth = '794px';
+      tempContainer.style.maxWidth = '794px';
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.background = '#ffffff';
+      tempContainer.style.backgroundColor = '#ffffff';
+      tempContainer.style.zIndex = '-999';
+      tempContainer.innerHTML = b2bHtml;
+      document.body.appendChild(tempContainer);
+
+      await new Promise(resolve => setTimeout(resolve, 250));
+
+      const filename = `Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
+      await exportElementToPdf(tempContainer, {
+        filename,
+        margin: 0,
+        width: 794,
+        scale: 2
+      });
+
+      document.body.removeChild(tempContainer);
+    } catch (err) {
+      console.error('B2B PDF Generation Error:', err);
+      alert('Failed to generate B2B PDF. Browser restrictions may apply.');
+    } finally {
+      setIsDownloadingB2B(false);
+    }
+  };
+
   const handleActionClick = (action: string) => {
     if (action === 'Download') {
       handleDownloadPDF();
@@ -931,6 +984,21 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
               <span>Delete Lead</span>
             </button>
           )}
+
+          <button 
+            type="button"
+            onClick={handleDownloadB2BPDF} 
+            disabled={isDownloadingB2B || isDownloading || !currentQuote}
+            className="px-5 py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
+            title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
+          >
+            {isDownloadingB2B ? (
+              <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            ) : (
+              <Download className="w-4 h-4 stroke-[2.5]" />
+            )}
+            <span>PDF FOR B2B AGENTS</span>
+          </button>
 
           <button 
             onClick={handleDownloadPDF} 
@@ -1648,6 +1716,23 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">PDF</span>
                         </button>
 
+                        {/* Button: B2B PDF */}
+                        <button 
+                          onClick={handleDownloadB2BPDF} 
+                          disabled={isDownloadingB2B || isDownloading} 
+                          className="flex flex-col items-center gap-2 group disabled:opacity-50"
+                          title="Download unbranded B2B PDF without company branding or contacts"
+                        >
+                           <div className="w-13 h-13 p-3 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                              {isDownloadingB2B ? (
+                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              ) : (
+                                <Download className="h-5 w-5" />
+                              )}
+                           </div>
+                           <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">B2B PDF</span>
+                        </button>
+
                         {/* Button 2: Edit Quote */}
                         {!isReadOnly && (
                           <button 
@@ -1697,8 +1782,28 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             </span>
                           </div>
 
-                          {/* Export PDF Button */}
+                          {/* Export PDF Buttons */}
                           <div className="flex items-center gap-3 shrink-0">
+                            <button
+                              type="button"
+                              onClick={handleDownloadB2BPDF}
+                              disabled={isDownloadingB2B || isDownloading}
+                              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
+                              title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
+                            >
+                              {isDownloadingB2B ? (
+                                <>
+                                  <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                  <span>Generating B2B...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="w-4 h-4 stroke-[2.5]" />
+                                  <span>PDF FOR B2B AGENTS</span>
+                                </>
+                              )}
+                            </button>
+
                             <button
                               type="button"
                               onClick={handleDownloadPDF}

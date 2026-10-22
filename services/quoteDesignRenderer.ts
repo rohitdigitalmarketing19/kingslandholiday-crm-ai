@@ -68,6 +68,7 @@ export interface QuoteDataModel {
   termsText?: string;
   logoUrl?: string;
   companyName?: string;
+  isB2B?: boolean;
 }
 
 export const BRAND = 'Kingsland Holidays';
@@ -129,7 +130,9 @@ const ico = (n: string, s = 16, w = 2) =>
   `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:inline-block;vertical-align:-0.15em;flex:none;width:${s}px;height:${s}px">${IC[n] || ''}</svg>`;
 
 const greeting = (Q: QuoteDataModel) =>
-  `Dear <b>${e(Q.client)}</b>, thank you for considering ${BRAND}. Please find below our detailed quotation for your requested itinerary.`;
+  Q.isB2B
+    ? `Dear <b>${e(Q.client)}</b>, please find below the detailed quotation for your requested itinerary.`
+    : `Dear <b>${e(Q.client)}</b>, thank you for considering ${e(Q.companyName || BRAND)}. Please find below our detailed quotation for your requested itinerary.`;
 
 export const getCutPrice = (Q: QuoteDataModel): string | null => {
   if (Q.cutPrice) return Q.cutPrice;
@@ -698,6 +701,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
     phones: '+91 6376983416 · +91 7014939068',
     email: 'official.kingslandholidays@gmail.com',
   };
+  const isB2BMode = Q.isB2B || (!adv.name && !adv.phones && !adv.email);
 
   return pg(
     `padding:28px 42px 20px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:flex-start;gap:14px;box-sizing:border-box`,
@@ -706,8 +710,9 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
-          <div style="font-family:${th.head};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>
+          ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
+          ${isB2BMode ? '' : `<div style="font-family:${th.head};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>`}
+          ${isB2BMode ? `<div style="font-family:${th.head};font-size:18px;font-weight:700">Travel Quotation</div>` : ''}
         </div>
         <div style="font-size:11px;color:${th.muted}">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -735,7 +740,11 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
       </div>
       <div>
         <div style="${sec}">Pure agent declaration</div>
-        ${col(DEFAULT_TERMS.agent)}
+        ${col(isB2BMode ? [
+          'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
+          'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
+          'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.'
+        ] : DEFAULT_TERMS.agent)}
       </div>
     </div>
 
@@ -764,6 +773,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
       </div>
     </div>
 
+    ${isB2BMode ? '' : `
     <!-- Advisor Footer pinned at bottom -->
     <div style="margin-top:auto;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex:none">
       <div>
@@ -776,6 +786,16 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
         <div style="display:flex;align-items:center;gap:6px">${ico('mail', 13)}${e(adv.email)}</div>
       </div>
     </div>
+    `}
+    ${isB2BMode ? `
+    <!-- B2B Generic Footer -->
+    <div style="margin-top:auto;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:center;align-items:center;gap:14px;flex:none">
+      <div style="text-align:center">
+        <div style="font-family:${th.head};font-size:14px;font-weight:700">Travel Quotation · ${e(Q.packageName)}</div>
+        <div style="font-size:10px;opacity:.75;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
+      </div>
+    </div>
+    ` : ''}
   `,
     thKey
   );
@@ -812,15 +832,22 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true): strin
       </svg>
       <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-start">
         <div style="display:flex;align-items:center;gap:14px">
-          ${Q.logoUrl ? `
-            <div style="background:#ffffff;padding:6px 14px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.3);border:1.5px solid rgba(212,175,55,0.6);display:flex;align-items:center;justify-content:center;min-height:52px;max-height:60px;max-width:200px;flex:none;box-sizing:border-box">
-              <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:48px;max-width:172px;width:auto;height:auto;object-fit:contain;display:block" />
+          ${Q.isB2B ? `
+            <div>
+              <div style="font-family:${rH};font-size:24px;font-weight:700;color:#fff;line-height:1.2">Custom Travel Itinerary</div>
+              <div style="font-size:11px;letter-spacing:1.6px;color:#d4af37;font-weight:600;margin-top:2px">CONFIDENTIAL TRAVEL PROPOSAL</div>
             </div>
-          ` : `<div style="width:44px;height:44px;border-radius:22px;border:1.5px solid #d4af37;background:rgba(212,175,55,0.12);display:flex;align-items:center;justify-content:center;color:#d4af37">${ico('mountain', 22)}</div>`}
-          <div>
-            <div style="font-family:${rH};font-size:26px;font-weight:700;color:#fff;line-height:1.2">${e(Q.companyName || BRAND)}</div>
-            <div style="font-size:11px;letter-spacing:1.6px;color:#d4af37;font-weight:600;margin-top:2px">REGISTERED TOUR OPERATOR</div>
-          </div>
+          ` : `
+            ${Q.logoUrl ? `
+              <div style="background:#ffffff;padding:6px 14px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.3);border:1.5px solid rgba(212,175,55,0.6);display:flex;align-items:center;justify-content:center;min-height:52px;max-height:60px;max-width:200px;flex:none;box-sizing:border-box">
+                <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:48px;max-width:172px;width:auto;height:auto;object-fit:contain;display:block" />
+              </div>
+            ` : `<div style="width:44px;height:44px;border-radius:22px;border:1.5px solid #d4af37;background:rgba(212,175,55,0.12);display:flex;align-items:center;justify-content:center;color:#d4af37">${ico('mountain', 22)}</div>`}
+            <div>
+              <div style="font-family:${rH};font-size:26px;font-weight:700;color:#fff;line-height:1.2">${e(Q.companyName || BRAND)}</div>
+              <div style="font-size:11px;letter-spacing:1.6px;color:#d4af37;font-weight:600;margin-top:2px">REGISTERED TOUR OPERATOR</div>
+            </div>
+          `}
         </div>
         <div style="text-align:right">
           <div style="font-size:11.5px;letter-spacing:3px;color:#d4af37;font-weight:800">TRAVEL QUOTATION</div>
@@ -914,7 +941,7 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true): strin
 
       <!-- Pinned Footer at bottom -->
       <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #d9cfae;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#8a6a1c;font-weight:600">
-        <div>${BRAND} · Registered Luxury Tour Operator · North India &amp; International</div>
+        <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator · North India &amp; International`}</div>
         <div style="color:#5f6985">Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
       </div>
     </div>
@@ -939,7 +966,7 @@ export function royalInclusionsSheet(
     `
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-family:${rH};font-size:18px;font-weight:700">${BRAND}</div>
+        <div style="font-family:${rH};font-size:18px;font-weight:700">${Q.isB2B ? 'Travel Quotation' : BRAND}</div>
         <div style="font-size:12px;color:#5f6985">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin:10px 0 16px">
@@ -955,7 +982,7 @@ export function royalInclusionsSheet(
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #d9cfae;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#8a6a1c;font-weight:600">
-      <div>${BRAND} · Registered Luxury Tour Operator · North India &amp; International</div>
+      <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator · North India &amp; International`}</div>
       <div style="color:#5f6985">Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
     </div>
   `,
@@ -976,8 +1003,8 @@ export function royalDaysSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #e8e1cf;box-shadow:0 2px 4px rgba(18,33,63,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
-          <div style="font-family:${rH};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>
+          ${(!Q.isB2B && Q.logoUrl) ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #e8e1cf;box-shadow:0 2px 4px rgba(18,33,63,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
+          <div style="font-family:${rH};font-size:18px;font-weight:700">${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
         </div>
         <div style="font-size:12px;color:#5f6985">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1031,7 +1058,7 @@ export function royalDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#8a6a1c">${ico('shield', 14)}</span>${note()}
       </div>
-      <div>Kingsland Verified Itinerary</div>
+      <div>${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
     </div>
   `,
     'royal'
@@ -1070,15 +1097,22 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
         <path d="M0 200v-50l70-40 60 50 70-40 50 30v50z" fill="#1a7470" opacity=".8"/>
       </svg>
       <div style="position:relative;display:flex;align-items:center;gap:12px">
-        ${Q.logoUrl ? `
-          <div style="background:#ffffff;padding:6px 12px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.25);border:1.5px solid rgba(242,169,59,0.5);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
-            <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:166px;width:auto;height:auto;object-fit:contain;display:block" />
+        ${Q.isB2B ? `
+          <div>
+            <div style="font-family:${aH};font-size:19px;line-height:1.1">Custom Itinerary</div>
+            <div style="font-size:10.5px;letter-spacing:1px;color:#a8d5cf;margin-top:2px">CUSTOM PROPOSAL</div>
           </div>
-        ` : `<div style="width:38px;height:38px;border-radius:19px;background:#f2a93b;color:#0f4c4a;display:flex;align-items:center;justify-content:center;flex:none">${ico('mountain', 20, 2.2)}</div>`}
-        <div>
-          <div style="font-family:${aH};font-size:20px;line-height:1.05">${e(Q.companyName || BRAND)}</div>
-          <div style="font-size:10.5px;letter-spacing:1px;color:#a8d5cf;margin-top:2px">TOUR OPERATOR</div>
-        </div>
+        ` : `
+          ${Q.logoUrl ? `
+            <div style="background:#ffffff;padding:6px 12px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.25);border:1.5px solid rgba(242,169,59,0.5);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
+              <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:166px;width:auto;height:auto;object-fit:contain;display:block" />
+            </div>
+          ` : `<div style="width:38px;height:38px;border-radius:19px;background:#f2a93b;color:#0f4c4a;display:flex;align-items:center;justify-content:center;flex:none">${ico('mountain', 20, 2.2)}</div>`}
+          <div>
+            <div style="font-family:${aH};font-size:20px;line-height:1.05">${e(Q.companyName || BRAND)}</div>
+            <div style="font-size:10.5px;letter-spacing:1px;color:#a8d5cf;margin-top:2px">TOUR OPERATOR</div>
+          </div>
+        `}
       </div>
       <div style="position:relative;margin-top:16px">
         <div style="font-size:11px;letter-spacing:3px;color:#f2a93b;font-weight:700">TRAVEL QUOTATION</div>
@@ -1153,7 +1187,7 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
 
       <!-- Pinned Footer at bottom -->
       <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #cfe5e1;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#3f5a58">
-        <div>${BRAND} · Registered Luxury Tour Operator</div>
+        <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator`}</div>
         <div>Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
       </div>
     </div>
@@ -1179,7 +1213,7 @@ export function alpineInclusionsSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:8px;font-family:${aH};font-size:18px;color:#0f4c4a">
-          <span style="color:#f2a93b">${ico('mountain', 20, 2.2)}</span>${BRAND}
+          ${Q.isB2B ? 'Travel Quotation' : `<span style="color:#f2a93b">${ico('mountain', 20, 2.2)}</span>${BRAND}`}
         </div>
         <div style="font-size:12px;color:#4a6462">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1194,7 +1228,7 @@ export function alpineInclusionsSheet(
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #cfe5e1;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#4a6462">
-      <div>${BRAND} · Registered Tour Operator</div>
+      <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Tour Operator`}</div>
       <div>Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
     </div>
   `,
@@ -1217,8 +1251,8 @@ export function alpineDaysSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #cfe5e1;box-shadow:0 2px 4px rgba(15,76,74,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : `<span style="color:#f2a93b">${ico('mountain', 20, 2.2)}</span>`}
-          <div style="font-family:${aH};font-size:18px;color:#0f4c4a">${e(Q.companyName || BRAND)}</div>
+          ${(!Q.isB2B && Q.logoUrl) ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #cfe5e1;box-shadow:0 2px 4px rgba(15,76,74,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : (!Q.isB2B ? `<span style="color:#f2a93b">${ico('mountain', 20, 2.2)}</span>` : '')}
+          <div style="font-family:${aH};font-size:18px;color:#0f4c4a">${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
         </div>
         <div style="font-size:12px;color:#4a6462">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1260,7 +1294,7 @@ export function alpineDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#0f4c4a">${ico('shield', 14)}</span>${note()}
       </div>
-      <div>Kingsland Verified Itinerary</div>
+      <div>${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
     </div>
   `,
     'alpine'
@@ -1296,12 +1330,19 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
       </svg>
       <div style="position:relative;display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:12px">
-          ${Q.logoUrl ? `
-            <div style="background:#ffffff;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(35,31,43,0.2);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
-              <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:162px;width:auto;height:auto;object-fit:contain;display:block" />
+          ${Q.isB2B ? `
+            <div>
+              <div style="font-family:${sH};font-size:19px;font-weight:800;color:#fff">Custom Travel Itinerary</div>
+              <div style="font-size:10px;letter-spacing:1px;color:#ffe3cf;font-weight:700">CONFIDENTIAL PROPOSAL</div>
             </div>
-          ` : `<div style="width:36px;height:36px;border-radius:10px;background:#fff;color:#ff5e4d;display:flex;align-items:center;justify-content:center">${ico('mountain', 20, 2.2)}</div>`}
-          <div style="font-family:${sH};font-size:20px;font-weight:800">${e(Q.companyName || BRAND)}</div>
+          ` : `
+            ${Q.logoUrl ? `
+              <div style="background:#ffffff;padding:6px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(35,31,43,0.2);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
+                <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:162px;width:auto;height:auto;object-fit:contain;display:block" />
+              </div>
+            ` : `<div style="width:36px;height:36px;border-radius:10px;background:#fff;color:#ff5e4d;display:flex;align-items:center;justify-content:center">${ico('mountain', 20, 2.2)}</div>`}
+            <div style="font-family:${sH};font-size:20px;font-weight:800">${e(Q.companyName || BRAND)}</div>
+          `}
         </div>
         <div style="text-align:right">
           <div style="font-size:11px;letter-spacing:2.5px;font-weight:800">TRAVEL QUOTATION</div>
@@ -1373,7 +1414,7 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
 
       <!-- Pinned Footer at bottom -->
       <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #f3d9c8;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#ff6a3d;font-weight:600">
-        <div>${BRAND} · Registered Luxury Tour Operator</div>
+        <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator`}</div>
         <div style="color:#5a5262">Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
       </div>
     </div>
@@ -1399,7 +1440,7 @@ export function sunsetInclusionsSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:8px;font-family:${sH};font-size:18px;font-weight:700">
-          <span style="width:28px;height:28px;border-radius:9px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 16, 2.2)}</span>${BRAND}
+          ${Q.isB2B ? 'Travel Quotation' : `<span style="width:28px;height:28px;border-radius:9px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 16, 2.2)}</span>${BRAND}`}
         </div>
         <div style="font-size:12px;color:#5a5262">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1415,7 +1456,7 @@ export function sunsetInclusionsSheet(
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #f3d9c8;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#5a5262">
-      <div>${BRAND} · Registered Luxury Tour Operator</div>
+      <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator`}</div>
       <div>Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
     </div>
   `,
@@ -1435,8 +1476,8 @@ export function sunsetDaysSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #f3d9c8;box-shadow:0 2px 4px rgba(255,106,61,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : `<span style="width:28px;height:28px;border-radius:9px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 16, 2.2)}</span>`}
-          <div style="font-family:${sH};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>
+          ${(!Q.isB2B && Q.logoUrl) ? `<div style="background:#ffffff;padding:3px 8px;border-radius:6px;border:1px solid #f3d9c8;box-shadow:0 2px 4px rgba(255,106,61,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : (!Q.isB2B ? `<span style="width:28px;height:28px;border-radius:9px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 16, 2.2)}</span>` : '')}
+          <div style="font-family:${sH};font-size:18px;font-weight:700">${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
         </div>
         <div style="font-size:12px;color:#5a5262">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1479,7 +1520,7 @@ export function sunsetDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#ff5e4d">${ico('shield', 14)}</span>${note()}
       </div>
-      <div>Kingsland Verified Itinerary</div>
+      <div>${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
     </div>
   `,
     'sunset'
@@ -1491,7 +1532,10 @@ export function sunsetDaysSheet(
    ===================================================================== */
 const eF = "'Hanken Grotesk',sans-serif", eH = "'Bricolage Grotesque',sans-serif";
 
-function editorialBar(right: string, logoUrl?: string, brandName = BRAND) {
+function editorialBar(right: string, logoUrl?: string, brandName = BRAND, isB2B = false) {
+  if (isB2B) {
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:3px solid #111"><div style="display:flex;align-items:center;gap:12px;font-family:${eH};font-size:18px;font-weight:800;letter-spacing:1px">TRAVEL QUOTATION</div><div style="font-size:12px;font-weight:700;letter-spacing:2px">${right}</div></div>`;
+  }
   return `<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:3px solid #111"><div style="display:flex;align-items:center;gap:12px;font-family:${eH};font-size:18px;font-weight:800;letter-spacing:1px">${logoUrl ? `<div style="background:#ffffff;padding:4px 10px;border:1.5px solid #111;border-radius:6px;display:flex;align-items:center;justify-content:center;max-height:48px;max-width:190px;box-sizing:border-box"><img src="${logoUrl}" alt="${e(brandName)}" crossOrigin="anonymous" style="max-height:40px;max-width:170px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : `<span style="color:#e5431f">${ico('mountain', 22, 2.4)}</span>`}${brandName.toUpperCase()}</div><div style="font-size:12px;font-weight:700;letter-spacing:2px">${right}</div></div>`;
 }
 
@@ -1513,7 +1557,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true): s
   return pg(
     `padding:30px 44px 20px;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;background:#f7f7f4;font-family:${eF};color:#111`,
     `
-    ${editorialBar('TRAVEL QUOTATION · NO. ' + e(Q.ref), Q.logoUrl, Q.companyName || BRAND)}
+    ${editorialBar('TRAVEL QUOTATION · NO. ' + e(Q.ref), (!Q.isB2B ? Q.logoUrl : undefined), Q.companyName || BRAND, Q.isB2B)}
 
     <!-- Title & Meta Block -->
     <div style="display:flex;gap:24px;align-items:flex-end">
@@ -1595,7 +1639,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true): s
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#555;font-weight:700">
-      <div>${BRAND.toUpperCase()} · REGISTERED TOUR OPERATOR</div>
+      <div>${Q.isB2B ? 'CUSTOMISED HOLIDAY ITINERARY · ALL INCLUSIONS GUARANTEED' : `${BRAND.toUpperCase()} · REGISTERED TOUR OPERATOR`}</div>
       <div>REF. NO. ${e(Q.ref)} · ALL INCLUSIONS GUARANTEED</div>
     </div>
   `,
@@ -1617,7 +1661,7 @@ export function editorialInclusionsSheet(
   return pg(
     `padding:30px 44px 20px;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;background:#f7f7f4;font-family:${eF};color:#111`,
     `
-    ${editorialBar('INCLUSIONS &amp; EXCLUSIONS' + pageLabel + ' · NO. ' + e(Q.ref))}
+    ${editorialBar('INCLUSIONS &amp; EXCLUSIONS' + pageLabel + ' · NO. ' + e(Q.ref), undefined, undefined, Q.isB2B)}
 
     <div style="margin-top:8px">
       ${renderIncExcGrid(inc, exc, pageNum === totalPages ? Q.note : undefined, TH.editorial)}
@@ -1625,7 +1669,7 @@ export function editorialInclusionsSheet(
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:2px solid #111;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#555;font-weight:700">
-      <div>${BRAND.toUpperCase()} · REGISTERED TOUR OPERATOR</div>
+      <div>${Q.isB2B ? 'CUSTOMISED HOLIDAY ITINERARY · ALL INCLUSIONS GUARANTEED' : `${BRAND.toUpperCase()} · REGISTERED TOUR OPERATOR`}</div>
       <div>REF. NO. ${e(Q.ref)} · ALL INCLUSIONS GUARANTEED</div>
     </div>
   `,
@@ -1641,7 +1685,7 @@ export function editorialDaysSheet(
   return pg(
     `padding:30px 44px 20px;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;background:#f7f7f4;font-family:${eF};color:#111`,
     `
-    ${editorialBar(e(Q.packageName.toUpperCase()) + ' · NO. ' + e(Q.ref))}
+    ${editorialBar(e(Q.packageName.toUpperCase()) + ' · NO. ' + e(Q.ref), undefined, undefined, Q.isB2B)}
 
     <div style="display:flex;align-items:flex-end;justify-content:space-between;margin:4px 0 0">
       <div style="font-family:${eH};font-size:40px;font-weight:800;line-height:.95;letter-spacing:-1.5px">The<br>itinerary</div>
@@ -1686,7 +1730,7 @@ export function editorialDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#e5431f">${ico('shield', 13)}</span>${note()}
       </div>
-      <div>Kingsland Verified Itinerary</div>
+      <div>${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
     </div>
   `,
     'editorial'
@@ -1731,12 +1775,19 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true): str
           <path d="M0 90V50L70 14l60 34 70-40 80 46 70-26 110 36v26z" fill="rgba(255,255,255,.14)"/>
         </svg>
         <div style="position:relative;display:flex;align-items:center;gap:12px">
-          ${Q.logoUrl ? `
-            <div style="background:#ffffff;padding:6px 14px;border-radius:14px;box-shadow:0 4px 14px rgba(74,47,224,0.25);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
-              <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:162px;width:auto;height:auto;object-fit:contain;display:block" />
+          ${Q.isB2B ? `
+            <div>
+              <div style="font-family:${pH};font-size:19px;font-weight:800;color:#fff">Custom Travel Itinerary</div>
+              <div style="font-size:10px;letter-spacing:1px;color:#ffd4bd;font-weight:700">CONFIDENTIAL PROPOSAL</div>
             </div>
-          ` : `<div style="width:36px;height:36px;border-radius:18px;background:#ffb996;color:#4a2fe0;display:flex;align-items:center;justify-content:center">${ico('mountain', 18, 2.4)}</div>`}
-          <div style="font-family:${pH};font-size:19px;font-weight:800">${e(Q.companyName || BRAND)}</div>
+          ` : `
+            ${Q.logoUrl ? `
+              <div style="background:#ffffff;padding:6px 14px;border-radius:14px;box-shadow:0 4px 14px rgba(74,47,224,0.25);display:flex;align-items:center;justify-content:center;min-height:48px;max-height:56px;max-width:190px;flex:none;box-sizing:border-box">
+                <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:44px;max-width:162px;width:auto;height:auto;object-fit:contain;display:block" />
+              </div>
+            ` : `<div style="width:36px;height:36px;border-radius:18px;background:#ffb996;color:#4a2fe0;display:flex;align-items:center;justify-content:center">${ico('mountain', 18, 2.4)}</div>`}
+            <div style="font-family:${pH};font-size:19px;font-weight:800">${e(Q.companyName || BRAND)}</div>
+          `}
         </div>
         <div style="position:relative;margin-top:16px">
           <div style="font-size:10.5px;letter-spacing:2px;font-weight:800;color:#ffd4bd">TRAVEL QUOTATION · REF. NO. ${e(Q.ref)}</div>
@@ -1811,7 +1862,7 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true): str
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #ddd3ff;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#4a2fe0;font-weight:700">
-      <div>${BRAND} · Registered Luxury Tour Operator</div>
+      <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator`}</div>
       <div style="color:#4a4670">Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
     </div>
   `,
@@ -1836,7 +1887,7 @@ export function playfulInclusionsSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:8px;font-family:${pH};font-size:18px;font-weight:700">
-          <span style="width:28px;height:28px;border-radius:14px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 15, 2.4)}</span>${BRAND}
+          ${Q.isB2B ? 'Travel Quotation' : `<span style="width:28px;height:28px;border-radius:14px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 15, 2.4)}</span>${BRAND}`}
         </div>
         <div style="font-size:12px;color:#4a4670;font-weight:600">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1851,7 +1902,7 @@ export function playfulInclusionsSheet(
 
     <!-- Pinned Footer at bottom -->
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #ddd3ff;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#4a4670">
-      <div>${BRAND} · Registered Luxury Tour Operator</div>
+      <div>${Q.isB2B ? 'Customised Holiday Itinerary · All Inclusions Guaranteed' : `${BRAND} · Registered Luxury Tour Operator`}</div>
       <div>Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
     </div>
   `,
@@ -1872,8 +1923,8 @@ export function playfulDaysSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:3px 8px;border-radius:8px;border:1px solid #ddd3ff;box-shadow:0 2px 4px rgba(74,47,224,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : `<span style="width:28px;height:28px;border-radius:14px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 15, 2.4)}</span>`}
-          <div style="font-family:${pH};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>
+          ${(!Q.isB2B && Q.logoUrl) ? `<div style="background:#ffffff;padding:3px 8px;border-radius:8px;border:1px solid #ddd3ff;box-shadow:0 2px 4px rgba(74,47,224,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : (!Q.isB2B ? `<span style="width:28px;height:28px;border-radius:14px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center">${ico('mountain', 15, 2.4)}</span>` : '')}
+          <div style="font-family:${pH};font-size:18px;font-weight:700">${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
         </div>
         <div style="font-size:12px;color:#4a4670;font-weight:600">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -1915,7 +1966,7 @@ export function playfulDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#4a2fe0">${ico('shield', 14)}</span>${note()}
       </div>
-      <div>Kingsland Verified Itinerary</div>
+      <div>${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
     </div>
   `,
     'playful'
@@ -1953,15 +2004,22 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
       </svg>
       <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-start">
         <div style="display:flex;align-items:center;gap:14px">
-          ${Q.logoUrl ? `
-            <div style="background:#ffffff;padding:6px 16px;border-radius:14px;border:2.5px solid #FFD700;box-shadow:0 4px 18px rgba(255,153,0,0.45);display:flex;align-items:center;justify-content:center;min-height:52px;max-height:60px;max-width:200px;flex:none;box-sizing:border-box">
-              <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:48px;max-width:168px;width:auto;height:auto;object-fit:contain;display:block" />
+          ${Q.isB2B ? `
+            <div>
+              <div style="font-family:${dH};font-size:24px;font-weight:800;color:#FFD700;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.5)">🪔 Festive Travel Proposal</div>
+              <div style="font-size:10.5px;letter-spacing:1.6px;color:#FF9900;font-weight:700;margin-top:2px">CONFIDENTIAL FESTIVE PROPOSAL</div>
             </div>
-          ` : `<div style="width:46px;height:46px;border-radius:23px;border:1.5px solid #FFD700;background:rgba(255,215,0,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 16px rgba(255,215,0,0.4)">🪔</div>`}
-          <div>
-            <div style="font-family:${dH};font-size:25px;font-weight:800;color:#FFD700;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.5)">✨ ${e(Q.companyName || BRAND)}</div>
-            <div style="font-size:10.5px;letter-spacing:1.6px;color:#FF9900;font-weight:700;margin-top:2px">FESTIVE EDITION · REGISTERED TOUR OPERATOR</div>
-          </div>
+          ` : `
+            ${Q.logoUrl ? `
+              <div style="background:#ffffff;padding:6px 16px;border-radius:14px;border:2.5px solid #FFD700;box-shadow:0 4px 18px rgba(255,153,0,0.45);display:flex;align-items:center;justify-content:center;min-height:52px;max-height:60px;max-width:200px;flex:none;box-sizing:border-box">
+                <img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:48px;max-width:168px;width:auto;height:auto;object-fit:contain;display:block" />
+              </div>
+            ` : `<div style="width:46px;height:46px;border-radius:23px;border:1.5px solid #FFD700;background:rgba(255,215,0,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 16px rgba(255,215,0,0.4)">🪔</div>`}
+            <div>
+              <div style="font-family:${dH};font-size:25px;font-weight:800;color:#FFD700;line-height:1.2;text-shadow:0 2px 8px rgba(0,0,0,0.5)">✨ ${e(Q.companyName || BRAND)}</div>
+              <div style="font-size:10.5px;letter-spacing:1.6px;color:#FF9900;font-weight:700;margin-top:2px">FESTIVE EDITION · REGISTERED TOUR OPERATOR</div>
+            </div>
+          `}
         </div>
         <div style="text-align:right">
           <div style="display:inline-block;background:rgba(255,153,0,0.22);border:1px solid #FF9900;padding:3px 12px;border-radius:999px;font-size:10.5px;letter-spacing:1.8px;color:#FFD700;font-weight:800">🪔 DIWALI SPECIAL PROPOSAL</div>
@@ -1986,7 +2044,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
 
       <!-- Greeting -->
       <div style="font-size:12.5px;line-height:1.45;color:#4a385a">
-        Dear <b>${e(Q.client)}</b>, wishing you and your family a very happy &amp; prosperous Diwali! Thank you for choosing ${BRAND}. Please find below our specially curated festive holiday proposal.
+        Dear <b>${e(Q.client)}</b>, wishing you and your family a very happy &amp; prosperous Diwali! ${Q.isB2B ? 'Please find below our specially curated festive holiday proposal.' : `Thank you for choosing ${e(Q.companyName || BRAND)}. Please find below our specially curated festive holiday proposal.`}
       </div>
 
       <!-- Price Box: Festive Glow -->
@@ -2057,7 +2115,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
 
       <!-- Pinned Footer at bottom -->
       <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #FFE0B2;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#7a4100;font-weight:600">
-        <div>🪔 Happy Diwali from ${BRAND} · Celebrating the Joy of Travel</div>
+        <div>${Q.isB2B ? '🪔 Happy Diwali · Celebrating the Joy of Travel' : `🪔 Happy Diwali from ${BRAND} · Celebrating the Joy of Travel`}</div>
         <div style="color:#1B0B2E;font-weight:700">Ref. No. ${e(Q.ref)} · All Inclusions Guaranteed</div>
       </div>
     </div>
@@ -2082,7 +2140,7 @@ export function diwaliInclusionsSheet(
     `
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-family:${dH};font-size:18px;font-weight:800;color:#FF9900">✨ ${BRAND} · Festive Edition</div>
+        <div style="font-family:${dH};font-size:18px;font-weight:800;color:#FF9900">✨ ${Q.isB2B ? 'Festive Travel Special' : `${BRAND} · Festive Edition`}</div>
         <div style="font-size:12px;color:#7a4100">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;margin:10px 0 16px">
@@ -2098,7 +2156,7 @@ export function diwaliInclusionsSheet(
 
     <div style="margin-top:auto;padding-top:10px;border-top:1.5px solid #FFE0B2;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#7a4100;font-weight:600">
       <div>🪔 Celebrating the Joy of Travel · Certified Rajasthan Tourism Partner</div>
-      <div style="color:#1B0B2E;font-weight:700">Official Festive Quotation · Kingsland Holidays</div>
+      <div style="color:#1B0B2E;font-weight:700">${Q.isB2B ? 'Official Festive Quotation · All Inclusions Guaranteed' : 'Official Festive Quotation · Kingsland Holidays'}</div>
     </div>
   `,
     'diwali'
@@ -2118,8 +2176,8 @@ export function diwaliDaysSheet(
     <div style="flex:none">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;align-items:center;gap:10px">
-          ${Q.logoUrl ? `<div style="background:#ffffff;padding:3px 10px;border-radius:8px;border:1.5px solid #FFD700;box-shadow:0 2px 8px rgba(255,153,0,0.2);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
-          <div style="font-family:${dH};font-size:18px;font-weight:800;color:#FF9900">✨ ${e(Q.companyName || BRAND)} · Festive Edition</div>
+          ${(!Q.isB2B && Q.logoUrl) ? `<div style="background:#ffffff;padding:3px 10px;border-radius:8px;border:1.5px solid #FFD700;box-shadow:0 2px 8px rgba(255,153,0,0.2);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:30px;max-width:120px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
+          <div style="font-family:${dH};font-size:18px;font-weight:800;color:#FF9900">✨ ${Q.isB2B ? 'Festive Itinerary' : `${e(Q.companyName || BRAND)} · Festive Edition`}</div>
         </div>
         <div style="font-size:12px;color:#7a4100">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
       </div>
@@ -2173,7 +2231,7 @@ export function diwaliDaysSheet(
       <div style="display:flex;align-items:center;gap:8px">
         <span style="color:#E65100">🪔</span>${note()}
       </div>
-      <div style="color:#1B0B2E;font-weight:700">Kingsland Verified Festive Itinerary</div>
+      <div style="color:#1B0B2E;font-weight:700">${Q.isB2B ? 'Verified Festive Itinerary' : 'Kingsland Verified Festive Itinerary'}</div>
     </div>
   `,
     'diwali'
@@ -2205,8 +2263,30 @@ export const AVAILABLE_QUOTE_DESIGNS = [
 export function renderCompleteProposalHtml(
   Q: QuoteDataModel,
   designId = 'royal',
-  customPartners?: PartnerBrand[]
+  customPartners?: PartnerBrand[],
+  isB2B = false
 ): string {
+  // B2B Agent mode: strip all company branding, logo, advisor, and company-specific info
+  if (isB2B) {
+    Q = {
+      ...Q,
+      isB2B: true,
+      logoUrl: '',
+      companyName: 'Travel Quotation',
+      advisor: {
+        name: '',
+        role: '',
+        phones: '',
+        email: ''
+      },
+      stats: [
+        ['Premium', 'Handcrafted Tour'],
+        ['All-Inclusive', 'Complete Package'],
+        ['Customised', 'Tailored Itinerary'],
+        ['24/7', 'Trip Assistance']
+      ]
+    };
+  }
   const normId = (designId || 'royal').toLowerCase();
   let key = 'royal';
   if (
@@ -2243,11 +2323,23 @@ export function renderCompleteProposalHtml(
   if (!fitsOnCover) {
     const allInc = normalizeListItems(Q.included);
     const allExc = normalizeListItems(Q.excluded);
-    const maxItemsPerPage = 18;
 
-    const maxItems = Math.max(allInc.length, allExc.length);
-    const totalIncPages = Math.max(1, Math.ceil(maxItems / maxItemsPerPage));
-    const itemsPerSlice = Math.ceil(maxItems / totalIncPages);
+    // Height calculation for dedicated Inclusions sheet:
+    // Safe height budget inside the box on a dedicated sheet is 880px (enough for ~35 items per column).
+    const calcListHeight = (items: string[], hasNote = false) => {
+      let h = 0;
+      for (const item of items) {
+        const lines = Math.ceil(item.length / 45) || 1;
+        h += (lines * 17) + 5;
+      }
+      if (hasNote) h += 40;
+      return h;
+    };
+
+    const maxColHeight = Math.max(calcListHeight(allInc), calcListHeight(allExc, Boolean(Q.note)));
+    // Fit onto 1 single dedicated sheet whenever content height fits within 880px
+    const totalIncPages = maxColHeight <= 880 ? 1 : Math.max(1, Math.ceil(maxColHeight / 880));
+    const itemsPerSlice = Math.ceil(Math.max(allInc.length, allExc.length) / totalIncPages);
 
     for (let p = 0; p < totalIncPages; p++) {
       const incSlice = allInc.slice(p * itemsPerSlice, (p + 1) * itemsPerSlice);
