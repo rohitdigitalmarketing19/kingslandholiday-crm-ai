@@ -48,6 +48,8 @@ export interface QuoteDataModel {
   coverImage?: string;
   hotel: HotelItemModel;
   hotels?: HotelItemModel[];
+  flightDetails?: string;
+  cabDetails?: string;
   advisor?: {
     name: string;
     role: string;
@@ -113,6 +115,7 @@ const IC: Record<string, string> = {
   pin: '<path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
   cal: '<path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
   car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+  plane: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
   bed: '<path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/>',
   food: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
@@ -266,7 +269,8 @@ export function estimateBlockHeight(
   else if (design === 'playful') baseWithoutHotels = 615;
 
   const hotelsHeight = (hotelCount * 50) + 36; // hotels + section header
-  const coverBaseHeight = baseWithoutHotels + hotelsHeight;
+  const transitHeight = (Q.flightDetails || Q.cabDetails) ? 58 : 0;
+  const coverBaseHeight = baseWithoutHotels + hotelsHeight + transitHeight;
 
   // Inclusions / Exclusions calculation
   const incList = normalizeListItems(Q.included);
@@ -505,6 +509,161 @@ function parseTermsSections(termsText?: string): Array<{ title: string; bullets?
     { title: 'Important information', bullets: DEFAULT_TERMS.important },
     { title: 'Pure agent declaration', bullets: DEFAULT_TERMS.agent },
   ];
+}
+
+export function renderTransitSection(Q: QuoteDataModel, themeKey = 'royal'): string {
+  const hasFlight = Boolean(Q.flightDetails && Q.flightDetails.trim());
+  const hasCab = Boolean(Q.cabDetails && Q.cabDetails.trim());
+  if (!hasFlight && !hasCab) return '';
+
+  const isBoth = hasFlight && hasCab;
+
+  if (themeKey === 'royal') {
+    return `
+      <!-- Flight & Cab Transit Details -->
+      <div style="display:flex;flex-direction:column;gap:5px;flex:none">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="color:#8a6a1c">${ico('car', 15)}</div>
+          <div style="font-family:${rH};font-size:14px;font-weight:700">Flight &amp; Cab Transit Details</div>
+          <div style="flex:1;height:1px;background:#d9cfae"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:8px">
+          ${hasFlight ? `
+            <div style="background:#fff;border:1px solid #e8e1cf;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(18,33,63,.04)">
+              <div style="width:28px;height:28px;border-radius:14px;background:#f4ecd2;color:#8a6a1c;display:flex;align-items:center;justify-content:center;flex:none">${ico('plane', 14)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:9.5px;letter-spacing:1px;color:#8a6a1c;font-weight:800;text-transform:uppercase">FLIGHT DETAILS</div>
+                <div style="font-size:11.5px;font-weight:700;color:#1b2540;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+              </div>
+            </div>` : ''}
+          ${hasCab ? `
+            <div style="background:#fff;border:1px solid #e8e1cf;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 6px rgba(18,33,63,.04)">
+              <div style="width:28px;height:28px;border-radius:14px;background:#f4ecd2;color:#8a6a1c;display:flex;align-items:center;justify-content:center;flex:none">${ico('car', 14)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:9.5px;letter-spacing:1px;color:#8a6a1c;font-weight:800;text-transform:uppercase">CAB &amp; TRANSIT</div>
+                <div style="font-size:11.5px;font-weight:700;color:#1b2540;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+              </div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  if (themeKey === 'alpine') {
+    return `
+      <!-- Flight & Cab Transit Details -->
+      <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:8px;flex:none">
+        ${hasFlight ? `
+          <div style="background:#e6f4f1;border-radius:12px;padding:8px 12px;display:flex;gap:10px;align-items:center">
+            <div style="width:30px;height:30px;border-radius:8px;background:#0f4c4a;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('plane', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;color:#3f5a58;font-weight:700;text-transform:uppercase">FLIGHT DETAILS</div>
+              <div style="font-size:11.5px;font-weight:700;color:#0f4c4a;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+            </div>
+          </div>` : ''}
+        ${hasCab ? `
+          <div style="background:#e6f4f1;border-radius:12px;padding:8px 12px;display:flex;gap:10px;align-items:center">
+            <div style="width:30px;height:30px;border-radius:8px;background:#0f4c4a;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('car', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;color:#3f5a58;font-weight:700;text-transform:uppercase">CAB &amp; TRANSIT</div>
+              <div style="font-size:11.5px;font-weight:700;color:#0f4c4a;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+            </div>
+          </div>` : ''}
+      </div>`;
+  }
+
+  if (themeKey === 'sunset') {
+    return `
+      <!-- Flight & Cab Transit Details -->
+      <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:8px;flex:none">
+        ${hasFlight ? `
+          <div style="background:#ffe9d9;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:10px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('plane', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;font-weight:800;color:#c2410c;text-transform:uppercase">FLIGHT DETAILS</div>
+              <div style="font-size:11.5px;font-weight:700;color:#231f2b;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+            </div>
+          </div>` : ''}
+        ${hasCab ? `
+          <div style="background:#ffe9d9;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:10px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('car', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;font-weight:800;color:#c2410c;text-transform:uppercase">CAB &amp; TRANSIT</div>
+              <div style="font-size:11.5px;font-weight:700;color:#231f2b;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+            </div>
+          </div>` : ''}
+      </div>`;
+  }
+
+  if (themeKey === 'editorial') {
+    return `
+      <!-- Flight & Cab Transit Details -->
+      <div style="border-top:1px solid #111;padding-top:6px;flex:none">
+        <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:12px">
+          ${hasFlight ? `
+            <div style="border-left:2px solid #e5431f;padding-left:10px">
+              <div style="font-size:9px;font-weight:800;letter-spacing:1px;color:#555550;text-transform:uppercase">FLIGHT DETAILS</div>
+              <div style="font-size:11.5px;font-weight:700;color:#111;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+            </div>` : ''}
+          ${hasCab ? `
+            <div style="border-left:2px solid #e5431f;padding-left:10px">
+              <div style="font-size:9px;font-weight:800;letter-spacing:1px;color:#555550;text-transform:uppercase">CAB &amp; TRANSIT</div>
+              <div style="font-size:11.5px;font-weight:700;color:#111;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+            </div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  if (themeKey === 'playful') {
+    return `
+      <!-- Flight & Cab Transit Details -->
+      <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:8px;flex:none">
+        ${hasFlight ? `
+          <div style="background:#fff;border:2px solid #e5dcff;border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('plane', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;font-weight:800;color:#3c2a8a;text-transform:uppercase">FLIGHT DETAILS</div>
+              <div style="font-size:11.5px;font-weight:700;color:#2a1240;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+            </div>
+          </div>` : ''}
+        ${hasCab ? `
+          <div style="background:#fff;border:2px solid #e5dcff;border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:8px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('car', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;letter-spacing:1px;font-weight:800;color:#3c2a8a;text-transform:uppercase">CAB &amp; TRANSIT</div>
+              <div style="font-size:11.5px;font-weight:700;color:#2a1240;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+            </div>
+          </div>` : ''}
+      </div>`;
+  }
+
+  // diwali
+  return `
+    <!-- Flight & Cab Transit Details -->
+    <div style="display:flex;flex-direction:column;gap:5px;flex:none">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="color:#E65100">🪔</div>
+        <div style="font-family:${dH};font-size:14px;font-weight:800;color:#1B0B2E">Flight &amp; Cab Transit Details</div>
+        <div style="flex:1;height:1px;background:#FFE0B2"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:${isBoth ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:8px">
+        ${hasFlight ? `
+          <div style="background:#fff;border:1px solid #FFE0B2;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(255,153,0,0.05)">
+            <div style="width:28px;height:28px;border-radius:10px;background:linear-gradient(135deg, #FF9900, #E65100);color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('plane', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9.5px;letter-spacing:1px;color:#E65100;font-weight:800;text-transform:uppercase">FLIGHT DETAILS</div>
+              <div style="font-size:11.5px;font-weight:700;color:#1B0B2E;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.flightDetails)}</div>
+            </div>
+          </div>` : ''}
+        ${hasCab ? `
+          <div style="background:#fff;border:1px solid #FFE0B2;border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(255,153,0,0.05)">
+            <div style="width:28px;height:28px;border-radius:10px;background:linear-gradient(135deg, #FF9900, #E65100);color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('car', 14)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9.5px;letter-spacing:1px;color:#E65100;font-weight:800;text-transform:uppercase">CAB &amp; TRANSIT</div>
+              <div style="font-size:11.5px;font-weight:700;color:#1B0B2E;margin-top:1px;line-height:1.3;word-break:break-word">${e(Q.cabDetails)}</div>
+            </div>
+          </div>` : ''}
+      </div>
+    </div>`;
 }
 
 export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartners?: PartnerBrand[]): string {
@@ -747,6 +906,9 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true): strin
         `).join('')}
       </div>
 
+      <!-- Flight & Cab Transit Details -->
+      ${renderTransitSection(Q, 'royal')}
+
       <!-- Inclusions / Exclusions (if fits on cover) -->
       ${incExcHtml}
 
@@ -983,6 +1145,9 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
         `).join('')}
       </div>
 
+      <!-- Flight & Cab Transit Details -->
+      ${renderTransitSection(Q, 'alpine')}
+
       <!-- Inclusions / Exclusions (if fits on cover) -->
       ${incExcHtml}
 
@@ -1189,6 +1354,9 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
           </div>
         `).join('')}
       </div>
+
+      <!-- Flight & Cab Transit Details -->
+      ${renderTransitSection(Q, 'sunset')}
 
       <!-- Operational Stats Strip -->
       <div style="background:#231f2b;color:#fff;border-radius:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));height:50px;flex:none">
@@ -1419,6 +1587,9 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true): s
       </div>
     </div>
 
+    <!-- Flight & Cab Transit Details -->
+    ${renderTransitSection(Q, 'editorial')}
+
     <!-- Inclusions / Exclusions (if fits on cover) -->
     ${incExcHtml}
 
@@ -1631,6 +1802,9 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true): str
         </div>
       `).join('')}
     </div>
+
+    <!-- Flight & Cab Transit Details -->
+    ${renderTransitSection(Q, 'playful')}
 
     <!-- Inclusions / Exclusions (if fits on cover) -->
     ${incExcHtml}
@@ -1874,6 +2048,9 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true): stri
           </div>
         `).join('')}
       </div>
+
+      <!-- Flight & Cab Transit Details -->
+      ${renderTransitSection(Q, 'diwali')}
 
       <!-- Inclusions / Exclusions (if fits on cover) -->
       ${incExcHtml}

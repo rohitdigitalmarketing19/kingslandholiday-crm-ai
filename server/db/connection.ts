@@ -180,6 +180,12 @@ let lastBackupTime = 0;
 export function createBackupSnapshot(reason: string = 'auto'): string | null {
   if (!db) return null;
   try {
+    const check = db.exec('PRAGMA integrity_check;');
+    if (!check || !check[0] || check[0].values[0][0] !== 'ok') {
+      console.warn('⚠️ Skipping backup snapshot: database integrity check failed');
+      return null;
+    }
+
     ensureDir(backupDir);
     const data = db.export();
     const buffer = Buffer.from(data);
@@ -297,7 +303,13 @@ export async function initDb(): Promise<SqlJsDatabase> {
       const cloudBuffer = await downloadFromSupabase();
       if (cloudBuffer && cloudBuffer.length > 500) {
         try {
-          db = new SQL.Database(cloudBuffer);
+          const testDb = new SQL.Database(cloudBuffer);
+          testDb.exec('SELECT count(*) FROM sqlite_master;');
+          const check = testDb.exec('PRAGMA integrity_check;');
+          if (!check || !check[0] || check[0].values[0][0] !== 'ok') {
+            throw new Error('Supabase database image failed integrity check');
+          }
+          db = testDb;
           safeWriteBuffer(dbPath, cloudBuffer);
           console.log(`🛡️ AUTO-RECOVERY: Successfully restored database from Supabase Cloud (${cloudBuffer.length} bytes)!`);
           loadedFromSupabase = true;
@@ -313,35 +325,45 @@ export async function initDb(): Promise<SqlJsDatabase> {
     try {
       const fileBuffer = fs.readFileSync(dbPath);
       if (fileBuffer.length > 500) {
-        db = new SQL.Database(fileBuffer);
+        const testDb = new SQL.Database(fileBuffer);
+        testDb.exec('SELECT count(*) FROM sqlite_master;');
+        const check = testDb.exec('PRAGMA integrity_check;');
+        if (!check || !check[0] || check[0].values[0][0] !== 'ok') {
+          throw new Error('Database disk image failed integrity check.');
+        }
+        db = testDb;
         console.log(`📂 Database loaded from persistent file: ${dbPath} (${fileBuffer.length} bytes)`);
-        // Sync local file to Supabase if Supabase is connected
         triggerSupabaseSync(fileBuffer);
       } else {
         throw new Error('Database file is empty or corrupted.');
       }
-    } catch (readErr) {
-      console.warn('⚠️ Database file could not be read cleanly. Checking backup snapshots...', readErr);
+    } catch (readErr: any) {
+      console.warn('⚠️ Database file could not be read cleanly. Checking backup snapshots...', readErr?.message || readErr);
     }
   }
 
-  // 3. If db not yet loaded, try restoring from latest local backup snapshot
+  // 3. If db not yet loaded, try restoring from latest healthy local backup snapshot
   if (!db) {
     const snapshots = listBackupSnapshots();
-    if (snapshots.length > 0) {
-      const latestSnapshot = snapshots[0];
+    for (const snap of snapshots) {
       try {
-        const snapPath = path.join(backupDir, latestSnapshot.filename);
+        const snapPath = path.join(backupDir, snap.filename);
         const snapBuffer = fs.readFileSync(snapPath);
-        db = new SQL.Database(snapBuffer);
-        safeWriteBuffer(dbPath, snapBuffer);
-        triggerSupabaseSync(snapBuffer);
-        console.log(`🛡️ AUTO-RECOVERY: Successfully recovered database from latest local snapshot: ${latestSnapshot.filename}`);
-      } catch (snapErr) {
-        console.error('⚠️ Could not restore from snapshot, creating fresh database:', snapErr);
-        db = new SQL.Database();
+        const testDb = new SQL.Database(snapBuffer);
+        testDb.exec('SELECT count(*) FROM sqlite_master;');
+        const check = testDb.exec('PRAGMA integrity_check;');
+        if (check && check[0] && check[0].values[0][0] === 'ok') {
+          db = testDb;
+          safeWriteBuffer(dbPath, snapBuffer);
+          triggerSupabaseSync(snapBuffer);
+          console.log(`🛡️ AUTO-RECOVERY: Successfully recovered database from healthy local snapshot: ${snap.filename}`);
+          break;
+        }
+      } catch (_snapErr) {
+        // try next snapshot
       }
-    } else {
+    }
+    if (!db) {
       console.log(`📂 Initializing new database file at: ${dbPath}`);
       db = new SQL.Database();
     }

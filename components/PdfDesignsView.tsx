@@ -64,6 +64,8 @@ const SAMPLE_QUOTE_DATA: QuoteDataModel = {
   rawPrice: 52500,
   discountPercent: 5,
   cutPrice: "₹55,125",
+  flightDetails: "Indigo 6E 2134 (DEL-IXC) & Return 6E 2135 Included",
+  cabDetails: "Private AC Innova Crysta for all transfers and sightseeing",
   hotel: {
     nights: "Night 1 & 2",
     name: "Hotel Katson Blue",

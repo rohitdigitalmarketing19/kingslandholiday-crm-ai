@@ -718,12 +718,26 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const currentQuoteDataModel = useMemo<QuoteDataModel | null>(() => {
     if (!currentQuote || !lead) return null;
 
+    const effectiveFlightDetails = (currentQuote.flightDetails && currentQuote.flightDetails.trim())
+      ? currentQuote.flightDetails.trim()
+      : '';
+
+    const effectiveCabDetails = (currentQuote.cabDetails && currentQuote.cabDetails.trim())
+      ? currentQuote.cabDetails.trim()
+      : '';
+
     const incList: string[] = [];
     if (currentQuote.inclusions?.accommodation) incList.push(getAccommodationInclusion(currentQuote));
     if (currentQuote.inclusions?.mealPlan) incList.push(getMealInclusion(currentQuote));
-    if (lead.includeCab === 'Yes') {
-      incList.push('Transport: Private Vehicle Included');
+
+    if (effectiveCabDetails) {
+      incList.push(`Cab / Transit: ${effectiveCabDetails}`);
     }
+
+    if (effectiveFlightDetails) {
+      incList.push(`Flight: ${effectiveFlightDetails}`);
+    }
+
     if (currentQuote.inclusions?.sightseeing) {
       incList.push('Sightseeing as per day itinerary');
     }
@@ -731,7 +745,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       incList.push(...parseCustomItems(currentQuote.otherInclusions));
     }
     if (incList.length === 0) {
-      incList.push('Accommodation on double sharing', 'Breakfast & dinner at all hotels', 'Private AC vehicle for all transfers', 'All toll taxes, state permits & driver allowance');
+      const defaultInclusions = [
+        'Accommodation on double sharing',
+        'Breakfast & dinner at all hotels',
+        'All toll taxes, state permits & driver allowance'
+      ];
+      if (effectiveCabDetails) {
+        defaultInclusions.push(`Cab / Transit: ${effectiveCabDetails}`);
+      }
+      if (effectiveFlightDetails) {
+        defaultInclusions.push(`Flight: ${effectiveFlightDetails}`);
+      }
+      incList.push(...defaultInclusions);
     }
 
     const excList: string[] = [];
@@ -739,7 +764,19 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       excList.push(...parseCustomItems(currentQuote.otherExclusions));
     }
     if (excList.length === 0) {
-      excList.push('Airfare / train tickets', 'Personal expenses (laundry, beverages)', 'Monument entry fees & camera permits', 'GST as applicable', 'Tips to driver & guides');
+      const defaultExclusions = [
+        'Personal expenses (laundry, beverages)',
+        'Monument entry fees & camera permits',
+        'GST as applicable',
+        'Tips to driver & guides'
+      ];
+      if (!effectiveFlightDetails && (currentQuote.flightsNotIncluded || lead.includeFlight === 'No')) {
+        defaultExclusions.unshift('Airfare / train tickets');
+      }
+      if (!effectiveCabDetails && currentQuote.cabsNotIncluded) {
+        defaultExclusions.unshift('Cab / local transfers');
+      }
+      excList.push(...defaultExclusions);
     }
 
     const mappedHotels: HotelItemModel[] = (currentQuote.hotels && currentQuote.hotels.length > 0)
@@ -783,6 +820,9 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           { title: 'Departure with Memories', text: 'Check-out and transfer for onward journey.', img: '' }
         ];
 
+    const hasFlight = Boolean(effectiveFlightDetails || lead.includeFlight === 'Yes' || (currentQuote.flightCost && currentQuote.flightCost > 0));
+    const servicesStr = `Cab, Hotel, Sightseeing${hasFlight ? ', Flight' : ''}`;
+
     return {
       client: lead.name,
       ref: lead.tripId,
@@ -792,7 +832,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       longDuration: `${currentQuote.nights || (lead.durationDays ? lead.durationDays - 1 : 4)} Nights / ${currentQuote.itinerary?.length || lead.durationDays || 5} Days`,
       duration: `${currentQuote.nights || 4}N / ${currentQuote.itinerary?.length || 5}D`,
       city: lead.destination || 'North India',
-      services: `Cab, Hotel, Sightseeing${lead.includeFlight === 'Yes' ? ', Flight' : ''}`,
+      services: servicesStr,
       travellers: `${lead.travelers?.adults || 2} Adults${lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}`,
       priceNote: 'Private Vehicle & Handpicked Stays',
       price: `₹${(pricingData.finalPrice || currentQuote.finalSellingPrice || 50000).toLocaleString('en-IN')}`,
@@ -802,6 +842,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       coverImage: (currentQuote as any)?.coverImage || (lead as any)?.coverImage || '',
       hotel: mappedHotels[0],
       hotels: mappedHotels,
+      flightDetails: effectiveFlightDetails,
+      cabDetails: effectiveCabDetails,
       advisor: {
         name: agentName || 'Mohit Ahlawat',
         role: 'Senior Trip Advisor',

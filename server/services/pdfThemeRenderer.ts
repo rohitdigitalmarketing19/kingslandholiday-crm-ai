@@ -67,6 +67,8 @@ export interface PackageRenderData {
   }>;
   terms?: string[];
   cancellationFees?: Array<[string, string]>;
+  flightDetails?: string;
+  cabDetails?: string;
   advisor?: {
     name: string;
     role: string;
@@ -551,6 +553,21 @@ export function buildPackageProposalHtml(
             </tbody>
           </table>
         </div>
+
+        ${(pkg.flightDetails || pkg.cabDetails) ? `
+          <!-- Flight & Cab Transit Details -->
+          <div style="display:grid;grid-template-columns:${(pkg.flightDetails && pkg.cabDetails) ? 'repeat(2,minmax(0,1fr))' : '1fr'};gap:12px">
+            ${pkg.flightDetails ? `
+              <div style="background:#ffffff;border:1px solid rgba(20,20,43,0.1);border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
+                <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:${primaryColor};text-transform:uppercase">✈️ Flight Details</div>
+                <div style="font-size:12px;font-weight:700;color:${navyColor};margin-top:4px;line-height:1.35">${escapeHtml(pkg.flightDetails)}</div>
+              </div>` : ''}
+            ${pkg.cabDetails ? `
+              <div style="background:#ffffff;border:1px solid rgba(20,20,43,0.1);border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
+                <div style="font-size:10px;font-weight:800;letter-spacing:1px;color:${primaryColor};text-transform:uppercase">🚗 Cab &amp; Transit Details</div>
+                <div style="font-size:12px;font-weight:700;color:${navyColor};margin-top:4px;line-height:1.35">${escapeHtml(pkg.cabDetails)}</div>
+              </div>` : ''}
+          </div>` : ''}
 
         <!-- Pricing Summary Box -->
         <div style="background:#ffffff;border:1.5px solid rgba(255,107,53,0.25);border-radius:14px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 10px rgba(0,0,0,0.03)">
