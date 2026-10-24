@@ -21,6 +21,7 @@ import {
   renderPartnerBadgeHtml,
   deduplicatePartners,
 } from '../utils/partnerLogos';
+import { DEFAULT_KINGSLAND_LOGO } from './kingslandLogo';
 
 export interface HotelItemModel {
   nights: string;
@@ -175,7 +176,8 @@ const pg = (style: string, inner: string, design = '') =>
 export const TH: Record<string, any> = {
   royal: {
     bg: '#fdfbf6', ink: '#1b2540', muted: '#3b455f', accent: '#d4af37', onAccent: '#12213f',
-    line: '#e3dac0', card: '#ffffff', footBg: '#12213f', footInk: '#ffffff',
+    line: '#e3dac0', card: '#ffffff', cardBorder: '#e8e1cf', footBg: '#12213f', footInk: '#ffffff',
+    circleBg: '#12213f', circleText: '#d4af37', footerIcon: '●',
     head: "'Playfair Display',serif", body: "'Manrope',sans-serif", radius: '14px', sec: 'rule',
     incBg: '#eef7f1', incBorder: '#bfe0cc', incTitle: '#14573a', incCheck: '#1f8a5b',
     excBg: '#fdf1f0', excBorder: '#efc4c0', excTitle: '#9c2b22', excX: '#c0392b',
@@ -183,7 +185,8 @@ export const TH: Record<string, any> = {
   },
   alpine: {
     bg: '#fbfdfc', ink: '#12302f', muted: '#3f5a58', accent: '#f2a93b', onAccent: '#2a1c00',
-    line: '#cfe5e1', card: '#e6f4f1', footBg: '#0f4c4a', footInk: '#ffffff',
+    line: '#cfe5e1', card: '#ffffff', cardBorder: '#cfe5e1', footBg: '#0f4c4a', footInk: '#ffffff',
+    circleBg: '#0f4c4a', circleText: '#ffffff', footerIcon: '●',
     head: "'DM Serif Display',serif", body: "'DM Sans',sans-serif", radius: '16px', sec: 'pill',
     incBg: '#e6f4f1', incBorder: '#b0d9cf', incTitle: '#0f4c4a', incCheck: '#1a7a74',
     excBg: '#fdf1f0', excBorder: '#efc4c0', excTitle: '#9c2b22', excX: '#c0392b',
@@ -191,7 +194,8 @@ export const TH: Record<string, any> = {
   },
   sunset: {
     bg: '#fffaf6', ink: '#231f2b', muted: '#4a4352', accent: '#ff6a3d', onAccent: '#ffffff',
-    line: '#f3d9c8', card: '#fff1e6', footBg: '#231f2b', footInk: '#ffffff',
+    line: '#f3d9c8', card: '#ffffff', cardBorder: '#f3d9c8', footBg: '#231f2b', footInk: '#ffffff',
+    circleBg: '#ff6a3d', circleText: '#ffffff', footerIcon: '●',
     head: "'Outfit',sans-serif", body: "'Nunito Sans',sans-serif", radius: '20px', sec: 'bar',
     incBg: '#e8f7ee', incBorder: '#bfe0cc', incTitle: '#14573a', incCheck: '#1f8a5b',
     excBg: '#fdeaea', excBorder: '#efc4c0', excTitle: '#9c2b22', excX: '#c0392b',
@@ -199,7 +203,8 @@ export const TH: Record<string, any> = {
   },
   editorial: {
     bg: '#f7f7f4', ink: '#111111', muted: '#33332f', accent: '#e5431f', onAccent: '#ffffff',
-    line: '#cfcfca', card: '#ffffff', footBg: '#111111', footInk: '#ffffff',
+    line: '#cfcfca', card: '#ffffff', cardBorder: '#cfcfca', footBg: '#111111', footInk: '#ffffff',
+    circleBg: '#111111', circleText: '#ffffff', footerIcon: '■',
     head: "'Bricolage Grotesque',sans-serif", body: "'Hanken Grotesk',sans-serif", radius: '0px', sec: 'rule',
     incBg: '#ffffff', incBorder: '#111111', incTitle: '#111111', incCheck: '#111111',
     excBg: '#ffffff', excBorder: '#e5431f', excTitle: '#e5431f', excX: '#e5431f',
@@ -207,7 +212,8 @@ export const TH: Record<string, any> = {
   },
   playful: {
     bg: '#f8f6ff', ink: '#1e1b3a', muted: '#3d3a5c', accent: '#4a2fe0', onAccent: '#ffffff',
-    line: '#ddd3ff', card: '#ffffff', footBg: '#4a2fe0', footInk: '#ffffff',
+    line: '#ddd3ff', card: '#ffffff', cardBorder: '#ddd3ff', footBg: '#4a2fe0', footInk: '#ffffff',
+    circleBg: '#4a2fe0', circleText: '#ffffff', footerIcon: '✦',
     head: "'Baloo 2',sans-serif", body: "'Nunito',sans-serif", radius: '24px', sec: 'pill',
     incBg: '#e3f7ee', incBorder: '#bfe0cc', incTitle: '#0c5a41', incCheck: '#12805c',
     excBg: '#ffe8e4', excBorder: '#efc4c0', excTitle: '#9c2b22', excX: '#c0392b',
@@ -215,7 +221,8 @@ export const TH: Record<string, any> = {
   },
   diwali: {
     bg: '#fffbf2', ink: '#1b0b2e', muted: '#4a385a', accent: '#ff9900', onAccent: '#1b0b2e',
-    line: '#ffe0b2', card: '#ffffff', footBg: '#1b0b2e', footInk: '#ffffff',
+    line: '#ffe0b2', card: '#ffffff', cardBorder: '#ffe0b2', footBg: '#1b0b2e', footInk: '#ffffff',
+    circleBg: '#1b0b2e', circleText: '#ffd700', footerIcon: '🪔',
     head: "'Playfair Display',serif", body: "'Manrope',sans-serif", radius: '16px', sec: 'pill',
     incBg: '#fff8e7', incBorder: '#ffd599', incTitle: '#b26a00', incCheck: '#e65100',
     excBg: '#fdf1f0', excBorder: '#efc4c0', excTitle: '#9c2b22', excX: '#c0392b',
@@ -671,14 +678,15 @@ export function renderTransitSection(Q: QuoteDataModel, themeKey = 'royal'): str
 
 export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartners?: PartnerBrand[]): string {
   const th = TH[thKey] || TH.royal;
-  const base = `font-family:${th.head};font-size:12px;font-weight:700;margin-bottom:5px;`;
+  const base = `font-family:${th.head};font-size:13.5px;font-weight:700;margin-bottom:6px;`;
   let sec = base + `color:${th.ink};text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid ${th.accent};padding-bottom:3px;`;
-  if (th.sec === 'pill') sec = base + `display:inline-block;background:${th.accent};color:${th.onAccent};padding:2px 9px;border-radius:999px;`;
-  if (th.sec === 'bar') sec = base + `color:${th.ink};border-left:3px solid ${th.accent};padding-left:7px;`;
+  if (th.sec === 'pill') sec = base + `display:inline-block;background:${th.accent};color:${th.onAccent};padding:3px 12px;border-radius:999px;font-size:12px;`;
+  if (th.sec === 'bar') sec = base + `color:${th.ink};border-left:3px solid ${th.accent};padding-left:8px;`;
 
-  const bl = (arr: string[]) => arr.map((t) => `<div style="display:flex;gap:5px"><span style="color:${th.accent};flex:none">●</span><span>${e(t)}</span></div>`).join('');
-  const col = (arr: string[]) => `<div style="display:flex;flex-direction:column;gap:3px;font-size:10px;line-height:1.3;color:${th.muted}">${bl(arr)}</div>`;
-  const fees = DEFAULT_TERMS.fees.map((f) => `<div style="display:flex;justify-content:space-between;gap:6px;font-size:10.5px;padding:2.5px 0;border-bottom:1px solid ${th.line}"><span>${e(f[0])}</span><b>${e(f[1])}</b></div>`).join('');
+  const bl = (arr: string[]) => arr.map((t) => `<div style="display:flex;gap:6px"><span style="color:${th.accent};flex:none">●</span><span>${e(t)}</span></div>`).join('');
+  // Scaled up font-size to 11.2px, line-height 1.42, gap 5px
+  const col = (arr: string[]) => `<div style="display:flex;flex-direction:column;gap:5px;font-size:11.2px;line-height:1.42;color:${th.muted}">${bl(arr)}</div>`;
+  const fees = DEFAULT_TERMS.fees.map((f) => `<div style="display:flex;justify-content:space-between;gap:6px;font-size:11.5px;padding:3.5px 0;border-bottom:1px solid ${th.line}"><span>${e(f[0])}</span><b>${e(f[1])}</b></div>`).join('');
 
   // Support custom manually added partners or fallback to curated partner network
   const hotelsToRender = (customPartners && customPartners.filter(p => p.category === 'hotel').length > 0)
@@ -703,102 +711,102 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   };
   const isB2BMode = Q.isB2B || (!adv.name && !adv.phones && !adv.email);
 
-  return pg(
-    `padding:28px 42px 20px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:flex-start;gap:14px;box-sizing:border-box`,
-    `
-    <!-- Header -->
-    <div style="flex:none">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:12px">
-          ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
-          ${isB2BMode ? '' : `<div style="font-family:${th.head};font-size:18px;font-weight:700">${e(Q.companyName || BRAND)}</div>`}
-          ${isB2BMode ? `<div style="font-family:${th.head};font-size:18px;font-weight:700">Travel Quotation</div>` : ''}
+  return `
+    <div class="sheet sheet-terms" data-design="${thKey}" style="width:794px;height:1123px;padding:32px 46px 26px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;">
+      
+      <!-- Top Header -->
+      <div style="flex:none">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:12px">
+            ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
+            <div style="font-family:${th.head};font-size:19px;font-weight:700">${isB2BMode ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
+          </div>
+          <div style="font-size:11.5px;color:${th.muted};font-weight:600">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
         </div>
-        <div style="font-size:11px;color:${th.muted}">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
-      </div>
-      <div style="font-family:${th.head};font-size:22px;font-weight:700;margin:6px 0 0;line-height:1.15">Terms &amp; Cancellation Policy</div>
-    </div>
-
-    <!-- Grid 1: Cancellation & Hotels (natural heights, fixed gap) -->
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:flex-start">
-      <div>
-        <div style="${sec}">Cancellation policy · land package</div>
-        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:4px 10px">${fees}</div>
-        <div style="margin-top:6px">${col(DEFAULT_TERMS.feeNotes)}</div>
-      </div>
-      <div>
-        <div style="${sec}">Hotels &amp; accommodation</div>
-        ${col(DEFAULT_TERMS.hotels)}
-      </div>
-    </div>
-
-    <!-- Grid 2: Important Info & Pure Agent (natural heights, fixed gap) -->
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:flex-start">
-      <div>
-        <div style="${sec}">Important information</div>
-        ${col(DEFAULT_TERMS.important)}
-      </div>
-      <div>
-        <div style="${sec}">Pure agent declaration</div>
-        ${col(isB2BMode ? [
-          'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
-          'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
-          'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.'
-        ] : DEFAULT_TERMS.agent)}
-      </div>
-    </div>
-
-    <!-- Partner Boxes directly below content (natural heights, fixed gap) -->
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:flex-start">
-      <!-- 1st Box: Hotel Working Partners -->
-      <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:8px 12px;display:flex;flex-direction:column;gap:5px">
-        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
-          <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
-          <span>Hotel Working Partners</span>
-        </div>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
-          ${hotelBadges}
-        </div>
+        <div style="font-family:${th.head};font-size:24px;font-weight:800;margin:6px 0 0;line-height:1.15;color:${th.ink}">Terms &amp; Cancellation Policy</div>
       </div>
 
-      <!-- 2nd Box: Working Partners -->
-      <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:8px 12px;display:flex;flex-direction:column;gap:5px">
-        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.7px;color:${th.ink};display:flex;align-items:center;gap:5px">
-          <span style="width:5px;height:5px;border-radius:50%;background:${th.accent};display:inline-block"></span>
-          <span>Working Partners</span>
+      <!-- Main Content Area: flex 1 with justify-content: space-between so sections stretch and fill the page with NO gap above advisor bar -->
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between;padding:16px 0 20px;">
+        
+        <!-- Grid 1: Cancellation & Hotels -->
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
+          <div>
+            <div style="${sec}">Cancellation policy · land package</div>
+            <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 12px;margin-bottom:8px">${fees}</div>
+            <div>${col(DEFAULT_TERMS.feeNotes)}</div>
+          </div>
+          <div>
+            <div style="${sec}">Hotels &amp; accommodation</div>
+            ${col(DEFAULT_TERMS.hotels)}
+          </div>
         </div>
-        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
-          ${travelBadges}
-        </div>
-      </div>
-    </div>
 
-    ${isB2BMode ? '' : `
-    <!-- Advisor Footer pinned at bottom -->
-    <div style="margin-top:auto;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex:none">
-      <div>
-        <div style="font-size:10px;opacity:.85">Your trip advisor</div>
-        <div style="font-family:${th.head};font-size:15px;font-weight:700;margin-top:1px">${e(adv.name)}</div>
-        <div style="font-size:10px;opacity:.85">${e(adv.role)}</div>
+        <!-- Grid 2: Important Info & Pure Agent -->
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
+          <div>
+            <div style="${sec}">Important information</div>
+            ${col(DEFAULT_TERMS.important)}
+          </div>
+          <div>
+            <div style="${sec}">Pure agent declaration</div>
+            ${col(isB2BMode ? [
+              'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
+              'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
+              'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.'
+            ] : DEFAULT_TERMS.agent)}
+          </div>
+        </div>
+
+        <!-- Partner Boxes: Hotel Working Partners & Working Partners -->
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
+          <!-- Hotel Working Partners -->
+          <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
+              <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+              <span>Hotel Working Partners</span>
+            </div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+              ${hotelBadges}
+            </div>
+          </div>
+
+          <!-- Working Partners -->
+          <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
+              <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+              <span>Working Partners</span>
+            </div>
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+              ${travelBadges}
+            </div>
+          </div>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600">
-        <div style="display:flex;align-items:center;gap:6px">${ico('phone', 13)}${e(adv.phones)}</div>
-        <div style="display:flex;align-items:center;gap:6px">${ico('mail', 13)}${e(adv.email)}</div>
-      </div>
+
+      <!-- Advisor bar pinned at bottom -->
+      ${isB2BMode ? `
+        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:center;align-items:center;gap:14px">
+          <div style="text-align:center">
+            <div style="font-family:${th.head};font-size:14px;font-weight:700">Travel Quotation · ${e(Q.packageName)}</div>
+            <div style="font-size:10px;opacity:.75;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
+          </div>
+        </div>
+      ` : `
+        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px">
+          <div>
+            <div style="font-size:10.5px;opacity:.85">Your trip advisor</div>
+            <div style="font-family:${th.head};font-size:16px;font-weight:700;margin-top:2px">${e(adv.name)}</div>
+            <div style="font-size:10.5px;opacity:.85">${e(adv.role)}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600">
+            <div style="display:flex;align-items:center;gap:6px">${ico('phone', 13)} ${e(adv.phones)}</div>
+            <div style="display:flex;align-items:center;gap:6px">${ico('mail', 13)} ${e(adv.email)}</div>
+          </div>
+        </div>
+      `}
     </div>
-    `}
-    ${isB2BMode ? `
-    <!-- B2B Generic Footer -->
-    <div style="margin-top:auto;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:center;align-items:center;gap:14px;flex:none">
-      <div style="text-align:center">
-        <div style="font-family:${th.head};font-size:14px;font-weight:700">Travel Quotation · ${e(Q.packageName)}</div>
-        <div style="font-size:10px;opacity:.75;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
-      </div>
-    </div>
-    ` : ''}
-  `,
-    thKey
-  );
+  `;
 }
 
 /* =====================================================================
@@ -2308,71 +2316,154 @@ export function renderCompleteProposalHtml(
 
   const pages: string[] = [];
 
-  // 1. Check if Inclusions & Exclusions fit on the Cover page
-  const { fitsOnCover } = estimateBlockHeight(Q, key);
+  // 1. Page 1: Cover Sheet (clean summary overview, fitsOnCover = false)
+  if (key === 'royal') pages.push(royalCoverSheet(Q, false));
+  else if (key === 'alpine') pages.push(alpineCoverSheet(Q, false));
+  else if (key === 'sunset') pages.push(sunsetCoverSheet(Q, false));
+  else if (key === 'editorial') pages.push(editorialCoverSheet(Q, false));
+  else if (key === 'playful') pages.push(playfulCoverSheet(Q, false));
+  else if (key === 'diwali') pages.push(diwaliCoverSheet(Q, false));
 
-  // Render Cover Page (with or without inclusions/exclusions)
-  if (key === 'royal') pages.push(royalCoverSheet(Q, fitsOnCover));
-  else if (key === 'alpine') pages.push(alpineCoverSheet(Q, fitsOnCover));
-  else if (key === 'sunset') pages.push(sunsetCoverSheet(Q, fitsOnCover));
-  else if (key === 'editorial') pages.push(editorialCoverSheet(Q, fitsOnCover));
-  else if (key === 'playful') pages.push(playfulCoverSheet(Q, fitsOnCover));
-  else if (key === 'diwali') pages.push(diwaliCoverSheet(Q, fitsOnCover));
-
-  // If Inclusions & Exclusions did not fit on cover, add Dedicated Inclusions Sheet(s)
-  if (!fitsOnCover) {
-    const allInc = normalizeListItems(Q.included);
-    const allExc = normalizeListItems(Q.excluded);
-
-    // Height calculation for dedicated Inclusions sheet:
-    // Safe height budget inside the box on a dedicated sheet is 880px (enough for ~35 items per column).
-    const calcListHeight = (items: string[], hasNote = false) => {
-      let h = 0;
-      for (const item of items) {
-        const lines = Math.ceil(item.length / 45) || 1;
-        h += (lines * 17) + 5;
-      }
-      if (hasNote) h += 40;
-      return h;
-    };
-
-    const maxColHeight = Math.max(calcListHeight(allInc), calcListHeight(allExc, Boolean(Q.note)));
-    // Fit onto 1 single dedicated sheet whenever content height fits within 880px
-    const totalIncPages = maxColHeight <= 880 ? 1 : Math.max(1, Math.ceil(maxColHeight / 880));
-    const itemsPerSlice = Math.ceil(Math.max(allInc.length, allExc.length) / totalIncPages);
-
-    for (let p = 0; p < totalIncPages; p++) {
-      const incSlice = allInc.slice(p * itemsPerSlice, (p + 1) * itemsPerSlice);
-      const excSlice = allExc.slice(p * itemsPerSlice, (p + 1) * itemsPerSlice);
-
-      if (key === 'royal') pages.push(royalInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-      else if (key === 'alpine') pages.push(alpineInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-      else if (key === 'sunset') pages.push(sunsetInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-      else if (key === 'editorial') pages.push(editorialInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-      else if (key === 'playful') pages.push(playfulInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-      else if (key === 'diwali') pages.push(diwaliInclusionsSheet(Q, incSlice, excSlice, p + 1, totalIncPages));
-    }
-  }
-
-  // 2. Day-wise Itinerary Pages with Height-Aware Chunking
+  // 2. Pages 2 through N-1: Continuous Flow (Inclusions/Exclusions -> Day-wise Itinerary -> All Day Cards)
   const totalDays = (Q.days && Q.days.length > 0) ? Q.days : [
     { title: 'Arrival & Hotel Check-in', text: 'Arrive at destination, private transfer to hotel and evening leisure.' },
     { title: 'Local Sightseeing & Experiences', text: 'Full day sightseeing tour exploring key heritage landmarks and markets.' },
     { title: 'Departure with Cherished Memories', text: 'Breakfast at hotel and seamless transfer to airport / railway station.' }
   ];
 
-  const chunks = chunkItineraryDays(totalDays, key);
-  for (const c of chunks) {
-    if (key === 'royal') pages.push(royalDaysSheet(Q, c.slice, c.startIdx));
-    else if (key === 'alpine') pages.push(alpineDaysSheet(Q, c.slice, c.startIdx));
-    else if (key === 'sunset') pages.push(sunsetDaysSheet(Q, c.slice, c.startIdx));
-    else if (key === 'editorial') pages.push(editorialDaysSheet(Q, c.slice, c.startIdx));
-    else if (key === 'playful') pages.push(playfulDaysSheet(Q, c.slice, c.startIdx));
-    else if (key === 'diwali') pages.push(diwaliDaysSheet(Q, c.slice, c.startIdx));
-  }
+  pages.push(renderContinuousItineraryTable(Q, totalDays, key));
 
-  // 3. Terms & Cancellation Policy Page
+  // 3. Final Page: Terms & Cancellation Policy (forced break-before, 100% height flex container)
   pages.push(renderTermsSheet(Q, key, customPartners));
 
   return pages.join('\n');
+}
+
+/**
+ * Renders the entire itinerary as ONE continuous flow across paged media.
+ * Uses table.itinerary-table with thead (display: table-header-group) and tfoot (display: table-footer-group)
+ * to natively repeat brand headers (with real logo) and footers (with >= 20px clearance) on every page.
+ * Content inside tbody flows continuously without manual height guessing:
+ * 1. Package Inclusions & Exclusions 2-column card at top
+ * 2. "Day-wise Itinerary" heading ONCE with break-after: avoid
+ * 3. Continuous vertical timeline with day number circle, continuous vertical line,
+ *    day cards with image (210px rounded box with blur background), title, and text (orphans: 3; widows: 3).
+ */
+export function renderContinuousItineraryTable(
+  Q: QuoteDataModel,
+  days: Array<{ title: string; text: string; img?: string; location?: string }>,
+  themeKey = 'royal'
+): string {
+  const th = TH[themeKey] || TH.royal;
+  const effectiveLogo = (!Q.isB2B && (Q.logoUrl || DEFAULT_KINGSLAND_LOGO)) ? (Q.logoUrl || DEFAULT_KINGSLAND_LOGO) : '';
+
+  // Render Day Cards
+  const daysHtml = days.map((day, idx) => {
+    const dayNum = idx + 1;
+    const dayImg = day.img && day.img.trim();
+    const hasImage = Boolean(dayImg);
+
+    return `
+      <div class="day-card-wrapper" style="position: relative; margin-bottom: 22px;">
+        <!-- Number Circle on Left -->
+        <div class="day-number-circle" style="position: absolute; left: -54px; top: 0; width: 40px; height: 40px; border-radius: 50%; background: ${th.circleBg}; color: ${th.circleText}; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); z-index: 2;">
+          ${dayNum}
+        </div>
+
+        <!-- Day Card on Right -->
+        <div class="day-card" style="background: ${th.card}; border: 1px solid ${th.cardBorder}; border-radius: ${th.radius || '14px'}; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); break-inside: auto; box-decoration-break: clone; -webkit-box-decoration-break: clone;">
+          
+          <!-- Image + Title Header (break-inside: avoid ensures image+title never cut in half, but allows break after header if page space ends) -->
+          <div class="day-card-header" style="break-inside: avoid; page-break-inside: avoid; margin-bottom: 12px;">
+            ${hasImage ? `
+              <div class="day-img-box" style="position: relative; height: 210px; width: 100%; border-radius: 10px; overflow: hidden; background: #000000; margin-bottom: 12px; break-inside: avoid; page-break-inside: avoid;">
+                <!-- Background blurred backdrop layer -->
+                <img src="${dayImg}" alt="" style="position: absolute; inset: -10%; width: 120%; height: 120%; object-fit: cover; filter: blur(20px) brightness(0.75); transform: scale(1.15); pointer-events: none;" />
+                <!-- Foreground containment layer -->
+                <img src="${dayImg}" alt="${e(day.title)}" crossOrigin="anonymous" style="position: relative; width: 100%; height: 100%; object-fit: contain; object-position: center; display: block;" onerror="this.closest('.day-img-box').style.display='none';" />
+              </div>` : ''}
+
+            <div class="day-title-row" style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; break-inside: avoid; page-break-inside: avoid;">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: ${th.ink}; font-family: ${th.head}; line-height: 1.3;">Day ${dayNum}: ${e(day.title)}</h3>
+              ${day.location ? `<span style="font-size: 11px; font-weight: 700; color: ${th.accent}; text-transform: uppercase; letter-spacing: 0.5px; flex: none;">${e(day.location)}</span>` : ''}
+            </div>
+          </div>
+
+          <!-- Day Text Body: can flow or start cleanly across page breaks -->
+          <div class="day-text" style="font-size: 12px; line-height: 1.6; color: ${th.muted}; orphans: 2; widows: 2; font-family: ${th.body}; margin: 0; break-inside: auto;">
+            ${day.text ? e(day.text).replace(/\n\n+/g, '</p><p style="margin: 8px 0 0 0; orphans: 2; widows: 2;">').replace(/\n/g, '<br/>') : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <table class="itinerary-table" data-design="${themeKey}" style="width: 794px; margin: 0 auto; border-collapse: collapse; page-break-before: always; break-before: page; page-break-after: always; break-after: page; background: ${th.bg};">
+      <thead class="itin-thead" style="display: table-header-group;">
+        <tr>
+          <th style="padding: 24px 46px 12px; border-bottom: 2px solid ${th.accent}; text-align: left; font-weight: normal; background: ${th.bg};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${(!Q.isB2B && effectiveLogo) ? `
+                  <div style="background: #ffffff; padding: 4px 10px; border-radius: 8px; border: 1px solid ${th.line}; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; align-items: center;">
+                    <img src="${effectiveLogo}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height: 32px; max-width: 120px; width: auto; height: auto; object-fit: contain; display: block;" />
+                  </div>` : ''}
+                <div style="font-family: ${th.head}; font-size: 18px; font-weight: 700; color: ${th.ink};">
+                  ${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}
+                </div>
+              </div>
+              <div style="font-size: 12px; color: ${th.muted}; font-weight: 600; font-family: ${th.body};">
+                ${e(Q.packageName)} · Ref. No. ${e(Q.ref)}
+              </div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+
+      <tfoot class="itin-tfoot" style="display: table-footer-group;">
+        <tr>
+          <td style="padding: 20px 46px 24px; border-top: 1px solid ${th.line}; font-size: 11px; color: ${th.muted}; font-family: ${th.body}; font-weight: 600; background: ${th.bg};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>*Indicative Itinerary · Subject to operational feasibility &amp; local conditions</div>
+              <div style="color: ${th.accent}; font-weight: 700;">${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+
+      <tbody class="itin-tbody" style="display: table-row-group;">
+        <tr>
+          <td class="itin-content-cell" style="padding: 20px 46px; background: ${th.bg}; color: ${th.ink}; vertical-align: top;">
+            
+            <!-- Inclusions & Exclusions Section at top of Page 2 -->
+            <div style="margin-bottom: 24px; break-inside: avoid; page-break-inside: avoid;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <div style="font-family: ${th.head}; font-size: 20px; font-weight: 700; color: ${th.ink};">Package Inclusions &amp; Exclusions</div>
+                <div style="flex: 1; height: 1px; background: ${th.line};"></div>
+              </div>
+              ${renderIncExcGrid(Q.included, Q.excluded, Q.note, th)}
+            </div>
+
+            <!-- "Day-wise Itinerary" Heading (ONCE, same name for all themes, right above Day 1) -->
+            <div style="break-inside: avoid; break-after: avoid; page-break-after: avoid; margin-bottom: 22px; margin-top: 10px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-family: ${th.head}; font-size: 24px; font-weight: 800; color: ${th.ink}; letter-spacing: -0.3px;">Day-wise Itinerary</div>
+                <div style="flex: 1; height: 1.5px; background: ${th.accent}; opacity: 0.8;"></div>
+              </div>
+            </div>
+
+            <!-- Continuous Timeline Stream & All Day Cards -->
+            <div class="timeline-container" style="position: relative; padding-left: 54px;">
+              <!-- Continuous vertical timeline line -->
+              <div class="timeline-stem" style="position: absolute; left: 19px; top: 14px; bottom: 30px; width: 2px; background: ${th.accent};"></div>
+
+              ${daysHtml}
+            </div>
+
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
 }

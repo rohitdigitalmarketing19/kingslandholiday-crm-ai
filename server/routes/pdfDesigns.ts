@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
+import fs from 'fs';
+import puppeteer from 'puppeteer-core';
 import { v4 as uuidv4 } from 'uuid';
 import { queryAll, queryOne, runQuery } from '../db/connection';
+import { renderCompleteProposalHtml } from '../../services/quoteDesignRenderer';
 import {
   getAllPdfDesigns,
   getActivePdfDesign,
@@ -187,6 +190,113 @@ router.delete('/:id', (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Error deleting PDF design:', err);
     res.status(500).json({ error: 'Failed to delete PDF design' });
+  }
+});
+
+// SERVER-SIDE CONTINUOUS CHROMIUM/PUPPETEER PDF RENDERER
+router.post('/render-pdf', async (req: Request, res: Response) => {
+  let browser: any = null;
+  try {
+    const { quoteData, designId = 'royal', partnerBrands, isB2B = false } = req.body;
+    if (!quoteData) {
+      return res.status(400).json({ error: 'quoteData is required' });
+    }
+
+    const htmlContent = renderCompleteProposalHtml(quoteData, designId, partnerBrands, isB2B);
+
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=DM+Serif+Display&family=Hanken+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&family=Nunito:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,600&display=swap" rel="stylesheet">
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 0;
+            }
+            * {
+              box-sizing: border-box;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+        </body>
+      </html>
+    `;
+
+    const CHROME_PATHS = [
+      process.env.CHROME_BIN,
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+    ].filter(Boolean) as string[];
+
+    const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
+    if (!executablePath) {
+      return res.status(500).json({ error: 'Chromium/Chrome binary not found on server' });
+    }
+
+    browser = await puppeteer.launch({
+      executablePath,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+    await page.setContent(fullHtml, { waitUntil: ['load', 'networkidle0' as any] });
+
+    // Wait for fonts and all images to complete loading
+    await page.evaluate(async () => {
+      if ((document as any).fonts && (document as any).fonts.ready) {
+        await (document as any).fonts.ready;
+      }
+      const imgs = Array.from(document.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+    });
+
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: 0, bottom: 0, left: 0, right: 0 },
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    const clientName = (quoteData.client || 'Client').replace(/\s+/g, '-');
+    const ref = (quoteData.ref || 'Quote').replace(/\s+/g, '-');
+    res.setHeader('Content-Disposition', `attachment; filename="Kingsland-Proposal-${ref}-${clientName}.pdf"`);
+    res.send(Buffer.from(pdfBuffer));
+  } catch (err: any) {
+    console.error('Server PDF Generation Error:', err);
+    res.status(500).json({ error: err.message || 'Failed to render PDF' });
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
   }
 });
 

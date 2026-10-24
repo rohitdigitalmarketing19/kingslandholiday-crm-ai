@@ -211,7 +211,7 @@ async function runAcceptanceTests() {
   const fakeZip = Buffer.from('Not a real zip file header');
   const detected = detectMagicBytes(fakeZip);
   assert(
-    detected !== 'zip',
+    detected?.ext !== 'zip',
     'Magic bytes: Fake zip file without PK\\x03\\x04 is not detected as zip'
   );
 

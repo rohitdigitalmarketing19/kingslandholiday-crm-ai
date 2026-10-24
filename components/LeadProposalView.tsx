@@ -652,18 +652,57 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   };
 
   const handleDownloadPDF = async () => {
-    if (!printRef.current || !currentQuote || !lead) return;
+    if (!currentQuoteDataModel || !currentQuote || !lead) return;
 
     setIsDownloading(true);
     try {
       const designTitle = selectedDesign?.title || 'Proposal';
       const filename = `Kingsland-${designTitle.replace(/\s+/g, '-')}-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
-      await exportElementToPdf(printRef.current, {
-        filename,
-        margin: 0,
-        width: 794,
-        scale: 2
-      });
+      const designId = (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
+        (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
+        selectedDesign?.id === 'diwali' ||
+        selectedDesign?.id === 'theme-f4b4ac06'
+          ? 'diwali'
+          : (selectedDesign?.id || 'royal');
+
+      // Try server-side Puppeteer Chromium PDF rendering
+      try {
+        const res = await fetch('/api/pdf-designs/render-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quoteData: currentQuoteDataModel,
+            designId,
+            partnerBrands: partnerBrandsList,
+            isB2B: false,
+          }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          return;
+        }
+      } catch (srvErr) {
+        console.warn('Server PDF generation failed, falling back to client export:', srvErr);
+      }
+
+      // Fallback to client-side export
+      if (printRef.current) {
+        await exportElementToPdf(printRef.current, {
+          filename,
+          margin: 0,
+          width: 794,
+          scale: 2
+        });
+      }
     } catch (err) {
       console.error('PDF Generation Error:', err);
       alert('Failed to generate PDF. Browser restrictions may apply.');
@@ -684,6 +723,38 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           ? 'diwali'
           : (selectedDesign?.id || 'royal');
 
+      const filename = `Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
+
+      // Try server-side Puppeteer Chromium PDF rendering
+      try {
+        const res = await fetch('/api/pdf-designs/render-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quoteData: currentQuoteDataModel,
+            designId,
+            partnerBrands: partnerBrandsList,
+            isB2B: true,
+          }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          return;
+        }
+      } catch (srvErr) {
+        console.warn('Server B2B PDF generation failed, falling back to client export:', srvErr);
+      }
+
+      // Fallback to client-side export
       const b2bHtml = renderCompleteProposalHtml(
         currentQuoteDataModel,
         designId,
@@ -707,7 +778,6 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
       await new Promise(resolve => setTimeout(resolve, 250));
 
-      const filename = `Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
       await exportElementToPdf(tempContainer, {
         filename,
         margin: 0,

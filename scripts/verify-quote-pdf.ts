@@ -515,7 +515,8 @@ async function runVerification() {
                 // Find list container (sibling div with display:flex;flex-direction:column)
                 const listDiv = container.querySelector('div[style*="flex-direction:column"]') || container;
                 const rows = Array.from(listDiv.querySelectorAll('div[style*="display:flex"]')).filter(r => {
-                  return r.parentElement === listDiv && r !== d && !r.innerText.includes('Included');
+                  const rEl = r as HTMLElement;
+                  return rEl.parentElement === listDiv && rEl !== d && !rEl.innerText?.includes('Included');
                 });
                 totalInc += rows.length;
               }
@@ -525,7 +526,8 @@ async function runVerification() {
               if (container) {
                 const listDiv = container.querySelector('div[style*="flex-direction:column"]') || container;
                 const rows = Array.from(listDiv.querySelectorAll('div[style*="display:flex"]')).filter(r => {
-                  return r.parentElement === listDiv && r !== d && !r.innerText.includes('Excluded') && !r.innerText.includes('Not included');
+                  const rEl = r as HTMLElement;
+                  return rEl.parentElement === listDiv && rEl !== d && !rEl.innerText?.includes('Excluded') && !rEl.innerText?.includes('Not included');
                 });
                 totalExc += rows.length;
               }
