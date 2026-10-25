@@ -2362,9 +2362,14 @@ export function renderContinuousItineraryTable(
     const dayNum = idx + 1;
     const dayImg = day.img && day.img.trim();
     const hasImage = Boolean(dayImg);
+    const isFirst = idx === 0;
+    const isLast = idx === days.length - 1;
 
     return `
       <div class="day-card-wrapper" style="position: relative; margin-bottom: 22px;">
+        <!-- Timeline vertical stem segment connecting circles -->
+        ${!isLast ? `<div class="timeline-card-stem" style="position: absolute; left: -35px; top: 20px; bottom: -22px; width: 2px; background: ${th.accent}; z-index: 1;"></div>` : ''}
+
         <!-- Number Circle on Left -->
         <div class="day-number-circle" style="position: absolute; left: -54px; top: 0; width: 40px; height: 40px; border-radius: 50%; background: ${th.circleBg}; color: ${th.circleText}; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.12); z-index: 2;">
           ${dayNum}
@@ -2399,22 +2404,24 @@ export function renderContinuousItineraryTable(
   }).join('');
 
   return `
-    <table class="itinerary-table" data-design="${themeKey}" style="width: 794px; margin: 0 auto; border-collapse: collapse; page-break-before: always; break-before: page; page-break-after: always; break-after: page; background: ${th.bg};">
+    <table class="itinerary-table" data-design="${themeKey}" style="width: 794px; margin: 0 auto; border-collapse: separate; border-spacing: 0; page-break-before: always; break-before: page; page-break-after: always; break-after: page; background: ${th.bg};">
       <thead class="itin-thead" style="display: table-header-group;">
         <tr>
-          <th style="padding: 24px 46px 12px; border-bottom: 2px solid ${th.accent}; text-align: left; font-weight: normal; background: ${th.bg};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                ${(!Q.isB2B && effectiveLogo) ? `
-                  <div style="background: #ffffff; padding: 4px 10px; border-radius: 8px; border: 1px solid ${th.line}; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; align-items: center;">
-                    <img src="${effectiveLogo}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height: 32px; max-width: 120px; width: auto; height: auto; object-fit: contain; display: block;" />
-                  </div>` : ''}
-                <div style="font-family: ${th.head}; font-size: 18px; font-weight: 700; color: ${th.ink};">
-                  ${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}
+          <th style="padding: 0; border: none; text-align: left; font-weight: normal; background: ${th.bg};">
+            <div style="position: relative; z-index: 50; background: ${th.bg}; padding: 24px 46px 12px; border-bottom: 2px solid ${th.accent};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  ${(!Q.isB2B && effectiveLogo) ? `
+                    <div style="background: #ffffff; padding: 4px 10px; border-radius: 8px; border: 1px solid ${th.line}; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; align-items: center;">
+                      <img src="${effectiveLogo}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height: 32px; max-width: 120px; width: auto; height: auto; object-fit: contain; display: block;" />
+                    </div>` : ''}
+                  <div style="font-family: ${th.head}; font-size: 18px; font-weight: 700; color: ${th.ink};">
+                    ${Q.isB2B ? 'Travel Quotation' : e(Q.companyName || BRAND)}
+                  </div>
                 </div>
-              </div>
-              <div style="font-size: 12px; color: ${th.muted}; font-weight: 600; font-family: ${th.body};">
-                ${e(Q.packageName)} · Ref. No. ${e(Q.ref)}
+                <div style="font-size: 12px; color: ${th.muted}; font-weight: 600; font-family: ${th.body};">
+                  ${e(Q.packageName)} · Ref. No. ${e(Q.ref)}
+                </div>
               </div>
             </div>
           </th>
@@ -2423,10 +2430,12 @@ export function renderContinuousItineraryTable(
 
       <tfoot class="itin-tfoot" style="display: table-footer-group;">
         <tr>
-          <td style="padding: 20px 46px 24px; border-top: 1px solid ${th.line}; font-size: 11px; color: ${th.muted}; font-family: ${th.body}; font-weight: 600; background: ${th.bg};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>*Indicative Itinerary · Subject to operational feasibility &amp; local conditions</div>
-              <div style="color: ${th.accent}; font-weight: 700;">${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
+          <td style="padding: 0; border: none; font-size: 11px; color: ${th.muted}; font-family: ${th.body}; font-weight: 600; background: ${th.bg};">
+            <div style="position: relative; z-index: 50; background: ${th.bg}; padding: 20px 46px 24px; border-top: 1px solid ${th.line};">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>*Indicative Itinerary · Subject to operational feasibility &amp; local conditions</div>
+                <div style="color: ${th.accent}; font-weight: 700;">${Q.isB2B ? 'Verified Tour Itinerary' : 'Kingsland Verified Itinerary'}</div>
+              </div>
             </div>
           </td>
         </tr>
@@ -2455,9 +2464,6 @@ export function renderContinuousItineraryTable(
 
             <!-- Continuous Timeline Stream & All Day Cards -->
             <div class="timeline-container" style="position: relative; padding-left: 54px;">
-              <!-- Continuous vertical timeline line -->
-              <div class="timeline-stem" style="position: absolute; left: 19px; top: 14px; bottom: 30px; width: 2px; background: ${th.accent};"></div>
-
               ${daysHtml}
             </div>
 

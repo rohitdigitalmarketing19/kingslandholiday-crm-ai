@@ -12,7 +12,7 @@ const CHROME_PATH = fs.existsSync('C:\\Program Files\\Google\\Chrome\\Applicatio
   ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   : 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 
-const ARTIFACT_DIR = 'C:\\Users\\Rahul\\.gemini\\antigravity-ide\\brain\\3be38f18-563a-4733-aea0-781f0569c0a0';
+const ARTIFACT_DIR = 'C:\\Users\\Rahul\\.gemini\\antigravity-ide\\brain\\9ee385c8-3910-41b1-a5c5-9d2be2c59c9e';
 
 function buildDoc(bodyHtml: string): string {
   return `
@@ -45,7 +45,8 @@ function buildDoc(bodyHtml: string): string {
           table.itinerary-table {
             width: 794px;
             margin: 0 auto;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
           }
           thead.itin-thead {
             display: table-header-group;

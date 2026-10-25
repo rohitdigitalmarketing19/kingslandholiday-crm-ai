@@ -228,6 +228,21 @@ router.post('/render-pdf', async (req: Request, res: Response) => {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
+            table.itinerary-table {
+              width: 794px;
+              margin: 0 auto;
+              border-collapse: separate;
+              border-spacing: 0;
+            }
+            thead.itin-thead {
+              display: table-header-group;
+            }
+            tfoot.itin-tfoot {
+              display: table-footer-group;
+            }
+            tbody.itin-tbody {
+              display: table-row-group;
+            }
           </style>
         </head>
         <body>
