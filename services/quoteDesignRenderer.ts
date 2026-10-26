@@ -2437,13 +2437,15 @@ export function renderCompleteProposalHtml(
 
   const pages: string[] = [];
 
-  // 1. Page 1: Cover Sheet (clean summary overview, fitsOnCover = false)
-  if (key === 'royal') pages.push(royalCoverSheet(Q, false));
-  else if (key === 'alpine') pages.push(alpineCoverSheet(Q, false));
-  else if (key === 'sunset') pages.push(sunsetCoverSheet(Q, false));
-  else if (key === 'editorial') pages.push(editorialCoverSheet(Q, false));
-  else if (key === 'playful') pages.push(playfulCoverSheet(Q, false));
-  else if (key === 'diwali') pages.push(diwaliCoverSheet(Q, false));
+  const { fitsOnCover } = estimateBlockHeight(Q, key);
+
+  // 1. Page 1: Cover Sheet (renders inclusions & exclusions if there is enough space on cover)
+  if (key === 'royal') pages.push(royalCoverSheet(Q, fitsOnCover));
+  else if (key === 'alpine') pages.push(alpineCoverSheet(Q, fitsOnCover));
+  else if (key === 'sunset') pages.push(sunsetCoverSheet(Q, fitsOnCover));
+  else if (key === 'editorial') pages.push(editorialCoverSheet(Q, fitsOnCover));
+  else if (key === 'playful') pages.push(playfulCoverSheet(Q, fitsOnCover));
+  else if (key === 'diwali') pages.push(diwaliCoverSheet(Q, fitsOnCover));
 
   // 2. Pages 2 through N-1: Continuous Flow (Inclusions/Exclusions -> Day-wise Itinerary -> All Day Cards)
   const totalDays = (Q.days && Q.days.length > 0) ? Q.days : [
@@ -2452,7 +2454,8 @@ export function renderCompleteProposalHtml(
     { title: 'Departure with Cherished Memories', text: 'Breakfast at hotel and seamless transfer to airport / railway station.' }
   ];
 
-  pages.push(renderContinuousItineraryTable(Q, totalDays, key));
+  // If inclusions fit on Page 1 cover, do not duplicate them on Page 2
+  pages.push(renderContinuousItineraryTable(Q, totalDays, key, !fitsOnCover));
 
   // 3. Final Page: Terms & Cancellation Policy (forced break-before, 100% height flex container)
   pages.push(renderTermsSheet(Q, key, customPartners));
@@ -2465,7 +2468,7 @@ export function renderCompleteProposalHtml(
  * Uses table.itinerary-table with thead (display: table-header-group) and tfoot (display: table-footer-group)
  * to natively repeat brand headers (with real logo) and footers (with >= 20px clearance) on every page.
  * Content inside tbody flows continuously without manual height guessing:
- * 1. Package Inclusions & Exclusions 2-column card at top
+ * 1. Package Inclusions & Exclusions 2-column card at top (if not already placed on Cover Sheet)
  * 2. "Day-wise Itinerary" heading ONCE with break-after: avoid
  * 3. Continuous vertical timeline with day number circle, continuous vertical line,
  *    day cards with image (210px rounded box with blur background), title, and text (orphans: 3; widows: 3).
@@ -2473,7 +2476,8 @@ export function renderCompleteProposalHtml(
 export function renderContinuousItineraryTable(
   Q: QuoteDataModel,
   days: Array<{ title: string; text: string; img?: string; location?: string }>,
-  themeKey = 'royal'
+  themeKey = 'royal',
+  showInclusions = true
 ): string {
   const th = TH[themeKey] || TH.royal;
   const effectiveLogo = (!Q.isB2B && (Q.logoUrl || DEFAULT_KINGSLAND_LOGO)) ? (Q.logoUrl || DEFAULT_KINGSLAND_LOGO) : '';
@@ -2566,17 +2570,18 @@ export function renderContinuousItineraryTable(
         <tr>
           <td class="itin-content-cell" style="padding: 20px 46px; background: ${th.bg}; color: ${th.ink}; vertical-align: top;">
             
-            <!-- Inclusions & Exclusions Section at top of Page 2 -->
+            <!-- Inclusions & Exclusions Section at top of continuous flow (if not already on Cover Sheet) -->
+            ${showInclusions ? `
             <div style="margin-bottom: 24px; break-inside: avoid; page-break-inside: avoid;">
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
                 <div style="font-family: ${th.head}; font-size: 20px; font-weight: 700; color: ${th.ink};">Package Inclusions &amp; Exclusions</div>
                 <div style="flex: 1; height: 1px; background: ${th.line};"></div>
               </div>
               ${renderIncExcGrid(Q.included, Q.excluded, Q.note, th)}
-            </div>
+            </div>` : ''}
 
             <!-- "Day-wise Itinerary" Heading (ONCE, same name for all themes, right above Day 1) -->
-            <div style="break-inside: avoid; break-after: avoid; page-break-after: avoid; margin-bottom: 22px; margin-top: 10px;">
+            <div style="break-inside: avoid; break-after: avoid; page-break-after: avoid; margin-bottom: 22px; margin-top: ${showInclusions ? '10px' : '0px'};">
               <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="font-family: ${th.head}; font-size: 24px; font-weight: 800; color: ${th.ink}; letter-spacing: -0.3px;">Day-wise Itinerary</div>
                 <div style="flex: 1; height: 1.5px; background: ${th.accent}; opacity: 0.8;"></div>
