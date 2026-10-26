@@ -503,14 +503,14 @@
         color: #f4f5f0 !important;
       }
 
-      /* Table headers and rows in dark mode */
-      html.dark th {
+      /* Table headers and rows in dark mode (exclude printed/proposal sheets) */
+      html.dark th:not(.sheet th):not(.printable-voucher-container th):not(.live-proposal-sheets-container th) {
         color: #d4d4d8 !important;
       }
-      html.dark td {
+      html.dark td:not(.sheet td):not(.printable-voucher-container td):not(.live-proposal-sheets-container td) {
         color: #f4f5f0 !important;
       }
-      html.dark thead {
+      html.dark thead:not(.sheet thead):not(.printable-voucher-container thead):not(.live-proposal-sheets-container thead) {
         border-color: #282a22 !important;
       }
 

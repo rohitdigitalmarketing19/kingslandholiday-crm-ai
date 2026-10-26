@@ -105,7 +105,7 @@ export const DEFAULT_TERMS = {
   agent: [
     'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
     'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
-    'All legal and statutory obligations subject to Jaipur, Rajasthan jurisdiction only.',
+    'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.',
   ],
 };
 
@@ -124,7 +124,10 @@ const IC: Record<string, string> = {
   x: '<path d="M18 6 6 18M6 6l12 12"/>',
   phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
   mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/>',
-  shield: '<path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>'
+  shield: '<path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/>',
+  info: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  checkCircle: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'
 };
 
 const ico = (n: string, s = 16, w = 2) =>
@@ -678,15 +681,6 @@ export function renderTransitSection(Q: QuoteDataModel, themeKey = 'royal'): str
 
 export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartners?: PartnerBrand[]): string {
   const th = TH[thKey] || TH.royal;
-  const base = `font-family:${th.head};font-size:13.5px;font-weight:700;margin-bottom:6px;`;
-  let sec = base + `color:${th.ink};text-transform:uppercase;letter-spacing:0.8px;border-bottom:2px solid ${th.accent};padding-bottom:3px;`;
-  if (th.sec === 'pill') sec = base + `display:inline-block;background:${th.accent};color:${th.onAccent};padding:3px 12px;border-radius:999px;font-size:12px;`;
-  if (th.sec === 'bar') sec = base + `color:${th.ink};border-left:3px solid ${th.accent};padding-left:8px;`;
-
-  const bl = (arr: string[]) => arr.map((t) => `<div style="display:flex;gap:6px"><span style="color:${th.accent};flex:none">●</span><span>${e(t)}</span></div>`).join('');
-  // Scaled up font-size to 11.2px, line-height 1.42, gap 5px
-  const col = (arr: string[]) => `<div style="display:flex;flex-direction:column;gap:5px;font-size:11.2px;line-height:1.42;color:${th.muted}">${bl(arr)}</div>`;
-  const fees = DEFAULT_TERMS.fees.map((f) => `<div style="display:flex;justify-content:space-between;gap:6px;font-size:11.5px;padding:3.5px 0;border-bottom:1px solid ${th.line}"><span>${e(f[0])}</span><b>${e(f[1])}</b></div>`).join('');
 
   // Support custom manually added partners or fallback to curated partner network
   const hotelsToRender = (customPartners && customPartners.filter(p => p.category === 'hotel').length > 0)
@@ -711,97 +705,224 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   };
   const isB2BMode = Q.isB2B || (!adv.name && !adv.phones && !adv.email);
 
-  return `
-    <div class="sheet sheet-terms" data-design="${thKey}" style="width:794px;height:1123px;padding:32px 46px 26px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;">
-      
-      <!-- Top Header -->
-      <div style="flex:none">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="display:flex;align-items:center;gap:12px">
-            ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
-            <div style="font-family:${th.head};font-size:19px;font-weight:700">${isB2BMode ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
-          </div>
-          <div style="font-size:11.5px;color:${th.muted};font-weight:600">${e(Q.packageName)} · Ref. No. ${e(Q.ref)}</div>
+  // Scaled-up bullet typography (12.8px, crisp bold high-contrast text, 1.5 line-height)
+  const bulletItems = (arr: string[]) => arr.map(t => `
+    <div style="display:flex;align-items:flex-start;gap:8px;font-size:12.8px;line-height:1.5;color:${th.ink} !important">
+      <span style="color:${th.accent};font-size:13px;line-height:1.35;flex:none;margin-top:1px">●</span>
+      <span style="flex:1;color:${th.ink} !important;font-weight:600">${e(t)}</span>
+    </div>
+  `).join('');
+
+  // Cancellation fees schedule with resilient div styling (immune to global dark mode table overrides)
+  const feeRows = DEFAULT_TERMS.fees.map((f, idx) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 6px;border-bottom:1px solid ${th.line};background:${idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)'}">
+      <span style="font-size:12.5px;font-weight:700;color:${th.ink} !important">${e(f[0])}</span>
+      <span style="display:inline-block;background:${th.bg};border:1.5px solid ${th.line};color:${th.ink} !important;font-weight:800;font-size:12px;padding:1.5px 7px;border-radius:6px;letter-spacing:0.3px">${e(f[1])}</span>
+    </div>
+  `).join('');
+
+  const cancellationScheduleHtml = `
+    <div style="display:flex;flex-direction:column;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 6px;border-bottom:1.5px solid ${th.line};font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${th.ink} !important">
+        <span>Notice Prior to Tour</span>
+        <span>Deduction</span>
+      </div>
+      ${feeRows}
+    </div>
+  `;
+
+  const cardHeader = (iconName: string, title: string, tag?: string) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid ${th.line};padding-bottom:6px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:22px;height:22px;border-radius:6px;background:${th.accent}1f;color:${th.accent};display:flex;align-items:center;justify-content:center;flex:none">
+          ${ico(iconName, 13, 2.2)}
         </div>
-        <div style="font-family:${th.head};font-size:24px;font-weight:800;margin:6px 0 0;line-height:1.15;color:${th.ink}">Terms &amp; Cancellation Policy</div>
+        <div style="font-family:${th.head};font-size:13px;font-weight:800;letter-spacing:0.5px;color:${th.ink};text-transform:uppercase">${e(title)}</div>
+      </div>
+      ${tag ? `<span style="font-size:9.5px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:${th.muted};background:${th.bg};border:1px solid ${th.line};padding:1.5px 5px;border-radius:4px">${e(tag)}</span>` : ''}
+    </div>
+  `;
+
+  // Check if custom terms were supplied
+  const hasCustomTerms = Boolean(Q.termsText && Q.termsText.trim().length >= 20);
+  const customSections = hasCustomTerms ? parseTermsSections(Q.termsText) : [];
+
+  let mainGridContent = '';
+
+  if (hasCustomTerms && customSections.length > 0) {
+    // Dynamic sections rendering in 2 balanced columns
+    const mid = Math.ceil(customSections.length / 2);
+    const col1 = customSections.slice(0, mid);
+    const col2 = customSections.slice(mid);
+
+    const renderCustomCol = (secs: typeof customSections) => secs.map(s => {
+      const isFees = s.isFees || s.title.toLowerCase().includes('cancellation');
+      return `
+        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;flex:1">
+          ${cardHeader(isFees ? 'shield' : 'fileText', s.title, isFees ? 'Policy' : 'Terms')}
+          ${isFees ? cancellationScheduleHtml : ''}
+          ${(s.bullets && s.bullets.length > 0) ? `
+            <div style="display:flex;flex-direction:column;gap:5px">
+              ${bulletItems(s.bullets)}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+
+    mainGridContent = `
+      <div style="display:flex;flex-direction:column;gap:10px">${renderCustomCol(col1)}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">${renderCustomCol(col2)}</div>
+    `;
+  } else {
+    // Standard structured 4-card layout
+    mainGridContent = `
+      <!-- COLUMN 1: Cancellation & Important Information -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        
+        <!-- Card 1: Cancellation Policy -->
+        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;flex:1">
+          ${cardHeader('shield', 'Cancellation Policy', 'Land Package')}
+          
+          ${cancellationScheduleHtml}
+
+          <div style="background:${th.bg};border:1px dashed ${th.line};border-radius:8px;padding:6px 9px;margin-top:auto">
+            <div style="display:flex;flex-direction:column;gap:4px">
+              ${DEFAULT_TERMS.feeNotes.map(n => `
+                <div style="font-size:11.8px;line-height:1.42;color:${th.ink} !important;display:flex;align-items:flex-start;gap:6px">
+                  <span style="color:${th.accent};flex:none;font-weight:900;font-size:12px">●</span>
+                  <span style="color:${th.ink} !important;font-weight:600">${e(n)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Important Travel Information -->
+        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03)">
+          ${cardHeader('info', 'Important Information', 'Essential')}
+          <div style="display:flex;flex-direction:column;gap:5.5px">
+            ${bulletItems(DEFAULT_TERMS.important)}
+          </div>
+        </div>
       </div>
 
-      <!-- Main Content Area: flex 1 with justify-content: space-between so sections stretch and fill the page with NO gap above advisor bar -->
-      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:space-between;padding:16px 0 20px;">
+      <!-- COLUMN 2: Hotels & Pure Agent Declaration -->
+      <div style="display:flex;flex-direction:column;gap:10px">
         
-        <!-- Grid 1: Cancellation & Hotels -->
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
-          <div>
-            <div style="${sec}">Cancellation policy · land package</div>
-            <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:6px 12px;margin-bottom:8px">${fees}</div>
-            <div>${col(DEFAULT_TERMS.feeNotes)}</div>
-          </div>
-          <div>
-            <div style="${sec}">Hotels &amp; accommodation</div>
-            ${col(DEFAULT_TERMS.hotels)}
+        <!-- Card 3: Hotels & Accommodation -->
+        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03)">
+          ${cardHeader('bed', 'Hotels & Accommodation', 'Stay Rules')}
+          <div style="display:flex;flex-direction:column;gap:5.5px">
+            ${bulletItems(DEFAULT_TERMS.hotels)}
           </div>
         </div>
 
-        <!-- Grid 2: Important Info & Pure Agent -->
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
-          <div>
-            <div style="${sec}">Important information</div>
-            ${col(DEFAULT_TERMS.important)}
-          </div>
-          <div>
-            <div style="${sec}">Pure agent declaration</div>
-            ${col(isB2BMode ? [
+        <!-- Card 4: Pure Agent Declaration -->
+        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;flex:1">
+          ${cardHeader('fileText', 'Pure Agent Declaration', 'Statutory')}
+          <div style="display:flex;flex-direction:column;gap:5.5px">
+            ${bulletItems(isB2BMode ? [
               'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
               'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
               'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.'
             ] : DEFAULT_TERMS.agent)}
           </div>
-        </div>
 
-        <!-- Partner Boxes: Hotel Working Partners & Working Partners -->
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:flex-start">
-          <!-- Hotel Working Partners -->
-          <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:10px 14px;display:flex;flex-direction:column;gap:8px">
-            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
-              <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
-              <span>Hotel Working Partners</span>
-            </div>
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
-              ${hotelBadges}
-            </div>
-          </div>
-
-          <!-- Working Partners -->
-          <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:10px 14px;display:flex;flex-direction:column;gap:8px">
-            <div style="font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
-              <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
-              <span>Working Partners</span>
-            </div>
-            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
-              ${travelBadges}
+          <div style="margin-top:auto;padding-top:8px">
+            <div style="background:${th.accent}12;border:1px solid ${th.accent}33;border-radius:8px;padding:6px 9px;display:flex;align-items:center;gap:8px">
+              <div style="color:${th.accent};flex:none">${ico('checkCircle', 14, 2)}</div>
+              <div style="font-size:11.5px;line-height:1.35;font-weight:700;color:${th.ink} !important">
+                Transparent pricing with zero hidden surcharges. All bookings guaranteed as per itinerary specifications.
+              </div>
             </div>
           </div>
         </div>
       </div>
+    `;
+  }
 
-      <!-- Advisor bar pinned at bottom -->
+  return `
+    <div class="sheet sheet-terms" data-design="${thKey}" style="width:794px;height:1123px;padding:26px 42px 22px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;">
+      
+      <!-- Top Brand Header -->
+      <div style="flex:none;border-bottom:1.5px solid ${th.line};padding-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:12px">
+            ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
+            <div>
+              <div style="font-family:${th.head};font-size:19px;font-weight:800;color:${th.ink};line-height:1.2">${isB2BMode ? 'Travel Quotation' : e(Q.companyName || BRAND)}</div>
+              <div style="font-size:10.5px;color:${th.muted};font-weight:600;letter-spacing:0.4px;margin-top:1px">PREMIUM TRAVEL MANAGEMENT</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="display:inline-block;background:#ffffff;border:1px solid ${th.line};padding:3px 10px;border-radius:6px;font-size:11.5px;font-weight:700;color:${th.ink}">
+              Ref: <span style="color:${th.accent}">${e(Q.ref)}</span>
+            </div>
+            <div style="font-size:11px;color:${th.muted};font-weight:600;margin-top:3px">${e(Q.packageName)}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px">
+          <div style="font-family:${th.head};font-size:22px;font-weight:800;color:${th.ink};letter-spacing:-0.2px">Terms &amp; Cancellation Policy</div>
+        </div>
+      </div>
+
+      <!-- Main Structured Grid (2 Columns, Balanced Heights, Crisp Font 12.8px) -->
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:10px 0 8px">
+        ${mainGridContent}
+      </div>
+
+      <!-- Partner Badges Section: Unified Two-Box Container -->
+      <div style="flex:none;margin-bottom:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+        <!-- Hotel Working Partners -->
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 11px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 4px rgba(0,0,0,0.02)">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+            <span>Hotel Working Partners</span>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+            ${hotelBadges}
+          </div>
+        </div>
+
+        <!-- Working Travel Partners -->
+        <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:7px 11px;display:flex;flex-direction:column;gap:5px;box-shadow:0 1px 4px rgba(0,0,0,0.02)">
+          <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;border-radius:50%;background:${th.accent};display:inline-block"></span>
+            <span>Working Partners</span>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+            ${travelBadges}
+          </div>
+        </div>
+      </div>
+
+      <!-- Advisor Bottom Bar -->
       ${isB2BMode ? `
-        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:center;align-items:center;gap:14px">
+        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:11px 18px;display:flex;justify-content:center;align-items:center;gap:14px">
           <div style="text-align:center">
             <div style="font-family:${th.head};font-size:14px;font-weight:700">Travel Quotation · ${e(Q.packageName)}</div>
-            <div style="font-size:10px;opacity:.75;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
+            <div style="font-size:10.5px;opacity:.8;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
           </div>
         </div>
       ` : `
-        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px">
-          <div>
-            <div style="font-size:10.5px;opacity:.85">Your trip advisor</div>
-            <div style="font-family:${th.head};font-size:16px;font-weight:700;margin-top:2px">${e(adv.name)}</div>
-            <div style="font-size:10.5px;opacity:.85">${e(adv.role)}</div>
+        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 4px 12px rgba(0,0,0,0.12)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:34px;height:34px;border-radius:50%;background:${th.accent}2a;border:1.5px solid ${th.accent};display:flex;align-items:center;justify-content:center;color:${th.footInk};font-size:14px;font-weight:800">
+              ${e(adv.name ? adv.name.charAt(0) : 'K')}
+            </div>
+            <div>
+              <div style="font-size:10px;opacity:.8;text-transform:uppercase;letter-spacing:0.6px;font-weight:700">Dedicated Trip Advisor</div>
+              <div style="font-family:${th.head};font-size:15px;font-weight:800;margin-top:1px;line-height:1.2">${e(adv.name)}</div>
+              <div style="font-size:10.5px;opacity:.85">${e(adv.role)}</div>
+            </div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600">
-            <div style="display:flex;align-items:center;gap:6px">${ico('phone', 13)} ${e(adv.phones)}</div>
-            <div style="display:flex;align-items:center;gap:6px">${ico('mail', 13)} ${e(adv.email)}</div>
+          <div style="display:flex;align-items:center;gap:18px">
+            <div style="display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:600">
+              <div style="display:flex;align-items:center;gap:6px">${ico('phone', 12)} <span>${e(adv.phones)}</span></div>
+              <div style="display:flex;align-items:center;gap:6px">${ico('mail', 12)} <span>${e(adv.email)}</span></div>
+            </div>
           </div>
         </div>
       `}

@@ -11,7 +11,7 @@ const CHROME_PATH = fs.existsSync('C:\\Program Files\\Google\\Chrome\\Applicatio
   ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
   : 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 
-const ARTIFACT_DIR = 'C:\\Users\\Rahul\\.gemini\\antigravity-ide\\brain\\e09334a9-8292-473d-a3c5-fb4d65aef402';
+const ARTIFACT_DIR = 'C:\\Users\\Rahul\\.gemini\\antigravity-ide\\brain\\7abe8271-87f7-4f62-9cba-a44dd34d8757';
 
 async function main() {
   const SQL = await initSqlJs();
