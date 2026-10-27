@@ -7,6 +7,7 @@ import { QuoteDataModel, HotelItemModel, renderCompleteProposalHtml, AVAILABLE_Q
 import { PartnerBrand, HOTEL_PARTNERS, TRAVEL_PARTNERS, renderPartnerBadgeHtml } from '../utils/partnerLogos';
 import { ClientDocumentsSection } from './ClientDocumentsSection';
 import { ClientDetailsSection } from './ClientDetailsSection';
+import ProposalPdfPreview, { ProposalPdfPreviewHandle } from './ProposalPdfPreview';
 
 interface LeadProposalViewProps {
   lead: Lead;
@@ -257,7 +258,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingB2B, setIsDownloadingB2B] = useState(false);
   const [noteText, setNoteText] = useState('');
-  const printRef = useRef<HTMLDivElement>(null);
+  const pdfPreviewRef = useRef<ProposalPdfPreviewHandle>(null);
   
   const quotes = lead?.quotes || [];
   const currentQuote = quotes[activeQuoteIndex];
@@ -652,57 +653,22 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   };
 
   const handleDownloadPDF = async () => {
-    if (!currentQuoteDataModel || !currentQuote || !lead) return;
+    if (!currentQuoteDataModel || !currentQuote || !lead || !pdfPreviewRef.current || isDownloading) return;
 
     setIsDownloading(true);
     try {
       const designTitle = selectedDesign?.title || 'Proposal';
       const filename = `Kingsland-${designTitle.replace(/\s+/g, '-')}-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
-      const designId = (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
-        (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
-        selectedDesign?.id === 'diwali' ||
-        selectedDesign?.id === 'theme-f4b4ac06'
-          ? 'diwali'
-          : (selectedDesign?.id || 'royal');
-
-      // Try server-side Puppeteer Chromium PDF rendering
-      try {
-        const res = await fetch('/api/pdf-designs/render-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            quoteData: currentQuoteDataModel,
-            designId,
-            partnerBrands: partnerBrandsList,
-            isB2B: false,
-          }),
-        });
-
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          return;
-        }
-      } catch (srvErr) {
-        console.warn('Server PDF generation failed, falling back to client export:', srvErr);
-      }
-
-      // Fallback to client-side export
-      if (printRef.current) {
-        await exportElementToPdf(printRef.current, {
-          filename,
-          margin: 0,
-          width: 794,
-          scale: 2
-        });
-      }
+      // Reuse the exact PDF currently displayed, including its page breaks.
+      const blob = await pdfPreviewRef.current.getPdf();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
       console.error('PDF Generation Error:', err);
       alert('Failed to generate PDF. Browser restrictions may apply.');
@@ -1946,25 +1912,19 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       </div>
 
                       <div className="flex justify-center p-4 sm:p-8 bg-slate-100 dark:bg-zinc-950/80 rounded-3xl border border-slate-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
-                        <div
-                          ref={printRef}
-                          className="live-proposal-sheets-container doc-preview-protected flex flex-col gap-10 shadow-2xl"
-                          style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}
-                          dangerouslySetInnerHTML={{
-                            __html: currentQuoteDataModel
-                              ? renderCompleteProposalHtml(
-                                  currentQuoteDataModel,
-                                  (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
-                                  (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
-                                  selectedDesign?.id === 'diwali' ||
-                                  selectedDesign?.id === 'theme-f4b4ac06'
-                                    ? 'diwali'
-                                    : (selectedDesign?.id || 'royal'),
-                                  partnerBrandsList
-                                )
-                              : ''
-                          }}
-                        />
+                        {currentQuoteDataModel && (
+                          <ProposalPdfPreview
+                            ref={pdfPreviewRef}
+                            quoteData={currentQuoteDataModel}
+                            designId={
+                              (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
+                              (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
+                              selectedDesign?.id === 'diwali' || selectedDesign?.id === 'theme-f4b4ac06'
+                                ? 'diwali' : (selectedDesign?.id || 'royal')
+                            }
+                            partnerBrands={partnerBrandsList}
+                          />
+                        )}
                       </div>
                     </div>
                    <div style={{ display: 'none' }}>

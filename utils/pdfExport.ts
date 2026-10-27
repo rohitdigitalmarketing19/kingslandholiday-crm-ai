@@ -3,6 +3,7 @@ import html2canvas from 'html2canvas';
 import { fitProposalTermsSheets } from '../services/quoteDesignRenderer';
 
 export interface PdfExportOptions {
+  download?: boolean; // false generates a Blob for preview without saving a file
   filename?: string;
   margin?: number; // margin in mm (default 0 for sheet designs, 8mm for generic continuous pages)
   width?: number;  // container width in px (default 794px = A4 at 96dpi)
@@ -75,7 +76,7 @@ export async function ensureAllQuoteFontsLoaded(): Promise<void> {
 export async function exportElementToPdf(
   element: HTMLElement,
   options: PdfExportOptions = {}
-): Promise<void> {
+): Promise<Blob> {
   const {
     filename = 'document.pdf',
     margin = 0,
@@ -443,7 +444,7 @@ export async function exportElementToPdf(
         min-height: 1123px;
         max-height: 1123px;
         background-color: #ffffff;
-        z-index: 999999;
+        z-index: -99999;
         pointer-events: none;
         box-sizing: border-box;
         overflow: hidden;
@@ -605,7 +606,11 @@ export async function exportElementToPdf(
     const finalName = filename.toLowerCase().endsWith('.pdf')
       ? filename
       : `${filename}.pdf`;
-    await pdf.save(finalName, { returnPromise: true });
+    const blob = pdf.output('blob');
+    if (options.download !== false) {
+      await pdf.save(finalName, { returnPromise: true });
+    }
+    return blob;
 
   } finally {
     h2cFix.remove();
