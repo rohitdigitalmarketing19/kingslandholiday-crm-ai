@@ -708,7 +708,7 @@ export function renderTransitSection(Q: QuoteDataModel, themeKey = 'royal'): str
     </div>`;
 }
 
-export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartners?: PartnerBrand[]): string {
+export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartners?: PartnerBrand[], continuous = false): string {
   const th = TH[thKey] || TH.royal;
 
   // Support custom manually added partners or fallback to curated partner network
@@ -753,7 +753,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   `).join('');
 
   const cardHeader = (iconName: string, title: string, tag?: string) => `
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid ${th.line};padding-bottom:8px;margin-bottom:10px">
+    <div class="terms-card-heading" style="display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid ${th.line};padding-bottom:8px;margin-bottom:10px;break-inside:avoid;break-after:avoid">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="width:24px;height:24px;border-radius:6px;background:${th.accent}1f;color:${th.accent};display:flex;align-items:center;justify-content:center;flex:none">
           ${ico(iconName, 14, 2.2)}
@@ -886,10 +886,11 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   }
 
   return `
-    <div class="sheet sheet-terms" data-design="${thKey}" style="width:794px;height:1120px;max-height:1120px;padding:24px 38px 20px;background:${th.bg};color:${th.ink};font-family:${th.body};display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;page-break-after:avoid;break-after:avoid;">
+    <div class="${continuous ? 'terms-flow' : 'sheet sheet-terms'}" data-design="${thKey}" style="${continuous ? 'width:100%;height:auto;padding:24px 0 0;display:block;box-sizing:border-box;position:relative;break-before:auto;page-break-before:auto;' : 'width:794px;height:1120px;max-height:1120px;padding:24px 38px 20px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;page-break-after:avoid;break-after:avoid;'}background:${th.bg};color:${th.ink};font-family:${th.body};">
       
       <!-- Top Brand Header -->
-      <div style="flex:none;border-bottom:1.5px solid ${th.line};padding-bottom:12px">
+      <div class="terms-title" style="flex:none;border-bottom:1.5px solid ${th.line};padding-bottom:12px;break-inside:avoid;break-after:avoid">
+        ${continuous ? '' : `
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="display:flex;align-items:center;gap:12px">
             ${(!isB2BMode && Q.logoUrl) ? `<div style="background:#ffffff;padding:4px 10px;border-radius:8px;border:1px solid ${th.line};box-shadow:0 2px 6px rgba(0,0,0,0.06);display:flex;align-items:center"><img src="${Q.logoUrl}" alt="${e(Q.companyName || BRAND)}" crossOrigin="anonymous" style="max-height:34px;max-width:130px;width:auto;height:auto;object-fit:contain;display:block" /></div>` : ''}
@@ -906,18 +907,19 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
           </div>
         </div>
 
-        <div style="margin-top:10px">
+        `}
+        <div style="margin-top:${continuous ? 0 : 10}px">
           <div style="font-family:${th.head};font-size:23px;font-weight:800;color:${th.ink};letter-spacing:-0.2px">Terms &amp; Cancellation Policy</div>
         </div>
       </div>
 
       <!-- Main Structured Grid (2 Columns, Balanced Heights, Crisp Font 12.5px) -->
-      <div class="terms-content-grid" style="flex:0 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:12px 0 10px">
+      <div class="terms-content-grid" style="flex:0 0 auto;display:${continuous ? 'flex;flex-direction:column' : 'grid;grid-template-columns:repeat(2,minmax(0,1fr))'};gap:14px;padding:12px 0 10px">
         ${mainGridContent}
       </div>
 
       <!-- Partner Badges Section: Unified Two-Box Container -->
-      <div style="flex:none;margin-bottom:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+      <div class="terms-partners" style="flex:none;margin-bottom:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;break-inside:avoid">
         <!-- Hotel Working Partners -->
         <div style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:8px 12px;display:flex;flex-direction:column;gap:6px;box-shadow:0 1px 4px rgba(0,0,0,0.02)">
           <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:${th.ink};display:flex;align-items:center;gap:6px">
@@ -943,14 +945,14 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
 
       <!-- Advisor Bottom Bar -->
       ${isB2BMode ? `
-        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:11px 18px;display:flex;justify-content:center;align-items:center;gap:14px">
+        <div class="terms-advisor" style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:11px 18px;display:flex;justify-content:center;align-items:center;gap:14px;break-inside:avoid">
           <div style="text-align:center">
             <div style="font-family:${th.head};font-size:14px;font-weight:700">Travel Quotation · ${e(Q.packageName)}</div>
             <div style="font-size:10.5px;opacity:.8;margin-top:2px">Ref. ${e(Q.ref)} · ${e(Q.duration)}</div>
           </div>
         </div>
       ` : `
-        <div style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 4px 12px rgba(0,0,0,0.12)">
+        <div class="terms-advisor" style="flex:none;background:${th.footBg};color:${th.footInk};border-radius:${th.radius};padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px;box-shadow:0 4px 12px rgba(0,0,0,0.12);break-inside:avoid">
           <div style="display:flex;align-items:center;gap:12px">
             <div style="width:34px;height:34px;border-radius:50%;background:${th.accent}2a;border:1.5px solid ${th.accent};display:flex;align-items:center;justify-content:center;color:${th.footInk};font-size:14px;font-weight:800">
               ${e(adv.name ? adv.name.charAt(0) : 'K')}
@@ -2540,10 +2542,9 @@ export function renderCompleteProposalHtml(
     { title: 'Departure with Cherished Memories', text: 'Breakfast at hotel and seamless transfer to airport / railway station.' }
   ];
 
-  pages.push(renderContinuousItineraryTable(Q, totalDays, key, tableInc, tableExc));
-
-  // 3. Final Page: Terms & Cancellation Policy (forced break-before, 100% height flex container)
-  pages.push(renderTermsSheet(Q, key, customPartners));
+  // Terms are part of the same flow, starting in the space after the last day.
+  const terms = renderTermsSheet(Q, key, customPartners, true);
+  pages.push(renderContinuousItineraryTable(Q, totalDays, key, tableInc, tableExc, terms));
 
   return pages.join('\n');
 }
@@ -2563,7 +2564,8 @@ export function renderContinuousItineraryTable(
   days: Array<{ title: string; text: string; img?: string; location?: string }>,
   themeKey = 'royal',
   tableInc?: string[] | false,
-  tableExc?: string[]
+  tableExc?: string[],
+  followingHtml = ''
 ): string {
   const th = TH[themeKey] || TH.royal;
   const effectiveLogo = (!Q.isB2B && (Q.logoUrl || DEFAULT_KINGSLAND_LOGO)) ? (Q.logoUrl || DEFAULT_KINGSLAND_LOGO) : '';
@@ -2686,6 +2688,8 @@ export function renderContinuousItineraryTable(
             <div class="timeline-container" style="position: relative; padding-left: 54px;">
               ${daysHtml}
             </div>
+
+            ${followingHtml}
 
           </td>
         </tr>

@@ -21,6 +21,9 @@ export async function renderProposalPdfPages(page: Page, fullHtml: string, conte
         html, body { background: transparent !important; }
         table.itinerary-table { break-before: auto !important; }
         .day-card-wrapper, .day-card { break-inside: auto !important; page-break-inside: auto !important; }
+        .terms-flow { break-before: auto !important; page-break-before: auto !important; }
+        .terms-title, .terms-card-heading { break-after: avoid; break-inside: avoid; }
+        .terms-flow tr, .terms-partners, .terms-advisor { break-inside: avoid; }
       ` });
     }
     const bytes = await page.pdf({

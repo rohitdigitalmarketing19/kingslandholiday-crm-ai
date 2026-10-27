@@ -13,6 +13,7 @@ const out = path.join(os.tmpdir(), 'kingsland-itinerary-preserved-images');
   const exporter = fs.readFileSync(path.join(root, 'utils/pdfExport.ts'), 'utf8')
     .replace('await pdf.save(finalName, { returnPromise: true });', 'window.__pdfBytes=Array.from(new Uint8Array(pdf.output("arraybuffer")));')
     .replace('if (pageCount > 0) {', '(window.__slices ||= []).push({start:currentStartY,end:currentStartY+sliceH}); if (pageCount > 0) {')
+    .replace('if (headerCanvas) ctx.drawImage(headerCanvas, 0, 0);', 'if (headerCanvas) {ctx.drawImage(headerCanvas, 0, 0);(window.__headers ||= []).push({height:headerH,bodyHeight:standardPageCanvasH,pageHeight:fullPageCanvasH,image:headerCanvas.toDataURL()});}')
     .replace('const containerRect = contClone.getBoundingClientRect();', `const containerRect = contClone.getBoundingClientRect();
       window.__photos=Array.from(contClone.querySelectorAll('.day-img-box')).map(el=>{const r=el.getBoundingClientRect();return {top:r.top-containerRect.top,bottom:r.bottom-containerRect.top,height:r.height,width:r.width,html:el.innerHTML}});
       window.__descriptions=Array.from(contClone.querySelectorAll('.day-text')).map(el=>{const r=el.getBoundingClientRect();return {top:r.top-containerRect.top,bottom:r.bottom-containerRect.top}});`);
@@ -40,8 +41,14 @@ const out = path.join(os.tmpdir(), 'kingsland-itinerary-preserved-images');
       await page.evaluate((quote, theme) => { document.querySelector('#proposal').innerHTML = window.renderQuote(quote, theme); }, quote, theme);
       const originals = await page.evaluate(() => Array.from(document.querySelectorAll('.day-img-box')).map(el => { const r=el.getBoundingClientRect(); return {height:r.height,width:r.width,html:el.innerHTML}; }));
       await page.evaluate(() => window.exportQuote(document.querySelector('#proposal'), { margin: 0, width: 794, scale: 1 }));
-      const result = await page.evaluate(() => ({ slices: window.__slices, bytes: window.__pdfBytes, photos:window.__photos, descriptions:window.__descriptions }));
+      const result = await page.evaluate(() => ({ slices: window.__slices, bytes: window.__pdfBytes, photos:window.__photos, descriptions:window.__descriptions, headers:window.__headers }));
       assert(result.slices.length >= 2, `${theme}: expected a multi-page itinerary`);
+      assert.equal(result.headers?.length,result.slices.length,`${theme}: header missing from an itinerary page`);
+      for(const header of result.headers) {
+        assert(header.height>0,`${theme}: empty header`);
+        assert.equal(header.image,result.headers[0].image,`${theme}: inconsistent header`);
+        assert.equal(header.height+header.bodyHeight,header.pageHeight,`${theme}: header space not reserved`);
+      }
       assert.equal(result.photos.length, originals.length, `${theme}: missing photo`);
       for (let i=0;i<result.photos.length;i++) {
         const photo=result.photos[i], original=originals[i];
@@ -55,7 +62,7 @@ const out = path.join(os.tmpdir(), 'kingsland-itinerary-preserved-images');
       const pdf = await PDFDocument.load(bytes);
       assert(pdf.getPageCount() >= 4 && pdf.getPageCount() <= 10, `${theme}: unexpected page count`);
       fs.writeFileSync(path.join(out, theme + '.pdf'), bytes);
-      console.log(`${theme}: PASS; ${result.photos.length} photos unchanged and uncut; long description continues across pages`);
+      console.log(`${theme}: PASS; header on all ${result.headers.length} itinerary pages; photos unchanged and uncut; descriptions flow`);
       await page.close();
     }
   } finally { await browser.close(); }

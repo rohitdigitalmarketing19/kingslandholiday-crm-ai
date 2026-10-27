@@ -35,7 +35,7 @@ const plugin = { name:'staged-source', setup(build) {
       // Export works on a clone; separately inspect the shared layout adjustment.
       const metric=await page.evaluate(()=>{
         if(window.fitTerms) window.fitTerms();
-        const sheet=document.querySelector('.sheet-terms');
+        const sheet=document.querySelector('.terms-flow') || document.querySelector('.sheet-terms');
         const grid=sheet.querySelector('.terms-content-grid') || sheet.children[1];
         const partner=grid.nextElementSibling;
         const rect=grid.getBoundingClientRect();
@@ -43,7 +43,7 @@ const plugin = { name:'staged-source', setup(build) {
         for(const el of grid.querySelectorAll('*')) bottom=Math.max(bottom,el.getBoundingClientRect().bottom);
         return {overlap:Math.max(0,bottom-partner.getBoundingClientRect().top),height:sheet.getBoundingClientRect().height};
       });
-      await (await page.$('.sheet-terms')).screenshot({path:path.join(out,theme+'-terms.png')});
+      await (await page.$('.terms-flow, .sheet-terms')).screenshot({path:path.join(out,theme+'-terms.png')});
       await page.addStyleTag({content:'@page{size:A4 portrait;margin:0}'+(staged ? '.sheet:not(.sheet-terms){height:1120px!important;min-height:1120px;max-height:1120px;break-after:page}table.itinerary-table{break-before:page}.sheet:last-child{break-after:auto}' : '')});
       const content=await page.evaluate(()=>document.querySelector('#proposal').innerHTML); const full=await page.content(); const serverBytes=await renderProposalPdfPages(page,full,content);
       fs.writeFileSync(path.join(out,theme+'-chromium.pdf'),serverBytes);

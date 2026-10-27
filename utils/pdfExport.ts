@@ -280,6 +280,21 @@ export async function exportElementToPdf(
       await new Promise(r => setTimeout(r, 100));
 
       try {
+        // Reserve the same brand header on every itinerary page. Capture it
+        // once and remove it from the flowing body so it cannot be duplicated,
+        // split, or overlap a photo/continued description.
+        const header = contClone.querySelector<HTMLElement>('thead.itin-thead');
+        const headerCanvas = header ? await html2canvas(header, {
+          scale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width,
+          windowWidth: width,
+          scrollX: 0, scrollY: 0,
+          allowTaint: false,
+        }) : null;
+        header?.remove();
         const canvas = await html2canvas(contContainer, {
           scale,
           useCORS: true,
@@ -291,13 +306,16 @@ export async function exportElementToPdf(
           allowTaint: false,
         });
 
-        const standardPageCanvasH = Math.floor((canvas.width * printH) / printW);
+        const fullPageCanvasH = Math.floor((canvas.width * printH) / printW);
+        const headerH = headerCanvas?.height || 0;
+        const standardPageCanvasH = fullPageCanvasH - headerH;
+        if (standardPageCanvasH <= 0) throw new Error('Itinerary header exceeds page height');
 
         // Collect breakable element rectangles, strictly excluding oversized elements (like table tbody or multi-day wrappers)
         const containerRect = contClone.getBoundingClientRect();
         const breakableEls = Array.from(
           contClone.querySelectorAll<HTMLElement>(
-            '.avoid-page-break, .day, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, section'
+            '.avoid-page-break, .day, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, .terms-title, .terms-card-heading, .terms-partners, .terms-advisor, .terms-flow tr, section'
           )
         );
         const elementBoxes = breakableEls.map(el => {
@@ -307,14 +325,19 @@ export async function exportElementToPdf(
           const wrapper = el.classList.contains('day-card-header') ? el.closest('.day-card-wrapper') : null;
           const top = wrapper ? wrapper.getBoundingClientRect().top : r.top;
           const topY = Math.max(0, Math.round((top - containerRect.top) * scale));
-          const bottomY = Math.round((r.bottom - containerRect.top) * scale);
+          const firstPolicyRow = el.classList.contains('terms-title') ? el.closest('.terms-flow')?.querySelector('table tbody tr') : null;
+          const next = el.classList.contains('terms-card-heading') ? el.nextElementSibling : null;
+          const firstCardItem = next?.tagName === 'TABLE' ? next.querySelector('tbody tr') : next?.firstElementChild;
+          const firstContent = firstPolicyRow || firstCardItem;
+          const bottom = firstContent ? Math.max(r.bottom, firstContent.getBoundingClientRect().bottom) : r.bottom;
+          const bottomY = Math.round((bottom - containerRect.top) * scale);
           return { topY, bottomY, height: bottomY - topY };
         }).filter(b => b.height > 0 && b.height < standardPageCanvasH * 0.75 && b.topY < canvas.height);
 
         // Descriptions can continue across pages, but never cut through a line
         // of text. Photos retain their original dimensions and stay with their
         // title/number in the header boxes above; a gap before them is allowed.
-        for (const text of Array.from(contClone.querySelectorAll<HTMLElement>('.day-text'))) {
+        for (const text of Array.from(contClone.querySelectorAll<HTMLElement>('.day-text, .terms-flow'))) {
           const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
           let node: Node | null;
           while ((node = walker.nextNode())) {
@@ -363,15 +386,16 @@ export async function exportElementToPdf(
 
           const pageCanvas = document.createElement('canvas');
           pageCanvas.width = canvas.width;
-          pageCanvas.height = standardPageCanvasH;
+          pageCanvas.height = fullPageCanvasH;
 
           const ctx = pageCanvas.getContext('2d')!;
           ctx.fillStyle = targetEndY >= canvas.height && pageBackground !== 'rgba(0, 0, 0, 0)' ? pageBackground : '#ffffff';
           ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          if (headerCanvas) ctx.drawImage(headerCanvas, 0, 0);
           ctx.drawImage(
             canvas,
             0, currentStartY, canvas.width, sliceH,
-            0, 0, canvas.width, sliceH
+            0, headerH, canvas.width, sliceH
           );
 
           const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
