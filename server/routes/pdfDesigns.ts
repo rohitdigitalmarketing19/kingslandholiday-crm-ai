@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import puppeteer from 'puppeteer-core';
+import { renderProposalPdfPages } from '../services/proposalPdfPagination';
 import { v4 as uuidv4 } from 'uuid';
 import { queryAll, queryOne, runQuery } from '../db/connection';
-import { renderCompleteProposalHtml } from '../../services/quoteDesignRenderer';
+import { renderCompleteProposalHtml, fitProposalTermsSheets } from '../../services/quoteDesignRenderer';
 import {
   getAllPdfDesigns,
   getActivePdfDesign,
@@ -243,6 +244,10 @@ router.post('/render-pdf', async (req: Request, res: Response) => {
             tbody.itin-tbody {
               display: table-row-group;
             }
+            /* 1123 CSS pixels exceed A4 by a fraction and spill onto blank pages. */
+            .sheet:not(.sheet-terms) { height: 1120px !important; min-height: 1120px; max-height: 1120px; break-after: page; }
+            table.itinerary-table { break-before: page; }
+            .sheet:last-child { break-after: auto; }
           </style>
         </head>
         <body>
@@ -297,11 +302,9 @@ router.post('/render-pdf', async (req: Request, res: Response) => {
       );
     });
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: 0, bottom: 0, left: 0, right: 0 },
-    });
+    await page.evaluate(fitProposalTermsSheets);
+
+    const pdfBuffer = await renderProposalPdfPages(page, fullHtml, htmlContent);
 
     res.setHeader('Content-Type', 'application/pdf');
     const clientName = (quoteData.client || 'Client').replace(/\s+/g, '-');

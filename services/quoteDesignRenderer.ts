@@ -74,6 +74,36 @@ export interface QuoteDataModel {
 
 export const BRAND = 'Kingsland Holidays';
 
+/** Apply after fonts/images settle, before either Chromium or canvas capture. */
+export function fitProposalTermsSheets(root: ParentNode = document): void {
+  root.querySelectorAll<HTMLElement>('.sheet-terms').forEach(sheet => {
+    if (sheet.dataset.pdfFitted) return;
+    sheet.style.height = 'auto';
+    sheet.style.minHeight = '1120px';
+    sheet.style.maxHeight = 'none';
+    sheet.style.justifyContent = 'flex-start';
+    const naturalHeight = Math.ceil(sheet.getBoundingClientRect().height);
+    if (naturalHeight > 1120) {
+      // Fit the complete layout, rather than shrinking the grid independently
+      // and letting partners/footer paint over its overflowing text.
+      const content = document.createElement('div');
+      content.style.cssText = 'display:flex;flex-direction:column;width:794px;box-sizing:border-box;';
+      content.style.padding = getComputedStyle(sheet).padding;
+      while (sheet.firstChild) content.appendChild(sheet.firstChild);
+      sheet.style.padding = '0';
+      sheet.appendChild(content);
+      const contentHeight = Math.ceil(content.getBoundingClientRect().height);
+      content.style.transformOrigin = 'top left';
+      content.style.transform = `scale(${1120 / contentHeight})`;
+      sheet.style.height = '1120px';
+      sheet.style.minHeight = '1120px';
+      sheet.style.maxHeight = '1120px';
+      sheet.style.overflow = 'hidden';
+    }
+    sheet.dataset.pdfFitted = 'true';
+  });
+}
+
 export const DEFAULT_TERMS = {
   fees: [
     ['More than 30 days before start', '25%'],
@@ -882,7 +912,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
       </div>
 
       <!-- Main Structured Grid (2 Columns, Balanced Heights, Crisp Font 12.5px) -->
-      <div style="flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:12px 0 10px">
+      <div class="terms-content-grid" style="flex:0 0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:12px 0 10px">
         ${mainGridContent}
       </div>
 

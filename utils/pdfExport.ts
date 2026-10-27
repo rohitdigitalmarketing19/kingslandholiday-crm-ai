@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { fitProposalTermsSheets } from '../services/quoteDesignRenderer';
 
 export interface PdfExportOptions {
   filename?: string;
@@ -179,6 +180,7 @@ export async function exportElementToPdf(
         })
       );
       if (document.fonts) await document.fonts.ready;
+      fitProposalTermsSheets(isolatedFrame);
       await new Promise(r => setTimeout(r, 60));
 
       // Overflow check
@@ -253,6 +255,7 @@ export async function exportElementToPdf(
       contClone.style.backgroundColor = '#ffffff';
       contClone.style.margin = '0';
       contClone.style.padding = '0';
+      const pageBackground = getComputedStyle(contentEl).backgroundColor;
 
       const bs = document.createElement('style');
       bs.textContent = breakStyleContent;
@@ -293,12 +296,16 @@ export async function exportElementToPdf(
         const containerRect = contClone.getBoundingClientRect();
         const breakableEls = Array.from(
           contClone.querySelectorAll<HTMLElement>(
-            '.avoid-page-break, .day, .day-card, .day-card-wrapper, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, section'
+            '.avoid-page-break, .day, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, section'
           )
         );
         const elementBoxes = breakableEls.map(el => {
           const r = el.getBoundingClientRect();
-          const topY = Math.max(0, Math.round((r.top - containerRect.top) * scale));
+          // Move the number circle with its image/title, while allowing the
+          // description below that header to continue onto the next page.
+          const wrapper = el.classList.contains('day-card-header') ? el.closest('.day-card-wrapper') : null;
+          const top = wrapper ? wrapper.getBoundingClientRect().top : r.top;
+          const topY = Math.max(0, Math.round((top - containerRect.top) * scale));
           const bottomY = Math.round((r.bottom - containerRect.top) * scale);
           return { topY, bottomY, height: bottomY - topY };
         }).filter(b => b.height > 0 && b.height < standardPageCanvasH * 0.75 && b.topY < canvas.height);
@@ -329,7 +336,7 @@ export async function exportElementToPdf(
             break;
           }
 
-          if (pageCount > 0 || !isPageAlreadyAllocated) {
+          if (pageCount > 0) {
             // Allocate new page for subsequent slices, or for first slice if not pre-allocated
             pdf.addPage();
           }
@@ -339,7 +346,7 @@ export async function exportElementToPdf(
           pageCanvas.height = standardPageCanvasH;
 
           const ctx = pageCanvas.getContext('2d')!;
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = targetEndY >= canvas.height && pageBackground !== 'rgba(0, 0, 0, 0)' ? pageBackground : '#ffffff';
           ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
           ctx.drawImage(
             canvas,
@@ -545,6 +552,7 @@ export async function exportElementToPdf(
           break;
         }
 
+        // Allocate only after a real slice exists; the first PDF page already exists.
         if (pageIndex > 0) pdf.addPage();
 
         const pageCanvas = document.createElement('canvas');
@@ -585,3 +593,4 @@ export async function exportElementToPdf(
     if (container && container.parentNode) container.parentNode.removeChild(container);
   }
 }
+
