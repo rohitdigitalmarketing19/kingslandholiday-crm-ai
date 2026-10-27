@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { fitProposalTermsSheets } from '../services/quoteDesignRenderer';
+import { fitProposalTermsSheets, fitItineraryPhotosToPages } from '../services/quoteDesignRenderer';
 
 export interface PdfExportOptions {
   filename?: string;
@@ -279,6 +279,7 @@ export async function exportElementToPdf(
       await new Promise(r => setTimeout(r, 100));
 
       try {
+        fitItineraryPhotosToPages(contClone, width * printH / printW);
         const canvas = await html2canvas(contContainer, {
           scale,
           useCORS: true,

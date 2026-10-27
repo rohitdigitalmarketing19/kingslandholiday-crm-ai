@@ -1,5 +1,6 @@
 import type { Page } from 'puppeteer-core';
 import { PDFDocument, rgb } from 'pdf-lib';
+import { fitItineraryPhotosToPages } from '../../services/quoteDesignRenderer';
 
 /** Preserve native continuous table pagination; fill only the last itinerary page. */
 export async function renderProposalPdfPages(page: Page, fullHtml: string, contentHtml: string): Promise<Uint8Array> {
@@ -22,6 +23,7 @@ export async function renderProposalPdfPages(page: Page, fullHtml: string, conte
         table.itinerary-table { break-before: auto !important; }
         .day-card-wrapper, .day-card { break-inside: auto !important; page-break-inside: auto !important; }
       ` });
+      await page.evaluate(fitItineraryPhotosToPages);
     }
     const bytes = await page.pdf({
       format: 'A4', printBackground: true, displayHeaderFooter: false,
