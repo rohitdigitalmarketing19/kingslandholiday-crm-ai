@@ -74,46 +74,6 @@ export interface QuoteDataModel {
 
 export const BRAND = 'Kingsland Holidays';
 
-/** Fit a day photo to the remaining space instead of moving a tall header wholesale. */
-export function fitItineraryPhotosToPages(root: HTMLElement | null = null, pageHeight = 0, originOffset = 0): number {
-  if (!root) {
-    root = document.querySelector<HTMLElement>('table.itinerary-table');
-    if (!root) return 0;
-    const headerHeight = root.querySelector('thead')?.getBoundingClientRect().height || 0;
-    const footerHeight = root.querySelector('tfoot')?.getBoundingClientRect().height || 0;
-    pageHeight = 794 * 297 / 210 - headerHeight - footerHeight;
-    originOffset = headerHeight;
-  }
-  const rootTop = root.getBoundingClientRect().top + originOffset;
-  let resized = 0;
-  let pageStart = 0;
-  for (const day of Array.from(root.querySelectorAll<HTMLElement>('.day-card-wrapper'))) {
-    const header = day.querySelector<HTMLElement>('.day-card-header');
-    const photo = day.querySelector<HTMLElement>('.day-img-box');
-    const text = day.querySelector<HTMLElement>('.day-text');
-    if (!header || !photo || !text) continue;
-    const top = day.getBoundingClientRect().top - rootTop;
-    if (top >= pageStart + pageHeight) pageStart += Math.floor((top - pageStart) / pageHeight) * pageHeight;
-    const available = pageStart + pageHeight - top;
-    const headerStyle = getComputedStyle(header);
-    const lineHeight = parseFloat(getComputedStyle(text).lineHeight) || 19.2;
-    const needed = header.getBoundingClientRect().bottom - day.getBoundingClientRect().top
-      + (parseFloat(headerStyle.marginBottom) || 0) + lineHeight * 2;
-    if (needed <= available) continue;
-    const fittedHeight = Math.floor(photo.getBoundingClientRect().height - (needed - available) - 8);
-    // Keep a useful photo, the full title, and two opening lines together.
-    // Tiny remainders may still move the header, but never waste a half page.
-    if (fittedHeight >= 72) {
-      photo.style.height = `${fittedHeight}px`;
-      photo.dataset.pdfFittedPhoto = 'true';
-      resized++;
-    } else {
-      pageStart = top;
-    }
-  }
-  return resized;
-}
-
 /** Apply after fonts/images settle, before either Chromium or canvas capture. */
 export function fitProposalTermsSheets(root: ParentNode = document): void {
   root.querySelectorAll<HTMLElement>('.sheet-terms').forEach(sheet => {

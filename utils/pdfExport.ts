@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { fitProposalTermsSheets, fitItineraryPhotosToPages } from '../services/quoteDesignRenderer';
+import { fitProposalTermsSheets } from '../services/quoteDesignRenderer';
 
 export interface PdfExportOptions {
   filename?: string;
@@ -279,7 +279,6 @@ export async function exportElementToPdf(
       await new Promise(r => setTimeout(r, 100));
 
       try {
-        fitItineraryPhotosToPages(contClone, width * printH / printW);
         const canvas = await html2canvas(contContainer, {
           scale,
           useCORS: true,
@@ -311,6 +310,25 @@ export async function exportElementToPdf(
           return { topY, bottomY, height: bottomY - topY };
         }).filter(b => b.height > 0 && b.height < standardPageCanvasH * 0.75 && b.topY < canvas.height);
 
+        // Descriptions can continue across pages, but never cut through a line
+        // of text. Photos retain their original dimensions and stay with their
+        // title/number in the header boxes above; a gap before them is allowed.
+        for (const text of Array.from(contClone.querySelectorAll<HTMLElement>('.day-text'))) {
+          const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
+          let node: Node | null;
+          while ((node = walker.nextNode())) {
+            if (!node.textContent?.trim()) continue;
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            for (const rect of Array.from(range.getClientRects())) {
+              if (rect.width <= 0 || rect.height <= 0) continue;
+              const topY = Math.max(0, Math.floor((rect.top - containerRect.top) * scale) - 1);
+              const bottomY = Math.ceil((rect.bottom - containerRect.top) * scale) + 1;
+              elementBoxes.push({ topY, bottomY, height: bottomY - topY });
+            }
+          }
+        }
+
         let currentStartY = 0;
         let pageCount = 0;
 
@@ -318,14 +336,14 @@ export async function exportElementToPdf(
           let targetEndY = currentStartY + standardPageCanvasH;
 
           if (targetEndY < canvas.height) {
-            const straddling = elementBoxes.find(b =>
-              b.topY < targetEndY &&
-              b.bottomY > targetEndY &&
-              b.topY > currentStartY &&
-              (targetEndY - b.topY) > 15
-            );
-            if (straddling) {
-              targetEndY = straddling.topY;
+            // Resolve overlapping protection boxes without ever shortening a
+            // photo or keeping a complete multi-page description together.
+            while (true) {
+              const straddling = elementBoxes.filter(b =>
+                b.topY < targetEndY && b.bottomY > targetEndY && b.topY > currentStartY
+              );
+              if (!straddling.length) break;
+              targetEndY = Math.min(...straddling.map(b => b.topY));
             }
           }
 
