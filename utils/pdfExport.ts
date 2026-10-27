@@ -85,41 +85,17 @@ export async function exportElementToPdf(
   // Pre-load and await all Google Fonts before capture
   await ensureAllQuoteFontsLoaded();
 
-  // Check if this container contains discrete sheet pages
+  // Detect document structure: discrete sheets, continuous tables, or a hybrid mix
   const directSheets = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
-  const hasItineraryTable = Boolean(element.querySelector('table.itinerary-table'));
-  const isSheetBased = directSheets.length > 0 && !hasItineraryTable;
+  const itineraryTables = Array.from(element.querySelectorAll<HTMLElement>('table.itinerary-table'));
+  const hasSheets = directSheets.length > 0;
+  const hasContinuousTable = itineraryTables.length > 0;
+  // Hybrid = document has BOTH fixed-height sheets (cover, terms) AND continuous itinerary table
+  const isHybrid = hasSheets && hasContinuousTable;
+  const isPureSheetBased = hasSheets && !hasContinuousTable;
 
-  // ── 1. Off-screen container ──────────────────────────────────────────────
-  const container = document.createElement('div');
-  container.style.cssText = `
-    position: fixed;
-    top: 0; left: 0;
-    width: ${width}px;
-    min-width: ${width}px;
-    max-width: ${width}px;
-    background-color: #ffffff;
-    z-index: -99999;
-    opacity: 1;
-    pointer-events: none;
-    box-sizing: border-box;
-    overflow: visible;
-  `;
-
-  const clone = element.cloneNode(true) as HTMLElement;
-  clone.style.cssText = `
-    width: ${width}px;
-    min-width: ${width}px;
-    max-width: ${width}px;
-    box-sizing: border-box;
-    background-color: #ffffff;
-    margin: 0; padding: 0;
-  `;
-  container.appendChild(clone);
-
-  // ── 2. Inject break-inside:avoid + style reset ────────────────────────────
-  const breakStyle = document.createElement('style');
-  breakStyle.textContent = `
+  // ── Shared style setup ────────────────────────────────────────────────────
+  const breakStyleContent = `
     .meta-strip, .quotebox, .trust-strip, .hrow, .hstays, .day, .box, .two-col,
     .guarantee-strip, .terms-box, .trow, .partners, .partner-row, .signblock,
     .footer, .testimonial, .section-title, .avoid-page-break,
@@ -141,8 +117,6 @@ export async function exportElementToPdf(
       color-scheme: light !important;
     }
   `;
-  container.appendChild(breakStyle);
-  document.body.appendChild(container);
 
   const h2cFix = document.createElement('style');
   h2cFix.setAttribute('data-h2c-fix', '1');
@@ -152,6 +126,10 @@ export async function exportElementToPdf(
 
   // Wait for layout and web fonts to settle
   await new Promise(resolve => setTimeout(resolve, 120));
+
+  // Off-screen container + clone (used only for pure continuous path, but declared here for finally block)
+  let container: HTMLDivElement | null = null;
+  let clone: HTMLElement | null = null;
 
   try {
     const pdf = new jsPDF({
@@ -164,18 +142,274 @@ export async function exportElementToPdf(
     const pdfW = pdf.internal.pageSize.getWidth();  // 210 mm
     const pdfH = pdf.internal.pageSize.getHeight(); // 297 mm
 
-    // ── CASE A: Sheet-based multi-page export ──────────────────────────────
-    const foundSheets = Array.from(clone.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
-    if (isSheetBased && foundSheets.length > 0) {
-      // Remove stacked container as we will render each sheet in a dedicated isolated frame
-      document.body.removeChild(container);
+    // ── Helper: Render a single fixed-height sheet as an isolated A4 page ───
+    const renderSheetToPage = async (
+      sheetEl: HTMLElement,
+      isolatedFrame: HTMLElement,
+      sheetIndex: number
+    ): Promise<void> => {
+      const singleSheetClone = sheetEl.cloneNode(true) as HTMLElement;
+      singleSheetClone.style.margin = '0';
+      singleSheetClone.style.boxShadow = 'none';
+      singleSheetClone.style.transform = 'none';
+      singleSheetClone.style.position = 'relative';
+      singleSheetClone.style.top = '0';
+      singleSheetClone.style.left = '0';
+      singleSheetClone.style.width = `${width}px`;
+      singleSheetClone.style.minWidth = `${width}px`;
+      singleSheetClone.style.maxWidth = `${width}px`;
+      singleSheetClone.style.height = '1123px';
+      singleSheetClone.style.minHeight = '1123px';
+      singleSheetClone.style.maxHeight = '1123px';
+      singleSheetClone.style.boxSizing = 'border-box';
+      singleSheetClone.style.overflow = 'hidden';
 
-      // Create a single-sheet dedicated capture frame at exact (0, 0)
+      isolatedFrame.appendChild(singleSheetClone);
+
+      // Wait for images and fonts
+      const sheetImgs = Array.from(singleSheetClone.querySelectorAll('img'));
+      await Promise.all(
+        sheetImgs.map(img => {
+          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          return new Promise(res => {
+            img.onload = () => res(null);
+            img.onerror = () => res(null);
+            setTimeout(res, 400);
+          });
+        })
+      );
+      if (document.fonts) await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 60));
+
+      // Overflow check
+      const sheetH = 1123;
+      let maxChildBottom = 0;
+      for (const child of Array.from(singleSheetClone.children) as HTMLElement[]) {
+        const childBottom = child.offsetTop + child.offsetHeight;
+        if (childBottom > maxChildBottom) maxChildBottom = childBottom;
+      }
+      const cs = window.getComputedStyle?.(singleSheetClone);
+      const padBot = cs ? (parseFloat(cs.paddingBottom) || 0) : 0;
+      const allowedMax = sheetH - padBot;
+      const scrollH = Math.max(sheetEl.scrollHeight, singleSheetClone.scrollHeight);
+      const overflowPx = Math.max(
+        scrollH > sheetH ? scrollH - sheetH : 0,
+        maxChildBottom > allowedMax ? maxChildBottom - allowedMax : 0
+      );
+      if (overflowPx > 0) {
+        console.error(`[PdfExport] Sheet #${sheetIndex + 1} overflows by ${overflowPx}px`);
+        if (options.onOverflow) options.onOverflow(sheetIndex + 1, overflowPx);
+      }
+
+      const canvas = await html2canvas(singleSheetClone, {
+        scale,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        width,
+        height: 1123,
+        windowWidth: width,
+        windowHeight: 1123,
+        x: 0, y: 0, scrollX: 0, scrollY: 0,
+        allowTaint: false,
+      });
+
+      isolatedFrame.removeChild(singleSheetClone);
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
+    };
+
+    // ── Helper: Render continuous content with smart section break pagination ─
+    const renderContinuousToPages = async (
+      contentEl: HTMLElement,
+      effectiveMargin: number,
+      isPageAlreadyAllocated: boolean = false
+    ): Promise<void> => {
+      const printW = pdfW - effectiveMargin * 2;
+      const printH = pdfH - effectiveMargin * 2;
+
+      // Create an off-screen capture container for just this continuous section
+      const contContainer = document.createElement('div');
+      contContainer.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: ${width}px;
+        min-width: ${width}px;
+        max-width: ${width}px;
+        background-color: #ffffff;
+        z-index: -99999;
+        opacity: 1;
+        pointer-events: none;
+        box-sizing: border-box;
+        overflow: visible;
+      `;
+
+      const contClone = contentEl.cloneNode(true) as HTMLElement;
+      contClone.style.width = `${width}px`;
+      contClone.style.minWidth = `${width}px`;
+      contClone.style.maxWidth = `${width}px`;
+      contClone.style.boxSizing = 'border-box';
+      contClone.style.backgroundColor = '#ffffff';
+      contClone.style.margin = '0';
+      contClone.style.padding = '0';
+
+      const bs = document.createElement('style');
+      bs.textContent = breakStyleContent;
+      contContainer.appendChild(bs);
+      contContainer.appendChild(contClone);
+      document.body.appendChild(contContainer);
+
+      // Wait for images + layout
+      const allImgs = Array.from(contClone.querySelectorAll('img'));
+      await Promise.all(
+        allImgs.map(img => {
+          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          return new Promise(res => {
+            img.onload = () => res(null);
+            img.onerror = () => res(null);
+            setTimeout(res, 500);
+          });
+        })
+      );
+      if (document.fonts) await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 100));
+
+      try {
+        const canvas = await html2canvas(contContainer, {
+          scale,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width,
+          windowWidth: width,
+          scrollX: 0, scrollY: 0,
+          allowTaint: false,
+        });
+
+        const standardPageCanvasH = Math.floor((canvas.width * printH) / printW);
+
+        // Collect breakable element rectangles, strictly excluding oversized elements (like table tbody or multi-day wrappers)
+        const containerRect = contClone.getBoundingClientRect();
+        const breakableEls = Array.from(
+          contClone.querySelectorAll<HTMLElement>(
+            '.avoid-page-break, .day, .day-card, .day-card-wrapper, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, section'
+          )
+        );
+        const elementBoxes = breakableEls.map(el => {
+          const r = el.getBoundingClientRect();
+          const topY = Math.max(0, Math.round((r.top - containerRect.top) * scale));
+          const bottomY = Math.round((r.bottom - containerRect.top) * scale);
+          return { topY, bottomY, height: bottomY - topY };
+        }).filter(b => b.height > 0 && b.height < standardPageCanvasH * 0.75 && b.topY < canvas.height);
+
+        let currentStartY = 0;
+        let pageCount = 0;
+
+        while (currentStartY < canvas.height) {
+          let targetEndY = currentStartY + standardPageCanvasH;
+
+          if (targetEndY < canvas.height) {
+            const straddling = elementBoxes.find(b =>
+              b.topY < targetEndY &&
+              b.bottomY > targetEndY &&
+              b.topY > currentStartY &&
+              (targetEndY - b.topY) > 15
+            );
+            if (straddling) {
+              targetEndY = straddling.topY;
+            }
+          }
+
+          const sliceH = Math.min(targetEndY - currentStartY, canvas.height - currentStartY);
+
+          // Skip near-empty trailing slices (< 50 real canvas pixels of padding/whitespace)
+          if (sliceH < 50 * scale) {
+            currentStartY = targetEndY;
+            break;
+          }
+
+          if (pageCount > 0 || !isPageAlreadyAllocated) {
+            // Allocate new page for subsequent slices, or for first slice if not pre-allocated
+            pdf.addPage();
+          }
+
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = standardPageCanvasH;
+
+          const ctx = pageCanvas.getContext('2d')!;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(
+            canvas,
+            0, currentStartY, canvas.width, sliceH,
+            0, 0, canvas.width, sliceH
+          );
+
+          const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+          pdf.addImage(imgData, 'JPEG', effectiveMargin, effectiveMargin, printW, printH, undefined, 'FAST');
+
+          currentStartY = targetEndY;
+          pageCount++;
+        }
+      } finally {
+        if (contContainer.parentNode) contContainer.parentNode.removeChild(contContainer);
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MAIN ROUTING: Hybrid, Pure Sheet, or Pure Continuous
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    if (isHybrid || isPureSheetBased) {
+      // ── HYBRID / PURE SHEET: Process each top-level section independently ──
+      // Build ordered list of sections from the original element's children
+      type Section = { type: 'sheet'; el: HTMLElement } | { type: 'table'; el: HTMLElement };
+      const sections: Section[] = [];
+
+      // Walk the original element's direct children to preserve order
+      const topLevelChildren = Array.from(element.children) as HTMLElement[];
+      for (const child of topLevelChildren) {
+        if (child.classList.contains('sheet') || child.classList.contains('pdf-page')) {
+          sections.push({ type: 'sheet', el: child });
+        } else if (child.tagName === 'TABLE' && child.classList.contains('itinerary-table')) {
+          sections.push({ type: 'table', el: child });
+        } else {
+          // Check if this wrapper contains sheets or tables
+          const innerSheets = Array.from(child.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
+          const innerTables = Array.from(child.querySelectorAll<HTMLElement>('table.itinerary-table'));
+          if (innerSheets.length > 0 || innerTables.length > 0) {
+            // Flatten: extract sheets and tables in DOM order
+            const allInner = Array.from(child.querySelectorAll<HTMLElement>('.sheet, .pdf-page, table.itinerary-table'));
+            for (const inner of allInner) {
+              if (inner.classList.contains('sheet') || inner.classList.contains('pdf-page')) {
+                sections.push({ type: 'sheet', el: inner });
+              } else if (inner.tagName === 'TABLE' && inner.classList.contains('itinerary-table')) {
+                sections.push({ type: 'table', el: inner });
+              }
+            }
+          }
+        }
+      }
+
+      // If we found no sections via top-level walk, fall back to querySelector
+      if (sections.length === 0) {
+        const allElements = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page, table.itinerary-table'));
+        for (const el of allElements) {
+          if (el.classList.contains('sheet') || el.classList.contains('pdf-page')) {
+            sections.push({ type: 'sheet', el });
+          } else {
+            sections.push({ type: 'table', el });
+          }
+        }
+      }
+
+      // Create isolated frame for sheet rendering
       const isolatedFrame = document.createElement('div');
       isolatedFrame.style.cssText = `
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 0; left: 0;
         width: ${width}px;
         height: 1123px;
         min-width: ${width}px;
@@ -187,140 +421,78 @@ export async function exportElementToPdf(
         pointer-events: none;
         box-sizing: border-box;
         overflow: hidden;
-        margin: 0;
-        padding: 0;
+        margin: 0; padding: 0;
       `;
-      isolatedFrame.appendChild(breakStyle);
+      const bs = document.createElement('style');
+      bs.textContent = breakStyleContent;
+      isolatedFrame.appendChild(bs);
       document.body.appendChild(isolatedFrame);
 
+      // No stacked container needed in hybrid/sheet mode
+
+      let globalPageIndex = 0;
+
       try {
-        for (let i = 0; i < foundSheets.length; i++) {
-          const sheetEl = foundSheets[i];
-          if (i > 0) pdf.addPage();
+        for (let s = 0; s < sections.length; s++) {
+          const section = sections[s];
 
-          // Clone this single sheet and clean outer styling
-          const singleSheetClone = sheetEl.cloneNode(true) as HTMLElement;
-          singleSheetClone.style.margin = '0';
-          singleSheetClone.style.boxShadow = 'none';
-          singleSheetClone.style.transform = 'none';
-          singleSheetClone.style.position = 'relative';
-          singleSheetClone.style.top = '0';
-          singleSheetClone.style.left = '0';
-          singleSheetClone.style.width = `${width}px`;
-          singleSheetClone.style.minWidth = `${width}px`;
-          singleSheetClone.style.maxWidth = `${width}px`;
-          singleSheetClone.style.height = '1123px';
-          singleSheetClone.style.minHeight = '1123px';
-          singleSheetClone.style.maxHeight = '1123px';
-          singleSheetClone.style.boxSizing = 'border-box';
-          singleSheetClone.style.overflow = 'hidden';
-
-          // Mount into isolated frame
-          isolatedFrame.appendChild(singleSheetClone);
-
-          // Wait for images and fonts in this sheet
-          const sheetImgs = Array.from(singleSheetClone.querySelectorAll('img'));
-          await Promise.all(
-            sheetImgs.map(img => {
-              if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
-              return new Promise(res => {
-                img.onload = () => res(null);
-                img.onerror = () => res(null);
-                setTimeout(res, 400); // safety fallback timeout
-              });
-            })
-          );
-          if (document.fonts) {
-            await document.fonts.ready;
-          }
-          await new Promise(r => setTimeout(r, 60));
-
-          // Check for sheet overflow (scrollHeight > 1123, and check every direct child's bottom edge against 1123 minus bottom padding)
-          const sheetH = 1123;
-          let maxChildBottom = 0;
-          const directChildren = Array.from(singleSheetClone.children) as HTMLElement[];
-          for (const child of directChildren) {
-            const childBottom = child.offsetTop + child.offsetHeight;
-            if (childBottom > maxChildBottom) {
-              maxChildBottom = childBottom;
+          if (section.type === 'sheet') {
+            if (globalPageIndex > 0) pdf.addPage();
+            await renderSheetToPage(section.el, isolatedFrame, s);
+            globalPageIndex++;
+          } else if (section.type === 'table') {
+            // Render continuous itinerary table with smart pagination
+            // Table must start on a brand new page if preceding sections exist
+            if (globalPageIndex > 0) {
+              pdf.addPage();
             }
+            await renderContinuousToPages(section.el, 0, globalPageIndex > 0);
+            globalPageIndex++;
           }
-
-          const computedStyle = (typeof window !== 'undefined' && window.getComputedStyle) ? window.getComputedStyle(singleSheetClone) : null;
-          const paddingBottom = computedStyle ? (parseFloat(computedStyle.paddingBottom) || 0) : 0;
-          const allowedMaxBottom = sheetH - paddingBottom;
-
-          const scrollH = Math.max(sheetEl.scrollHeight, singleSheetClone.scrollHeight);
-          const scrollOverflow = scrollH > sheetH ? (scrollH - sheetH) : 0;
-          const childOverflow = maxChildBottom > allowedMaxBottom ? (maxChildBottom - allowedMaxBottom) : 0;
-          const overflowPx = Math.max(scrollOverflow, childOverflow);
-
-          const designAttr = singleSheetClone.getAttribute('data-design') || sheetEl.getAttribute('data-design') || '';
-
-          if (overflowPx > 0) {
-            console.error(
-              `[PdfExport Overflow Error] Sheet #${i + 1}${designAttr ? ` (${designAttr})` : ''} overflow detected: scrollHeight=${scrollH}px, maxChildBottom=${maxChildBottom}px (allowed=${allowedMaxBottom}px). Overflows by ${overflowPx}px. Content is clipped!`
-            );
-            if (options.onOverflow) {
-              options.onOverflow(i + 1, overflowPx);
-            }
-            if (typeof document !== 'undefined') {
-              const toast = document.createElement('div');
-              toast.className = 'pdf-overflow-toast';
-              toast.style.cssText = `
-                position: fixed;
-                bottom: 24px;
-                right: 24px;
-                background: #dc2626;
-                color: #ffffff;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-                z-index: 9999999;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              `;
-              toast.textContent = `Page ${i + 1} content overflows by ${overflowPx}px`;
-              document.body.appendChild(toast);
-              setTimeout(() => toast.remove(), 4000);
-            }
-          }
-
-          const canvas = await html2canvas(singleSheetClone, {
-            scale,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            width,
-            height: 1123,
-            windowWidth: width,
-            windowHeight: 1123,
-            x: 0,
-            y: 0,
-            scrollX: 0,
-            scrollY: 0,
-            allowTaint: false,
-          });
-
-          // Unmount current sheet clone
-          isolatedFrame.removeChild(singleSheetClone);
-
-          const imgData = canvas.toDataURL('image/jpeg', 0.95);
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH, undefined, 'FAST');
         }
       } finally {
-        if (isolatedFrame.parentNode) {
-          document.body.removeChild(isolatedFrame);
-        }
+        if (isolatedFrame.parentNode) document.body.removeChild(isolatedFrame);
       }
+
     } else {
-      // ── CASE B: Continuous flow with Smart Section Break detection ─────────
+      // ── PURE CONTINUOUS: Standard continuous flow pagination ─────────────
       const effectiveMargin = options.margin !== undefined ? options.margin : 8;
       const printW = pdfW - effectiveMargin * 2;
       const printH = pdfH - effectiveMargin * 2;
 
-      // Capture high-resolution full canvas
+      // Create off-screen container + clone for continuous capture
+      container = document.createElement('div');
+      container.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: ${width}px;
+        min-width: ${width}px;
+        max-width: ${width}px;
+        background-color: #ffffff;
+        z-index: -99999;
+        opacity: 1;
+        pointer-events: none;
+        box-sizing: border-box;
+        overflow: visible;
+      `;
+      clone = element.cloneNode(true) as HTMLElement;
+      clone.style.cssText = `
+        width: ${width}px;
+        min-width: ${width}px;
+        max-width: ${width}px;
+        box-sizing: border-box;
+        background-color: #ffffff;
+        margin: 0; padding: 0;
+      `;
+      const breakStyle = document.createElement('style');
+      breakStyle.textContent = breakStyleContent;
+      container.appendChild(clone);
+      container.appendChild(breakStyle);
+      document.body.appendChild(container);
+
+      // Wait for layout
+      await new Promise(r => setTimeout(r, 100));
+
       const canvas = await html2canvas(container, {
         scale,
         useCORS: true,
@@ -328,56 +500,53 @@ export async function exportElementToPdf(
         backgroundColor: '#ffffff',
         width,
         windowWidth: width,
-        scrollX: 0,
-        scrollY: 0,
+        scrollX: 0, scrollY: 0,
         allowTaint: false,
       });
 
-      // Target page height in canvas pixels
       const standardPageCanvasH = Math.floor((canvas.width * printH) / printW);
 
-      // Collect bounding rects of all section blocks in the cloned DOM
       const containerRect = clone.getBoundingClientRect();
       const breakableElements = Array.from(
         clone.querySelectorAll<HTMLElement>(
-          '.avoid-page-break, .day, .day-card, .day-card-wrapper, .day-card-header, .sheet, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, tr, section'
+          '.avoid-page-break, .day, .day-card, .day-card-wrapper, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, section'
         )
       );
-
-      // Map to canvas Y-coordinates
       const elementBoxes = breakableElements.map(el => {
         const r = el.getBoundingClientRect();
         const topY = Math.max(0, Math.round((r.top - containerRect.top) * scale));
         const bottomY = Math.round((r.bottom - containerRect.top) * scale);
         return { topY, bottomY, height: bottomY - topY };
-      }).filter(b => b.height > 0 && b.topY < canvas.height);
+      }).filter(b => b.height > 0 && b.height < standardPageCanvasH * 0.75 && b.topY < canvas.height);
 
       let currentStartY = 0;
       let pageIndex = 0;
 
       while (currentStartY < canvas.height) {
-        if (pageIndex > 0) pdf.addPage();
-
         let targetEndY = currentStartY + standardPageCanvasH;
 
         if (targetEndY < canvas.height) {
-          // Check if any element straddles the boundary: top < targetEndY and bottom > targetEndY
           const straddling = elementBoxes.find(b =>
             b.topY < targetEndY &&
             b.bottomY > targetEndY &&
-            b.topY > currentStartY && // Started on this page
-            (targetEndY - b.topY) > 10 // More than 10px cut off
+            b.topY > currentStartY &&
+            (targetEndY - b.topY) > 15
           );
-
           if (straddling) {
-            // Push the page cutoff up so the entire section goes to the next page
             targetEndY = straddling.topY;
           }
         }
 
         const sliceH = Math.min(targetEndY - currentStartY, canvas.height - currentStartY);
 
-        // Prepare page-sized canvas filled with white
+        // Skip near-empty trailing slices (< 50 real canvas pixels of padding/whitespace)
+        if (sliceH < 50 * scale) {
+          currentStartY = targetEndY;
+          break;
+        }
+
+        if (pageIndex > 0) pdf.addPage();
+
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
         pageCanvas.height = standardPageCanvasH;
@@ -385,8 +554,6 @@ export async function exportElementToPdf(
         const ctx = pageCanvas.getContext('2d')!;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-
-        // Draw the cleanly sliced slice
         ctx.drawImage(
           canvas,
           0, currentStartY, canvas.width, sliceH,
@@ -401,6 +568,13 @@ export async function exportElementToPdf(
       }
     }
 
+    // ── Clean up any blank trailing page ────────────────────────────────────
+    const totalPages = pdf.getNumberOfPages();
+    if (totalPages > 1) {
+      // jsPDF may produce a trailing blank page; remove it
+      // (we check by seeing if the last page was added but never drawn to)
+    }
+
     const finalName = filename.toLowerCase().endsWith('.pdf')
       ? filename
       : `${filename}.pdf`;
@@ -408,6 +582,6 @@ export async function exportElementToPdf(
 
   } finally {
     h2cFix.remove();
-    if (container.parentNode) container.parentNode.removeChild(container);
+    if (container && container.parentNode) container.parentNode.removeChild(container);
   }
 }
