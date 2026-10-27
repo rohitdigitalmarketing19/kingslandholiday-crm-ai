@@ -1142,7 +1142,7 @@ export const PdfDesignsView: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center custom-scrollbar">
               <div
                 ref={modalPrintRef}
-                className="w-full max-w-[794px] space-y-8"
+                className="w-full max-w-[794px] space-y-8 doc-preview-protected live-proposal-sheets-container"
                 dangerouslySetInnerHTML={{
                   __html: renderCompleteProposalHtml(dynamicSampleQuote, previewDesignId, partnerBrandsList)
                 }}

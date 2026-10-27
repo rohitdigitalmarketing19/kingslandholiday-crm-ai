@@ -17,8 +17,8 @@ async function main() {
   const SQL = await initSqlJs();
   const db = new SQL.Database(fs.readFileSync('kingsland.db'));
 
-  // Load KL-1003 lead
-  const leadRows = db.exec("SELECT * FROM leads WHERE trip_id = 'KL-1003'")[0];
+  // Load latest lead
+  const leadRows = db.exec("SELECT * FROM leads ORDER BY created_at DESC LIMIT 1")[0];
   const lead: any = Object.fromEntries(leadRows.columns.map((c, i) => [c, leadRows.values[0][i]]));
 
   const quoteRows = db.exec("SELECT * FROM quotes WHERE lead_id = '" + lead.id + "'")[0];

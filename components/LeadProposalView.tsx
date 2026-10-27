@@ -1948,7 +1948,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       <div className="flex justify-center p-4 sm:p-8 bg-slate-100 dark:bg-zinc-950/80 rounded-3xl border border-slate-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
                         <div
                           ref={printRef}
-                          className="live-proposal-sheets-container flex flex-col gap-10 shadow-2xl"
+                          className="live-proposal-sheets-container doc-preview-protected flex flex-col gap-10 shadow-2xl"
                           style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#ffffff', backgroundColor: '#ffffff' }}
                           dangerouslySetInnerHTML={{
                             __html: currentQuoteDataModel

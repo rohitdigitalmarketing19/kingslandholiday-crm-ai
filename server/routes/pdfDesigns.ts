@@ -275,20 +275,23 @@ router.post('/render-pdf', async (req: Request, res: Response) => {
 
     const page = await browser.newPage();
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
-    await page.setContent(fullHtml, { waitUntil: ['load', 'networkidle0' as any] });
+    await page.setContent(fullHtml, { waitUntil: 'domcontentloaded', timeout: 20000 });
 
-    // Wait for fonts and all images to complete loading
+    // Wait for fonts and all images to complete loading with safety timeout
     await page.evaluate(async () => {
       if ((document as any).fonts && (document as any).fonts.ready) {
-        await (document as any).fonts.ready;
+        try {
+          await (document as any).fonts.ready;
+        } catch (_) {}
       }
       const imgs = Array.from(document.querySelectorAll('img'));
       await Promise.all(
         imgs.map(img => {
           if (img.complete) return Promise.resolve();
           return new Promise(resolve => {
-            img.onload = resolve;
-            img.onerror = resolve;
+            const timer = setTimeout(resolve, 2500);
+            img.onload = () => { clearTimeout(timer); resolve(null); };
+            img.onerror = () => { clearTimeout(timer); resolve(null); };
           });
         })
       );

@@ -503,15 +503,29 @@
         color: #f4f5f0 !important;
       }
 
-      /* Table headers and rows in dark mode (exclude printed/proposal sheets) */
-      html.dark th:not(.sheet th):not(.printable-voucher-container th):not(.live-proposal-sheets-container th) {
+      /* Table headers and rows in dark mode (exempting proposal previews and document sheets) */
+      html.dark body :not(.live-proposal-sheets-container):not(.live-proposal-sheets-container *):not(.sheet):not(.sheet *):not(.sheet-terms):not(.sheet-terms *):not(.itinerary-table):not(.itinerary-table *):not(.doc-preview-protected):not(.doc-preview-protected *) th {
         color: #d4d4d8 !important;
       }
-      html.dark td:not(.sheet td):not(.printable-voucher-container td):not(.live-proposal-sheets-container td) {
+      html.dark body :not(.live-proposal-sheets-container):not(.live-proposal-sheets-container *):not(.sheet):not(.sheet *):not(.sheet-terms):not(.sheet-terms *):not(.itinerary-table):not(.itinerary-table *):not(.doc-preview-protected):not(.doc-preview-protected *) td {
         color: #f4f5f0 !important;
       }
-      html.dark thead:not(.sheet thead):not(.printable-voucher-container thead):not(.live-proposal-sheets-container thead) {
+      html.dark thead {
         border-color: #282a22 !important;
+      }
+
+      /* Proposal preview sheets & tables: guarantee authentic ink colors in dark mode */
+      html.dark .live-proposal-sheets-container table td,
+      html.dark .live-proposal-sheets-container table th,
+      html.dark .sheet table td,
+      html.dark .sheet table th,
+      html.dark .sheet-terms table td,
+      html.dark .sheet-terms table th,
+      html.dark .itinerary-table td,
+      html.dark .itinerary-table th,
+      html.dark .doc-preview-protected table td,
+      html.dark .doc-preview-protected table th {
+        color: inherit !important;
       }
 
       /* Fix hover states in dark mode */

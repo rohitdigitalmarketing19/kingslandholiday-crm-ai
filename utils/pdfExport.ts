@@ -87,7 +87,8 @@ export async function exportElementToPdf(
 
   // Check if this container contains discrete sheet pages
   const directSheets = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
-  const isSheetBased = directSheets.length > 0;
+  const hasItineraryTable = Boolean(element.querySelector('table.itinerary-table'));
+  const isSheetBased = directSheets.length > 0 && !hasItineraryTable;
 
   // ── 1. Off-screen container ──────────────────────────────────────────────
   const container = document.createElement('div');
@@ -339,7 +340,7 @@ export async function exportElementToPdf(
       const containerRect = clone.getBoundingClientRect();
       const breakableElements = Array.from(
         clone.querySelectorAll<HTMLElement>(
-          '.avoid-page-break, .day, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, tr, section'
+          '.avoid-page-break, .day, .day-card, .day-card-wrapper, .day-card-header, .sheet, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, tr, section'
         )
       );
 
