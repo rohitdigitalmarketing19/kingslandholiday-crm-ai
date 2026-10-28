@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { applyTheme, readTheme } from '../../utils/theme';
 import { TabType, Customer, HotelVoucher, TripItinerary } from './types';
 import { 
   getStoredCustomers, 
@@ -41,6 +42,15 @@ interface OperationsPortalProps {
 }
 
 export default function App({ activeTab: externalActiveTab, onTabChange, hideSidebar = false, isReadOnly = false }: OperationsPortalProps = {}) {
+  useEffect(() => {
+    if (hideSidebar) return;
+    applyTheme(readTheme());
+    const sync = (event: StorageEvent) => {
+      if (event.key === 'kingsland_theme') applyTheme(readTheme());
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, [hideSidebar]);
   const [internalActiveTab, setInternalActiveTab] = useState<TabType>('customer');
   const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
 
@@ -354,7 +364,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
   const upcomingTripsCount = customers.filter((c) => c.status === 'Upcoming').length;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans antialiased">
+    <div className="crm-app min-h-screen bg-canvas text-content flex flex-col font-sans antialiased">
       <div className="flex flex-1 min-h-screen overflow-hidden">
         
         {/* Operations Sidebar Navigation */}
@@ -374,7 +384,7 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
         {isMobileOpen && (
           <div
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 z-30 bg-slate-900/60 backdrop-blur-xs lg:hidden"
+            className="fixed inset-0 z-30 bg-inverse/60 backdrop-blur-xs lg:hidden"
           />
         )}
 

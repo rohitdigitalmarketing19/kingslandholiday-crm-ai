@@ -70,6 +70,7 @@ export interface Agent {
 }
 
 export interface HotelEntry {
+  mealPlan?: string;
   nights: number;
   selectedNightIndices?: number[];
   hotelName: string;
@@ -85,6 +86,7 @@ export interface InclusionEntry {
 }
 
 export interface QuoteData {
+  hotelAlternative?: { price: number; hotels: HotelEntry[] } | null;
   id: string; 
   packageTitle: string;
   finalSellingPrice: number;

@@ -1,12 +1,13 @@
 
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig(({ mode }) => {
   // Fix: Casting process to any to resolve missing 'cwd' property on the type definition in certain environments.
   const env = loadEnv(mode, (process as any).cwd(), '');
   return {
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY),
     },

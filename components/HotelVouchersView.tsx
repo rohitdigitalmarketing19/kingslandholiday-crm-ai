@@ -482,34 +482,34 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
       
       {/* Toast Notification */}
       {isSuccessToast && (
-        <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl bg-emerald-900 text-white shadow-xl border border-emerald-700 flex items-center gap-2.5 animate-in slide-in-from-top-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+        <div className="fixed top-6 right-6 z-50 px-4 py-3 rounded-xl bg-success-strong text-white shadow-sm border border-success-line flex items-center gap-2.5 animate-in slide-in-from-top-3">
+          <CheckCircle2 className="w-5 h-5 text-success-ink" />
           <span className="text-xs font-bold">{isSuccessToast}</span>
         </div>
       )}
 
       {isReadOnly && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-center justify-between shadow-xs">
+        <div className="p-4 rounded-xl bg-warning-soft border border-warning-line text-warning-ink flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl">👁️</span>
             <div>
-              <h4 className="font-black text-xs uppercase tracking-wider">Read-Only View Only Mode Enabled</h4>
-              <p className="text-xs text-amber-800 font-medium">Uploading documents and editing email templates are restricted for View-Only access. You can view, download, or inspect voucher records.</p>
+              <h4 className="font-semibold text-sm uppercase tracking-wider">Read-Only View Only Mode Enabled</h4>
+              <p className="text-sm text-warning-ink font-medium">Uploading documents and editing email templates are restricted for View-Only access. You can view, download, or inspect voucher records.</p>
             </div>
           </div>
-          <span className="px-3 py-1 rounded-full bg-amber-200 text-amber-950 font-black text-[10px] uppercase border border-amber-400">View Only Mode</span>
+          <span className="px-3 py-1 rounded-full bg-warning-soft text-warning-ink font-semibold text-xs uppercase border border-warning-line">View Only Mode</span>
         </div>
       )}
 
       {/* Top Banner & Header */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-            <Building2 className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center gap-2 text-warning-ink font-bold text-sm uppercase tracking-wider">
+            <Building2 className="w-4 h-4 text-warning-ink" />
             <span>Supplier & Hotel Partner Documents Desk</span>
           </div>
-          <h2 className="text-2xl font-black text-white mt-1">Hotel-Side Vouchers Desk</h2>
-          <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+          <h2 className="text-2xl font-semibold text-white mt-1">Hotel-Side Vouchers Desk</h2>
+          <p className="text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
             Upload the <strong>actual hotel vouchers and confirmation documents received directly from the hotel side</strong>. If a hotel forgot to send their voucher, click <strong>"Send Mail to Hotel"</strong> to dispatch an instant reminder with the hotel name and booking details.
           </p>
         </div>
@@ -517,7 +517,7 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={toggleExpandAll}
-            className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-sm font-bold"
             title="Expand / Collapse All Lead Rows"
           >
             <ChevronsUpDown className="w-4 h-4" />
@@ -526,7 +526,7 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
           
           <button
             onClick={loadData}
-            className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+            className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 text-sm font-bold"
             title="Refresh Vouchers"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -539,66 +539,66 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1 */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Active Packages</span>
-            <div className="p-2 rounded-xl bg-indigo-100 text-indigo-700">
+            <div className="p-2 rounded-xl bg-brand-soft text-brand-ink">
               <Layers className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-semibold text-content font-mono">
             {stats.totalPackages}
           </div>
-          <div className="text-[11px] text-slate-500 font-medium">
+          <div className="text-xs text-secondary font-medium">
             Customer packages in operations pipeline
           </div>
         </div>
 
         {/* Card 2 */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Package Hotels</span>
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
+            <div className="p-2 rounded-xl bg-brand-soft text-brand-ink">
               <Hotel className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-semibold text-content font-mono">
             {stats.totalHotels}
           </div>
-          <div className="text-[11px] text-slate-500 font-medium">
+          <div className="text-xs text-secondary font-medium">
             Total hotel stays across all packages
           </div>
         </div>
 
         {/* Card 3 */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Hotel Vouchers Received</span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+            <div className="p-2 rounded-xl bg-success-soft text-success-ink">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-emerald-950 font-mono">
+          <div className="text-2xl font-semibold text-success-ink font-mono">
             {stats.uploadedCount}
           </div>
-          <div className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div className="text-xs text-success-ink font-bold flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-success-strong animate-pulse"></span>
             {stats.completionRate}% Documents Uploaded
           </div>
         </div>
 
         {/* Card 4 */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Awaiting From Hotel Side</span>
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-800">
+            <div className="p-2 rounded-xl bg-warning-soft text-warning-ink">
               <Clock className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-950 font-mono">
+          <div className="text-2xl font-semibold text-warning-ink font-mono">
             {stats.pendingCount}
           </div>
-          <div className="text-[11px] text-amber-700 font-bold">
+          <div className="text-xs text-warning-ink font-bold">
             {stats.pendingCount === 0 ? 'All hotel documents attached! 🎉' : 'Send mail reminder if hotel forgot'}
           </div>
         </div>
@@ -606,35 +606,35 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col lg:flex-row items-center justify-between gap-3 shadow-2xs">
+      <div className="p-4 rounded-xl bg-surface border border-line flex flex-col lg:flex-row items-center justify-between gap-3 shadow-2xs">
         
         <div className="flex items-center gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap">
           {/* Search Box */}
           <div className="relative flex-1 sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search Guest, Booking ID, Hotel, Confirmation #..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium text-slate-900"
+              className="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-canvas border border-line focus:outline-none focus:ring-2 focus:ring-warning-line font-medium text-content"
             />
           </div>
 
           {/* Status Quick Filter */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 shrink-0">
+          <div className="flex items-center bg-subtle p-1 rounded-xl gap-1 shrink-0">
             <button
               onClick={() => setStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                statusFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
+                statusFilter === 'all' ? 'bg-surface text-content shadow-xs' : 'text-secondary hover:text-content'
               }`}
             >
               All ({customerPackageGroups.length})
             </button>
             <button
               onClick={() => setStatusFilter('pending')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                statusFilter === 'pending' ? 'bg-amber-500 text-white shadow-xs' : 'text-amber-700 hover:text-amber-900'
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                statusFilter === 'pending' ? 'bg-warning-strong text-white shadow-xs' : 'text-warning-ink hover:text-warning-ink'
               }`}
             >
               <AlertCircle className="w-3.5 h-3.5" />
@@ -642,8 +642,8 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
             </button>
             <button
               onClick={() => setStatusFilter('uploaded')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                statusFilter === 'uploaded' ? 'bg-emerald-600 text-white shadow-xs' : 'text-emerald-700 hover:text-emerald-900'
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                statusFilter === 'uploaded' ? 'bg-success-strong text-white shadow-xs' : 'text-success-ink hover:text-success-ink'
               }`}
             >
               <Check className="w-3.5 h-3.5" />
@@ -655,12 +655,12 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
         {/* Dropdowns */}
         <div className="flex items-center gap-2 flex-wrap self-start lg:self-center">
           {/* Month Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="flex items-center gap-1.5 bg-canvas border border-line rounded-xl px-2.5 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-brand-ink" />
             <select
               value={monthFilter}
               onChange={(e) => setMonthFilter(e.target.value)}
-              className="bg-transparent text-xs font-semibold focus:outline-none text-slate-800 cursor-pointer"
+              className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
             >
               <option value="all">All Travel Months</option>
               {availableMonths.map((m) => (
@@ -672,12 +672,12 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
           </div>
 
           {/* Destination Filter */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-1.5 bg-canvas border border-line rounded-xl px-2.5 py-1.5">
+            <Filter className="w-3.5 h-3.5 text-secondary" />
             <select
               value={destinationFilter}
               onChange={(e) => setDestinationFilter(e.target.value)}
-              className="bg-transparent text-xs font-semibold focus:outline-none text-slate-800 cursor-pointer"
+              className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
             >
               <option value="all">All Destinations ({uniqueDestinations.length})</option>
               {uniqueDestinations.map((d) => (
@@ -693,10 +693,10 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
 
       {/* Main Content: Customer Package Rows (DEFAULT CLOSED / COLLAPSED) */}
       {filteredGroups.length === 0 ? (
-        <div className="p-12 text-center bg-white border border-slate-200 rounded-3xl space-y-3">
+        <div className="p-12 text-center bg-surface border border-line rounded-xl space-y-3">
           <Hotel className="w-12 h-12 text-slate-300 mx-auto animate-bounce" />
-          <h4 className="text-base font-bold text-slate-800">No Package Bookings Found</h4>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
+          <h4 className="text-base font-bold text-content">No Package Bookings Found</h4>
+          <p className="text-sm text-secondary max-w-md mx-auto">
             No hotel packages match your search.
           </p>
         </div>
@@ -713,46 +713,46 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
             return (
               <div 
                 key={group.customerId} 
-                className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs hover:border-slate-300 transition-all duration-200"
+                className="bg-surface border border-line rounded-xl overflow-hidden shadow-2xs hover:border-line transition-all duration-200"
               >
                 {/* Customer Header Row (Click to open/close) */}
                 <div 
                   className={`p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer select-none transition-colors ${
-                    isFullyUploaded ? 'bg-gradient-to-r from-emerald-50/40 via-white to-slate-50/50 hover:bg-emerald-50/60' : 'bg-slate-50/70 hover:bg-slate-100/80'
+                    isFullyUploaded ? 'bg-gradient-to-r from-success-soft/40 via-white to-line/50 hover:bg-success-soft/60' : 'bg-canvas/70 hover:bg-subtle/80'
                   }`}
                   onClick={() => toggleCustomerExpand(group.customerId)}
                 >
                   {/* Left: Guest & Booking Identity */}
                   <div className="flex items-start sm:items-center gap-3.5">
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-sm shrink-0 shadow-xs ${
-                      isFullyUploaded ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white'
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs ${
+                      isFullyUploaded ? 'bg-success-strong text-white' : 'bg-inverse text-white'
                     }`}>
                       {group.customerName.charAt(0).toUpperCase()}
                     </div>
 
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                        <span className="font-mono text-sm font-bold text-brand-ink bg-brand-soft px-2 py-0.5 rounded-md border border-brand-line">
                           {group.bookingId}
                         </span>
-                        <h3 className="font-black text-slate-900 text-sm sm:text-base">
+                        <h3 className="font-semibold text-content text-sm sm:text-base">
                           {group.customerName}
                         </h3>
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-slate-200/80 text-slate-700">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-hover/80 text-content">
                           📍 {group.destination}
                         </span>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                          group.tripStatus === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
-                          group.tripStatus === 'In-Transit' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          group.tripStatus === 'Completed' ? 'bg-success-soft text-success-ink' :
+                          group.tripStatus === 'In-Transit' ? 'bg-brand-soft text-brand-ink' : 'bg-warning-soft text-warning-ink'
                         }`}>
                           {group.tripStatus}
                         </span>
                       </div>
 
-                      <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-3 flex-wrap">
+                      <p className="text-sm text-secondary font-medium mt-1 flex items-center gap-3 flex-wrap">
                         <span>🗓️ Travel: <strong>{group.startDate || 'TBA'}</strong> to <strong>{group.endDate || 'TBA'}</strong></span>
                         <span>👥 <strong>{group.paxAdults}</strong> Adults {group.paxChildren > 0 ? `& ${group.paxChildren} Children` : ''}</span>
-                        {group.phone && <span className="font-mono text-slate-600">📞 {group.phone}</span>}
+                        {group.phone && <span className="font-mono text-secondary">📞 {group.phone}</span>}
                         <span>👤 Ops Manager: {group.assignedOpsManager}</span>
                       </p>
                     </div>
@@ -762,23 +762,23 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                   <div className="flex items-center gap-3 self-end md:self-center shrink-0">
                     
                     <div className="text-right space-y-1 min-w-[140px]">
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-slate-500">Vouchers:</span>
-                        <span className={isFullyUploaded ? 'text-emerald-700 font-black' : 'text-amber-800 font-black'}>
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-secondary">Vouchers:</span>
+                        <span className={isFullyUploaded ? 'text-success-ink font-semibold' : 'text-warning-ink font-semibold'}>
                           {uploadedVouchersInPkg} / {totalVouchersInPkg} Attached
                         </span>
                       </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-hover h-2 rounded-full overflow-hidden">
                         <div 
                           className={`h-full transition-all duration-500 ${
-                            isFullyUploaded ? 'bg-emerald-500' : 'bg-amber-500'
+                            isFullyUploaded ? 'bg-success-strong' : 'bg-warning-strong'
                           }`}
                           style={{ width: `${progressPercent}%` }}
                         ></div>
                       </div>
                     </div>
 
-                    <div className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800 shadow-2xs">
+                    <div className="p-1.5 rounded-lg bg-surface border border-line text-secondary hover:text-content shadow-2xs">
                       {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
 
@@ -787,22 +787,22 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
 
                 {/* Expanded Section: All Hotels in Package (Visible only if isExpanded) */}
                 {isExpanded && (
-                  <div className="p-5 border-t border-slate-200 bg-white space-y-4 animate-in slide-in-from-top-2 duration-150">
+                  <div className="p-5 border-t border-line bg-surface space-y-4 animate-in slide-in-from-top-2 duration-150">
                     
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                          <Hotel className="w-4 h-4 text-amber-600" />
+                        <h4 className="text-sm font-semibold uppercase tracking-wider text-content flex items-center gap-2">
+                          <Hotel className="w-4 h-4 text-warning-ink" />
                           <span>All Package Hotels ({group.vouchers.length} Total Accommodations)</span>
                         </h4>
-                        <p className="text-[11px] text-slate-400 font-medium">
+                        <p className="text-xs text-muted font-medium">
                           Upload the actual hotel voucher or click "Send Mail to Hotel" if property hasn't sent confirmation yet
                         </p>
                       </div>
                     </div>
 
                     {group.vouchers.length === 0 ? (
-                      <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500 space-y-2">
+                      <div className="p-6 rounded-xl bg-canvas border border-line text-center text-sm text-secondary space-y-2">
                         <p>No hotel vouchers configured for this package.</p>
                       </div>
                     ) : (
@@ -813,10 +813,10 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                           return (
                             <div 
                               key={voucher.id} 
-                              className={`p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between space-y-3 ${
+                              className={`p-4 rounded-xl border transition-all duration-200 flex flex-col justify-between space-y-3 ${
                                 isUploaded 
-                                  ? 'bg-emerald-50/30 border-emerald-200 shadow-2xs' 
-                                  : 'bg-amber-50/30 border-amber-200/90 shadow-2xs hover:border-amber-400'
+                                  ? 'bg-success-soft/30 border-success-line shadow-2xs' 
+                                  : 'bg-warning-soft/30 border-warning-line/90 shadow-2xs hover:border-warning-line'
                               }`}
                             >
                               {/* Top Hotel Information */}
@@ -824,32 +824,32 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                 <div className="flex items-start justify-between gap-2">
                                   <div>
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-slate-900 text-white">
+                                      <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-md bg-inverse text-white">
                                         Hotel #{idx + 1}
                                       </span>
-                                      <span className="text-[10px] font-bold text-slate-500">
+                                      <span className="text-xs font-bold text-secondary">
                                         📍 {voucher.city}
                                       </span>
                                     </div>
-                                    <h5 className="font-extrabold text-slate-900 text-sm mt-1">
+                                    <h5 className="font-semibold text-content text-sm mt-1">
                                       {voucher.hotelName}
                                     </h5>
                                   </div>
 
                                   {/* Status Pill */}
-                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black flex items-center gap-1 shrink-0 ${
+                                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shrink-0 ${
                                     isUploaded 
-                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300/60' 
-                                      : 'bg-amber-100 text-amber-900 border border-amber-300/60'
+                                      ? 'bg-success-soft text-success-ink border border-success-line/60' 
+                                      : 'bg-warning-soft text-warning-ink border border-warning-line/60'
                                   }`}>
                                     {isUploaded ? (
                                       <>
-                                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                        <CheckCircle2 className="w-3 h-3 text-success-ink" />
                                         <span>Hotel Voucher Attached</span>
                                       </>
                                     ) : (
                                       <>
-                                        <Clock className="w-3 h-3 text-amber-600" />
+                                        <Clock className="w-3 h-3 text-warning-ink" />
                                         <span>Awaiting From Hotel</span>
                                       </>
                                     )}
@@ -857,16 +857,16 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                 </div>
 
                                 {/* Stay Specs */}
-                                <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-slate-100">
+                                <div className="grid grid-cols-2 gap-2 text-sm pt-1.5 border-t border-line">
                                   <div className="space-y-0.5">
-                                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Check-In / Out:</span>
-                                    <p className="font-bold text-slate-700 text-[11px]">
+                                    <span className="text-xs text-muted font-bold block uppercase">Check-In / Out:</span>
+                                    <p className="font-bold text-content text-xs">
                                       {voucher.checkIn} to {voucher.checkOut} ({voucher.nights}N)
                                     </p>
                                   </div>
                                   <div className="space-y-0.5">
-                                    <span className="text-[10px] text-slate-400 font-bold block uppercase">Room & Plan:</span>
-                                    <p className="font-bold text-slate-700 text-[11px] truncate">
+                                    <span className="text-xs text-muted font-bold block uppercase">Room & Plan:</span>
+                                    <p className="font-bold text-content text-xs truncate">
                                       {voucher.roomType} • {voucher.mealPlan || 'CPAI'}
                                     </p>
                                   </div>
@@ -874,66 +874,66 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
 
                                 {/* Actual Uploaded Document Details */}
                                 {isUploaded ? (
-                                  <div className="p-3 rounded-xl bg-white border border-emerald-200 text-xs space-y-1.5 shadow-2xs">
+                                  <div className="p-3 rounded-xl bg-surface border border-success-line text-sm space-y-1.5 shadow-2xs">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[10px] text-slate-500 font-bold uppercase">Hotel Confirmation Ref:</span>
-                                      <span className="font-mono font-black text-emerald-800 text-xs">
+                                      <span className="text-xs text-secondary font-bold uppercase">Hotel Confirmation Ref:</span>
+                                      <span className="font-mono font-semibold text-success-ink text-sm">
                                         {voucher.confirmationNumber || 'HTL-CONFIRMED'}
                                       </span>
                                     </div>
-                                    <div className="flex items-center justify-between text-[11px] text-slate-700 font-medium">
+                                    <div className="flex items-center justify-between text-xs text-content font-medium">
                                       <span className="flex items-center gap-1 truncate max-w-[200px]">
-                                        <FileText className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <FileText className="w-3.5 h-3.5 text-success-ink shrink-0" />
                                         <span className="truncate">{voucher.fileName || 'Hotel_Confirmation.pdf'}</span>
                                       </span>
-                                      <span className="text-[10px] text-slate-400 shrink-0">{voucher.uploadedAt || 'Attached'}</span>
+                                      <span className="text-xs text-muted shrink-0">{voucher.uploadedAt || 'Attached'}</span>
                                     </div>
                                     {voucher.hotelContact && (
-                                      <div className="text-[10px] text-slate-500 pt-1 border-t border-slate-100 flex items-center gap-1">
-                                        <Phone className="w-3 h-3 text-slate-400" />
+                                      <div className="text-xs text-secondary pt-1 border-t border-line flex items-center gap-1">
+                                        <Phone className="w-3 h-3 text-muted" />
                                         <span>Property Contact: <strong>{voucher.hotelContact}</strong></span>
                                       </div>
                                     )}
                                   </div>
                                 ) : (
-                                  <div className="p-2.5 rounded-xl bg-amber-50/50 border border-dashed border-amber-300 text-[11px] text-amber-800 text-center">
+                                  <div className="p-2.5 rounded-xl bg-warning-soft/50 border border-dashed border-warning-line text-xs text-warning-ink text-center">
                                     No voucher document uploaded from hotel side yet.
                                   </div>
                                 )}
                               </div>
 
                               {/* Action Buttons */}
-                              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                              <div className="pt-2 border-t border-line flex items-center justify-between gap-2 flex-wrap">
                                 {isUploaded ? (
                                   <>
                                     <div className="flex items-center gap-1.5 flex-wrap">
                                       {/* View Actual Document */}
                                       <button
                                         onClick={() => setViewDocumentVoucher(voucher)}
-                                        className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                                        className="px-3 py-1.5 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
                                         title="View Actual Uploaded Hotel Document"
                                       >
-                                        <Eye className="w-3.5 h-3.5 text-amber-400" />
+                                        <Eye className="w-3.5 h-3.5 text-warning-ink" />
                                         <span>View Document</span>
                                       </button>
 
                                       {/* Download File */}
                                       <button
                                         onClick={() => handleDownloadActualFile(voucher)}
-                                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                                        className="px-3 py-1.5 rounded-xl bg-subtle hover:bg-hover text-content font-bold text-sm flex items-center gap-1.5 transition-all cursor-pointer"
                                         title="Download Original Hotel Voucher"
                                       >
-                                        <Download className="w-3.5 h-3.5 text-slate-500" />
+                                        <Download className="w-3.5 h-3.5 text-secondary" />
                                         <span>Download</span>
                                       </button>
 
                                       {/* Send WhatsApp to Guest */}
                                       <button
                                         onClick={() => handleSendWhatsAppToGuest(voucher)}
-                                        className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1.5 transition-all border border-emerald-200 cursor-pointer"
+                                        className="px-3 py-1.5 rounded-xl bg-success-soft hover:bg-success-soft text-success-ink font-bold text-sm flex items-center gap-1.5 transition-all border border-success-line cursor-pointer"
                                         title="Send Confirmation to Guest WhatsApp"
                                       >
-                                        <Send className="w-3.5 h-3.5 text-emerald-600" />
+                                        <Send className="w-3.5 h-3.5 text-success-ink" />
                                         <span>Guest WA</span>
                                       </button>
 
@@ -946,7 +946,7 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                           }
                                           setSendMailVoucher(voucher);
                                         }}
-                                        className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center gap-1 transition-all border border-indigo-200 cursor-pointer"
+                                        className="px-2.5 py-1.5 rounded-xl bg-brand-soft hover:bg-brand-soft text-brand-ink font-bold text-sm flex items-center gap-1 transition-all border border-brand-line cursor-pointer"
                                         title="Send Email / Message to Hotel Property"
                                       >
                                         <Mail className="w-3.5 h-3.5" />
@@ -958,14 +958,14 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                       <div className="flex items-center gap-1">
                                         <button
                                           onClick={() => setUploadModalVoucher(voucher)}
-                                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
+                                          className="p-1.5 rounded-lg text-muted hover:text-warning-ink hover:bg-warning-soft transition-colors cursor-pointer"
                                           title="Replace / Re-upload Document from Hotel"
                                         >
                                           <Upload className="w-3.5 h-3.5" />
                                         </button>
                                         <button
                                           onClick={() => handleResetVoucher(voucher)}
-                                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                                          className="p-1.5 rounded-lg text-muted hover:text-danger-ink hover:bg-danger-soft transition-colors cursor-pointer"
                                           title="Remove Document"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -984,7 +984,7 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                         }
                                         setUploadModalVoucher(voucher);
                                       }}
-                                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                                      className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-warning-strong to-warning-strong hover:from-warning-strong hover:to-warning-strong text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm hover:shadow-sm transition-all cursor-pointer"
                                     >
                                       <Upload className="w-4 h-4" />
                                       <span>Upload Hotel Document (PDF / JPG)</span>
@@ -999,7 +999,7 @@ export const HotelVouchersView: React.FC<HotelVouchersViewProps> = ({
                                         }
                                         setSendMailVoucher(voucher);
                                       }}
-                                      className="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
+                                      className="w-full py-2 px-3 rounded-xl bg-brand hover:bg-brand text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
                                     >
                                       <Mail className="w-3.5 h-3.5" />
                                       <span>Send Mail to Hotel (Request Voucher)</span>
@@ -1218,7 +1218,7 @@ Website: www.kingslandholidays.com`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-inverse/75 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="hotel-voucher-fixed send-mail-hotel-fixed hotel-email-modal-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         
         {/* Header */}
@@ -1501,7 +1501,7 @@ const HotelSideUploadModal: React.FC<HotelSideUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-inverse/70 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
@@ -1674,7 +1674,7 @@ const HotelDocumentViewerModal: React.FC<HotelDocumentViewerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-inverse/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden">
       <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-5xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150">
         
         {/* Top Control Bar */}

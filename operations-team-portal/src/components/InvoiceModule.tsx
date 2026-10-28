@@ -581,15 +581,15 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     <div className="space-y-6">
 
       {/* Top Banner & Action Controls */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <span className="p-2 rounded-xl bg-brand/20 text-brand-ink border border-brand-line/30">
               <Receipt className="w-6 h-6" />
             </span>
-            <h2 className="font-extrabold text-xl tracking-tight">Invoice Creation & Printing Hub</h2>
+            <h2 className="font-semibold text-xl tracking-tight">Invoice Creation & Printing Hub</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1 max-w-xl">
+          <p className="text-sm text-muted mt-1 max-w-xl">
             Create, edit, auto-fill, print, and export 3 official invoice templates (Tax Invoice, Package Description, and Customer Package Invoice) with customizable Logo & Terms Settings.
           </p>
         </div>
@@ -598,14 +598,14 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           {activeType !== 'settings' && (
             isReadOnly ? (
-              <div className="px-3.5 py-2 rounded-xl bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center gap-1.5 border border-amber-400/30">
+              <div className="px-3.5 py-2 rounded-xl bg-warning-strong/20 text-warning-ink font-bold text-sm flex items-center gap-1.5 border border-warning-line/30">
                 <span>👁️ View Only (Form Removed)</span>
               </div>
             ) : (
               <button
                 onClick={() => setIsEditMode(!isEditMode)}
-                className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
-                  isEditMode ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                className={`px-3.5 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all ${
+                  isEditMode ? 'bg-brand text-white shadow-sm' : 'bg-inverse text-slate-300 hover:bg-inverse'
                 }`}
               >
                 <Edit3 className="w-4 h-4" />
@@ -618,7 +618,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             <>
               <button
                 onClick={handleDownloadPdf}
-                className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs flex items-center gap-1.5 transition-all shadow-md"
+                className="px-3.5 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-content font-semibold text-sm flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <Download className="w-4 h-4" />
                 <span>Download PDF</span>
@@ -626,7 +626,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
               <button
                 onClick={handlePrint}
-                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 border border-slate-700 transition-all"
+                className="px-3.5 py-2 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm flex items-center gap-1.5 border border-line transition-all"
               >
                 <Printer className="w-4 h-4" />
                 <span>Print Invoice</span>
@@ -634,7 +634,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
               <button
                 onClick={handleShareWhatsApp}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                className="px-3.5 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-white font-bold text-sm flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <Send className="w-4 h-4" />
                 <span>Share WhatsApp</span>
@@ -645,26 +645,26 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       </div>
 
       {/* Customer & Trip Search Bar for Invoice Viewer */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="p-4 rounded-xl bg-surface border border-line shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1">
-          <span className="p-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-sm">🔍</span>
+          <span className="p-2 rounded-xl bg-brand-soft text-brand-ink font-bold text-sm">🔍</span>
           <div className="flex-1 relative">
             <input
               type="text"
               placeholder="Search Invoice by Customer Name, Trip / Booking ID, Destination, Phone..."
               value={customerSearchQuery}
               onChange={e => setCustomerSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 focus:bg-white transition-all"
+              className="w-full bg-canvas border border-line rounded-xl px-3.5 py-2 text-sm font-bold text-content outline-none focus:border-brand-line focus:bg-surface transition-all"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black text-slate-600 whitespace-nowrap">Selected Invoice Guest:</span>
+          <span className="text-sm font-semibold text-secondary whitespace-nowrap">Selected Invoice Guest:</span>
           <select
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-black text-slate-900 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-xs truncate"
+            className="px-3.5 py-2 rounded-xl border border-line text-sm font-semibold text-content bg-canvas outline-none focus:ring-2 focus:ring-brand-line/20 max-w-xs truncate"
           >
             {filteredCustomersList.length === 0 ? (
               <option value="">No matching trips found</option>
@@ -678,53 +678,53 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           </select>
         </div>
       </div>
-      <div className="flex flex-wrap gap-2 p-1.5 rounded-2xl bg-white border border-slate-200 shadow-xs">
+      <div className="flex flex-wrap gap-2 p-1.5 rounded-xl bg-surface border border-line shadow-xs">
         <button
           onClick={() => setActiveType('tax')}
-          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all ${
+          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'tax'
-              ? 'bg-slate-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-inverse text-white shadow-sm'
+              : 'text-secondary hover:bg-subtle hover:text-content'
           }`}
         >
-          <Receipt className="w-4 h-4 text-emerald-400" />
+          <Receipt className="w-4 h-4 text-success-ink" />
           <span>1. Tax Invoice (GST)</span>
         </button>
 
         <button
           onClick={() => setActiveType('package_description')}
-          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all ${
+          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'package_description'
-              ? 'bg-slate-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-inverse text-white shadow-sm'
+              : 'text-secondary hover:bg-subtle hover:text-content'
           }`}
         >
-          <FileText className="w-4 h-4 text-indigo-400" />
+          <FileText className="w-4 h-4 text-brand-ink" />
           <span>2. Package Description</span>
         </button>
 
         <button
           onClick={() => setActiveType('package_customer')}
-          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all ${
+          className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'package_customer'
-              ? 'bg-slate-900 text-white shadow-md'
-              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              ? 'bg-inverse text-white shadow-sm'
+              : 'text-secondary hover:bg-subtle hover:text-content'
           }`}
         >
-          <Plane className="w-4 h-4 text-amber-400" />
+          <Plane className="w-4 h-4 text-warning-ink" />
           <span>3. Payment Confirmation Slip</span>
         </button>
 
         {!isReadOnly && (
           <button
             onClick={() => setActiveType('settings')}
-            className={`py-3 px-5 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all ${
+            className={`py-3 px-5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
               activeType === 'settings'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200'
+                ? 'bg-brand text-white shadow-sm'
+                : 'bg-brand-soft text-brand-ink hover:bg-brand-soft border border-brand-line'
             }`}
           >
-            <Building2 className="w-4 h-4 text-indigo-500" />
+            <Building2 className="w-4 h-4 text-brand-ink" />
             <span>⚙️ Company Details (Name, GST, PAN, Address) & Terms</span>
           </button>
         )}
@@ -732,20 +732,20 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
       {/* Global Company Banner Indicator (When viewing an invoice) */}
       {activeType !== 'settings' && (
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-xs">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-brand-soft/80 border border-brand-line text-sm">
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <Building2 className="w-5 h-5 text-indigo-600 shrink-0" />
+            <Building2 className="w-5 h-5 text-brand-ink shrink-0" />
             <div className="truncate">
-              <span className="font-black text-slate-900">{companyName}</span>
-              <span className="text-slate-600 ml-2">
-                GSTIN: <strong className="font-mono text-slate-800">{companyGstin}</strong> • PAN: <strong className="font-mono text-slate-800">{companyPan}</strong> • {companyAddress}, {companyCity}
+              <span className="font-semibold text-content">{companyName}</span>
+              <span className="text-secondary ml-2">
+                GSTIN: <strong className="font-mono text-content">{companyGstin}</strong> • PAN: <strong className="font-mono text-content">{companyPan}</strong> • {companyAddress}, {companyCity}
               </span>
             </div>
           </div>
           {!isReadOnly && (
             <button
               onClick={() => setActiveType('settings')}
-              className="px-3 py-1.5 rounded-xl bg-white hover:bg-indigo-600 hover:text-white border border-indigo-300 text-indigo-700 font-extrabold text-[11px] shrink-0 shadow-2xs transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-surface hover:bg-brand hover:text-white border border-brand-line text-brand-ink font-semibold text-xs shrink-0 shadow-2xs transition-all flex items-center gap-1.5"
             >
               <Settings className="w-3.5 h-3.5" />
               <span>Edit Company Details & Terms</span>
@@ -758,20 +758,20 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       {/* 4. INVOICE SETTINGS PANEL (COMPANY DETAILS & TERMS EDITORS) */}
       {/* ======================================================== */}
       {activeType === 'settings' && (
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
+        <div className="bg-surface border border-line rounded-xl p-6 sm:p-8 shadow-sm space-y-8 animate-in fade-in duration-200">
           
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
             <div>
-              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                <Building2 className="w-6 h-6 text-indigo-600" />
+              <h3 className="text-xl font-semibold text-content flex items-center gap-2">
+                <Building2 className="w-6 h-6 text-brand-ink" />
                 Company Details & Invoice Terms Settings
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">Configure your company name, GST, PAN, address, contact info and customize multi-line paragraph Terms & Conditions across all 3 invoice templates.</p>
+              <p className="text-sm text-secondary mt-0.5">Configure your company name, GST, PAN, address, contact info and customize multi-line paragraph Terms & Conditions across all 3 invoice templates.</p>
             </div>
 
             <button
               onClick={handleSaveSettings}
-              className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs flex items-center gap-2 shadow-md transition-all shrink-0"
+              className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all shrink-0"
             >
               <Save className="w-4 h-4" />
               <span>Save Company Details & Terms</span>
@@ -780,32 +780,32 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
           {/* Section A: Full Company Legal & Contact Details */}
           <div className="space-y-4">
-            <h4 className="font-extrabold text-slate-900 uppercase text-xs tracking-wider flex items-center gap-2 text-indigo-700 border-b pb-2">
+            <h4 className="font-semibold text-content uppercase text-sm tracking-wider flex items-center gap-2 text-brand-ink border-b pb-2">
               <Building2 className="w-4 h-4" /> 1. Company Legal & Registered Information (Applies to all 3 Invoices)
             </h4>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
               
               {/* Logo Upload Box */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <h5 className="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-                  <ImageIcon className="w-3.5 h-3.5 text-indigo-600" /> Company Brand Logo
+              <div className="p-5 rounded-xl bg-canvas border border-line space-y-3">
+                <h5 className="font-bold text-content uppercase text-xs flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-brand-ink" /> Company Brand Logo
                 </h5>
 
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-2xl bg-white border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
+                  <div className="w-20 h-20 rounded-xl bg-surface border-2 border-dashed border-line flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
                     {companyLogo ? (
                       <img src={companyLogo} alt="Uploaded Logo" className="max-h-full max-w-full object-contain p-1" />
                     ) : (
-                      <div className="text-center text-slate-400 p-2">
+                      <div className="text-center text-muted p-2">
                         <ImageIcon className="w-5 h-5 mx-auto mb-1 opacity-50" />
-                        <span className="text-[8px] font-bold block">No Logo</span>
+                        <span className="text-xs font-bold block">No Logo</span>
                       </div>
                     )}
                   </div>
 
                   <div className="space-y-2 flex-1">
-                    <label htmlFor="logo-file-input" className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs cursor-pointer inline-flex items-center gap-1.5 transition-all">
+                    <label htmlFor="logo-file-input" className="px-3 py-1.5 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm cursor-pointer inline-flex items-center gap-1.5 transition-all">
                       <Upload className="w-3.5 h-3.5" />
                       <span>Upload Logo</span>
                     </label>
@@ -818,13 +818,13 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     />
 
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Or Image URL</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Or Image URL</label>
                       <input
                         type="text"
                         value={companyLogo}
                         onChange={(e) => setCompanyLogo(e.target.value)}
                         placeholder="https://example.com/logo.png"
-                        className="w-full mt-0.5 px-2.5 py-1 rounded-lg border border-slate-300 font-mono text-[11px] text-slate-900 bg-white"
+                        className="w-full mt-0.5 px-2.5 py-1 rounded-lg border border-line font-mono text-xs text-content bg-surface"
                       />
                     </div>
                   </div>
@@ -832,41 +832,41 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               </div>
 
               {/* Company Legal Details (Name, GSTIN, PAN) */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <h5 className="font-bold text-slate-800 uppercase text-[11px] text-teal-700">Company Identification</h5>
+              <div className="p-5 rounded-xl bg-canvas border border-line space-y-3">
+                <h5 className="font-bold text-content uppercase text-xs text-success-ink">Company Identification</h5>
                 
                 <div className="space-y-2.5">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Company Name</label>
+                    <label className="block text-xs font-bold text-secondary uppercase">Company Name</label>
                     <input
                       type="text"
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="e.g. Kingsland Holidays Pvt Ltd"
-                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
+                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold text-content bg-surface"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">GSTIN / GST No</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">GSTIN / GST No</label>
                       <input
                         type="text"
                         value={companyGstin}
                         onChange={(e) => setCompanyGstin(e.target.value)}
                         placeholder="08AABCK1234F1Z9"
-                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-mono font-bold text-slate-900 bg-white"
+                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-mono font-bold text-content bg-surface"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase">PAN Number</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">PAN Number</label>
                       <input
                         type="text"
                         value={companyPan}
                         onChange={(e) => setCompanyPan(e.target.value)}
                         placeholder="AABCK1234F"
-                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-mono font-bold text-slate-900 bg-white"
+                        className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-mono font-bold text-content bg-surface"
                       />
                     </div>
                   </div>
@@ -874,61 +874,61 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               </div>
 
               {/* Company Registered Address & Contacts */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <h5 className="font-bold text-slate-800 uppercase text-[11px] text-indigo-700">Address & Contact Info</h5>
+              <div className="p-5 rounded-xl bg-canvas border border-line space-y-3">
+                <h5 className="font-bold text-content uppercase text-xs text-brand-ink">Address & Contact Info</h5>
                 
                 <div className="space-y-2.5">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Registered Address</label>
+                    <label className="block text-xs font-bold text-secondary uppercase">Registered Address</label>
                     <input
                       type="text"
                       value={companyAddress}
                       onChange={(e) => setCompanyAddress(e.target.value)}
                       placeholder="402, Business Tower, M.I. Road"
-                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-medium text-slate-900 bg-white"
+                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-medium text-content bg-surface"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">City, State & PIN</label>
+                    <label className="block text-xs font-bold text-secondary uppercase">City, State & PIN</label>
                     <input
                       type="text"
                       value={companyCity}
                       onChange={(e) => setCompanyCity(e.target.value)}
                       placeholder="Jaipur, Rajasthan, India - 302001"
-                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-medium text-slate-900 bg-white"
+                      className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-medium text-content bg-surface"
                     />
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Phone</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Phone</label>
                       <input
                         type="text"
                         value={companyPhone}
                         onChange={(e) => setCompanyPhone(e.target.value)}
                         placeholder="+91 98000 12345"
-                        className="w-full mt-1 px-2 py-1 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white"
+                        className="w-full mt-1 px-2 py-1 rounded-lg border border-line text-sm text-content bg-surface"
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Email</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Email</label>
                       <input
                         type="text"
                         value={companyEmail}
                         onChange={(e) => setCompanyEmail(e.target.value)}
                         placeholder="info@company.com"
-                        className="w-full mt-1 px-2 py-1 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white"
+                        className="w-full mt-1 px-2 py-1 rounded-lg border border-line text-sm text-content bg-surface"
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Website</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Website</label>
                       <input
                         type="text"
                         value={companyWebsite}
                         onChange={(e) => setCompanyWebsite(e.target.value)}
                         placeholder="www.company.com"
-                        className="w-full mt-1 px-2 py-1 rounded-lg border border-slate-300 text-xs text-slate-900 bg-white"
+                        className="w-full mt-1 px-2 py-1 rounded-lg border border-line text-sm text-content bg-surface"
                       />
                     </div>
                   </div>
@@ -939,12 +939,12 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           </div>
 
           {/* Section B: Individual Terms & Conditions Paragraph Editors for all 3 Invoices */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="space-y-4 pt-4 border-t border-line">
             <div>
-              <h4 className="font-extrabold text-slate-900 uppercase text-xs tracking-wider text-slate-800">
+              <h4 className="font-semibold text-content uppercase text-sm tracking-wider text-content">
                 2. Terms & Conditions (Paragraph Format Textarea)
               </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-xs text-secondary mt-0.5">
                 Enter your terms and policies in full paragraph format below. You can include paragraphs, bullet points, numbers, and policies — line breaks are preserved in the printable invoices.
               </p>
             </div>
@@ -952,81 +952,81 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-xs">
               
               {/* 1. Tax Invoice Terms Editor */}
-              <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
-                  <h5 className="font-extrabold text-emerald-900 text-xs uppercase flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-emerald-600" />
+              <div className="p-5 rounded-xl bg-success-soft/40 border border-success-line space-y-3">
+                <div className="flex items-center justify-between border-b border-success-line pb-2">
+                  <h5 className="font-semibold text-success-ink text-sm uppercase flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-success-ink" />
                     1. Tax Invoice Terms
                   </h5>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">Paragraph Box</span>
+                  <span className="text-xs bg-success-soft text-success-ink font-bold px-2 py-0.5 rounded">Paragraph Box</span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Terms & Conditions Paragraphs:</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Terms & Conditions Paragraphs:</label>
                   <textarea
                     rows={8}
                     value={taxTermsText}
                     onChange={(e) => setTaxTermsText(e.target.value)}
                     placeholder="Enter Tax Invoice Terms & Conditions paragraphs here..."
-                    className="w-full p-3 rounded-xl border border-emerald-300 text-xs text-slate-800 bg-white font-sans leading-relaxed focus:ring-2 focus:ring-emerald-500/20 shadow-xs"
+                    className="w-full p-3 rounded-xl border border-success-line text-sm text-content bg-surface font-sans leading-relaxed focus:ring-2 focus:ring-success-line/20 shadow-xs"
                   />
-                  <p className="text-[10px] text-slate-500 italic">Applies to the 1. Tax Invoice (GST) template footer.</p>
+                  <p className="text-xs text-secondary italic">Applies to the 1. Tax Invoice (GST) template footer.</p>
                 </div>
               </div>
 
               {/* 2. Package Description Terms Editor */}
-              <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-indigo-200 pb-2">
-                  <h5 className="font-extrabold text-indigo-900 text-xs uppercase flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-indigo-600" />
+              <div className="p-5 rounded-xl bg-brand-soft/40 border border-brand-line space-y-3">
+                <div className="flex items-center justify-between border-b border-brand-line pb-2">
+                  <h5 className="font-semibold text-brand-ink text-sm uppercase flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-brand-ink" />
                     2. Package Description Terms
                   </h5>
-                  <span className="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">Paragraph Box</span>
+                  <span className="text-xs bg-brand-soft text-brand-ink font-bold px-2 py-0.5 rounded">Paragraph Box</span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Terms & Conditions Paragraphs:</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Terms & Conditions Paragraphs:</label>
                   <textarea
                     rows={8}
                     value={pkgDescTermsText}
                     onChange={(e) => setPkgDescTermsText(e.target.value)}
                     placeholder="Enter Package Description Terms paragraphs here..."
-                    className="w-full p-3 rounded-xl border border-indigo-300 text-xs text-slate-800 bg-white font-sans leading-relaxed focus:ring-2 focus:ring-indigo-500/20 shadow-xs"
+                    className="w-full p-3 rounded-xl border border-brand-line text-sm text-content bg-surface font-sans leading-relaxed focus:ring-2 focus:ring-brand-line/20 shadow-xs"
                   />
-                  <p className="text-[10px] text-slate-500 italic">Applies to the 2. Package Description template footer.</p>
+                  <p className="text-xs text-secondary italic">Applies to the 2. Package Description template footer.</p>
                 </div>
               </div>
 
               {/* 3. Payment Confirmation Slip Terms Editor */}
-              <div className="p-5 rounded-2xl bg-amber-50/40 border border-amber-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-amber-200 pb-2">
-                  <h5 className="font-extrabold text-amber-900 text-xs uppercase flex items-center gap-1.5">
-                    <Plane className="w-4 h-4 text-amber-600" />
+              <div className="p-5 rounded-xl bg-warning-soft/40 border border-warning-line space-y-3">
+                <div className="flex items-center justify-between border-b border-warning-line pb-2">
+                  <h5 className="font-semibold text-warning-ink text-sm uppercase flex items-center gap-1.5">
+                    <Plane className="w-4 h-4 text-warning-ink" />
                     3. Payment Confirmation Slip Terms
                   </h5>
-                  <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Paragraph Box</span>
+                  <span className="text-xs bg-warning-soft text-warning-ink font-bold px-2 py-0.5 rounded">Paragraph Box</span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-bold text-slate-600 uppercase">Terms & Conditions Paragraphs:</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Terms & Conditions Paragraphs:</label>
                   <textarea
                     rows={8}
                     value={pkgCustomerTermsText}
                     onChange={(e) => setPkgCustomerTermsText(e.target.value)}
                     placeholder="Enter Payment Confirmation Slip terms, payment schedules, and cancellation policies paragraphs here..."
-                    className="w-full p-3 rounded-xl border border-amber-300 text-xs text-slate-800 bg-white font-sans leading-relaxed focus:ring-2 focus:ring-amber-500/20 shadow-xs"
+                    className="w-full p-3 rounded-xl border border-warning-line text-sm text-content bg-surface font-sans leading-relaxed focus:ring-2 focus:ring-warning-line/20 shadow-xs"
                   />
-                  <p className="text-[10px] text-slate-500 italic">Applies to the 3. Payment Confirmation Slip template footer.</p>
+                  <p className="text-xs text-secondary italic">Applies to the 3. Payment Confirmation Slip template footer.</p>
                 </div>
               </div>
 
             </div>
           </div>
 
-          <div className="flex justify-end pt-4 border-t border-slate-100">
+          <div className="flex justify-end pt-4 border-t border-line">
             <button
               onClick={handleSaveSettings}
-              className="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs flex items-center gap-2 shadow-lg transition-all"
+              className="px-8 py-3 rounded-xl bg-brand hover:bg-brand text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all"
             >
               <Save className="w-4 h-4" />
               <span>Save Company Details & Terms</span>
@@ -1038,24 +1038,24 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
       {/* MANUAL FILLING FORM EDITOR PANEL */}
       {!isReadOnly && activeType !== 'settings' && isEditMode && (
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+        <div className="bg-surface border border-line rounded-xl p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
           
           {/* Top Bar with Auto-fill Dropdown */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-line">
             <div>
-              <h3 className="font-extrabold text-slate-900 text-base flex items-center gap-2">
-                <Edit3 className="w-4 h-4 text-indigo-600" />
+              <h3 className="font-semibold text-content text-base flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-brand-ink" />
                 Manual Data Entry & Customer Auto-Fill
               </h3>
-              <p className="text-xs text-slate-500">Fill in details manually below or select a customer to auto-fill fields instantly.</p>
+              <p className="text-sm text-secondary">Fill in details manually below or select a customer to auto-fill fields instantly.</p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-600">Auto-fill from Customer:</span>
+              <span className="text-sm font-bold text-secondary">Auto-fill from Customer:</span>
               <select
                 value={selectedCustomerId}
                 onChange={(e) => setSelectedCustomerId(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="px-3 py-1.5 rounded-xl border border-line text-sm font-bold text-content bg-canvas outline-none focus:ring-2 focus:ring-brand-line/20"
               >
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -1070,78 +1070,78 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             
             {/* Section 1: Customer Details */}
-            <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <h4 className="font-extrabold text-slate-900 uppercase text-[11px] tracking-wider text-indigo-700">Customer & Client Profile</h4>
+            <div className="space-y-2 p-4 rounded-xl bg-canvas border border-line">
+              <h4 className="font-semibold text-content uppercase text-xs tracking-wider text-brand-ink">Customer & Client Profile</h4>
               
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Customer Name</label>
+                <label className="block text-xs font-bold text-secondary uppercase">Customer Name</label>
                 <input
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
+                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold text-content bg-surface"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Mobile Number</label>
+                <label className="block text-xs font-bold text-secondary uppercase">Mobile Number</label>
                 <input
                   type="text"
                   value={customerMobile}
                   onChange={(e) => setCustomerMobile(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
+                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold text-content bg-surface"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Email Address</label>
+                <label className="block text-xs font-bold text-secondary uppercase">Email Address</label>
                 <input
                   type="text"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-900 bg-white"
+                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line text-content bg-surface"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Customer GSTIN</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Customer GSTIN</label>
                   <input
                     type="text"
                     value={customerGstin}
                     onChange={(e) => setCustomerGstin(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-mono text-content bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Customer PAN</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Customer PAN</label>
                   <input
                     type="text"
                     value={customerPan}
                     onChange={(e) => setCustomerPan(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-mono text-content bg-surface"
                   />
                 </div>
               </div>
             </div>
 
             {/* Section 2: Reference & Dates */}
-            <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <h4 className="font-extrabold text-slate-900 uppercase text-[11px] tracking-wider text-teal-700">Invoice Reference & Trip Info</h4>
+            <div className="space-y-2 p-4 rounded-xl bg-canvas border border-line">
+              <h4 className="font-semibold text-content uppercase text-xs tracking-wider text-success-ink">Invoice Reference & Trip Info</h4>
               
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Trip ID</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Trip ID</label>
                   <input
                     type="text"
                     value={tripId}
                     onChange={(e) => setTripId(e.target.value)}
                     placeholder="e.g. KL-1001"
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold font-mono text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold font-mono text-content bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">
+                  <label className="block text-xs font-bold text-secondary uppercase">
                     {activeType === 'package_customer' ? 'Receipt No.' : 'Invoice No.'}
                   </label>
                   <input
@@ -1149,60 +1149,60 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     value={invoiceNo}
                     onChange={(e) => setInvoiceNo(e.target.value)}
                     placeholder={activeType === 'package_customer' ? 'Receipt No.' : 'Invoice No.'}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold font-mono text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold font-mono text-content bg-surface"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Invoice Date</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Invoice Date</label>
                   <input
                     type="text"
                     value={invoiceDate}
                     onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line text-content bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Trip Start Date</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Trip Start Date</label>
                   <input
                     type="text"
                     value={tripStartDate}
                     onChange={(e) => setTripStartDate(e.target.value)}
-                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-900 bg-white"
+                    className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line text-content bg-surface"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Place of Supply</label>
+                <label className="block text-xs font-bold text-secondary uppercase">Place of Supply</label>
                 <input
                   type="text"
                   value={placeOfSupply}
                   onChange={(e) => setPlaceOfSupply(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 text-slate-900 bg-white"
+                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line text-content bg-surface"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Trip Name / Package Title</label>
+                <label className="block text-xs font-bold text-secondary uppercase">Trip Name / Package Title</label>
                 <input
                   type="text"
                   value={tripName}
                   onChange={(e) => setTripName(e.target.value)}
-                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
+                  className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold text-content bg-surface"
                 />
               </div>
             </div>
 
             {/* Section 3: Passenger Details Box */}
-            <div className="space-y-2 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div className="space-y-2 p-4 rounded-xl bg-canvas border border-line">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-slate-900 uppercase text-[11px] tracking-wider text-amber-700">Travelers & Passengers List</h4>
+                <h4 className="font-semibold text-content uppercase text-xs tracking-wider text-warning-ink">Travelers & Passengers List</h4>
                 <button
                   onClick={() => setPassengers([...passengers, { id: Date.now().toString(), text: 'New Passenger Age 25' }])}
-                  className="px-2 py-0.5 rounded bg-amber-600 text-white text-[10px] font-bold flex items-center gap-1"
+                  className="px-2 py-0.5 rounded bg-warning-strong text-white text-xs font-bold flex items-center gap-1"
                 >
                   <Plus className="w-3 h-3" /> Add
                 </button>
@@ -1219,11 +1219,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         updated[idx].text = e.target.value;
                         setPassengers(updated);
                       }}
-                      className="flex-1 px-2.5 py-1 rounded border border-slate-300 text-xs font-semibold bg-white"
+                      className="flex-1 px-2.5 py-1 rounded border border-line text-sm font-semibold bg-surface"
                     />
                     <button
                       onClick={() => setPassengers(passengers.filter(item => item.id !== p.id))}
-                      className="p-1 rounded text-rose-600 hover:bg-rose-50"
+                      className="p-1 rounded text-danger-ink hover:bg-danger-soft"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1236,25 +1236,25 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
           {/* Type Specific Items Editor & TAX MODE SWITCHER */}
           {activeType === 'tax' && (
-            <div className="pt-4 border-t border-slate-200 space-y-4">
+            <div className="pt-4 border-t border-line space-y-4">
               
               {/* GST Tax Mode Selector (CGST + SGST vs IGST) */}
-              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+              <div className="p-4 rounded-xl bg-success-soft/60 border border-success-line flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
                 <div>
-                  <h4 className="font-black text-emerald-900 uppercase tracking-wider text-xs flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-emerald-700" /> GST Tax Calculation Mode
+                  <h4 className="font-semibold text-success-ink uppercase tracking-wider text-sm flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 text-success-ink" /> GST Tax Calculation Mode
                   </h4>
-                  <p className="text-[11px] text-emerald-700 font-medium mt-0.5">Manually choose between Dual Tax (CGST + SGST) for intra-state or Single Tax (IGST) for inter-state billing.</p>
+                  <p className="text-xs text-success-ink font-medium mt-0.5">Manually choose between Dual Tax (CGST + SGST) for intra-state or Single Tax (IGST) for inter-state billing.</p>
                 </div>
 
-                <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-emerald-300 shrink-0 font-bold">
+                <div className="flex items-center gap-2 bg-surface p-1 rounded-xl border border-success-line shrink-0 font-bold">
                   <button
                     type="button"
                     onClick={() => setTaxMode('cgst_sgst')}
-                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                       taxMode === 'cgst_sgst'
-                        ? 'bg-emerald-600 text-white font-extrabold shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100'
+                        ? 'bg-success-strong text-white font-semibold shadow-sm'
+                        : 'text-content hover:bg-subtle'
                     }`}
                   >
                     ● CGST + SGST (9% + 9%)
@@ -1263,10 +1263,10 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   <button
                     type="button"
                     onClick={() => setTaxMode('igst')}
-                    className={`px-3 py-1.5 rounded-lg text-xs transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                       taxMode === 'igst'
-                        ? 'bg-emerald-600 text-white font-extrabold shadow-sm'
-                        : 'text-slate-700 hover:bg-slate-100'
+                        ? 'bg-success-strong text-white font-semibold shadow-sm'
+                        : 'text-content hover:bg-subtle'
                     }`}
                   >
                     ● IGST (18%)
@@ -1275,7 +1275,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">Tax Invoice Service Items & SAC Codes</h4>
+                <h4 className="font-bold text-sm uppercase tracking-wider text-content">Tax Invoice Service Items & SAC Codes</h4>
                 <button
                   onClick={() => setTaxItems([...taxItems, {
                     id: Date.now().toString(),
@@ -1287,7 +1287,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     sgstRate: 9,
                     igstRate: 18
                   }])}
-                  className="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center gap-1"
+                  className="px-3 py-1 rounded-lg bg-brand text-white font-bold text-sm flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Service Row
                 </button>
@@ -1295,9 +1295,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
               <div className="space-y-2">
                 {taxItems.map((item, index) => (
-                  <div key={item.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 md:grid-cols-6 gap-2 text-xs items-center">
+                  <div key={item.id} className="p-3 rounded-xl bg-canvas border border-line grid grid-cols-1 md:grid-cols-6 gap-2 text-sm items-center">
                     <div className="md:col-span-2">
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Description of Service</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Description of Service</label>
                       <input
                         type="text"
                         value={item.description}
@@ -1306,11 +1306,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                           updated[index].description = e.target.value;
                           setTaxItems(updated);
                         }}
-                        className="w-full mt-0.5 px-2 py-1 rounded border border-slate-300 font-bold bg-white"
+                        className="w-full mt-0.5 px-2 py-1 rounded border border-line font-bold bg-surface"
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">SAC Code</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">SAC Code</label>
                       <input
                         type="text"
                         value={item.sacCode}
@@ -1319,11 +1319,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                           updated[index].sacCode = e.target.value;
                           setTaxItems(updated);
                         }}
-                        className="w-full mt-0.5 px-2 py-1 rounded border border-slate-300 font-mono bg-white"
+                        className="w-full mt-0.5 px-2 py-1 rounded border border-line font-mono bg-surface"
                       />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-500 uppercase">Taxable Value (₹)</label>
+                      <label className="block text-xs font-bold text-secondary uppercase">Taxable Value (₹)</label>
                       <input
                         type="number"
                         value={item.taxableValue}
@@ -1332,13 +1332,13 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                           updated[index].taxableValue = parseFloat(e.target.value) || 0;
                           setTaxItems(updated);
                         }}
-                        className="w-full mt-0.5 px-2 py-1 rounded border border-slate-300 font-mono font-bold bg-white"
+                        className="w-full mt-0.5 px-2 py-1 rounded border border-line font-mono font-bold bg-surface"
                       />
                     </div>
 
                     {taxMode === 'cgst_sgst' ? (
                       <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase">CGST % / SGST %</label>
+                        <label className="block text-xs font-bold text-secondary uppercase">CGST % / SGST %</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="number"
@@ -1348,9 +1348,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                               updated[index].cgstRate = parseFloat(e.target.value) || 0;
                               setTaxItems(updated);
                             }}
-                            className="w-1/2 px-1 py-1 rounded border border-slate-300 font-mono text-center bg-white"
+                            className="w-1/2 px-1 py-1 rounded border border-line font-mono text-center bg-surface"
                           />
-                          <span className="text-slate-400">/</span>
+                          <span className="text-muted">/</span>
                           <input
                             type="number"
                             value={item.sgstRate}
@@ -1359,13 +1359,13 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                               updated[index].sgstRate = parseFloat(e.target.value) || 0;
                               setTaxItems(updated);
                             }}
-                            className="w-1/2 px-1 py-1 rounded border border-slate-300 font-mono text-center bg-white"
+                            className="w-1/2 px-1 py-1 rounded border border-line font-mono text-center bg-surface"
                           />
                         </div>
                       </div>
                     ) : (
                       <div>
-                        <label className="block text-[9px] font-bold text-slate-500 uppercase">IGST Rate %</label>
+                        <label className="block text-xs font-bold text-secondary uppercase">IGST Rate %</label>
                         <input
                           type="number"
                           value={item.igstRate || 18}
@@ -1374,7 +1374,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                             updated[index].igstRate = parseFloat(e.target.value) || 0;
                             setTaxItems(updated);
                           }}
-                          className="w-full mt-0.5 px-2 py-1 rounded border border-slate-300 font-mono font-bold text-center bg-white"
+                          className="w-full mt-0.5 px-2 py-1 rounded border border-line font-mono font-bold text-center bg-surface"
                         />
                       </div>
                     )}
@@ -1382,7 +1382,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <div className="flex items-center justify-end pt-3">
                       <button
                         onClick={() => setTaxItems(taxItems.filter(i => i.id !== item.id))}
-                        className="p-1 text-rose-600 hover:bg-rose-100 rounded"
+                        className="p-1 text-danger-ink hover:bg-danger-soft rounded"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1394,16 +1394,16 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           )}
 
           {activeType === 'package_description' && (
-            <div className="pt-4 border-t border-slate-200 space-y-3">
+            <div className="pt-4 border-t border-line space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">Package Description Expense Breakdown Rows</h4>
+                <h4 className="font-bold text-sm uppercase tracking-wider text-content">Package Description Expense Breakdown Rows</h4>
                 <button
                   onClick={() => setPkgDescItems([...pkgDescItems, {
                     id: Date.now().toString(),
                     description: 'Extra Sightseeing & Guide Services',
                     price: 5000
                   }])}
-                  className="px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center gap-1"
+                  className="px-3 py-1 rounded-lg bg-brand text-white font-bold text-sm flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Expense Item
                 </button>
@@ -1411,8 +1411,8 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
               <div className="space-y-2">
                 {pkgDescItems.map((item, index) => (
-                  <div key={item.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-3 text-xs">
-                    <span className="font-mono font-bold text-slate-500">{index + 1}.</span>
+                  <div key={item.id} className="p-3 rounded-xl bg-canvas border border-line flex items-center gap-3 text-sm">
+                    <span className="font-mono font-bold text-secondary">{index + 1}.</span>
                     <input
                       type="text"
                       value={item.description}
@@ -1421,10 +1421,10 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         updated[index].description = e.target.value;
                         setPkgDescItems(updated);
                       }}
-                      className="flex-1 px-3 py-1.5 rounded border border-slate-300 font-bold bg-white"
+                      className="flex-1 px-3 py-1.5 rounded border border-line font-bold bg-surface"
                     />
                     <div className="w-36 flex items-center gap-1">
-                      <span className="font-bold text-slate-500">₹</span>
+                      <span className="font-bold text-secondary">₹</span>
                       <input
                         type="number"
                         value={item.price}
@@ -1433,12 +1433,12 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                           updated[index].price = parseFloat(e.target.value) || 0;
                           setPkgDescItems(updated);
                         }}
-                        className="w-full px-2 py-1 rounded border border-slate-300 font-mono font-bold bg-white"
+                        className="w-full px-2 py-1 rounded border border-line font-mono font-bold bg-surface"
                       />
                     </div>
                     <button
                       onClick={() => setPkgDescItems(pkgDescItems.filter(i => i.id !== item.id))}
-                      className="p-1 text-rose-600 hover:bg-rose-100 rounded"
+                      className="p-1 text-danger-ink hover:bg-danger-soft rounded"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -1449,43 +1449,43 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           )}
 
           {activeType === 'package_customer' && (
-            <div className="pt-4 border-t border-slate-200 space-y-3">
-              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-700">Customer Package Specifics & Installment Schedule</h4>
+            <div className="pt-4 border-t border-line space-y-3">
+              <h4 className="font-bold text-sm uppercase tracking-wider text-content">Customer Package Specifics & Installment Schedule</h4>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase">Deposit Status Badge</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Deposit Status Badge</label>
                   <input
                     type="text"
                     value={pkgDepositStatus}
                     onChange={(e) => setPkgDepositStatus(e.target.value)}
-                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-slate-300 font-bold bg-white"
+                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase">Hotel Badge Tag</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Hotel Badge Tag</label>
                   <input
                     type="text"
                     value={hotelBadge}
                     onChange={(e) => setHotelBadge(e.target.value)}
-                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-slate-300 font-bold bg-white"
+                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase">Meal Badge Tag</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Meal Badge Tag</label>
                   <input
                     type="text"
                     value={mealBadge}
                     onChange={(e) => setMealBadge(e.target.value)}
-                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-slate-300 font-bold bg-white"
+                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase">Total Amount Paid (₹)</label>
+                  <label className="block text-xs font-bold text-secondary uppercase">Total Amount Paid (₹)</label>
                   <input
                     type="number"
                     value={totalPaidAmount}
                     onChange={(e) => setTotalPaidAmount(parseFloat(e.target.value) || 0)}
-                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-slate-300 font-bold text-emerald-700 bg-white"
+                    className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold text-success-ink bg-surface"
                   />
                 </div>
               </div>
@@ -1497,7 +1497,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
       {/* PRINTABLE / DISPLAY CONTAINER (PIXEL PERFECT MATCHING USER PDFs) */}
       {activeType !== 'settings' && (
-        <div className="p-4 bg-slate-200 dark:bg-zinc-800 rounded-3xl overflow-x-auto flex justify-center custom-scrollbar print:bg-white print:p-0">
+        <div className="p-4 bg-hover rounded-xl overflow-x-auto flex justify-center custom-scrollbar print:bg-white print:p-0">
           
           <div
             ref={printRef}

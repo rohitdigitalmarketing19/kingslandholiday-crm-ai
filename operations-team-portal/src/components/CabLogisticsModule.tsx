@@ -369,36 +369,36 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
     <div className="space-y-6">
       
       {isReadOnly && (
-        <div className="p-3.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between text-xs">
+        <div className="p-3.5 rounded-lg bg-warning-soft border border-warning-line text-warning-ink flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
-            <AlertCircle size={16} className="text-amber-600 flex-shrink-0" />
+            <AlertCircle size={16} className="text-warning-ink flex-shrink-0" />
             <p className="font-medium">Read-Only View: Payment modifications and payout logs are restricted.</p>
           </div>
-          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold text-[11px]">View Only</span>
+          <span className="px-2 py-0.5 rounded bg-warning-soft text-warning-ink font-semibold text-xs">View Only</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-surface border border-line rounded-xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-brand-ink font-semibold text-sm uppercase tracking-wider mb-1">
             <Building2 size={15} />
             <span>Operations Logistics & Payouts</span>
           </div>
-          <h2 className="text-lg font-semibold text-slate-800">Hotel & Cab Driver Payment Management</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <h2 className="text-lg font-semibold text-content">Hotel & Cab Driver Payment Management</h2>
+          <p className="text-sm text-secondary mt-0.5">
             Manage individual hotel voucher payouts and driver logistics. Edit costs directly on cards, record partial advances or mark payments cleared.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-center">
-            <span className="text-[10px] uppercase font-medium text-slate-500 block">Total Trips</span>
-            <span className="text-base font-semibold text-slate-800 tabular-nums">{customers.length}</span>
+          <div className="px-3 py-2 rounded-lg bg-canvas border border-line text-center">
+            <span className="text-xs uppercase font-medium text-secondary block">Total Trips</span>
+            <span className="text-base font-semibold text-content tabular-nums">{customers.length}</span>
           </div>
-          <div className="px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-center">
-            <span className="text-[10px] uppercase font-medium text-emerald-600 block">Active Logistics</span>
-            <span className="text-base font-semibold text-emerald-700 tabular-nums">
+          <div className="px-3 py-2 rounded-lg bg-success-soft border border-success-line text-center">
+            <span className="text-xs uppercase font-medium text-success-ink block">Active Logistics</span>
+            <span className="text-base font-semibold text-success-ink tabular-nums">
               {customers.filter((c) => c.hotelPaymentStatus === 'Paid to Hotel' || c.cabPaymentStatus === 'Paid to Driver').length}
             </span>
           </div>
@@ -406,14 +406,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
       </div>
 
       {/* Filter Bar */}
-      <div className="p-3.5 rounded-lg bg-white border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="p-3.5 rounded-lg bg-surface border border-line flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="flex items-center gap-2">
-          <User size={15} className="text-slate-400" />
-          <span className="font-medium text-slate-700">Filter by Trip:</span>
+          <User size={15} className="text-muted" />
+          <span className="font-medium text-content">Filter by Trip:</span>
           <select
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 max-w-[280px]"
+            className="px-2.5 py-1.5 rounded-md text-sm font-medium bg-canvas text-content border border-line focus:outline-none focus:ring-1 focus:ring-brand-line max-w-[280px]"
           >
             <option value="all">All Converted Trips ({customers.length})</option>
             {customers.map((c) => (
@@ -424,8 +424,8 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
           </select>
         </div>
 
-        <span className="text-slate-500">
-          Showing <strong className="text-slate-800 tabular-nums">{filtered.length}</strong> trip payment records
+        <span className="text-secondary">
+          Showing <strong className="text-content tabular-nums">{filtered.length}</strong> trip payment records
         </span>
       </div>
 
@@ -463,65 +463,65 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
           const totalHotelsRemaining = Math.max(0, totalHotelsBudget - totalHotelsPaid);
 
           return (
-            <div key={cust.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div key={cust.id} className="bg-surface rounded-xl border border-line shadow-sm overflow-hidden">
               
               {/* Trip Header */}
-              <div className="p-4 bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="p-4 bg-inverse text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-mono text-[11px] font-semibold border border-slate-700">
+                    <span className="px-2 py-0.5 rounded bg-inverse text-brand-ink font-mono text-xs font-semibold border border-line">
                       {cust.bookingId}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-medium text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-inverse text-slate-300 font-medium text-xs">
                       {cust.destination}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-emerald-300 font-medium text-[11px] flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded bg-inverse text-success-ink font-medium text-xs flex items-center gap-1">
                       <Calendar size={12} />
                       {cust.startDate} to {cust.endDate}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-medium text-[11px]">
+                    <span className="px-2 py-0.5 rounded bg-inverse text-slate-300 font-medium text-xs">
                       {custVouchers.length} {custVouchers.length === 1 ? 'Hotel' : 'Hotels'}
                     </span>
                   </div>
                   <h3 className="text-base font-semibold text-white">
-                    Guest: {cust.name} <span className="text-xs font-normal text-slate-400">({cust.paxAdults} Adults {cust.paxChildren > 0 ? `· ${cust.paxChildren} Child` : ''})</span>
+                    Guest: {cust.name} <span className="text-sm font-normal text-muted">({cust.paxAdults} Adults {cust.paxChildren > 0 ? `· ${cust.paxChildren} Child` : ''})</span>
                   </h3>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-300">
+                  <span className="text-sm text-slate-300">
                     Total Trip Amount: <strong className="font-mono text-white text-sm">₹{(cust.totalAmount || 0).toLocaleString('en-IN')}</strong>
                   </span>
                 </div>
               </div>
 
               {/* Trip Body */}
-              <div className="p-5 space-y-5 bg-slate-50/40">
+              <div className="p-5 space-y-5 bg-canvas/40">
                 
                 {/* 1. HOTEL BREAKDOWN SECTION */}
-                <div className="p-4 rounded-lg bg-white border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="p-4 rounded-lg bg-surface border border-line space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-indigo-50 text-indigo-600">
+                      <div className="p-1.5 rounded-md bg-brand-soft text-brand-ink">
                         <Building2 size={16} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-slate-800">Hotel Payments Breakdown ({custVouchers.length} {custVouchers.length === 1 ? 'Hotel' : 'Hotels'})</h4>
-                        <p className="text-[11px] text-slate-500">
+                        <h4 className="text-sm font-semibold text-content">Hotel Payments Breakdown ({custVouchers.length} {custVouchers.length === 1 ? 'Hotel' : 'Hotels'})</h4>
+                        <p className="text-xs text-secondary">
                           Payout records for individual hotel properties. Edit cost or record payouts directly.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-slate-600 text-xs">
-                        Budget: <strong className="text-slate-800 font-mono">₹{totalHotelsBudget.toLocaleString('en-IN')}</strong>
+                      <div className="px-2.5 py-1 rounded-md bg-canvas border border-line text-secondary text-sm">
+                        Budget: <strong className="text-content font-mono">₹{totalHotelsBudget.toLocaleString('en-IN')}</strong>
                       </div>
-                      <div className="px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs">
+                      <div className="px-2.5 py-1 rounded-md bg-success-soft border border-success-line text-success-ink text-sm">
                         Paid: <strong className="font-mono">₹{totalHotelsPaid.toLocaleString('en-IN')}</strong>
                       </div>
                       {totalHotelsRemaining > 0 && (
-                        <div className="px-2.5 py-1 rounded-md bg-amber-50 border border-amber-100 text-amber-700 text-xs">
+                        <div className="px-2.5 py-1 rounded-md bg-warning-soft border border-warning-line text-warning-ink text-sm">
                           Due: <strong className="font-mono">₹{totalHotelsRemaining.toLocaleString('en-IN')}</strong>
                         </div>
                       )}
@@ -546,10 +546,10 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                           key={v.id} 
                           className={`p-4 rounded-lg border transition-all space-y-3.5 flex flex-col justify-between ${
                             hStatus === 'Paid to Hotel' 
-                              ? 'bg-white border-emerald-200' 
+                              ? 'bg-surface border-success-line' 
                               : hStatus === 'Partially Paid' 
-                              ? 'bg-white border-amber-200' 
-                              : 'bg-white border-slate-200'
+                              ? 'bg-surface border-warning-line' 
+                              : 'bg-surface border-line'
                           }`}
                         >
                           <div>
@@ -557,14 +557,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                             <div className="flex items-start justify-between gap-2 mb-2">
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5 mb-1">
-                                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                  <span className="text-xs font-semibold text-secondary bg-subtle px-2 py-0.5 rounded">
                                     Hotel #{idx + 1} · {v.city || cust.destination}
                                   </span>
                                   {!isReadOnly && !isEditing && (
                                     <button
                                       type="button"
                                       onClick={() => handleStartEditVoucher(v)}
-                                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                      className="p-1 text-muted hover:text-brand-ink hover:bg-brand-soft rounded transition-colors"
                                       title="Edit Hotel Details & Cost"
                                     >
                                       <Pencil size={12} />
@@ -579,35 +579,35 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                       value={tempVoucherName}
                                       onChange={(e) => setTempVoucherName(e.target.value)}
                                       placeholder="Hotel Name"
-                                      className="w-full px-2 py-1 text-xs font-semibold border border-indigo-300 rounded bg-indigo-50/40 outline-none"
+                                      className="w-full px-2 py-1 text-sm font-semibold border border-brand-line rounded bg-brand-soft/40 outline-none"
                                     />
                                     <input
                                       type="text"
                                       value={tempVoucherRoomType}
                                       onChange={(e) => setTempVoucherRoomType(e.target.value)}
                                       placeholder="Room Type"
-                                      className="w-full px-2 py-1 text-[11px] font-medium border border-slate-300 rounded bg-white outline-none"
+                                      className="w-full px-2 py-1 text-xs font-medium border border-line rounded bg-surface outline-none"
                                     />
                                   </div>
                                 ) : (
                                   <>
-                                    <h5 className="font-semibold text-slate-800 text-sm truncate">
+                                    <h5 className="font-semibold text-content text-sm truncate">
                                       {v.hotelName || `Hotel ${idx + 1}`}
                                     </h5>
-                                    <p className="text-xs text-slate-500 font-medium mt-0.5 flex items-center gap-1">
-                                      <BedDouble size={12} className="text-slate-400" />
+                                    <p className="text-sm text-secondary font-medium mt-0.5 flex items-center gap-1">
+                                      <BedDouble size={12} className="text-muted" />
                                       <span>{v.roomType || 'Standard Deluxe'}</span>
                                     </p>
                                   </>
                                 )}
                               </div>
 
-                              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
                                 hStatus === 'Paid to Hotel' 
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                  ? 'bg-success-soft text-success-ink border-success-line' 
                                   : hStatus === 'Partially Paid' 
-                                  ? 'bg-amber-50 text-amber-700 border-amber-200' 
-                                  : 'bg-slate-100 text-slate-600 border-slate-200'
+                                  ? 'bg-warning-soft text-warning-ink border-warning-line' 
+                                  : 'bg-subtle text-secondary border-line'
                               }`}>
                                 {hStatus}
                               </span>
@@ -616,34 +616,34 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                             {/* Financial Metric Row */}
                             <div className="grid grid-cols-3 gap-2 text-center mt-2.5">
                               {/* Cost */}
-                              <div className="p-2 rounded-md bg-slate-50 border border-slate-100">
-                                <span className="text-[10px] uppercase font-medium text-slate-500 block">Cost</span>
+                              <div className="p-2 rounded-md bg-canvas border border-line">
+                                <span className="text-xs uppercase font-medium text-secondary block">Cost</span>
                                 {isEditing ? (
                                   <input
                                     type="number"
                                     value={tempVoucherCost}
                                     onChange={(e) => setTempVoucherCost(Number(e.target.value))}
-                                    className="w-full text-center px-1 py-0.5 text-xs font-mono font-semibold border border-indigo-300 rounded bg-white mt-1 outline-none"
+                                    className="w-full text-center px-1 py-0.5 text-sm font-mono font-semibold border border-brand-line rounded bg-surface mt-1 outline-none"
                                   />
                                 ) : (
-                                  <span className="font-semibold text-sm text-slate-800 font-mono block mt-0.5 tabular-nums">
+                                  <span className="font-semibold text-sm text-content font-mono block mt-0.5 tabular-nums">
                                     ₹{hCost.toLocaleString('en-IN')}
                                   </span>
                                 )}
                               </div>
 
                               {/* Paid */}
-                              <div className="p-2 rounded-md bg-emerald-50 border border-emerald-100">
-                                <span className="text-[10px] uppercase font-medium text-emerald-600 block">Paid</span>
-                                <span className="font-semibold text-sm text-emerald-700 font-mono block mt-0.5 tabular-nums">
+                              <div className="p-2 rounded-md bg-success-soft border border-success-line">
+                                <span className="text-xs uppercase font-medium text-success-ink block">Paid</span>
+                                <span className="font-semibold text-sm text-success-ink font-mono block mt-0.5 tabular-nums">
                                   ₹{hPaid.toLocaleString('en-IN')}
                                 </span>
                               </div>
 
                               {/* Balance */}
-                              <div className="p-2 rounded-md bg-amber-50 border border-amber-100">
-                                <span className="text-[10px] uppercase font-medium text-amber-600 block">Balance</span>
-                                <span className="font-semibold text-sm text-amber-700 font-mono block mt-0.5 tabular-nums">
+                              <div className="p-2 rounded-md bg-warning-soft border border-warning-line">
+                                <span className="text-xs uppercase font-medium text-warning-ink block">Balance</span>
+                                <span className="font-semibold text-sm text-warning-ink font-mono block mt-0.5 tabular-nums">
                                   ₹{hRemaining.toLocaleString('en-IN')}
                                 </span>
                               </div>
@@ -655,14 +655,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleSaveVoucherDetails(v)}
-                                  className="px-2.5 py-1 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors"
+                                  className="px-2.5 py-1 text-sm bg-brand hover:bg-brand text-white rounded font-medium transition-colors"
                                 >
                                   Save Details
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setEditingVoucherId(null)}
-                                  className="px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded font-medium transition-colors"
+                                  className="px-2 py-1 text-sm bg-subtle hover:bg-hover text-secondary rounded font-medium transition-colors"
                                 >
                                   Cancel
                                 </button>
@@ -670,32 +670,32 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                             )}
 
                             {/* Payment Metadata */}
-                            <div className="mt-2.5 p-2 rounded-md bg-slate-50 border border-slate-100 text-[11px] space-y-1">
-                              <div className="flex items-center justify-between text-slate-600">
-                                <span className="text-slate-400">Paid Date:</span>
-                                <span className="font-mono text-slate-700 font-medium">{hPaidAt}</span>
+                            <div className="mt-2.5 p-2 rounded-md bg-canvas border border-line text-xs space-y-1">
+                              <div className="flex items-center justify-between text-secondary">
+                                <span className="text-muted">Paid Date:</span>
+                                <span className="font-mono text-content font-medium">{hPaidAt}</span>
                               </div>
-                              <div className="flex items-center justify-between text-slate-600">
-                                <span className="text-slate-400">Mode:</span>
-                                <span className="font-medium text-slate-700">{hMode}</span>
+                              <div className="flex items-center justify-between text-secondary">
+                                <span className="text-muted">Mode:</span>
+                                <span className="font-medium text-content">{hMode}</span>
                               </div>
-                              <div className="flex items-center justify-between text-slate-600">
-                                <span className="text-slate-400">Ref #:</span>
-                                <span className="font-mono text-slate-700 truncate max-w-[140px]">{hRef}</span>
+                              <div className="flex items-center justify-between text-secondary">
+                                <span className="text-muted">Ref #:</span>
+                                <span className="font-mono text-content truncate max-w-[140px]">{hRef}</span>
                               </div>
                             </div>
 
                             {/* Payment Parts Log */}
                             {Array.isArray(v.paymentLogs) && v.paymentLogs.length > 0 && (
-                              <div className="mt-2 p-2 rounded-md bg-slate-50 border border-slate-100 text-[11px] space-y-1">
-                                <div className="text-[10px] font-semibold uppercase text-slate-500 flex items-center justify-between">
+                              <div className="mt-2 p-2 rounded-md bg-canvas border border-line text-xs space-y-1">
+                                <div className="text-xs font-semibold uppercase text-secondary flex items-center justify-between">
                                   <span>Installments ({v.paymentLogs.length})</span>
-                                  <span className="font-mono text-emerald-700">₹{v.paymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}</span>
+                                  <span className="font-mono text-success-ink">₹{v.paymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}</span>
                                 </div>
                                 {v.paymentLogs.map((part, pIdx) => (
-                                  <div key={part.id || pIdx} className="flex items-center justify-between text-[10px] text-slate-600 bg-white p-1 rounded border border-slate-100">
-                                    <span className="font-mono text-slate-400">{part.paidAt}</span>
-                                    <span>Part {pIdx + 1}: <strong className="font-mono text-emerald-700">₹{part.amount.toLocaleString('en-IN')}</strong></span>
+                                  <div key={part.id || pIdx} className="flex items-center justify-between text-xs text-secondary bg-surface p-1 rounded border border-line">
+                                    <span className="font-mono text-muted">{part.paidAt}</span>
+                                    <span>Part {pIdx + 1}: <strong className="font-mono text-success-ink">₹{part.amount.toLocaleString('en-IN')}</strong></span>
                                   </div>
                                 ))}
                               </div>
@@ -704,13 +704,13 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
 
                           {/* Quick Payment Actions */}
                           {!isReadOnly && (
-                            <div className="pt-2 border-t border-slate-100">
+                            <div className="pt-2 border-t border-line">
                               {hStatus !== 'Paid to Hotel' ? (
                                 <div className="flex items-center gap-2">
                                   <button
                                     type="button"
                                     onClick={() => handleHotelCompletePaymentDone(cust, v, hCost)}
-                                    className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                                    className="flex-1 py-1.5 px-3 rounded-lg bg-success-strong hover:bg-success-strong text-white font-medium text-sm flex items-center justify-center gap-1.5 transition-colors"
                                   >
                                     <Check size={14} />
                                     <span>Payment Done</span>
@@ -728,14 +728,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                         setPartialHotelRef('');
                                       }
                                     }}
-                                    className="py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors"
+                                    className="py-1.5 px-2.5 rounded-lg bg-subtle hover:bg-hover text-content font-medium text-sm transition-colors"
                                   >
                                     <span>Partial</span>
                                   </button>
                                 </div>
                               ) : (
-                                <div className="py-1.5 px-3 rounded-lg bg-emerald-50 border border-emerald-100 text-center text-emerald-700 text-xs font-medium flex items-center justify-center gap-1.5">
-                                  <CheckCircle2 size={14} className="text-emerald-600" />
+                                <div className="py-1.5 px-3 rounded-lg bg-success-soft border border-success-line text-center text-success-ink text-sm font-medium flex items-center justify-center gap-1.5">
+                                  <CheckCircle2 size={14} className="text-success-ink" />
                                   <span>100% Hotel Payment Cleared</span>
                                 </div>
                               )}
@@ -744,28 +744,28 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
 
                           {/* Inline Partial Payment Form */}
                           {!isReadOnly && isPartialOpen && (
-                            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-2 text-xs animate-in fade-in duration-150">
-                              <div className="flex items-center justify-between font-medium text-slate-700 border-b border-slate-200 pb-1.5">
+                            <div className="p-3 rounded-lg bg-canvas border border-line space-y-2 text-sm animate-in fade-in duration-150">
+                              <div className="flex items-center justify-between font-medium text-content border-b border-line pb-1.5">
                                 <span>Record Partial Payment:</span>
-                                <span className="font-mono text-amber-700 font-semibold">Due: ₹{hRemaining.toLocaleString('en-IN')}</span>
+                                <span className="font-mono text-warning-ink font-semibold">Due: ₹{hRemaining.toLocaleString('en-IN')}</span>
                               </div>
                               <div className="space-y-1.5">
                                 <div>
-                                  <label className="text-[10px] text-slate-500 block">Amount (₹):</label>
+                                  <label className="text-xs text-secondary block">Amount (₹):</label>
                                   <input
                                     type="number"
                                     value={partialHotelAmount}
                                     onChange={(e) => setPartialHotelAmount(Number(e.target.value))}
-                                    className="w-full px-2 py-1 rounded bg-white text-slate-800 font-mono font-semibold border border-slate-200 text-xs outline-none focus:border-indigo-400"
+                                    className="w-full px-2 py-1 rounded bg-surface text-content font-mono font-semibold border border-line text-sm outline-none focus:border-brand-line"
                                   />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
-                                    <label className="text-[10px] text-slate-500 block">Mode:</label>
+                                    <label className="text-xs text-secondary block">Mode:</label>
                                     <select
                                       value={partialHotelMode}
                                       onChange={(e) => setPartialHotelMode(e.target.value)}
-                                      className="w-full px-1.5 py-1 rounded bg-white text-slate-700 border border-slate-200 text-xs outline-none"
+                                      className="w-full px-1.5 py-1 rounded bg-surface text-content border border-line text-sm outline-none"
                                     >
                                       <option value="UPI">UPI</option>
                                       <option value="Bank Transfer">Bank Transfer</option>
@@ -774,12 +774,12 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="text-[10px] text-slate-500 block">UTR / Ref #:</label>
+                                    <label className="text-xs text-secondary block">UTR / Ref #:</label>
                                     <input
                                       type="text"
                                       value={partialHotelRef}
                                       onChange={(e) => setPartialHotelRef(e.target.value)}
-                                      className="w-full px-2 py-1 rounded bg-white text-slate-800 font-mono text-xs border border-slate-200 outline-none"
+                                      className="w-full px-2 py-1 rounded bg-surface text-content font-mono text-sm border border-line outline-none"
                                       placeholder="Ref #"
                                     />
                                   </div>
@@ -788,14 +788,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleSavePartialHotelPayment(cust, v, hCost)}
-                                    className="flex-1 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors"
+                                    className="flex-1 py-1.5 rounded bg-success-strong hover:bg-success-strong text-white font-medium text-sm transition-colors"
                                   >
                                     Confirm
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setActivePartialHotelId(null)}
-                                    className="px-2 py-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium transition-colors"
+                                    className="px-2 py-1.5 rounded bg-hover hover:bg-hover text-secondary text-sm font-medium transition-colors"
                                   >
                                     Cancel
                                   </button>
@@ -811,25 +811,25 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                 </div>
 
                 {/* 2. CAB & DRIVER LOGISTICS & PAYOUTS */}
-                <div className="p-4 rounded-lg bg-white border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="p-4 rounded-lg bg-surface border border-line space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-md bg-teal-50 text-teal-600">
+                      <div className="p-1.5 rounded-md bg-success-soft text-success-ink">
                         <Car size={16} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-slate-800">Cab & Driver Payment Management</h4>
-                        <p className="text-[11px] text-slate-500">
+                        <h4 className="text-sm font-semibold text-content">Cab & Driver Payment Management</h4>
+                        <p className="text-xs text-secondary">
                           Driver allocation, vehicle details, and payout tracking with full or partial payment options.
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
-                        cabPayStatus === 'Paid to Driver' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        cabPayStatus === 'Partially Paid' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                        'bg-slate-100 text-slate-600 border-slate-200'
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                        cabPayStatus === 'Paid to Driver' ? 'bg-success-soft text-success-ink border-success-line' :
+                        cabPayStatus === 'Partially Paid' ? 'bg-warning-soft text-warning-ink border-warning-line' :
+                        'bg-subtle text-secondary border-line'
                       }`}>
                         {cabPayStatus}
                       </span>
@@ -840,15 +840,15 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     
                     {/* Column 1: Assigned Driver & Vehicle Info */}
-                    <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-3 flex flex-col justify-between text-xs">
+                    <div className="p-3.5 rounded-lg bg-canvas border border-line space-y-3 flex flex-col justify-between text-sm">
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] uppercase font-semibold text-slate-500">Assigned Driver & Vehicle</span>
+                          <span className="text-xs uppercase font-semibold text-secondary">Assigned Driver & Vehicle</span>
                           {!isReadOnly && !isEditingCab && (
                             <button
                               type="button"
                               onClick={() => handleStartEditCab(cust)}
-                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors flex items-center gap-1 text-[11px]"
+                              className="p-1 text-muted hover:text-brand-ink hover:bg-brand-soft rounded transition-colors flex items-center gap-1 text-xs"
                               title="Edit Driver & Vehicle Details"
                             >
                               <Pencil size={12} />
@@ -860,59 +860,59 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                         {isEditingCab ? (
                           <div className="space-y-2 mt-1">
                             <div>
-                              <label className="text-[10px] text-slate-500 block">Driver Name:</label>
+                              <label className="text-xs text-secondary block">Driver Name:</label>
                               <input
                                 type="text"
                                 value={tempDriverName}
                                 onChange={(e) => setTempDriverName(e.target.value)}
-                                className="w-full px-2 py-1 text-xs font-semibold border border-indigo-300 rounded bg-white outline-none"
+                                className="w-full px-2 py-1 text-sm font-semibold border border-brand-line rounded bg-surface outline-none"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] text-slate-500 block">Driver Phone:</label>
+                              <label className="text-xs text-secondary block">Driver Phone:</label>
                               <input
                                 type="text"
                                 value={tempDriverPhone}
                                 onChange={(e) => setTempDriverPhone(e.target.value)}
-                                className="w-full px-2 py-1 text-xs font-mono border border-slate-300 rounded bg-white outline-none"
+                                className="w-full px-2 py-1 text-sm font-mono border border-line rounded bg-surface outline-none"
                               />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="text-[10px] text-slate-500 block">Cab Model:</label>
+                                <label className="text-xs text-secondary block">Cab Model:</label>
                                 <input
                                   type="text"
                                   value={tempCabModel}
                                   onChange={(e) => setTempCabModel(e.target.value)}
-                                  className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white outline-none"
+                                  className="w-full px-2 py-1 text-sm border border-line rounded bg-surface outline-none"
                                 />
                               </div>
                               <div>
-                                <label className="text-[10px] text-slate-500 block">Cab Number:</label>
+                                <label className="text-xs text-secondary block">Cab Number:</label>
                                 <input
                                   type="text"
                                   value={tempCabNumber}
                                   onChange={(e) => setTempCabNumber(e.target.value)}
-                                  className="w-full px-2 py-1 text-xs font-mono border border-slate-300 rounded bg-white outline-none"
+                                  className="w-full px-2 py-1 text-sm font-mono border border-line rounded bg-surface outline-none"
                                 />
                               </div>
                             </div>
                             <div>
-                              <label className="text-[10px] text-slate-500 block">Pickup Location:</label>
+                              <label className="text-xs text-secondary block">Pickup Location:</label>
                               <input
                                 type="text"
                                 value={tempCabPickup}
                                 onChange={(e) => setTempCabPickup(e.target.value)}
-                                className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white outline-none"
+                                className="w-full px-2 py-1 text-sm border border-line rounded bg-surface outline-none"
                               />
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-1 mt-1">
-                            <strong className="text-slate-800 text-sm font-semibold block">{driverName}</strong>
-                            <p className="font-mono text-xs text-slate-600">{cabModel} ({cabNumber})</p>
-                            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin size={12} className="text-slate-400 flex-shrink-0" />
+                            <strong className="text-content text-sm font-semibold block">{driverName}</strong>
+                            <p className="font-mono text-sm text-secondary">{cabModel} ({cabNumber})</p>
+                            <p className="text-sm text-secondary flex items-center gap-1 mt-0.5">
+                              <MapPin size={12} className="text-muted flex-shrink-0" />
                               <span className="truncate">{cabPickup}</span>
                             </p>
                           </div>
@@ -920,18 +920,18 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                       </div>
 
                       {isEditingCab ? (
-                        <div className="flex items-center gap-1.5 pt-2 border-t border-slate-200">
+                        <div className="flex items-center gap-1.5 pt-2 border-t border-line">
                           <button
                             type="button"
                             onClick={() => handleSaveCabDetails(cust)}
-                            className="flex-1 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors"
+                            className="flex-1 py-1.5 text-sm bg-brand hover:bg-brand text-white rounded font-medium transition-colors"
                           >
                             Save Cab Details
                           </button>
                           <button
                             type="button"
                             onClick={() => setEditingCabCustId(null)}
-                            className="px-2.5 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 rounded font-medium transition-colors"
+                            className="px-2.5 py-1.5 text-sm bg-hover hover:bg-hover text-content rounded font-medium transition-colors"
                           >
                             Cancel
                           </button>
@@ -939,77 +939,77 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                       ) : (
                         <a 
                           href={`tel:${driverPhone}`} 
-                          className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-mono font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                          className="px-3 py-1.5 rounded-lg bg-surface border border-line hover:bg-subtle text-content font-mono font-medium text-sm flex items-center justify-center gap-1.5 transition-colors"
                         >
-                          <Phone size={13} className="text-slate-500" />
+                          <Phone size={13} className="text-secondary" />
                           <span>Call Driver: {driverPhone}</span>
                         </a>
                       )}
                     </div>
 
                     {/* Column 2: Cab Financial Metrics */}
-                    <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-3 flex flex-col justify-between text-xs">
+                    <div className="p-3.5 rounded-lg bg-canvas border border-line space-y-3 flex flex-col justify-between text-sm">
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] uppercase font-semibold text-slate-500">Cab Payout Metrics</span>
+                          <span className="text-xs uppercase font-semibold text-secondary">Cab Payout Metrics</span>
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 text-center">
-                          <div className="p-2 rounded-md bg-white border border-slate-200">
-                            <span className="text-[10px] uppercase font-medium text-slate-400 block">Cost</span>
+                          <div className="p-2 rounded-md bg-surface border border-line">
+                            <span className="text-xs uppercase font-medium text-muted block">Cost</span>
                             {isEditingCab ? (
                               <input
                                 type="number"
                                 value={tempCabCost}
                                 onChange={(e) => setTempCabCost(Number(e.target.value))}
-                                className="w-full text-center px-1 py-0.5 text-xs font-mono font-semibold border border-indigo-300 rounded bg-white mt-1 outline-none"
+                                className="w-full text-center px-1 py-0.5 text-sm font-mono font-semibold border border-brand-line rounded bg-surface mt-1 outline-none"
                               />
                             ) : (
-                              <span className="font-semibold text-sm text-slate-800 font-mono block mt-0.5 tabular-nums">
+                              <span className="font-semibold text-sm text-content font-mono block mt-0.5 tabular-nums">
                                 ₹{cabCost.toLocaleString('en-IN')}
                               </span>
                             )}
                           </div>
-                          <div className="p-2 rounded-md bg-emerald-50 border border-emerald-100">
-                            <span className="text-[10px] uppercase font-medium text-emerald-600 block">Paid</span>
-                            <span className="font-semibold text-sm text-emerald-700 font-mono block mt-0.5 tabular-nums">
+                          <div className="p-2 rounded-md bg-success-soft border border-success-line">
+                            <span className="text-xs uppercase font-medium text-success-ink block">Paid</span>
+                            <span className="font-semibold text-sm text-success-ink font-mono block mt-0.5 tabular-nums">
                               ₹{cabPaid.toLocaleString('en-IN')}
                             </span>
                           </div>
-                          <div className="p-2 rounded-md bg-amber-50 border border-amber-100">
-                            <span className="text-[10px] uppercase font-medium text-amber-600 block">Balance</span>
-                            <span className="font-semibold text-sm text-amber-700 font-mono block mt-0.5 tabular-nums">
+                          <div className="p-2 rounded-md bg-warning-soft border border-warning-line">
+                            <span className="text-xs uppercase font-medium text-warning-ink block">Balance</span>
+                            <span className="font-semibold text-sm text-warning-ink font-mono block mt-0.5 tabular-nums">
                               ₹{cabRemaining.toLocaleString('en-IN')}
                             </span>
                           </div>
                         </div>
 
-                        <div className="p-2 rounded-md bg-white border border-slate-200 text-[11px] space-y-1 font-medium mt-2.5">
-                          <div className="flex justify-between text-slate-600">
-                            <span className="text-slate-400">Paid Date:</span>
-                            <span className="font-mono text-slate-700">{cabPayDate}</span>
+                        <div className="p-2 rounded-md bg-surface border border-line text-xs space-y-1 font-medium mt-2.5">
+                          <div className="flex justify-between text-secondary">
+                            <span className="text-muted">Paid Date:</span>
+                            <span className="font-mono text-content">{cabPayDate}</span>
                           </div>
-                          <div className="flex justify-between text-slate-600">
-                            <span className="text-slate-400">Mode:</span>
-                            <span className="text-slate-700 font-medium">{cabPayMode}</span>
+                          <div className="flex justify-between text-secondary">
+                            <span className="text-muted">Mode:</span>
+                            <span className="text-content font-medium">{cabPayMode}</span>
                           </div>
-                          <div className="flex justify-between text-slate-600">
-                            <span className="text-slate-400">Ref #:</span>
-                            <span className="font-mono text-slate-700 truncate max-w-[140px]">{cabPayRef}</span>
+                          <div className="flex justify-between text-secondary">
+                            <span className="text-muted">Ref #:</span>
+                            <span className="font-mono text-content truncate max-w-[140px]">{cabPayRef}</span>
                           </div>
                         </div>
 
                         {/* Cab Payment Parts Log */}
                         {Array.isArray(cust.cabPaymentLogs) && cust.cabPaymentLogs.length > 0 && (
-                          <div className="mt-2 p-2 rounded-md bg-white border border-slate-200 text-[11px] space-y-1">
-                            <div className="text-[10px] font-semibold uppercase text-slate-500 flex items-center justify-between">
+                          <div className="mt-2 p-2 rounded-md bg-surface border border-line text-xs space-y-1">
+                            <div className="text-xs font-semibold uppercase text-secondary flex items-center justify-between">
                               <span>Installments ({cust.cabPaymentLogs.length})</span>
-                              <span className="font-mono text-emerald-700 font-semibold">₹{cust.cabPaymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}</span>
+                              <span className="font-mono text-success-ink font-semibold">₹{cust.cabPaymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}</span>
                             </div>
                             {cust.cabPaymentLogs.map((part, pIdx) => (
-                              <div key={part.id || pIdx} className="flex items-center justify-between text-[10px] text-slate-600 bg-slate-50 p-1 rounded border border-slate-100">
-                                <span className="font-mono text-slate-400">{part.paidAt}</span>
-                                <span>Part {pIdx + 1}: <strong className="font-mono text-emerald-700">₹{part.amount.toLocaleString('en-IN')}</strong></span>
+                              <div key={part.id || pIdx} className="flex items-center justify-between text-xs text-secondary bg-canvas p-1 rounded border border-line">
+                                <span className="font-mono text-muted">{part.paidAt}</span>
+                                <span>Part {pIdx + 1}: <strong className="font-mono text-success-ink">₹{part.amount.toLocaleString('en-IN')}</strong></span>
                               </div>
                             ))}
                           </div>
@@ -1018,10 +1018,10 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                     </div>
 
                     {/* Column 3: Cab Payment Controls */}
-                    <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3 text-xs">
+                    <div className="p-3.5 rounded-lg bg-canvas border border-line flex flex-col justify-between space-y-3 text-sm">
                       <div>
-                        <span className="text-[10px] uppercase font-semibold text-slate-500 block mb-1">Cab Payout Actions</span>
-                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                        <span className="text-xs uppercase font-semibold text-secondary block mb-1">Cab Payout Actions</span>
+                        <p className="text-xs text-secondary leading-relaxed">
                           {cabPaid >= cabCost ? 'Full cab payment has been cleared to driver.' : `Pending balance of ₹${cabRemaining.toLocaleString('en-IN')} remaining.`}
                         </p>
                       </div>
@@ -1033,7 +1033,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleCabCompletePaymentDone(cust)}
-                                className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center gap-1.5 transition-colors"
+                                className="flex-1 py-1.5 px-3 rounded-lg bg-success-strong hover:bg-success-strong text-white font-medium text-sm flex items-center justify-center gap-1.5 transition-colors"
                               >
                                 <Check size={14} />
                                 <span>Payment Done</span>
@@ -1051,42 +1051,42 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     setPartialCabRef('');
                                   }
                                 }}
-                                className="py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-colors"
+                                className="py-1.5 px-2.5 rounded-lg bg-subtle hover:bg-hover text-content font-medium text-sm transition-colors"
                               >
                                 <span>Partial</span>
                               </button>
                             </div>
                           ) : (
-                            <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-100 text-center text-emerald-700 font-medium text-xs flex items-center justify-center gap-1.5">
-                              <CheckCircle2 size={14} className="text-emerald-600" />
+                            <div className="p-2 rounded-lg bg-success-soft border border-success-line text-center text-success-ink font-medium text-sm flex items-center justify-center gap-1.5">
+                              <CheckCircle2 size={14} className="text-success-ink" />
                               <span>100% Cab Payment Completed</span>
                             </div>
                           )}
 
                           {/* Inline Partial Payment Box for Cab */}
                           {activePartialCabCustId === cust.id && (
-                            <div className="p-3 rounded-lg bg-white border border-slate-200 space-y-2 text-xs animate-in fade-in duration-150 mt-2">
-                              <div className="flex items-center justify-between font-medium text-slate-700 border-b border-slate-100 pb-1.5">
+                            <div className="p-3 rounded-lg bg-surface border border-line space-y-2 text-sm animate-in fade-in duration-150 mt-2">
+                              <div className="flex items-center justify-between font-medium text-content border-b border-line pb-1.5">
                                 <span>Record Driver Partial Advance:</span>
-                                <span className="font-mono text-amber-700 font-semibold">Due: ₹{cabRemaining.toLocaleString('en-IN')}</span>
+                                <span className="font-mono text-warning-ink font-semibold">Due: ₹{cabRemaining.toLocaleString('en-IN')}</span>
                               </div>
                               <div className="space-y-1.5">
                                 <div>
-                                  <label className="text-[10px] text-slate-500 block">Amount (₹):</label>
+                                  <label className="text-xs text-secondary block">Amount (₹):</label>
                                   <input
                                     type="number"
                                     value={partialCabAmount}
                                     onChange={(e) => setPartialCabAmount(Number(e.target.value))}
-                                    className="w-full px-2 py-1 rounded bg-slate-50 text-slate-800 font-mono font-semibold border border-slate-200 text-xs outline-none focus:border-indigo-400"
+                                    className="w-full px-2 py-1 rounded bg-canvas text-content font-mono font-semibold border border-line text-sm outline-none focus:border-brand-line"
                                   />
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
                                   <div>
-                                    <label className="text-[10px] text-slate-500 block">Mode:</label>
+                                    <label className="text-xs text-secondary block">Mode:</label>
                                     <select
                                       value={partialCabMode}
                                       onChange={(e) => setPartialCabMode(e.target.value)}
-                                      className="w-full px-1.5 py-1 rounded bg-slate-50 text-slate-700 border border-slate-200 text-xs outline-none"
+                                      className="w-full px-1.5 py-1 rounded bg-canvas text-content border border-line text-sm outline-none"
                                     >
                                       <option value="UPI">UPI</option>
                                       <option value="Cash">Cash</option>
@@ -1094,12 +1094,12 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="text-[10px] text-slate-500 block">UTR / Ref #:</label>
+                                    <label className="text-xs text-secondary block">UTR / Ref #:</label>
                                     <input
                                       type="text"
                                       value={partialCabRef}
                                       onChange={(e) => setPartialCabRef(e.target.value)}
-                                      className="w-full px-2 py-1 rounded bg-slate-50 text-slate-800 font-mono text-xs border border-slate-200 outline-none"
+                                      className="w-full px-2 py-1 rounded bg-canvas text-content font-mono text-sm border border-line outline-none"
                                       placeholder="Ref #"
                                     />
                                   </div>
@@ -1108,14 +1108,14 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleSavePartialCabPayment(cust)}
-                                    className="flex-1 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors"
+                                    className="flex-1 py-1.5 rounded bg-success-strong hover:bg-success-strong text-white font-medium text-sm transition-colors"
                                   >
                                     Confirm
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => setActivePartialCabCustId(null)}
-                                    className="px-2 py-1.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-600 text-xs font-medium transition-colors"
+                                    className="px-2 py-1.5 rounded bg-hover hover:bg-hover text-secondary text-sm font-medium transition-colors"
                                   >
                                     Cancel
                                   </button>
@@ -1131,17 +1131,17 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                 </div>
 
                 {/* 3. INTERNAL TRIP OPERATIONS REMARKS */}
-                <div className="p-3.5 rounded-lg bg-white border border-slate-200 space-y-2 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <div className="flex items-center gap-1.5 font-medium text-slate-700">
-                      <MessageSquare size={14} className="text-slate-400" />
+                <div className="p-3.5 rounded-lg bg-surface border border-line space-y-2 text-sm">
+                  <div className="flex items-center justify-between border-b border-line pb-1.5">
+                    <div className="flex items-center gap-1.5 font-medium text-content">
+                      <MessageSquare size={14} className="text-muted" />
                       <span>Operations Remarks</span>
                     </div>
                     {!isReadOnly && !isEditingRemarks && (
                       <button
                         type="button"
                         onClick={() => handleStartEditRemarks(cust)}
-                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors flex items-center gap-1 text-[11px]"
+                        className="p-1 text-muted hover:text-brand-ink hover:bg-brand-soft rounded transition-colors flex items-center gap-1 text-xs"
                       >
                         <Pencil size={12} />
                         <span>Edit Remarks</span>
@@ -1155,28 +1155,28 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                         rows={2}
                         value={tempOpsRemarks}
                         onChange={(e) => setTempOpsRemarks(e.target.value)}
-                        className="w-full p-2.5 rounded-lg bg-slate-50 border border-slate-200 font-normal text-xs text-slate-800 outline-none focus:border-indigo-400"
+                        className="w-full p-2.5 rounded-lg bg-canvas border border-line font-normal text-sm text-content outline-none focus:border-brand-line"
                         placeholder="Add operational remarks e.g. Guest requested early check-in, driver briefing completed..."
                       />
                       <div className="flex items-center gap-1.5 justify-end">
                         <button
                           type="button"
                           onClick={() => handleSaveRemarks(cust)}
-                          className="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition-colors"
+                          className="px-3 py-1.5 text-sm bg-brand hover:bg-brand text-white rounded font-medium transition-colors"
                         >
                           Save Remarks
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditingRemarksCustId(null)}
-                          className="px-2.5 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 rounded font-medium transition-colors"
+                          className="px-2.5 py-1.5 text-sm bg-subtle hover:bg-hover text-secondary rounded font-medium transition-colors"
                         >
                           Cancel
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <p className="text-slate-600 leading-relaxed font-normal">
+                    <p className="text-secondary leading-relaxed font-normal">
                       {opsRemarks}
                     </p>
                   )}

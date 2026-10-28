@@ -150,6 +150,8 @@ export function initializeDatabase(): void {
     `ALTER TABLE pdf_designs ADD COLUMN field_mappings TEXT DEFAULT '[]'`,
     `ALTER TABLE agents ADD COLUMN phone TEXT DEFAULT ''`,
     `ALTER TABLE agents ADD COLUMN email TEXT DEFAULT ''`,
+    `ALTER TABLE quotes ADD COLUMN hotel_alternative TEXT DEFAULT NULL`,
+    `ALTER TABLE quote_hotels ADD COLUMN meal_plan TEXT DEFAULT ''`,
     `ALTER TABLE quotes ADD COLUMN cover_image TEXT DEFAULT ''`,
     `ALTER TABLE quotes ADD COLUMN day_images TEXT DEFAULT '[]'`,
     `ALTER TABLE quote_itinerary_days ADD COLUMN image_url TEXT DEFAULT ''`,

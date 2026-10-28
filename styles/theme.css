@@ -1,0 +1,176 @@
+/* Shared by the CRM and the standalone Operations portal. */
+@import "tailwindcss" source(none);
+@source "../App.tsx";
+@source "../index.tsx";
+@source "../components";
+@source "../operations-team-portal/src";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --color-canvas: var(--surface-muted);
+  --color-surface: var(--surface);
+  --color-subtle: var(--surface-raised);
+  --color-hover: var(--surface-hover);
+  --color-inverse: #0f172a;
+  --color-content: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-line: var(--border);
+  --color-control: var(--control-border);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+  --color-on-brand: #ffffff;
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-success-line: var(--success-line);
+  --color-success-strong: #047857;
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-line: var(--warning-line);
+  --color-warning-strong: #92400e;
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-line: var(--danger-line);
+  --color-danger-strong: #b91c1c;
+  --color-info-soft: var(--info-soft);
+  --color-info-ink: var(--info-ink);
+  --color-info-line: var(--info-line);
+  --color-info-strong: #0369a1;
+}
+
+:root {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --surface-raised: #f1f5f9;
+  --surface-hover: #e2e8f0;
+  --surface-sidebar: var(--surface);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+  --control-border: #64748b;
+  --brand: #1d4ed8;
+  --brand-hover: #1e40af;
+  --brand-ink: #1d4ed8;
+  --brand-soft: #eff6ff;
+  --brand-line: #bfdbfe;
+  --primary: var(--brand);
+  --success-soft: #ecfdf5;
+  --success-ink: #047857;
+  --success-line: #a7f3d0;
+  --warning-soft: #fffbeb;
+  --warning-ink: #92400e;
+  --warning-line: #fde68a;
+  --danger-soft: #fef2f2;
+  --danger-ink: #b91c1c;
+  --danger-line: #fecaca;
+  --info-soft: #f0f9ff;
+  --info-ink: #0369a1;
+  --info-line: #bae6fd;
+}
+
+html.dark {
+  color-scheme: dark;
+  --surface: #1e293b;
+  --surface-muted: #0f172a;
+  --surface-raised: #253247;
+  --surface-hover: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --control-border: #64748b;
+  --brand-ink: #93c5fd;
+  --brand-soft: #172e50;
+  --brand-line: #36577e;
+  --success-soft: #12372f;
+  --success-ink: #6ee7b7;
+  --success-line: #286352;
+  --warning-soft: #3b2e1b;
+  --warning-ink: #fcd34d;
+  --warning-line: #786037;
+  --danger-soft: #42252e;
+  --danger-ink: #fda4af;
+  --danger-line: #804552;
+  --info-soft: #173447;
+  --info-ink: #7dd3fc;
+  --info-line: #31647f;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    background: var(--surface-muted);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button, input, select, textarea { font: inherit; }
+  table { color: inherit; }
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]) { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+}
+
+/* Interface rules never reach a document or public customer page. */
+@media screen {
+  .crm-sidebar[data-collapsed="true"] button[aria-label] { justify-content: center; padding-inline: 0; }
+  .crm-sidebar[data-collapsed="true"] button[aria-label] > span:not(:first-child),
+  .crm-sidebar[data-collapsed="true"] button[aria-label] > svg { display: none; }
+  .crm-sidebar[data-collapsed="true"] button[aria-label]:not(:has(svg)) { display: none; }
+  .crm-app .bg-inverse { --text-muted: #cbd5e1; --text-secondary: #cbd5e1; }
+  .crm-app :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--brand-ink);
+    outline-offset: 3px;
+  }
+  .crm-app :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea):not(:where(.doc-preview-protected *, .printable-voucher-container *, .hotel-voucher-fixed *, .hotel-email-modal-fixed *)) {
+    border-color: var(--control-border);
+    border-width: 1px;
+    min-height: 36px;
+  }
+  .crm-app :where(input[type="checkbox"], input[type="radio"]) { accent-color: var(--brand); }
+  .crm-app :where(table) { font-variant-numeric: tabular-nums; }
+  .crm-app :where(th) { text-align: left; font-weight: 600; }
+  .crm-app :where(button:disabled) { opacity: .55; }
+  .crm-app :where(.doc-preview-protected, .printable-voucher-container, .hotel-voucher-fixed, .hotel-email-modal-fixed, .live-proposal-sheets-container) {
+    color-scheme: light;
+    color: #0f172a;
+    background-color: #ffffff;
+    /* Document colors are deliberately independent of the interface theme. */
+    --surface: #ffffff;
+    --surface-muted: #f8fafc;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+  }
+}
+
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: var(--control-border) transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--control-border); border-radius: 6px; }
+.sidebar-transition { transition: width .18s ease; }
+@keyframes toast-in { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toast-out { from { opacity: 1; } to { opacity: 0; } }
+.toast-enter { animation: toast-in .2s ease-out; }
+.toast-exit { animation: toast-out .15s ease-in forwards; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+@media print {
+  :root, html.dark { color-scheme: light; --surface: #ffffff; --surface-muted: #ffffff; --surface-raised: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #64748b; --border: #e2e8f0; --brand-ink: #1d4ed8; }
+  html, body, #root { width: 100% !important; height: auto !important; min-height: 100% !important; overflow: visible !important; position: static !important; background: white !important; color: black !important; margin: 0 !important; padding: 0 !important; transform: none !important; filter: none !important; backdrop-filter: none !important; }
+  .print\:hidden, nav, header, aside, button { display: none !important; }
+  .fixed.inset-0 { position: static !important; background: transparent !important; backdrop-filter: none !important; overflow: visible !important; width: 100% !important; height: auto !important; display: block !important; padding: 0 !important; margin: 0 !important; }
+  .fixed.inset-0 > div { max-height: none !important; max-width: 100% !important; width: 100% !important; height: auto !important; overflow: visible !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; background: white !important; position: static !important; }
+  .printable-voucher-container { width: 100% !important; max-width: 100% !important; margin: 0 auto !important; background: white !important; box-shadow: none !important; border: none !important; display: block !important; visibility: visible !important; }
+}

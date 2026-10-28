@@ -192,33 +192,33 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
         {/* Total Portfolio Value */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wide">
+        <div className="p-4 rounded-xl bg-surface border border-line shadow-2xs">
+          <div className="flex items-center justify-between text-secondary text-xs font-medium uppercase tracking-wide">
             <span>Total Revenue</span>
-            <span className="p-1 rounded bg-indigo-50 text-indigo-700">
+            <span className="p-1 rounded bg-brand-soft text-brand-ink">
               <IndianRupee className="w-3.5 h-3.5" />
             </span>
           </div>
-          <p className="text-xl font-bold text-slate-900 mt-1 tabular-nums">
+          <p className="text-xl font-bold text-content mt-1 tabular-nums">
             ₹{overallFinancials.totalBookings.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{customers.length} confirmed packages</p>
+          <p className="text-xs text-muted mt-0.5">{customers.length} confirmed packages</p>
         </div>
 
         {/* Collected Payments */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wide">
+        <div className="p-4 rounded-xl bg-surface border border-line shadow-2xs">
+          <div className="flex items-center justify-between text-secondary text-xs font-medium uppercase tracking-wide">
             <span>Received Revenue</span>
-            <span className="p-1 rounded bg-emerald-50 text-emerald-700">
+            <span className="p-1 rounded bg-success-soft text-success-ink">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </span>
           </div>
-          <p className="text-xl font-bold text-emerald-700 mt-1 tabular-nums">
+          <p className="text-xl font-bold text-success-ink mt-1 tabular-nums">
             ₹{overallFinancials.totalCollected.toLocaleString('en-IN')}
           </p>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
+          <div className="w-full bg-subtle h-1.5 rounded-full mt-2 overflow-hidden">
             <div 
-              className="bg-emerald-600 h-full rounded-full transition-all duration-300" 
+              className="bg-success-strong h-full rounded-full transition-all duration-300" 
               style={{ width: `${Math.round((overallFinancials.totalCollected / (overallFinancials.totalBookings || 1)) * 100)}%` }}
             />
           </div>
@@ -227,77 +227,77 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
         {/* OVERDUE PAYMENTS ALERT */}
         <div className={`p-4 rounded-xl border shadow-2xs transition-all ${
           overallFinancials.totalOverdue > 0
-            ? 'bg-rose-50/50 border-rose-200'
-            : 'bg-white border-slate-200'
+            ? 'bg-danger-soft/50 border-danger-line'
+            : 'bg-surface border-line'
         }`}>
-          <div className="flex items-center justify-between text-[11px] font-medium uppercase tracking-wide">
-            <span className={overallFinancials.totalOverdue > 0 ? 'text-rose-700 flex items-center gap-1 font-semibold' : 'text-slate-500'}>
-              {overallFinancials.totalOverdue > 0 && <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />}
+          <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide">
+            <span className={overallFinancials.totalOverdue > 0 ? 'text-danger-ink flex items-center gap-1 font-semibold' : 'text-secondary'}>
+              {overallFinancials.totalOverdue > 0 && <AlertTriangle className="w-3.5 h-3.5 text-danger-ink" />}
               Overdue EMIs
             </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-rose-100 text-rose-800">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded bg-danger-soft text-danger-ink">
               {overallFinancials.overdueEmiCount} EMIs
             </span>
           </div>
-          <p className="text-xl font-bold text-rose-700 mt-1 tabular-nums">
+          <p className="text-xl font-bold text-danger-ink mt-1 tabular-nums">
             ₹{overallFinancials.totalOverdue.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-rose-600/90 mt-0.5 font-medium">
+          <p className="text-xs text-danger-ink/90 mt-0.5 font-medium">
             {overallFinancials.totalOverdue > 0 ? `${overallFinancials.overdueCustomersCount} guest(s) pending payment` : 'All installments on time'}
           </p>
         </div>
 
         {/* Pending Balance */}
-        <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium uppercase tracking-wide">
+        <div className="p-4 rounded-xl bg-surface border border-line shadow-2xs">
+          <div className="flex items-center justify-between text-secondary text-xs font-medium uppercase tracking-wide">
             <span>Pending Balance</span>
-            <span className="p-1 rounded bg-amber-50 text-amber-700">
+            <span className="p-1 rounded bg-warning-soft text-warning-ink">
               <Clock className="w-3.5 h-3.5" />
             </span>
           </div>
-          <p className="text-xl font-bold text-amber-800 mt-1 tabular-nums">
+          <p className="text-xl font-bold text-warning-ink mt-1 tabular-nums">
             ₹{overallFinancials.totalPending.toLocaleString('en-IN')}
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">{overallFinancials.pendingEmiCount} future scheduled EMIs</p>
+          <p className="text-xs text-muted mt-0.5">{overallFinancials.pendingEmiCount} future scheduled EMIs</p>
         </div>
 
       </div>
 
       {/* Live EMI Breakdown Counter Bar */}
-      <div className="p-3 bg-slate-900 text-white rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xs">
+      <div className="p-3 bg-inverse text-white rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-sm shadow-xs">
         <div className="flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-indigo-400" />
-          <span className="font-semibold text-slate-200 text-xs">Operations Milestone Breakdown:</span>
+          <CreditCard className="w-4 h-4 text-brand-ink" />
+          <span className="font-semibold text-slate-200 text-sm">Operations Milestone Breakdown:</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="px-2.5 py-0.5 rounded-md bg-white/10 text-white font-medium">
-            Total: <strong className="text-indigo-300 font-semibold">{overallFinancials.totalEmiCount}</strong>
+            Total: <strong className="text-brand-ink font-semibold">{overallFinancials.totalEmiCount}</strong>
           </span>
-          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
+          <span className="px-2.5 py-0.5 rounded-md bg-success-strong/20 text-success-ink font-medium border border-success-line/30">
             Paid: <strong className="font-semibold">{overallFinancials.paidEmiCount}</strong>
           </span>
-          <span className={`px-2.5 py-0.5 rounded-md font-medium border ${overallFinancials.overdueEmiCount > 0 ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-white/10 text-slate-300 border-transparent'}`}>
+          <span className={`px-2.5 py-0.5 rounded-md font-medium border ${overallFinancials.overdueEmiCount > 0 ? 'bg-danger-strong/20 text-danger-ink border-danger-line/40' : 'bg-white/10 text-slate-300 border-transparent'}`}>
             Overdue: <strong className="font-semibold">{overallFinancials.overdueEmiCount}</strong>
           </span>
-          <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-medium border border-amber-500/30">
+          <span className="px-2.5 py-0.5 rounded-md bg-warning-strong/20 text-warning-ink font-medium border border-warning-line/30">
             Pending: <strong className="font-semibold">{overallFinancials.pendingEmiCount}</strong>
           </span>
         </div>
       </div>
 
       {/* Advanced Multi-Filter Controls */}
-      <div className="p-3.5 rounded-xl bg-white border border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shadow-2xs">
+      <div className="p-3.5 rounded-xl bg-surface border border-line flex flex-wrap items-center justify-between gap-3 text-sm shadow-2xs">
         
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-slate-500 text-xs">Filter:</span>
+          <span className="font-medium text-secondary text-sm">Filter:</span>
           
           {/* Quick Payment Status Filter Pills */}
           <button
             onClick={() => setFilterPayment('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               filterPayment === 'all'
-                ? 'bg-slate-900 text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-inverse text-white shadow-2xs'
+                : 'bg-subtle text-secondary hover:bg-hover'
             }`}
           >
             All Packages ({customers.length})
@@ -305,10 +305,10 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
           <button
             onClick={() => setFilterPayment('overdue')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors cursor-pointer ${
               filterPayment === 'overdue'
-                ? 'bg-rose-600 text-white shadow-2xs'
-                : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
+                ? 'bg-danger-strong text-white shadow-2xs'
+                : 'bg-danger-soft text-danger-ink border border-danger-line hover:bg-danger-soft'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -317,10 +317,10 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
           <button
             onClick={() => setFilterPayment('pending')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               filterPayment === 'pending'
-                ? 'bg-amber-600 text-white shadow-2xs'
-                : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                ? 'bg-warning-strong text-white shadow-2xs'
+                : 'bg-warning-soft text-warning-ink border border-warning-line hover:bg-warning-soft'
             }`}
           >
             Pending Balance
@@ -328,22 +328,22 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
           <button
             onClick={() => setFilterPayment('paid')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
               filterPayment === 'paid'
-                ? 'bg-emerald-600 text-white shadow-2xs'
-                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                ? 'bg-success-strong text-white shadow-2xs'
+                : 'bg-success-soft text-success-ink border border-success-line hover:bg-success-soft'
             }`}
           >
             Fully Paid
           </button>
 
           {/* Select dropdowns for status & destination */}
-          <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+          <div className="h-4 w-px bg-hover mx-1 hidden sm:block" />
 
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 text-xs focus:border-indigo-400 outline-none cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg bg-canvas border border-line font-medium text-content text-sm focus:border-brand-line outline-none cursor-pointer"
           >
             <option value="active">Active (In-Transit & Upcoming)</option>
             <option value="Upcoming">Upcoming Only</option>
@@ -355,7 +355,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
           <select
             value={filterDestination}
             onChange={(e) => setFilterDestination(e.target.value)}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 font-medium text-slate-700 text-xs focus:border-indigo-400 outline-none cursor-pointer"
+            className="px-2.5 py-1.5 rounded-lg bg-canvas border border-line font-medium text-content text-sm focus:border-brand-line outline-none cursor-pointer"
           >
             <option value="all">All Destinations</option>
             {destinations.map((d) => (
@@ -364,22 +364,22 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
           </select>
         </div>
 
-        <div className="text-xs text-slate-500 font-medium">
-          Showing <span className="font-semibold text-slate-800">{filteredCustomers.length}</span> records
+        <div className="text-sm text-secondary font-medium">
+          Showing <span className="font-semibold text-content">{filteredCustomers.length}</span> records
         </div>
       </div>
 
       {/* Customer Cards / Expandable Rows */}
       {filteredCustomers.length === 0 ? (
-        <div className="p-12 text-center rounded-xl bg-white border border-dashed border-slate-200 space-y-2">
+        <div className="p-12 text-center rounded-xl bg-surface border border-dashed border-line space-y-2">
           <Users className="w-10 h-10 text-slate-300 mx-auto" />
-          <h3 className="font-semibold text-slate-800 text-sm">No Customer Packages Found</h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <h3 className="font-semibold text-content text-sm">No Customer Packages Found</h3>
+          <p className="text-sm text-muted max-w-sm mx-auto">
             No customer bookings match the active payment or trip filter criteria.
           </p>
           <button
             onClick={() => { setFilterPayment('all'); setFilterStatus('all'); setFilterDestination('all'); }}
-            className="mt-2 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer"
+            className="mt-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-brand text-white hover:bg-brand transition-colors cursor-pointer"
           >
             Reset Filters
           </button>
@@ -395,19 +395,19 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
             const m = getCustomerPaymentMetrics(cust);
 
             const statusBadge = 
-              cust.status === 'Upcoming' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              cust.status === 'In-Transit' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-              'bg-slate-100 text-slate-700 border-slate-200';
+              cust.status === 'Upcoming' ? 'bg-success-soft text-success-ink border-success-line' :
+              cust.status === 'In-Transit' ? 'bg-brand-soft text-brand-ink border-brand-line' :
+              'bg-subtle text-content border-line';
 
             return (
               <div 
                 key={cust.id}
-                className={`bg-white border rounded-xl transition-all font-sans overflow-hidden ${
+                className={`bg-surface border rounded-xl transition-all font-sans overflow-hidden ${
                   isExpanded 
-                    ? 'border-indigo-200 shadow-md ring-1 ring-indigo-100' 
+                    ? 'border-brand-line shadow-sm ring-1 ring-brand-line' 
                     : m.overdueCount > 0 
-                    ? 'border-rose-200 hover:border-rose-300 shadow-2xs' 
-                    : 'border-slate-200 hover:border-slate-300 hover:shadow-xs shadow-2xs'
+                    ? 'border-danger-line hover:border-danger-line shadow-2xs' 
+                    : 'border-line hover:border-line hover:shadow-xs shadow-2xs'
                 }`}
               >
                 {/* Compact Row (Always visible - click to toggle complete card) */}
@@ -415,56 +415,56 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                   onClick={() => toggleCustomerExpanded(cust.id)}
                   className={`px-4 py-3 cursor-pointer select-none transition-colors flex flex-wrap items-center justify-between gap-3 ${
                     isExpanded 
-                      ? 'bg-indigo-50/40 border-b border-indigo-100' 
-                      : 'bg-white hover:bg-slate-50/70'
+                      ? 'bg-brand-soft/40 border-b border-brand-line' 
+                      : 'bg-surface hover:bg-canvas/70'
                   }`}
                 >
                   {/* Left Side: Chevron, Booking ID, Name, Destination, Travel Dates, Financial Pills */}
                   <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                     <button
                       type="button"
-                      className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-transform duration-200"
+                      className="p-1 rounded-md text-muted hover:text-secondary hover:bg-hover/60 transition-transform duration-200"
                       title={isExpanded ? "Collapse card" : "Expand full card"}
                     >
                       {isExpanded ? (
-                        <ChevronDown size={16} className="text-indigo-600 transform rotate-180 transition-transform duration-200" />
+                        <ChevronDown size={16} className="text-brand-ink transform rotate-180 transition-transform duration-200" />
                       ) : (
-                        <ChevronRight size={16} className="text-slate-400 group-hover:text-slate-600 transition-transform duration-200" />
+                        <ChevronRight size={16} className="text-muted group-hover:text-secondary transition-transform duration-200" />
                       )}
                     </button>
 
-                    <span className="text-xs font-mono font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shrink-0">
+                    <span className="text-sm font-mono font-semibold text-content bg-subtle px-2 py-0.5 rounded border border-line shrink-0">
                       #{cust.bookingId}
                     </span>
 
                     {isNewTrip && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 shrink-0">
+                      <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-warning-soft text-warning-ink border border-warning-line shrink-0">
                         New
                       </span>
                     )}
 
-                    <span className={`text-[11px] px-2 py-0.5 rounded font-medium border shrink-0 ${statusBadge}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium border shrink-0 ${statusBadge}`}>
                       {cust.status}
                     </span>
 
                     {/* Customer Avatar & Name */}
                     <div className="flex items-center gap-1.5 min-w-0 pr-1">
-                      <div className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-semibold text-[10px] flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-brand-soft text-brand-ink font-semibold text-xs flex items-center justify-center shrink-0">
                         {cust.name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="font-semibold text-slate-900 text-xs truncate max-w-[150px] sm:max-w-[200px]">
+                      <span className="font-semibold text-content text-sm truncate max-w-[150px] sm:max-w-[200px]">
                         {cust.name}
                       </span>
                     </div>
 
                     {/* Destination Badge */}
-                    <div className="hidden sm:flex items-center gap-1 text-xs text-indigo-700 font-medium bg-indigo-50/70 border border-indigo-100 px-2 py-0.5 rounded shrink-0">
-                      <MapPin size={11} className="text-indigo-500" />
+                    <div className="hidden sm:flex items-center gap-1 text-sm text-brand-ink font-medium bg-brand-soft/70 border border-brand-line px-2 py-0.5 rounded shrink-0">
+                      <MapPin size={11} className="text-brand-ink" />
                       <span>{cust.destination}</span>
                     </div>
 
                     {/* Travel Dates & Pax (Compact row summary) */}
-                    <div className="hidden md:flex items-center gap-2 text-[11px] text-slate-500 shrink-0">
+                    <div className="hidden md:flex items-center gap-2 text-xs text-secondary shrink-0">
                       <span>📅 {cust.startDate}</span>
                       <span>·</span>
                       <span>{cust.paxAdults} Adults{cust.paxChildren > 0 ? `, ${cust.paxChildren} Kids` : ''}</span>
@@ -473,21 +473,21 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                     {/* Quick Financial Status Badge in Row */}
                     {cust.totalAmount > 0 ? (
                       <div className="hidden lg:flex items-center gap-1.5 shrink-0">
-                        <span className="text-[11px] font-semibold text-slate-800">
+                        <span className="text-xs font-semibold text-content">
                           ₹{cust.totalAmount.toLocaleString('en-IN')}
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
+                        <span className={`text-xs px-2 py-0.5 rounded font-medium border ${
                           m.overdueCount > 0 
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            ? 'bg-danger-soft text-danger-ink border-danger-line'
                             : m.overallPaymentStatus === 'Fully Paid'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-amber-50 text-amber-800 border-amber-200'
+                            ? 'bg-success-soft text-success-ink border-success-line'
+                            : 'bg-warning-soft text-warning-ink border-warning-line'
                         }`}>
                           {m.overdueCount > 0 ? `${m.overdueCount} Overdue` : m.overallPaymentStatus === 'Fully Paid' ? 'Fully Paid' : `Paid ₹${m.paidAmount.toLocaleString('en-IN')}`}
                         </span>
                       </div>
                     ) : (
-                      <span className="hidden lg:inline text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 shrink-0">
+                      <span className="hidden lg:inline text-xs text-warning-ink bg-warning-soft px-2 py-0.5 rounded border border-warning-line shrink-0">
                         EMI Pending
                       </span>
                     )}
@@ -495,11 +495,11 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                     {/* Quick Voucher Badge */}
                     <div className="hidden xl:flex items-center gap-1 shrink-0">
                       {vouchSummary.pending > 0 ? (
-                        <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 flex items-center gap-1">
+                        <span className="text-xs font-semibold text-warning-ink bg-warning-soft px-2 py-0.5 rounded border border-warning-line flex items-center gap-1">
                           <AlertCircle className="w-3 h-3" /> {vouchSummary.pending} Vouchers Pending
                         </span>
                       ) : (
-                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                        <span className="text-xs font-semibold text-success-ink bg-success-soft px-2 py-0.5 rounded border border-success-line flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> All Vouchers Uploaded
                         </span>
                       )}
@@ -514,7 +514,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                         e.stopPropagation();
                         onSelectCustomer(cust);
                       }}
-                      className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 text-sm font-medium rounded-lg bg-subtle hover:bg-hover text-content transition-colors cursor-pointer"
                     >
                       Details
                     </button>
@@ -525,7 +525,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                         e.stopPropagation();
                         onNavigateToDayWise(cust.id);
                       }}
-                      className="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1.5 text-sm font-medium rounded-lg bg-brand-soft hover:bg-brand-soft text-brand-ink border border-brand-line transition-colors flex items-center gap-1 cursor-pointer"
                       title="View Day Wise Trip Itinerary"
                     >
                       <span>Day Wise</span>
@@ -533,8 +533,8 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                     </button>
 
                     {cust.status === 'Completed' ? (
-                      <span className="text-[10px] font-medium py-1 px-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Done
+                      <span className="text-xs font-medium py-1 px-2 rounded-lg bg-success-soft text-success-ink border border-success-line flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-success-ink" /> Done
                       </span>
                     ) : (
                       <button
@@ -543,7 +543,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                           e.stopPropagation();
                           if (onCompleteTrip) onCompleteTrip(cust);
                         }}
-                        className="text-xs font-medium py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
+                        className="text-sm font-medium py-1.5 px-2.5 rounded-lg bg-success-strong hover:bg-success-strong text-white shadow-2xs transition-colors flex items-center gap-1 cursor-pointer"
                         title="Mark Trip as Complete"
                       >
                         <CheckCircle2 className="w-3 h-3" />
@@ -557,7 +557,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                         e.stopPropagation();
                         onOpenShareCustomer(cust);
                       }}
-                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg bg-canvas hover:bg-subtle text-secondary border border-line transition-colors cursor-pointer"
                       title="Share Details"
                     >
                       <Share2 className="w-3.5 h-3.5" />
@@ -567,27 +567,27 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
                 {/* Complete Card Body (Visible when Expanded) */}
                 {isExpanded && (
-                  <div className="p-5 bg-white space-y-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-5 bg-surface space-y-4 border-t border-line animate-in fade-in slide-in-from-top-2 duration-200">
                     
                     {/* Customer Info & Contact Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-canvas border border-line text-sm">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Contact Phone</span>
-                        <div className="flex items-center gap-1 text-slate-700 font-mono font-medium text-xs mt-0.5">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-xs text-muted font-medium uppercase tracking-wide block">Contact Phone</span>
+                        <div className="flex items-center gap-1 text-content font-mono font-medium text-sm mt-0.5">
+                          <Phone className="w-3.5 h-3.5 text-muted" />
                           <span>{cust.phone || 'Not specified'}</span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Email Address</span>
-                        <div className="flex items-center gap-1 text-slate-700 font-medium text-xs mt-0.5 truncate">
-                          <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="text-xs text-muted font-medium uppercase tracking-wide block">Email Address</span>
+                        <div className="flex items-center gap-1 text-content font-medium text-sm mt-0.5 truncate">
+                          <Mail className="w-3.5 h-3.5 text-muted shrink-0" />
                           <span className="truncate">{cust.email || 'Not specified'}</span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wide block">Assigned Operations Manager</span>
-                        <span className="font-semibold text-slate-800 text-xs mt-0.5 block">
+                        <span className="text-xs text-muted font-medium uppercase tracking-wide block">Assigned Operations Manager</span>
+                        <span className="font-semibold text-content text-sm mt-0.5 block">
                           {cust.assignedOpsManager || 'Ops Team'}
                         </span>
                       </div>
@@ -595,44 +595,44 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
                     {/* Financial & Installments Section */}
                     {cust.totalAmount <= 0 ? (
-                      <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-1">
-                        <div className="flex items-center justify-between font-semibold text-amber-900">
+                      <div className="p-3.5 rounded-xl bg-warning-soft border border-warning-line text-sm space-y-1">
+                        <div className="flex items-center justify-between font-semibold text-warning-ink">
                           <span>Package Cost: Pending Quotation</span>
-                          <span className="text-[10px] font-medium text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+                          <span className="text-xs font-medium text-warning-ink bg-warning-soft px-2 py-0.5 rounded border border-warning-line">
                             EMI Schedule Pending
                           </span>
                         </div>
-                        <p className="text-[11px] text-amber-700">
+                        <p className="text-xs text-warning-ink">
                           Please update the lead quote price to generate the standard milestone payment schedule.
                         </p>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 text-xs space-y-3">
+                      <div className="p-4 rounded-xl bg-canvas/80 border border-line text-sm space-y-3">
                         {/* Financial Summary Header */}
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold">
-                          <span className="text-slate-900 text-sm">
+                          <span className="text-content text-sm">
                             Total Package Value: ₹{cust.totalAmount.toLocaleString('en-IN')}
                           </span>
                           <div className="flex items-center gap-3 text-xs">
-                            <span className="text-emerald-700 font-medium">
+                            <span className="text-success-ink font-medium">
                               Received: ₹{m.paidAmount.toLocaleString('en-IN')} ({m.percentPaid}%)
                             </span>
                             <span className="text-slate-300">•</span>
-                            <span className={m.overdueCount > 0 ? 'text-rose-600 font-semibold' : 'text-slate-600'}>
+                            <span className={m.overdueCount > 0 ? 'text-danger-ink font-semibold' : 'text-secondary'}>
                               Balance Due: ₹{(m.total - m.paidAmount).toLocaleString('en-IN')}
                             </span>
                           </div>
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                        <div className="w-full bg-hover h-2 rounded-full overflow-hidden flex">
                           <div 
-                            className="bg-emerald-600 h-full transition-all duration-300"
+                            className="bg-success-strong h-full transition-all duration-300"
                             style={{ width: `${m.percentPaid}%` }}
                           />
                           {m.overdueCount > 0 && (
                             <div 
-                              className="bg-rose-500 h-full transition-all duration-300"
+                              className="bg-danger-strong h-full transition-all duration-300"
                               style={{ width: `${Math.round((m.overdueAmount / (m.total || 1)) * 100)}%` }}
                             />
                           )}
@@ -656,35 +656,35 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                             return (
                               <div 
                                 key={inst.id}
-                                className={`p-3 rounded-lg border text-xs flex flex-col justify-between gap-2 transition-all ${
+                                className={`p-3 rounded-lg border text-sm flex flex-col justify-between gap-2 transition-all ${
                                   isPaid 
-                                    ? 'bg-emerald-50/70 text-slate-800 border-emerald-200 ring-1 ring-emerald-100' 
+                                    ? 'bg-success-soft/70 text-content border-success-line ring-1 ring-success-line' 
                                     : isOverdue 
-                                    ? 'bg-rose-50 border-rose-200 text-rose-900 shadow-2xs' 
-                                    : 'bg-white border-slate-200 text-slate-700'
+                                    ? 'bg-danger-soft border-danger-line text-danger-ink shadow-2xs' 
+                                    : 'bg-surface border-line text-content'
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-1">
-                                  <span className="font-semibold text-slate-800 text-[11px] truncate">
+                                  <span className="font-semibold text-content text-xs truncate">
                                     {shortLabel}
                                   </span>
                                   {isPaid ? (
-                                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                    <span className="text-xs font-bold text-success-ink bg-success-soft px-1.5 py-0.5 rounded">
                                       PAID ✓
                                     </span>
                                   ) : isOverdue ? (
-                                    <span className="text-[10px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                                    <span className="text-xs font-bold text-danger-ink bg-danger-soft px-1.5 py-0.5 rounded">
                                       OVERDUE
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                    <span className="text-xs font-medium text-secondary bg-subtle px-1.5 py-0.5 rounded">
                                       DUE
                                     </span>
                                   )}
                                 </div>
 
-                                <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
-                                  <span className="font-bold text-slate-900 text-xs">
+                                <div className="flex items-center justify-between gap-2 pt-1 border-t border-line">
+                                  <span className="font-bold text-content text-sm">
                                     ₹{inst.amount.toLocaleString('en-IN')}
                                   </span>
 
@@ -694,12 +694,12 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                                       e.stopPropagation();
                                       onRecordPaymentClick(cust, inst);
                                     }}
-                                    className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors cursor-pointer ${
+                                    className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                                       isPaid
-                                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                        ? 'bg-success-soft text-success-ink hover:bg-success-soft'
                                         : isOverdue
-                                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-2xs'
-                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-2xs'
+                                        ? 'bg-danger-strong hover:bg-danger-strong text-white shadow-2xs'
+                                        : 'bg-brand hover:bg-brand text-white shadow-2xs'
                                     }`}
                                   >
                                     {isPaid ? 'View Receipt' : isOverdue ? 'Collect Now' : 'Mark Paid'}
@@ -714,32 +714,32 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                     )}
 
                     {/* Hotel Voucher Summary */}
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex flex-wrap items-center justify-between gap-2">
+                    <div className="p-3.5 rounded-xl bg-canvas border border-line text-sm flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Hotel className="w-4 h-4 text-indigo-600" />
-                        <span className="font-semibold text-slate-800">Accommodation Vouchers:</span>
-                        <span className="text-slate-600">
+                        <Hotel className="w-4 h-4 text-brand-ink" />
+                        <span className="font-semibold text-content">Accommodation Vouchers:</span>
+                        <span className="text-secondary">
                           {vouchSummary.uploaded} uploaded of {vouchSummary.total || 0} total required
                         </span>
                       </div>
                       {vouchSummary.pending > 0 ? (
-                        <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-warning-ink bg-warning-soft px-2.5 py-1 rounded-lg border border-warning-line flex items-center gap-1.5">
                           <AlertCircle className="w-3.5 h-3.5" /> {vouchSummary.pending} Vouchers Pending Upload
                         </span>
                       ) : (
-                        <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                        <span className="text-sm font-semibold text-success-ink bg-success-soft px-2.5 py-1 rounded-lg border border-success-line flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5" /> All Hotel Vouchers Confirmed
                         </span>
                       )}
                     </div>
 
                     {/* Full Action Footer */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => onSelectCustomer(cust)}
-                          className="text-xs font-medium py-2 px-3.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          className="text-sm font-medium py-2 px-3.5 rounded-lg bg-inverse hover:bg-inverse text-white transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                         >
                           <span>Open Full Customer Drawer</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -748,7 +748,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                         <button
                           type="button"
                           onClick={() => onNavigateToDayWise(cust.id)}
-                          className="text-xs font-medium py-2 px-3.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="text-sm font-medium py-2 px-3.5 rounded-lg bg-brand-soft hover:bg-brand-soft text-brand-ink border border-brand-line transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <span>Day Wise Itinerary</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -760,7 +760,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                           <button
                             type="button"
                             onClick={() => onCompleteTrip && onCompleteTrip(cust)}
-                            className="text-xs font-medium py-2 px-3.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                            className="text-sm font-medium py-2 px-3.5 rounded-lg bg-success-strong hover:bg-success-strong text-white shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Complete Trip</span>
@@ -770,7 +770,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
                         <button
                           type="button"
                           onClick={() => onOpenShareCustomer(cust)}
-                          className="text-xs font-medium py-2 px-3 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                          className="text-sm font-medium py-2 px-3 rounded-lg bg-canvas hover:bg-subtle text-content border border-line transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <Share2 className="w-3.5 h-3.5" />
                           <span>Share on WhatsApp</span>

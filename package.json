@@ -31,7 +31,7 @@
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.27.0",
     "multer": "^2.4.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.2.1",
     "pdf-lib": "^1.17.1",
     "pg": "^8.23.0",
     "react": "^19.2.3",
@@ -45,10 +45,12 @@
   },
   "overrides": {
     "jspdf": "^4.2.1",
-    "dompurify": "^3.4.13",
+    "dompurify": "^3.4.17",
+    "proxy-addr": "^2.0.8",
     "nanoid": "^5.1.6"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/handlebars": "^4.0.40",
@@ -61,6 +63,7 @@
     "@vitejs/plugin-react": "^4.5.0",
     "concurrently": "^9.1.2",
     "puppeteer-core": "^25.13.0",
+    "tailwindcss": "^4.1.14",
     "vite": "^6.4.3"
   }
 }

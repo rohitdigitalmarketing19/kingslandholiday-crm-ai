@@ -1,3 +1,4 @@
+import { normalizeHotelAlternative } from '../../utils/hotelOptions';
 import { runQuery, queryAll, queryOne } from '../db/connection';
 
 function hydrateLead(row: any): any {
@@ -35,6 +36,7 @@ function hydrateLead(row: any): any {
 function hydrateQuote(row: any): any {
   const quote: any = {
     id: row.id, packageTitle: row.package_title || '', finalSellingPrice: row.final_selling_price || 0,
+    hotelAlternative: row.hotel_alternative ? normalizeHotelAlternative(JSON.parse(row.hotel_alternative)) : null,
     visaCost: row.visa_cost || 0, flightCost: row.flight_cost || 0, landPackageCost: row.land_package_cost || 0,
     marketingFees: row.marketing_fees || 0, discountPercentage: row.discount_percentage || 0, nights: row.nights || 6,
     hotelsNotIncluded: !!row.hotels_not_included, flightsNotIncluded: !!row.flights_not_included,
@@ -46,7 +48,7 @@ function hydrateQuote(row: any): any {
   quote.hotels = queryAll('SELECT * FROM quote_hotels WHERE quote_id = ? ORDER BY sort_order ASC', [row.id]).map((h: any) => ({
     nights: h.nights, selectedNightIndices: JSON.parse(h.selected_night_indices || '[]'),
     hotelName: h.hotel_name || '', city: h.city || '', category: h.category || '4 Star',
-    roomType: h.room_type || 'Standard Room', comments: h.comments || '',
+    roomType: h.room_type || 'Standard Room', comments: h.comments || '', mealPlan: h.meal_plan || '',
   }));
   quote.inclusions = {
     accommodation: { single: { included: false, comments: '' }, double: { included: false, comments: '' }, triple: { included: false, comments: '' } },

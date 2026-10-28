@@ -195,8 +195,8 @@ Cancellation Policy (Land Package):
 
   if (loading) {
     return (
-      <div className="p-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-lime-400" /> Loading settings...
+      <div className="p-12 text-center text-secondary text-sm flex items-center justify-center gap-2">
+        <RefreshCw className="w-4 h-4 animate-spin text-brand-ink" /> Loading settings...
       </div>
     );
   }
@@ -207,12 +207,12 @@ Cancellation Policy (Land Package):
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-lime-400/10 text-lime-400 border border-lime-400/20 flex items-center justify-center font-black">
+            <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand-ink border border-brand-line/20 flex items-center justify-center font-semibold">
               <SettingsIcon className="w-4 h-4" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white dark:text-white">Settings</h1>
           </div>
-          <p className="text-xs text-zinc-400">
+          <p className="text-sm text-muted">
             Company profile, terms, and payment details shown on proposals and invoices.
           </p>
         </div>
@@ -221,7 +221,7 @@ Cancellation Policy (Land Package):
           type="button"
           onClick={handleSubmit}
           disabled={saving}
-          className="px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-black font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          className="px-6 py-2.5 bg-brand hover:bg-brand text-on-brand font-bold text-sm rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
         >
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saveSuccess ? 'Settings Saved!' : 'Save Settings'}
@@ -229,14 +229,14 @@ Cancellation Policy (Land Package):
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-line pb-3">
         <button
           type="button"
           onClick={() => setActiveTab('general')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'general'
-              ? 'bg-lime-400 text-black shadow-xs'
-              : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-800'
+              ? 'bg-brand text-on-brand shadow-xs'
+              : 'bg-surface text-secondary hover:text-content hover:bg-subtle border border-line'
           }`}
         >
           <Building className="w-4 h-4" />
@@ -246,15 +246,15 @@ Cancellation Policy (Land Package):
         <button
           type="button"
           onClick={() => setActiveTab('pdfThemes')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer flex items-center gap-2 ${
             activeTab === 'pdfThemes'
-              ? 'bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white shadow-md shadow-orange-500/20'
-              : 'bg-zinc-900/60 text-zinc-400 hover:text-white border border-zinc-800'
+              ? 'bg-brand text-on-brand shadow-sm'
+              : 'bg-surface text-secondary hover:text-content hover:bg-subtle border border-line'
           }`}
         >
-          <Sparkles className="w-4 h-4 text-[#FF6B35]" />
+          <Sparkles className="w-4 h-4" />
           <span>PDF Themes &amp; Festival Skins</span>
-          <span className="text-[10px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-300 ml-1">
+          <span className="text-xs font-semibold uppercase px-1.5 py-0.2 rounded bg-warning-strong/20 text-warning-ink ml-1">
             New
           </span>
         </button>
@@ -265,15 +265,15 @@ Cancellation Policy (Land Package):
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
         {/* Box 1: Company Profile */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
-          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
+          <span className="text-sm font-bold text-content uppercase tracking-wider block">
             Company profile
           </span>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                Company name<span className="text-lime-400 ml-0.5">*</span>
+              <label className="block text-sm font-bold text-content mb-1.5">
+                Company name<span className="text-brand-ink ml-0.5">*</span>
               </label>
               <input
                 type="text"
@@ -281,12 +281,12 @@ Cancellation Policy (Land Package):
                 value={formData.company_name}
                 onChange={e => handleChange('company_name', e.target.value)}
                 placeholder="e.g. Kingsland Holidays"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Tagline
               </label>
               <input
@@ -294,13 +294,13 @@ Cancellation Policy (Land Package):
                 value={formData.tagline}
                 onChange={e => handleChange('tagline', e.target.value)}
                 placeholder="e.g. Desire to travel"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                <label className="block text-sm font-bold text-content mb-1.5">
                   Phone
                 </label>
                 <input
@@ -308,12 +308,12 @@ Cancellation Policy (Land Package):
                   value={formData.phone}
                   onChange={e => handleChange('phone', e.target.value)}
                   placeholder="e.g. +91 7615907468"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                <label className="block text-sm font-bold text-content mb-1.5">
                   Email
                 </label>
                 <input
@@ -321,14 +321,14 @@ Cancellation Policy (Land Package):
                   value={formData.email}
                   onChange={e => handleChange('email', e.target.value)}
                   placeholder="e.g. support@kingslandholiday.com"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                <label className="block text-sm font-bold text-content mb-1.5">
                   Website
                 </label>
                 <input
@@ -336,12 +336,12 @@ Cancellation Policy (Land Package):
                   value={formData.website}
                   onChange={e => handleChange('website', e.target.value)}
                   placeholder="e.g. kingslandholiday.com"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+                <label className="block text-sm font-bold text-content mb-1.5">
                   GST number
                 </label>
                 <input
@@ -349,15 +349,15 @@ Cancellation Policy (Land Package):
                   value={formData.gst_number}
                   onChange={e => handleChange('gst_number', e.target.value)}
                   placeholder="e.g. 08AAACK1234F1Z5"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                  Default GST % (new proposals)<span className="text-lime-400 ml-0.5">*</span>
+                <label className="block text-sm font-bold text-content mb-1.5">
+                  Default GST % (new proposals)<span className="text-brand-ink ml-0.5">*</span>
                 </label>
                 <input
                   type="number"
@@ -365,15 +365,15 @@ Cancellation Policy (Land Package):
                   value={formData.default_gst_percent}
                   onChange={e => handleChange('default_gst_percent', parseFloat(e.target.value) || 0)}
                   placeholder="5.00"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-0.5">
+                <label className="block text-sm font-bold text-content mb-0.5">
                   Place of supply (invoices)
                 </label>
-                <span className="text-[10px] text-zinc-500 block mb-1.5">
+                <span className="text-xs text-secondary block mb-1.5">
                   Usually the agency's state, e.g. Rajasthan (08).
                 </span>
                 <input
@@ -381,13 +381,13 @@ Cancellation Policy (Land Package):
                   value={formData.place_of_supply}
                   onChange={e => handleChange('place_of_supply', e.target.value)}
                   placeholder="Rajasthan (08)"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Address
               </label>
               <textarea
@@ -395,42 +395,42 @@ Cancellation Policy (Land Package):
                 value={formData.address}
                 onChange={e => handleChange('address', e.target.value)}
                 placeholder="Agency office address"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30 resize-y"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30 resize-y"
               />
             </div>
           </div>
         </div>
 
         {/* Box 2: Trip ID & Auto-Numbering Format */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider flex items-center gap-2">
-              <Hash className="w-3.5 h-3.5 text-lime-400" />
+            <span className="text-sm font-bold text-content uppercase tracking-wider flex items-center gap-2">
+              <Hash className="w-3.5 h-3.5 text-brand-ink" />
               Trip ID & Auto-Numbering Format
             </span>
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-lime-400/10 border border-lime-400/30 rounded-lg text-lime-400 text-xs font-mono font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-brand/10 border border-brand-line/30 rounded-lg text-brand-ink text-sm font-mono font-bold">
               <span>Next Trip ID Preview:</span>
-              <span className="bg-lime-400 text-black px-1.5 py-0.5 rounded font-black text-[11px]">
+              <span className="bg-brand text-on-brand px-1.5 py-0.5 rounded font-semibold text-xs">
                 {(formData.trip_id_prefix || 'KL-') + String(formData.trip_id_next_number || 1001).padStart(formData.trip_id_digits || 4, '0')}
               </span>
             </div>
           </div>
 
-          <p className="text-xs text-zinc-400 leading-relaxed">
+          <p className="text-sm text-muted leading-relaxed">
             Configure the prefix and starting sequence for generating unique Trip IDs. Every new lead, quote, and booking will automatically continue with this numbering format.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                Trip ID Prefix / Format<span className="text-lime-400 ml-0.5">*</span>
+              <label className="block text-sm font-bold text-content mb-1.5">
+                Trip ID Prefix / Format<span className="text-brand-ink ml-0.5">*</span>
               </label>
               <input
                 type="text"
                 value={formData.trip_id_prefix || ''}
                 onChange={e => handleChange('trip_id_prefix', e.target.value)}
                 placeholder="e.g. KL-, KLH-, KLH-2026-, TRIP-"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content font-mono font-bold placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {['KL-', 'KLH-', 'KLH-2026-', 'TRIP-'].map(pre => (
@@ -438,10 +438,10 @@ Cancellation Policy (Land Package):
                     key={pre}
                     type="button"
                     onClick={() => handleChange('trip_id_prefix', pre)}
-                    className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-xs font-mono border transition-all cursor-pointer ${
                       formData.trip_id_prefix === pre
-                        ? 'bg-lime-400 text-black border-lime-400 font-bold'
-                        : 'bg-zinc-800/80 text-zinc-400 border-zinc-700 hover:text-zinc-200'
+                        ? 'bg-brand text-on-brand border-brand-line font-bold'
+                        : 'bg-surface text-muted border-line hover:text-content'
                     }`}
                   >
                     {pre}
@@ -451,8 +451,8 @@ Cancellation Policy (Land Package):
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                Next Sequential Number<span className="text-lime-400 ml-0.5">*</span>
+              <label className="block text-sm font-bold text-content mb-1.5">
+                Next Sequential Number<span className="text-brand-ink ml-0.5">*</span>
               </label>
               <input
                 type="number"
@@ -460,28 +460,28 @@ Cancellation Policy (Land Package):
                 value={formData.trip_id_next_number || 1001}
                 onChange={e => handleChange('trip_id_next_number', parseInt(e.target.value, 10) || 1)}
                 placeholder="1001"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content font-mono font-bold placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
-              <span className="text-[10px] text-zinc-500 block mt-1.5">
+              <span className="text-xs text-secondary block mt-1.5">
                 New leads will start from this number and count up.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Minimum Digits (Padding)
               </label>
               <select
                 value={formData.trip_id_digits || 4}
                 onChange={e => handleChange('trip_id_digits', parseInt(e.target.value, 10) || 4)}
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 font-mono font-bold outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content font-mono font-bold outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               >
                 <option value={3}>3 Digits (e.g. 001)</option>
                 <option value={4}>4 Digits (e.g. 1001)</option>
                 <option value={5}>5 Digits (e.g. 01001)</option>
                 <option value={6}>6 Digits (e.g. 001001)</option>
               </select>
-              <span className="text-[10px] text-zinc-500 block mt-1.5">
+              <span className="text-xs text-secondary block mt-1.5">
                 Sequence: {(formData.trip_id_prefix || 'KL-') + String((formData.trip_id_next_number || 1001) + 1).padStart(formData.trip_id_digits || 4, '0')}, {(formData.trip_id_prefix || 'KL-') + String((formData.trip_id_next_number || 1001) + 2).padStart(formData.trip_id_digits || 4, '0')}...
               </span>
             </div>
@@ -489,14 +489,14 @@ Cancellation Policy (Land Package):
         </div>
 
         {/* Box 3: Branding & Proof */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
-          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
+          <span className="text-sm font-bold text-content uppercase tracking-wider block">
             Branding & Proof
           </span>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Established year
               </label>
               <input
@@ -504,12 +504,12 @@ Cancellation Policy (Land Package):
                 value={formData.established_year}
                 onChange={e => handleChange('established_year', e.target.value)}
                 placeholder="2010"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Rating (0–5)
               </label>
               <input
@@ -520,14 +520,14 @@ Cancellation Policy (Land Package):
                 value={formData.rating}
                 onChange={e => handleChange('rating', parseFloat(e.target.value) || 0)}
                 placeholder="4.8"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Happy customers
               </label>
               <input
@@ -535,45 +535,45 @@ Cancellation Policy (Land Package):
                 value={formData.happy_customers}
                 onChange={e => handleChange('happy_customers', e.target.value)}
                 placeholder="5000+"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Agency Logo
               </label>
               <div className="flex items-center gap-3">
-                <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
-                  <Upload className="w-3.5 h-3.5 text-lime-400" />
+                <label className="px-3.5 py-2 bg-surface hover:bg-surface text-content font-semibold text-sm rounded-xl border border-line cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
+                  <Upload className="w-3.5 h-3.5 text-brand-ink" />
                   Choose Logo
                   <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 </label>
                 {formData.logo_url ? (
-                  <img src={formData.logo_url} alt="Logo" className="h-7 max-w-[80px] object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
+                  <img src={formData.logo_url} alt="Logo" className="h-7 max-w-[80px] object-contain rounded border border-line p-0.5 bg-surface shrink-0" />
                 ) : (
-                  <span className="text-[11px] text-zinc-500 truncate">No file</span>
+                  <span className="text-xs text-secondary truncate">No file</span>
                 )}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Favicon (Browser Icon)
               </label>
               <div className="flex items-center gap-3">
-                <label className="px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs rounded-xl border border-zinc-700 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
-                  <Upload className="w-3.5 h-3.5 text-lime-400" />
+                <label className="px-3.5 py-2 bg-surface hover:bg-surface text-content font-semibold text-sm rounded-xl border border-line cursor-pointer flex items-center gap-1.5 transition-colors shrink-0">
+                  <Upload className="w-3.5 h-3.5 text-brand-ink" />
                   Choose Icon
                   <input type="file" accept="image/x-icon,image/png,image/svg+xml,image/jpeg" onChange={handleFaviconUpload} className="hidden" />
                 </label>
                 {formData.favicon_url ? (
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <img src={formData.favicon_url} alt="Favicon" className="w-6 h-6 object-contain rounded border border-zinc-700 p-0.5 bg-white shrink-0" />
-                    <span className="text-[10px] text-lime-400 font-bold truncate">Active ✓</span>
+                    <img src={formData.favicon_url} alt="Favicon" className="w-6 h-6 object-contain rounded border border-line p-0.5 bg-surface shrink-0" />
+                    <span className="text-xs text-brand-ink font-bold truncate">Active ✓</span>
                   </div>
                 ) : (
-                  <span className="text-[11px] text-zinc-500 truncate">Default</span>
+                  <span className="text-xs text-secondary truncate">Default</span>
                 )}
               </div>
             </div>
@@ -581,22 +581,22 @@ Cancellation Policy (Land Package):
         </div>
 
         {/* Box 4: Email & SMTP Settings */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-line/80 pb-3">
             <div className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-lime-400" />
-              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              <Mail className="w-4 h-4 text-brand-ink" />
+              <span className="text-sm font-bold text-content uppercase tracking-wider">
                 Gmail & SMTP Email Delivery Settings
               </span>
             </div>
-            <span className="text-[10px] text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-lg border border-zinc-700 font-medium">
+            <span className="text-xs text-muted bg-surface px-2.5 py-1 rounded-lg border border-line font-medium">
               Used for 1-Click Login Links, OTP Security Codes & New User Credentials
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Sender Email Address (Gmail Account) *
               </label>
               <input
@@ -605,13 +605,13 @@ Cancellation Policy (Land Package):
                 value={formData.smtp_user}
                 onChange={e => handleChange('smtp_user', e.target.value)}
                 placeholder="rohit.digitalmarketing19@gmail.com"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
-              <span className="text-[10px] text-zinc-500 mt-1 block">Account from which CRM emails are dispatched</span>
+              <span className="text-xs text-secondary mt-1 block">Account from which CRM emails are dispatched</span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Gmail App Password (16-Digit) *
               </label>
               <div className="relative">
@@ -620,65 +620,65 @@ Cancellation Policy (Land Package):
                   value={formData.smtp_pass}
                   onChange={e => handleChange('smtp_pass', e.target.value)}
                   placeholder="e.g. abcd efgh ijkl mnop"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl pl-4 pr-10 py-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl pl-4 pr-10 py-2.5 text-sm font-mono text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
                 <button
                   type="button"
                   onClick={() => setShowSmtpPass(!showSmtpPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-secondary hover:text-content cursor-pointer"
                 >
                   {showSmtpPass ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
-              <span className="text-[10px] text-zinc-500 mt-1 block">
-                Generate 16-digit password at: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-lime-400 hover:underline">Google App Passwords</a>
+              <span className="text-xs text-secondary mt-1 block">
+                Generate 16-digit password at: <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noreferrer" className="text-brand-ink hover:underline">Google App Passwords</a>
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">SMTP Host</label>
+              <label className="block text-sm font-bold text-content mb-1.5">SMTP Host</label>
               <input
                 type="text"
                 value={formData.smtp_host}
                 onChange={e => handleChange('smtp_host', e.target.value)}
                 placeholder="smtp.gmail.com"
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm font-mono text-content outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">SMTP Port</label>
+                <label className="block text-sm font-bold text-content mb-1.5">SMTP Port</label>
                 <input
                   type="number"
                   value={formData.smtp_port}
                   onChange={e => handleChange('smtp_port', parseInt(e.target.value) || 587)}
                   placeholder="587"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm font-mono text-content outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-300 mb-1.5">Sender Display Name</label>
+                <label className="block text-sm font-bold text-content mb-1.5">Sender Display Name</label>
                 <input
                   type="text"
                   value={formData.smtp_from_name}
                   onChange={e => handleChange('smtp_from_name', e.target.value)}
                   placeholder="Kingsland Holidays"
-                  className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 outline-none transition-all focus:ring-1 focus:ring-lime-400/30"
+                  className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content outline-none transition-all focus:ring-1 focus:ring-brand-line/30"
                 />
               </div>
             </div>
           </div>
 
           {/* Test Email Verification Box */}
-          <div className="bg-zinc-950/60 border border-zinc-800 rounded-xl p-4 space-y-3 mt-2">
+          <div className="bg-canvas border border-line rounded-xl p-4 space-y-3 mt-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                  <Send size={13} className="text-lime-400" />
+                <h4 className="text-sm font-bold text-content flex items-center gap-1.5">
+                  <Send size={13} className="text-brand-ink" />
                   <span>Test Real-Time Email Delivery</span>
                 </h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+                <p className="text-xs text-muted mt-0.5">
                   Send a live test verification email to confirm that your SMTP and Gmail password are working.
                 </p>
               </div>
@@ -689,13 +689,13 @@ Cancellation Policy (Land Package):
                   value={testEmailTarget}
                   onChange={e => setTestEmailTarget(e.target.value)}
                   placeholder="Recipient Email"
-                  className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-zinc-200 outline-none focus:border-lime-400 w-56"
+                  className="bg-surface border border-line rounded-lg px-3 py-1.5 text-sm text-content outline-none focus:border-brand-line w-56"
                 />
                 <button
                   type="button"
                   onClick={handleTestSmtp}
                   disabled={isTestingSmtp}
-                  className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                  className="px-4 py-1.5 bg-surface hover:bg-surface text-brand-ink font-bold text-sm rounded-lg border border-line transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
                 >
                   {isTestingSmtp ? <RefreshCw size={12} className="animate-spin" /> : <Send size={12} />}
                   <span>{isTestingSmtp ? 'Sending...' : 'Send Test'}</span>
@@ -704,15 +704,15 @@ Cancellation Policy (Land Package):
             </div>
 
             {smtpTestMsg && (
-              <div className={`p-3 rounded-lg text-xs font-medium border flex items-start gap-2 ${
+              <div className={`p-3 rounded-lg text-sm font-medium border flex items-start gap-2 ${
                 smtpTestMsg.type === 'success'
-                  ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60'
-                  : 'bg-red-950/40 text-red-300 border-red-800/60'
+                  ? 'bg-success-soft/40 text-success-ink border-success-line/60'
+                  : 'bg-danger-soft/40 text-danger-ink border-danger-line/60'
               }`}>
                 {smtpTestMsg.type === 'success' ? (
-                  <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <CheckCircle2 size={14} className="text-success-ink shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                  <AlertTriangle size={14} className="text-danger-ink shrink-0 mt-0.5" />
                 )}
                 <span>{smtpTestMsg.text}</span>
               </div>
@@ -721,40 +721,40 @@ Cancellation Policy (Land Package):
         </div>
 
         {/* Box 5: Database Safety & Automated Backup Center */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-5">
-          <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-line/80 pb-3">
             <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-lime-400" />
-              <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+              <Lock className="w-4 h-4 text-brand-ink" />
+              <span className="text-sm font-bold text-content uppercase tracking-wider">
                 Database Safety & Backup Center
               </span>
             </div>
-            <span className="text-[10px] text-emerald-400 bg-emerald-950/50 px-2.5 py-1 rounded-lg border border-emerald-800/50 font-bold flex items-center gap-1">
+            <span className="text-xs text-success-ink bg-success-soft/50 px-2.5 py-1 rounded-lg border border-success-line/50 font-bold flex items-center gap-1">
               <CheckCircle2 size={11} />
               Auto-Recovery Active
             </span>
           </div>
 
-          <p className="text-xs text-zinc-400 leading-relaxed">
+          <p className="text-sm text-muted leading-relaxed">
             Your CRM automatically creates timestamped backups on startup and whenever changes occur. You can download an offline database backup file to your computer at any time, or upload a backup file to restore all your leads, quotes, invoices, and settings.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             {/* Download Backup */}
-            <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div className="bg-canvas border border-line rounded-xl p-4 flex flex-col justify-between space-y-3">
               <div>
-                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5 text-lime-400 rotate-180" />
+                <h4 className="text-sm font-bold text-content flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-brand-ink rotate-180" />
                   <span>Download Full Database Backup</span>
                 </h4>
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  Save a full offline copy of your CRM database (<code className="text-lime-400 text-[10px]">kingsland.db</code>) directly to your computer.
+                <p className="text-xs text-muted mt-1">
+                  Save a full offline copy of your CRM database (<code className="text-brand-ink text-xs">kingsland.db</code>) directly to your computer.
                 </p>
               </div>
               <a
                 href="/api/settings/backup/download"
                 download
-                className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-lime-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 text-center"
+                className="w-full py-2.5 bg-surface hover:bg-surface text-brand-ink font-bold text-sm rounded-lg border border-line transition-colors flex items-center justify-center gap-2 text-center"
               >
                 <Upload className="w-3.5 h-3.5 rotate-180" />
                 <span>Download Backup (.db)</span>
@@ -762,17 +762,17 @@ Cancellation Policy (Land Package):
             </div>
 
             {/* Restore / Upload Backup */}
-            <div className="bg-zinc-950/80 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div className="bg-canvas border border-line rounded-xl p-4 flex flex-col justify-between space-y-3">
               <div>
-                <h4 className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                  <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <h4 className="text-sm font-bold text-content flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-warning-ink" />
                   <span>Restore from Backup File</span>
                 </h4>
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  Upload a previously downloaded <code className="text-amber-400 text-[10px]">.db</code> file to instantly restore all records and settings.
+                <p className="text-xs text-muted mt-1">
+                  Upload a previously downloaded <code className="text-warning-ink text-xs">.db</code> file to instantly restore all records and settings.
                 </p>
               </div>
-              <label className={`w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-amber-400 font-bold text-xs rounded-lg border border-zinc-700 transition-colors flex items-center justify-center gap-2 cursor-pointer text-center ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}>
+              <label className={`w-full py-2.5 bg-surface hover:bg-surface text-warning-ink font-bold text-sm rounded-lg border border-line transition-colors flex items-center justify-center gap-2 cursor-pointer text-center ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}>
                 <Upload className={`w-3.5 h-3.5 ${isRestoring ? 'animate-bounce' : ''}`} />
                 <span>{isRestoring ? 'Restoring Database...' : 'Upload & Restore Backup'}</span>
                 <input
@@ -836,14 +836,14 @@ Cancellation Policy (Land Package):
         </div>
 
         {/* Box 5: Defaults for Documents */}
-        <div className="bg-zinc-900/60 dark:bg-[#161713] border border-zinc-800 rounded-2xl p-5 md:p-6 space-y-4">
-          <span className="text-xs font-bold text-zinc-200 uppercase tracking-wider block">
+        <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
+          <span className="text-sm font-bold text-content uppercase tracking-wider block">
             Defaults for documents
           </span>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5">
+              <label className="block text-sm font-bold text-content mb-1.5">
                 Default payment terms
               </label>
               <textarea
@@ -851,22 +851,22 @@ Cancellation Policy (Land Package):
                 value={formData.default_payment_terms}
                 onChange={e => handleChange('default_payment_terms', e.target.value)}
                 placeholder="e.g. 50% advance to confirm the booking, balance 15 days before travel."
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30 resize-y"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30 resize-y"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-0.5">
+              <label className="block text-sm font-bold text-content mb-0.5">
                 Default terms & conditions
               </label>
-              <span className="text-[10px] text-zinc-500 block mb-1.5">
+              <span className="text-xs text-secondary block mb-1.5">
                 Printed on the proposal and invoice.
               </span>
               <textarea
                 rows={8}
                 value={formData.default_terms_conditions}
                 onChange={e => handleChange('default_terms_conditions', e.target.value)}
-                className="w-full bg-zinc-950/80 dark:bg-[#0e0f0c] border border-zinc-700/80 focus:border-lime-400 rounded-xl px-4 py-2.5 text-xs text-zinc-100 placeholder:text-zinc-600 outline-none transition-all focus:ring-1 focus:ring-lime-400/30 resize-y font-mono text-[11px] leading-relaxed"
+                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30 resize-y font-mono text-xs leading-relaxed"
               />
             </div>
           </div>
@@ -877,7 +877,7 @@ Cancellation Policy (Land Package):
           <button
             type="submit"
             disabled={saving}
-            className="px-8 py-3 bg-lime-400 hover:bg-lime-300 text-black font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-8 py-3 bg-brand hover:bg-brand text-on-brand font-bold text-sm rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saveSuccess ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saveSuccess ? 'Settings Saved Successfully!' : 'Save Settings'}

@@ -166,37 +166,37 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
     <div className="space-y-6 animate-in fade-in duration-200">
       
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-teal-500/20 text-teal-400 border border-teal-500/30">
+            <span className="p-1.5 rounded-lg bg-success-strong/20 text-success-ink border border-success-line/30">
               <CheckCircle2 className="w-5 h-5" />
             </span>
-            <h3 className="font-extrabold text-xl">Completed Trips & Review Desk</h3>
+            <h3 className="font-semibold text-xl">Completed Trips & Review Desk</h3>
           </div>
-          <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+          <p className="text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
             Archived journey logs, guest remarks, operational audit, and automated Google Review requests via WhatsApp & Gmail.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="px-5 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
-            <span className="text-[10px] uppercase font-bold text-slate-300 block">Completed Trips</span>
-            <span className="text-2xl font-black text-white">{completedCustomers.length}</span>
+          <div className="px-5 py-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
+            <span className="text-xs uppercase font-bold text-slate-300 block">Completed Trips</span>
+            <span className="text-2xl font-semibold text-white">{completedCustomers.length}</span>
           </div>
-          <div className="px-5 py-2.5 rounded-2xl bg-amber-500/20 backdrop-blur-md border border-amber-500/40 text-center">
-            <span className="text-[10px] uppercase font-bold text-amber-300 block">Avg Rating</span>
-            <span className="text-2xl font-black text-amber-300">5.0 ★</span>
+          <div className="px-5 py-2.5 rounded-xl bg-warning-strong/20 backdrop-blur-md border border-warning-line/40 text-center">
+            <span className="text-xs uppercase font-bold text-warning-ink block">Avg Rating</span>
+            <span className="text-2xl font-semibold text-warning-ink">5.0 ★</span>
           </div>
         </div>
       </div>
 
       {/* Completed List */}
       {filtered.length === 0 ? (
-        <div className="p-12 text-center rounded-3xl bg-white border-2 border-dashed border-slate-200 shadow-sm">
+        <div className="p-12 text-center rounded-xl bg-surface border-2 border-dashed border-line shadow-sm">
           <Award className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 text-base">No Completed Trips Found</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 className="font-bold text-content text-base">No Completed Trips Found</h3>
+          <p className="text-sm text-secondary mt-1 max-w-sm mx-auto">
             Trips marked as 'Completed' will appear here with guest remarks and Google Review dispatch options.
           </p>
         </div>
@@ -210,47 +210,47 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
             return (
               <div
                 key={cust.id}
-                className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                className="bg-surface border border-line rounded-xl p-6 shadow-sm hover:shadow-sm transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-3">
                   {/* Top Bar: Booking ID & Stars */}
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-black text-indigo-700 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-200">
+                    <span className="text-sm font-mono font-semibold text-brand-ink bg-brand-soft px-3 py-1 rounded-xl border border-brand-line">
                       {cust.bookingId}
                     </span>
 
-                    <div className="flex items-center gap-1 text-amber-500 text-xs font-extrabold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
+                    <div className="flex items-center gap-1 text-warning-ink text-sm font-semibold bg-warning-soft px-2.5 py-1 rounded-xl border border-warning-line">
                       {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} className={`w-3.5 h-3.5 fill-current ${s <= score ? 'text-amber-400' : 'text-slate-200'}`} />
+                        <Star key={s} className={`w-3.5 h-3.5 fill-current ${s <= score ? 'text-warning-ink' : 'text-slate-200'}`} />
                       ))}
-                      <span className="ml-1 text-slate-800">{score}.0</span>
+                      <span className="ml-1 text-content">{score}.0</span>
                     </div>
                   </div>
 
                   {/* Customer Info */}
                   <div>
-                    <h4 className="font-black text-slate-900 text-lg">
+                    <h4 className="font-semibold text-content text-lg">
                       {cust.name}
                     </h4>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-medium mt-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-secondary font-medium mt-1">
                       <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-rose-500" />
-                        <strong className="text-slate-800">{cust.destination}</strong>
+                        <MapPin className="w-3.5 h-3.5 text-danger-ink" />
+                        <strong className="text-content">{cust.destination}</strong>
                       </div>
                       <span className="text-slate-300">•</span>
                       <div className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        <Calendar className="w-3.5 h-3.5 text-muted" />
                         <span>{cust.startDate} to {cust.endDate}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3 text-[11px] text-slate-500 font-mono mt-1.5">
+                    <div className="flex items-center gap-3 text-xs text-secondary font-mono mt-1.5">
                       <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-slate-400" />
+                        <Phone className="w-3 h-3 text-muted" />
                         {cust.phone || '—'}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Mail className="w-3 h-3 text-slate-400" />
+                        <Mail className="w-3 h-3 text-muted" />
                         {cust.email || '—'}
                       </span>
                     </div>
@@ -258,21 +258,21 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
 
                   {/* Feedback Comment (if any) */}
                   {itin?.feedbackComment && (
-                    <div className="p-3 rounded-2xl bg-amber-50/60 border border-amber-100 text-xs text-slate-700 italic">
+                    <div className="p-3 rounded-xl bg-warning-soft/60 border border-warning-line text-sm text-content italic">
                       "{itin.feedbackComment}"
                     </div>
                   )}
 
                   {/* Operational Remarks Section */}
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="p-3.5 rounded-xl bg-canvas border border-line space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
                         Lead & Trip Remarks:
                       </span>
                       {!isEditingRemark && (
                         <button
                           onClick={() => handleStartEditRemark(cust)}
-                          className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                          className="text-xs font-bold text-brand-ink hover:text-brand-ink flex items-center gap-1 cursor-pointer"
                         >
                           <Edit3 className="w-3 h-3" />
                           <span>{cust.opsRemarks || cust.accountsRemarks ? 'Edit' : '+ Add Remark'}</span>
@@ -281,7 +281,7 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
                     </div>
 
                     {!isEditingRemark ? (
-                      <p className="text-xs text-slate-700 italic font-medium leading-relaxed">
+                      <p className="text-sm text-content italic font-medium leading-relaxed">
                         {cust.opsRemarks || cust.accountsRemarks || cust.notes || 'No remarks recorded for this completed trip.'}
                       </p>
                     ) : (
@@ -291,19 +291,19 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
                           value={remarkText}
                           onChange={(e) => setRemarkText(e.target.value)}
                           placeholder="Enter trip settlement remarks..."
-                          className="w-full p-2.5 rounded-xl bg-white border border-indigo-400 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
+                          className="w-full p-2.5 rounded-xl bg-surface border border-brand-line text-sm font-medium text-content focus:ring-2 focus:ring-brand-line outline-none"
                         />
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => handleSaveRemark(cust)}
-                            className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs cursor-pointer"
+                            className="px-3 py-1 rounded-lg bg-success-strong hover:bg-success-strong text-white font-bold text-xs flex items-center gap-1 shadow-xs cursor-pointer"
                           >
                             <Save className="w-3 h-3" />
                             <span>Save Remark</span>
                           </button>
                           <button
                             onClick={() => setEditingRemarkCustId(null)}
-                            className="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-[10px] cursor-pointer"
+                            className="px-3 py-1 rounded-lg bg-hover hover:bg-hover text-content font-bold text-xs cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -314,19 +314,19 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
                 </div>
 
                 {/* Bottom Actions: Review Request & Summary Share */}
-                <div className="pt-3 border-t border-slate-100 space-y-2">
+                <div className="pt-3 border-t border-line space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => handleOpenReviewModal(cust)}
-                      className="px-3 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer group"
+                      className="px-3 py-2.5 rounded-xl bg-warning-strong hover:bg-warning-strong text-content font-semibold text-sm flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer group"
                     >
-                      <Star className="w-3.5 h-3.5 fill-slate-950 text-slate-950 group-hover:scale-110 transition-transform" />
+                      <Star className="w-3.5 h-3.5 fill-slate-950 text-content group-hover:scale-110 transition-transform" />
                       <span>Request GMB Review</span>
                     </button>
 
                     <button
                       onClick={() => onOpenShareCustomer(cust)}
-                      className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      className="px-3 py-2.5 rounded-xl bg-subtle hover:bg-hover text-content font-bold text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                       <span>Share Summary</span>
@@ -335,15 +335,15 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
 
                   {/* Review Request Status Banner */}
                   {cust.reviewRequestedAt ? (
-                    <div className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl flex items-center justify-between">
+                    <div className="text-xs text-success-ink font-semibold bg-success-soft border border-success-line px-2.5 py-1 rounded-xl flex items-center justify-between">
                       <span className="flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <CheckCircle2 className="w-3 h-3 text-success-ink" />
                         <span>Review requested via {cust.reviewChannel}</span>
                       </span>
-                      <span className="font-mono text-slate-500">{cust.reviewRequestedAt}</span>
+                      <span className="font-mono text-secondary">{cust.reviewRequestedAt}</span>
                     </div>
                   ) : (
-                    <div className="text-[10px] text-slate-400 font-medium px-1 text-center">
+                    <div className="text-xs text-muted font-medium px-1 text-center">
                       Review not requested yet
                     </div>
                   )}
@@ -359,20 +359,20 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
       {/* GOOGLE REVIEW DISPATCHER MODAL (WHATSAPP & GMAIL) */}
       {/* ========================================================================= */}
       {reviewModalCust && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 bg-inverse/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-surface rounded-xl max-w-xl w-full p-6 shadow-sm border border-line space-y-5 animate-in zoom-in-95 duration-150">
             
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-100 text-amber-800">
-                  <Star className="w-5 h-5 fill-amber-500 text-amber-600" />
+                <div className="p-2 rounded-xl bg-warning-soft text-warning-ink">
+                  <Star className="w-5 h-5 fill-amber-500 text-warning-ink" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-900 text-base">
+                  <h3 className="font-semibold text-content text-base">
                     Send Google Review Request
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-sm text-secondary font-medium">
                     Guest: <strong>{reviewModalCust.name}</strong> ({reviewModalCust.bookingId}) · {reviewModalCust.destination}
                   </p>
                 </div>
@@ -380,23 +380,23 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
 
               <button
                 onClick={() => setReviewModalCust(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                className="p-1.5 rounded-xl text-muted hover:text-content hover:bg-subtle cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Official GMB Link Indicator */}
-            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-amber-900">
-                <ShieldCheck className="w-4 h-4 text-amber-700" />
+            <div className="p-3 rounded-xl bg-warning-soft border border-warning-line flex items-center justify-between text-sm">
+              <div className="flex items-center gap-2 text-warning-ink">
+                <ShieldCheck className="w-4 h-4 text-warning-ink" />
                 <span className="font-bold">Official GMB Review URL:</span>
               </div>
               <a
                 href={GMB_REVIEW_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-indigo-700 font-bold hover:underline flex items-center gap-1"
+                className="font-mono text-brand-ink font-bold hover:underline flex items-center gap-1"
               >
                 <span>g.page/r/CTH_2txUgnSLEAE/review</span>
                 <ExternalLink className="w-3 h-3" />
@@ -405,24 +405,24 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
 
             {/* Editable Subject (for Gmail) */}
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700 block">Email Subject:</label>
+              <label className="text-sm font-bold text-content block">Email Subject:</label>
               <input
                 type="text"
                 value={reviewSubjectDraft}
                 onChange={(e) => setReviewSubjectDraft(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 rounded-xl bg-canvas border border-line text-sm font-bold text-content focus:ring-2 focus:ring-brand-line"
               />
             </div>
 
             {/* Editable Message Content */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 block">Review Invitation Message:</label>
+                <label className="text-sm font-bold text-content block">Review Invitation Message:</label>
                 <button
                   onClick={handleCopyReviewText}
-                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-bold text-brand-ink hover:text-brand-ink flex items-center gap-1 cursor-pointer"
                 >
-                  {copiedReview ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedReview ? <Check className="w-3.5 h-3.5 text-success-ink" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copiedReview ? 'Copied to Clipboard!' : 'Copy Message'}</span>
                 </button>
               </div>
@@ -430,15 +430,15 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
                 rows={8}
                 value={reviewMessageDraft}
                 onChange={(e) => setReviewMessageDraft(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-500 font-sans leading-relaxed"
+                className="w-full p-3 rounded-xl bg-canvas border border-line text-sm font-medium text-content focus:ring-2 focus:ring-brand-line font-sans leading-relaxed"
               />
             </div>
 
             {/* Action Buttons: WhatsApp & Gmail */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line">
               <button
                 onClick={handleSendWhatsAppReview}
-                className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                className="py-3 px-4 rounded-xl bg-success-strong hover:bg-success-strong text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
                 <MessageSquare className="w-4 h-4 fill-white" />
                 <span>Send via WhatsApp</span>
@@ -446,7 +446,7 @@ export const CompletedTripsModule: React.FC<CompletedTripsModuleProps> = ({
 
               <button
                 onClick={handleSendGmailReview}
-                className="py-3 px-4 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                className="py-3 px-4 rounded-xl bg-danger-strong hover:bg-danger-strong text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
               >
                 <Mail className="w-4 h-4" />
                 <span>Send via Gmail</span>

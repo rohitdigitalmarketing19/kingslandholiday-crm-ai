@@ -121,26 +121,26 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
     <div className="space-y-6 animate-in fade-in duration-300">
       
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-line">
         <div>
           <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-amber-600" />
-            <h2 className="text-xl font-semibold text-slate-800">
+            <Clock className="w-5 h-5 text-warning-ink" />
+            <h2 className="text-xl font-semibold text-content">
               Follow-ups & Reminders
             </h2>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-sm text-secondary mt-0.5">
             Manage scheduled customer call logs, touchpoint reminders, and completed follow-up notes.
           </p>
         </div>
 
         {/* Agent Filter */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-medium">Assigned Agent:</span>
+          <span className="text-sm text-secondary font-medium">Assigned Agent:</span>
           <select
             value={selectedAgent}
             onChange={(e) => setSelectedAgent(e.target.value)}
-            className="bg-white text-slate-800 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 cursor-pointer shadow-2xs"
+            className="bg-surface text-content border border-line rounded-lg px-3 py-1.5 text-sm font-medium outline-none focus:border-brand-line cursor-pointer shadow-2xs"
           >
             <option value="all">All Agents</option>
             {agents.map((a) => (
@@ -153,25 +153,25 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
       </div>
 
       {/* Tabs & Search Toolbar */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-surface p-3.5 rounded-xl border border-line shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         
         {/* Tabs Bar */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-lg overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1 p-1 bg-subtle/80 rounded-lg overflow-x-auto custom-scrollbar">
           
           {/* Overdue */}
           <button
             onClick={() => setActiveTab('overdue')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'overdue'
-                ? 'bg-rose-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-danger-strong text-white shadow-xs'
+                : 'text-secondary hover:text-content hover:bg-white/60'
             }`}
           >
             <span>Overdue</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+            <span className={`px-1.5 py-0.2 rounded text-xs font-semibold ${
               categorized.overdue.length > 0 
-                ? activeTab === 'overdue' ? 'bg-rose-800 text-white' : 'bg-rose-100 text-rose-700' 
-                : 'bg-slate-200 text-slate-600'
+                ? activeTab === 'overdue' ? 'bg-danger-strong text-white' : 'bg-danger-soft text-danger-ink' 
+                : 'bg-hover text-secondary'
             }`}>
               {categorized.overdue.length}
             </span>
@@ -180,15 +180,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Today */}
           <button
             onClick={() => setActiveTab('today')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'today'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-warning-strong text-white shadow-xs'
+                : 'text-secondary hover:text-content hover:bg-white/60'
             }`}
           >
             <span>Today</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              activeTab === 'today' ? 'bg-amber-800 text-white' : 'bg-amber-100 text-amber-800'
+            <span className={`px-1.5 py-0.2 rounded text-xs font-semibold ${
+              activeTab === 'today' ? 'bg-warning-strong text-white' : 'bg-warning-soft text-warning-ink'
             }`}>
               {categorized.today.length}
             </span>
@@ -197,15 +197,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Tomorrow */}
           <button
             onClick={() => setActiveTab('tomorrow')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'tomorrow'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-brand text-white shadow-xs'
+                : 'text-secondary hover:text-content hover:bg-white/60'
             }`}
           >
             <span>Tomorrow</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              activeTab === 'tomorrow' ? 'bg-indigo-800 text-white' : 'bg-slate-200 text-slate-600'
+            <span className={`px-1.5 py-0.2 rounded text-xs font-semibold ${
+              activeTab === 'tomorrow' ? 'bg-brand text-white' : 'bg-hover text-secondary'
             }`}>
               {categorized.tomorrow.length}
             </span>
@@ -214,15 +214,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Upcoming */}
           <button
             onClick={() => setActiveTab('upcoming')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'upcoming'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-brand text-white shadow-xs'
+                : 'text-secondary hover:text-content hover:bg-white/60'
             }`}
           >
             <span>Upcoming</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              activeTab === 'upcoming' ? 'bg-indigo-800 text-white' : 'bg-slate-200 text-slate-600'
+            <span className={`px-1.5 py-0.2 rounded text-xs font-semibold ${
+              activeTab === 'upcoming' ? 'bg-brand text-white' : 'bg-hover text-secondary'
             }`}>
               {categorized.upcoming.length}
             </span>
@@ -231,15 +231,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
           {/* Completed */}
           <button
             onClick={() => setActiveTab('completed')}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer ${
               activeTab === 'completed'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                ? 'bg-success-strong text-white shadow-xs'
+                : 'text-secondary hover:text-content hover:bg-white/60'
             }`}
           >
             <span>Completed</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold ${
-              activeTab === 'completed' ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-600'
+            <span className={`px-1.5 py-0.2 rounded text-xs font-semibold ${
+              activeTab === 'completed' ? 'bg-success-strong text-white' : 'bg-hover text-secondary'
             }`}>
               {categorized.completed.length}
             </span>
@@ -249,13 +249,13 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
 
         {/* Search */}
         <div className="relative min-w-[220px]">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             type="text"
             placeholder="Search follow-ups..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-indigo-400 focus:bg-white transition-all"
+            className="w-full pl-8 pr-3 py-1.5 bg-canvas border border-line rounded-lg text-sm font-medium text-content outline-none focus:border-brand-line focus:bg-surface transition-all"
           />
         </div>
       </div>
@@ -263,12 +263,12 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
       {/* Follow-up Leads List */}
       <div className="space-y-3">
         {currentList.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-xl border border-dashed border-slate-200 p-8 space-y-2">
-            <div className="w-10 h-10 mx-auto rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+          <div className="py-16 text-center bg-surface rounded-xl border border-dashed border-line p-8 space-y-2">
+            <div className="w-10 h-10 mx-auto rounded-lg bg-canvas flex items-center justify-center text-muted">
               <CheckCircle2 size={20} />
             </div>
-            <h4 className="text-sm font-semibold text-slate-800">No Scheduled Follow-ups</h4>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+            <h4 className="text-sm font-semibold text-content">No Scheduled Follow-ups</h4>
+            <p className="text-sm text-muted max-w-sm mx-auto font-medium">
               There are no {activeTab} follow-up calls or reminders matching your filters.
             </p>
           </div>
@@ -282,37 +282,37 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
               <div
                 key={lead.id}
                 onClick={() => onOpenLead(lead)}
-                className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+                className="bg-surface p-4 rounded-xl border border-line shadow-2xs hover:shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
               >
                 {/* Left Info */}
                 <div className="flex items-start gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-lg bg-inverse text-white flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
                     {lead.name.charAt(0).toUpperCase()}
                   </div>
 
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-slate-900 text-xs">{lead.name}</span>
-                      <span className="font-mono text-[10px] text-slate-400">#{lead.tripId}</span>
+                      <span className="font-semibold text-content text-sm">{lead.name}</span>
+                      <span className="font-mono text-xs text-muted">#{lead.tripId}</span>
                       
-                      <span className="text-[10px] font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100">
+                      <span className="text-xs font-medium text-brand-ink bg-brand-soft px-1.5 py-0.2 rounded border border-brand-line">
                         {lead.destination}
                       </span>
 
-                      <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">
+                      <span className="text-xs font-medium text-secondary bg-subtle px-1.5 py-0.2 rounded">
                         {lead.followUpType || 'Call'}
                       </span>
                     </div>
 
                     {lead.followUpNote && (
-                      <p className="text-xs text-slate-600 line-clamp-1 italic">
+                      <p className="text-sm text-secondary line-clamp-1 italic">
                         "{lead.followUpNote}"
                       </p>
                     )}
 
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400">
+                    <div className="flex items-center gap-3 text-xs text-muted">
                       {lead.phone && (
-                        <span className="flex items-center gap-1 font-mono text-slate-600">
+                        <span className="flex items-center gap-1 font-mono text-secondary">
                           <Phone size={10} />
                           <span>{lead.phone}</span>
                         </span>
@@ -331,12 +331,12 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
                 {/* Right Action & Schedule Details */}
                 <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
                   <div className="text-right">
-                    <div className="flex items-center gap-1 text-xs font-semibold text-slate-800">
-                      <Calendar size={12} className="text-slate-400" />
+                    <div className="flex items-center gap-1 text-sm font-semibold text-content">
+                      <Calendar size={12} className="text-muted" />
                       <span>{formatDisplayDate(lead.followUpDate)}</span>
-                      {lead.followUpTime && <span className="text-slate-400 font-normal">· {lead.followUpTime}</span>}
+                      {lead.followUpTime && <span className="text-muted font-normal">· {lead.followUpTime}</span>}
                     </div>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs text-muted">
                       {lead.status === 'Postponed' ? 'Postponed' : 'Scheduled Touch'}
                     </span>
                   </div>
@@ -346,15 +346,15 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
                       type="button"
                       disabled={isCompleting}
                       onClick={(e) => handleMarkComplete(lead.id, e)}
-                      className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      className="px-3 py-1.5 bg-success-soft hover:bg-success-soft text-success-ink border border-success-line rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
                       title="Mark as Completed"
                     >
                       <Check size={13} />
                       <span>{isCompleting ? 'Saving...' : 'Done'}</span>
                     </button>
                   ) : (
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-medium flex items-center gap-1">
-                      <CheckCircle2 size={13} className="text-emerald-600" />
+                    <span className="px-2.5 py-1 bg-subtle text-secondary rounded-lg text-sm font-medium flex items-center gap-1">
+                      <CheckCircle2 size={13} className="text-success-ink" />
                       <span>Completed</span>
                     </span>
                   )}
@@ -365,7 +365,7 @@ export const FollowUpsView: React.FC<FollowUpsViewProps> = ({
                       e.stopPropagation();
                       onOpenLead(lead);
                     }}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-muted hover:text-brand-ink hover:bg-brand-soft rounded-lg transition-colors cursor-pointer"
                     title="Open Lead"
                   >
                     <ChevronRight size={16} />

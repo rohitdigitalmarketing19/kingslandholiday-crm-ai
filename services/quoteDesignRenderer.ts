@@ -24,12 +24,14 @@ import {
 import { DEFAULT_KINGSLAND_LOGO } from './kingslandLogo';
 
 export interface HotelItemModel {
+  notes?: string;
   nights: string;
   name: string;
   type: string;
   room: string;
   rooms: string;
   city?: string;
+  mealPlan?: string;
 }
 
 export interface QuoteDataModel {
@@ -49,6 +51,8 @@ export interface QuoteDataModel {
   coverImage?: string;
   hotel: HotelItemModel;
   hotels?: HotelItemModel[];
+  hotelAlternative?: { price: string; hotels: HotelItemModel[] } | null;
+  hotelOptionsOnCover?: boolean;
   flightDetails?: string;
   cabDetails?: string;
   advisor?: {
@@ -310,9 +314,9 @@ export function estimateBlockHeight(
   else if (design === 'editorial') baseWithoutHotels = 670;
   else if (design === 'playful') baseWithoutHotels = 650;
 
-  const hotelsHeight = (hotelCount * 52) + 38; // hotels + section header
+  const hotelsHeight = Q.hotelAlternative ? (Q.hotelOptionsOnCover === false ? 35 : 190 + (hotelCount + Q.hotelAlternative.hotels.length) * 48) : (hotelCount * 52) + 38; // hotels + section header
   const transitHeight = (Q.flightDetails || Q.cabDetails) ? 68 : 0;
-  const coverBaseHeight = baseWithoutHotels + hotelsHeight + transitHeight;
+  const coverBaseHeight = baseWithoutHotels + hotelsHeight + transitHeight - (Q.hotelAlternative ? 100 : 0);
 
   // Inclusions / Exclusions calculation
   const incList = normalizeListItems(Q.included);
@@ -980,6 +984,21 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
    ===================================================================== */
 const rF = "'Manrope',sans-serif", rH = "'Playfair Display',serif";
 
+
+export function renderHotelOptionTables(Q: QuoteDataModel, force = false): string {
+  if (!Q.hotelAlternative) return '';
+  if (!force && Q.hotelOptionsOnCover === false) return '<div style="font-weight:700;font-size:13px;padding:12px 0">Hotel options and their prices are compared on the following page.</div>';
+  const options = [{ hotels: Q.hotels?.length ? Q.hotels : [Q.hotel], price: Q.price }, Q.hotelAlternative];
+  return `<div class="hotel-options-comparison" style="display:flex;flex-direction:column;gap:18px">${options.map((option,index) => `
+    <table class="hotel-option-table" style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;line-height:1.4;border:1px solid #283047;background:#ffffff;color:#172033">
+      <colgroup><col style="width:19%"><col style="width:34%"><col style="width:22%"><col style="width:25%"></colgroup>
+      <thead><tr><th colspan="4" style="padding:8px;background:#9280bf;color:#111827;border:1px solid #283047;font-size:16px">Hotel Details - Option ${index+1}</th></tr>
+      <tr style="background:#ded7ec"><th style="width:19%;padding:6px;border:1px solid #283047">City / Nights</th><th style="width:34%;padding:6px;border:1px solid #283047">Hotel Name</th><th style="width:22%;padding:6px;border:1px solid #283047">Room Type</th><th style="width:25%;padding:6px;border:1px solid #283047">Meal Type</th></tr></thead>
+      <tbody>${option.hotels.map(h => `<tr><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.nights)}${h.city ? '<br>'+e(h.city) : ''}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere;font-weight:700">${e(h.name)}${h.notes ? '<div style="font-size:10px;font-weight:400">'+e(h.notes)+'</div>' : ''}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.room)}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.mealPlan || 'As per inclusions')}</td></tr>`).join('')}
+      <tr class="hotel-option-total"><td colspan="4" style="padding:8px;border:1px solid #283047;background:#fff500;color:#111827;text-align:center;font-size:15px;font-weight:800">Total Package Cost: ${e(option.price)}</td></tr></tbody>
+    </table>`).join('')}</div>`;
+}
+
 export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSlice?: string[], excSlice?: string[]): string {
   const tile = (ic: string, l: string, v: string) => `
     <div style="background:#fff;border:1px solid #e8e1cf;border-radius:14px;padding:10px 12px;box-sizing:border-box;box-shadow:0 3px 12px rgba(18,33,63,.08);display:flex;flex-direction:column;justify-content:flex-start">
@@ -1048,7 +1067,7 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSli
       <div style="font-size:12.5px;line-height:1.45;color:#3b455f;flex:none">${greeting(Q)}</div>
 
       <!-- Price Box: Uncompressed with guaranteed min-height -->
-      <div style="display:flex;border-radius:14px;overflow:hidden;border:1.5px solid #12213f;flex:none;min-height:92px;box-sizing:border-box">
+      ${Q.hotelAlternative ? '' : `<div style="display:flex;border-radius:14px;overflow:hidden;border:1.5px solid #12213f;flex:none;min-height:92px;box-sizing:border-box">
         <div style="flex:1;padding:12px 18px;background:#fff;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box">
           <div style="font-size:10.5px;letter-spacing:2px;color:#8a6a1c;font-weight:800;line-height:1.2">QUOTED PACKAGE PRICE</div>
           <div style="font-family:${rH};font-size:22px;font-weight:700;margin-top:3px;line-height:1.2;color:#12213f">${e(Q.packageName)}</div>
@@ -1064,7 +1083,7 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSli
             <div style="font-family:${rH};font-size:32px;font-weight:700;color:#fff;line-height:1.15;margin-top:2px">${e(Q.price)}</div>
           `}
         </div>
-      </div>
+      </div>`}
 
       <!-- Stats Row -->
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #d9cfae;border-bottom:1px solid #d9cfae;padding:6px 0;flex:none">
@@ -1077,7 +1096,7 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSli
       </div>
 
       <!-- Accommodation Schedule -->
-      <div style="display:flex;flex-direction:column;gap:6px;flex:none">
+      ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:6px;flex:none">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="color:#8a6a1c">${ico('bed', 16)}</div>
           <div style="font-family:${rH};font-size:15px;font-weight:700">Accommodation Schedule (${hotelCount} ${hotelCount > 1 ? 'Hotels' : 'Hotel'})</div>
@@ -1105,7 +1124,7 @@ export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSli
             </div>
           </div>
         `).join('')}
-      </div>
+      </div>`}
 
       <!-- Flight & Cab Transit Details -->
       ${renderTransitSection(Q, 'royal')}
@@ -1320,7 +1339,7 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
       </div>
 
       <!-- Price Banner -->
-      <div style="background:#f2a93b;border-radius:16px;padding:14px 18px;color:#2a1c00;flex:none;box-sizing:border-box">
+      ${Q.hotelAlternative ? '' : `<div style="background:#f2a93b;border-radius:16px;padding:14px 18px;color:#2a1c00;flex:none;box-sizing:border-box">
         <div style="font-size:10.5px;letter-spacing:2px;font-weight:700">QUOTED PACKAGE PRICE</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-top:3px">
           <div style="font-family:${aH};font-size:42px;line-height:1">${e(Q.price)}</div>
@@ -1334,10 +1353,10 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
           </span>
           ${e(Q.travellers)} · ${e(Q.priceNote)}
         </div>
-      </div>
+      </div>`}
 
       <!-- Accommodation Cards -->
-      <div style="display:flex;flex-direction:column;gap:6px;flex:none">
+      ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:6px;flex:none">
         ${allHotels.map(h => `
           <div style="background:#e6f4f1;border-radius:12px;padding:${isMulti ? '6px 12px' : '10px 14px'};display:flex;gap:12px;align-items:center">
             <div style="width:34px;height:34px;border-radius:10px;background:#0f4c4a;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', 16)}</div>
@@ -1351,7 +1370,7 @@ export function alpineCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
             </div>
           </div>
         `).join('')}
-      </div>
+      </div>`}
 
       <!-- Flight & Cab Transit Details -->
       ${renderTransitSection(Q, 'alpine')}
@@ -1531,7 +1550,7 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
     </div>
 
     <!-- Floating Price Stamp -->
-    <div style="position:absolute;right:46px;top:175px;width:140px;height:140px;border-radius:70px;background:#fff;border:4px solid #ffe3cf;box-shadow:0 8px 20px rgba(35,31,43,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:10;padding:6px;box-sizing:border-box">
+    ${Q.hotelAlternative ? '' : `<div style="position:absolute;right:46px;top:175px;width:140px;height:140px;border-radius:70px;background:#fff;border:4px solid #ffe3cf;box-shadow:0 8px 20px rgba(35,31,43,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:10;padding:6px;box-sizing:border-box">
       ${(Q.discountPercent && Q.discountPercent > 0) ? `
         <div style="font-size:9.5px;letter-spacing:1px;font-weight:800;color:#c2410c">${Q.discountPercent}% OFF</div>
         <div style="font-family:${sH};font-size:22px;font-weight:800;line-height:1.1;color:#231f2b;margin:1px 0">${e(Q.price)}</div>
@@ -1542,7 +1561,7 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
         <div style="font-family:${sH};font-size:24px;font-weight:800;line-height:1.1;color:#231f2b;margin:2px 0">${e(Q.price)}</div>
         <div style="font-size:10.5px;color:#5a5262;font-weight:600">${e(Q.travellers)}</div>
       `}
-    </div>
+    </div>`}
 
     <!-- Content Sections Wrapper: fixed 14px gap, natural heights -->
     <div style="padding:14px 46px 20px;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;box-sizing:border-box;flex:1;min-height:0">
@@ -1554,7 +1573,7 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
       </div>
 
       <!-- Hotel Accommodations -->
-      <div style="display:flex;flex-direction:column;gap:5px">
+      ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:5px">
         ${allHotels.map(h => `
           <div style="background:#ffe9d9;border-radius:14px;padding:${isMulti ? '6px 12px' : '9px 14px'};display:flex;align-items:center;gap:11px">
             <div style="width:${isMulti ? '30px' : '36px'};height:${isMulti ? '30px' : '36px'};border-radius:10px;background:#ff5e4d;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', isMulti ? 15 : 18)}</div>
@@ -1568,7 +1587,7 @@ export function sunsetCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
             </div>
           </div>
         `).join('')}
-      </div>
+      </div>`}
 
       <!-- Flight & Cab Transit Details -->
       ${renderTransitSection(Q, 'sunset')}
@@ -1750,7 +1769,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true, in
     <div style="font-size:12.5px;line-height:1.45;color:#33332f;max-width:540px;flex:none">${greeting(Q)}</div>
 
     <!-- Package Price Box -->
-    <div style="display:flex;align-items:center;gap:20px;border-top:3px solid #111;border-bottom:1px solid #111;padding:8px 0;flex:none;box-sizing:border-box">
+    ${Q.hotelAlternative ? '' : `<div style="display:flex;align-items:center;gap:20px;border-top:3px solid #111;border-bottom:1px solid #111;padding:8px 0;flex:none;box-sizing:border-box">
       <div>
         <div style="font-size:11px;letter-spacing:2px;font-weight:700">QUOTED PACKAGE PRICE</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-top:2px">
@@ -1766,7 +1785,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true, in
         </div>
         <div style="font-size:12.5px;font-weight:600;margin-top:4px;line-height:1.35">${e(Q.travellers)}<br>${e(Q.priceNote)}</div>
       </div>
-    </div>
+    </div>`}
 
     <!-- Stats Row -->
     <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #cfcfca;padding:6px 0;flex:none">
@@ -1779,7 +1798,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true, in
     </div>
 
     <!-- Accommodation Schedule -->
-    <div style="display:flex;flex-direction:column;gap:4px;flex:none">
+    ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:4px;flex:none">
       <div style="font-family:${eH};font-size:16px;font-weight:800;letter-spacing:.5px">ACCOMMODATION SCHEDULE (${hotelCount} ${hotelCount > 1 ? 'HOTELS' : 'HOTEL'})</div>
       <div style="border-top:2px solid #111">
         <div style="display:grid;grid-template-columns:110px 80px 1fr 110px;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:1px;color:#555550;padding:4px 0;border-bottom:1px solid #111">
@@ -1803,7 +1822,7 @@ export function editorialCoverSheet(Q: QuoteDataModel, showInclusions = true, in
           </div>
         `).join('')}
       </div>
-    </div>
+    </div>`}
 
     <!-- Flight & Cab Transit Details -->
     ${renderTransitSection(Q, 'editorial')}
@@ -1974,7 +1993,7 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true, incS
         </div>
       </div>
 
-      <div style="width:220px;flex:none;background:#ffb996;border-radius:26px;padding:20px 18px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box">
+      ${Q.hotelAlternative ? '' : `<div style="width:220px;flex:none;background:#ffb996;border-radius:26px;padding:20px 18px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box">
         <div>
           <div style="font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:#5a2a10">QUOTED PACKAGE PRICE</div>
           <div style="font-family:${pH};font-size:${(Q.discountPercent && Q.discountPercent > 0) ? '34px' : '38px'};font-weight:800;line-height:1.1;margin-top:4px;color:#2a1240">${e(Q.price)}</div>
@@ -1988,7 +2007,7 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true, incS
           </div>
           <div style="font-size:12px;font-weight:700;line-height:1.35;margin-top:4px;color:#3d1f10">${e(Q.priceNote)}</div>
         </div>
-      </div>
+      </div>`}
     </div>
 
     <!-- Info Tiles -->
@@ -2012,7 +2031,7 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true, incS
     </div>
 
     <!-- Accommodation Schedule -->
-    <div style="display:flex;flex-direction:column;gap:5px">
+    ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:5px">
       ${allHotels.map(h => `
         <div style="background:#fff;border:2px solid #e5dcff;border-radius:16px;padding:${isMulti ? '6px 12px' : '9px 14px'};display:flex;align-items:center;gap:12px">
           <div style="width:${isMulti ? '32px' : '38px'};height:${isMulti ? '32px' : '38px'};border-radius:10px;background:#4a2fe0;color:#fff;display:flex;align-items:center;justify-content:center;flex:none">${ico('bed', isMulti ? 16 : 20)}</div>
@@ -2026,7 +2045,7 @@ export function playfulCoverSheet(Q: QuoteDataModel, showInclusions = true, incS
           </div>
         </div>
       `).join('')}
-    </div>
+    </div>`}
 
     <!-- Flight & Cab Transit Details -->
     ${renderTransitSection(Q, 'playful')}
@@ -2222,7 +2241,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
       </div>
 
       <!-- Price Box: Festive Glow (Uncompressed guaranteed min-height) -->
-      <div style="display:flex;border-radius:14px;overflow:hidden;border:1.5px solid #FF9900;box-shadow:0 4px 18px rgba(255,153,0,0.15);flex:none;min-height:92px;box-sizing:border-box">
+      ${Q.hotelAlternative ? '' : `<div style="display:flex;border-radius:14px;overflow:hidden;border:1.5px solid #FF9900;box-shadow:0 4px 18px rgba(255,153,0,0.15);flex:none;min-height:92px;box-sizing:border-box">
         <div style="flex:1;padding:12px 18px;background:#fff;display:flex;flex-direction:column;justify-content:center;box-sizing:border-box">
           <div style="font-size:10.5px;letter-spacing:2px;color:#E65100;font-weight:800;line-height:1.2">🪔 FESTIVE OFFER PRICE</div>
           <div style="font-family:${dH};font-size:22px;font-weight:700;color:#1B0B2E;margin-top:3px;line-height:1.2">${e(Q.packageName)}</div>
@@ -2238,7 +2257,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
             <div style="font-family:${dH};font-size:32px;font-weight:800;color:#FFD700;line-height:1.15;margin-top:2px">${e(Q.price)}</div>
           `}
         </div>
-      </div>
+      </div>`}
 
       <!-- Stats Row -->
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #FFE0B2;border-bottom:1px solid #FFE0B2;padding:6px 0;background:#FFFBF2;flex:none">
@@ -2251,7 +2270,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
       </div>
 
       <!-- Accommodation Schedule -->
-      <div style="display:flex;flex-direction:column;gap:6px;flex:none">
+      ${Q.hotelAlternative ? renderHotelOptionTables(Q) : `<div style="display:flex;flex-direction:column;gap:6px;flex:none">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="color:#E65100">🪔</div>
           <div style="font-family:${dH};font-size:15px;font-weight:800;color:#1B0B2E">Handpicked Festive Stays (${hotelCount} ${hotelCount > 1 ? 'Hotels' : 'Hotel'})</div>
@@ -2279,7 +2298,7 @@ export function diwaliCoverSheet(Q: QuoteDataModel, showInclusions = true, incSl
             </div>
           </div>
         `).join('')}
-      </div>
+      </div>`}
 
       <!-- Flight & Cab Transit Details -->
       ${renderTransitSection(Q, 'diwali')}
@@ -2480,6 +2499,10 @@ export function renderCompleteProposalHtml(
     key = 'playful';
   }
 
+  if (Q.hotelAlternative) {
+    const rows = [...(Q.hotels?.length ? Q.hotels : [Q.hotel]), ...Q.hotelAlternative.hotels];
+    Q = { ...Q, hotelOptionsOnCover: rows.length <= 5 && rows.every(h => (h.name + h.room + (h.mealPlan || '') + (h.city || '') + (h.notes || '')).length < 150) };
+  }
   const pages: string[] = [];
 
   // 1. Page 1: Cover Sheet & Inclusions/Exclusions Gap Elimination
@@ -2544,7 +2567,7 @@ export function renderCompleteProposalHtml(
 
   // Terms are part of the same flow, starting in the space after the last day.
   const terms = renderTermsSheet(Q, key, customPartners, true);
-  pages.push(renderContinuousItineraryTable(Q, totalDays, key, tableInc, tableExc, terms));
+  pages.push(renderContinuousItineraryTable(Q, totalDays, key, tableInc, tableExc, terms, Q.hotelOptionsOnCover === false ? renderHotelOptionTables(Q, true) : ''));
 
   return pages.join('\n');
 }
@@ -2565,7 +2588,8 @@ export function renderContinuousItineraryTable(
   themeKey = 'royal',
   tableInc?: string[] | false,
   tableExc?: string[],
-  followingHtml = ''
+  followingHtml = '',
+  hotelComparisonHtml = ''
 ): string {
   const th = TH[themeKey] || TH.royal;
   const effectiveLogo = (!Q.isB2B && (Q.logoUrl || DEFAULT_KINGSLAND_LOGO)) ? (Q.logoUrl || DEFAULT_KINGSLAND_LOGO) : '';
@@ -2665,6 +2689,7 @@ export function renderContinuousItineraryTable(
         <tr>
           <td class="itin-content-cell" style="padding: 20px 46px; background: ${th.bg}; color: ${th.ink}; vertical-align: top;">
             
+            ${hotelComparisonHtml}
             <!-- Inclusions & Exclusions Section (only if remaining or not placed on cover) -->
             ${hasInclusionsOnTable ? `
             <div style="margin-bottom: 24px; break-inside: avoid; page-break-inside: avoid;">

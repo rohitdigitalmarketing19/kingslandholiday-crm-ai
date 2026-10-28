@@ -87,20 +87,20 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex justify-end">
-      <div className={`w-full ${isConverted ? 'max-w-4xl' : 'max-w-2xl'} bg-white h-full shadow-xl overflow-y-auto flex flex-col transition-all duration-300`}>
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 sticky top-0 z-10">
+    <div className="fixed inset-0 bg-inverse/50 backdrop-blur-sm z-50 flex justify-end">
+      <div className={`w-full ${isConverted ? 'max-w-4xl' : 'max-w-2xl'} bg-surface h-full shadow-sm overflow-y-auto flex flex-col transition-all duration-300`}>
+        <div className="p-6 border-b border-line flex justify-between items-center bg-canvas sticky top-0 z-10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase">Inquiry #{lead.tripId}</span>
+              <span className="text-xs font-bold text-brand-ink tracking-widest uppercase">Inquiry #{lead.tripId}</span>
               {isConverted && (
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-success-soft text-success-ink border border-success-line">
                   Converted Booking ✓
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-bold text-slate-800">{lead.name}</h2>
-            <p className="text-slate-500 text-sm">{lead.phone || 'No phone'} • {lead.email}</p>
+            <h2 className="text-2xl font-bold text-content">{lead.name}</h2>
+            <p className="text-secondary text-sm">{lead.phone || 'No phone'} • {lead.email}</p>
           </div>
           <div className="flex items-center gap-3">
             {onDeleteLead && (
@@ -109,7 +109,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
                 onClick={() => {
                   onDeleteLead(lead.id);
                 }}
-                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg text-sm font-medium transition-all flex items-center gap-1.5"
               >
                 <Trash2 size={13} />
                 <span>Delete Lead</span>
@@ -117,7 +117,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             )}
             <button 
               onClick={onClose}
-              className="p-1.5 hover:bg-slate-200 rounded-lg transition-colors text-slate-400"
+              className="p-1.5 hover:bg-hover rounded-lg transition-colors text-muted"
             >
               <X size={18} />
             </button>
@@ -126,14 +126,14 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
 
         {/* Tab Navigation for Converted Leads */}
         {isConverted && (
-          <div className="flex items-center gap-2 px-6 pt-4 border-b border-slate-200 bg-slate-50/50">
+          <div className="flex items-center gap-2 px-6 pt-4 border-b border-line bg-canvas/50">
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+              className={`pb-3 px-3 text-sm font-semibold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
                 activeTab === 'overview'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'border-brand-line text-brand-ink'
+                  : 'border-transparent text-muted hover:text-secondary'
               }`}
             >
               <Layout size={14} />
@@ -143,16 +143,16 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             <button
               type="button"
               onClick={() => setActiveTab('documents')}
-              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+              className={`pb-3 px-3 text-sm font-semibold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
                 activeTab === 'documents'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'border-brand-line text-brand-ink'
+                  : 'border-transparent text-muted hover:text-secondary'
               }`}
             >
               <FileText size={14} />
               <span>Client Documents</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                activeTab === 'documents' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-200 text-slate-600'
+              <span className={`text-xs px-1.5 py-0.2 rounded-full font-bold ${
+                activeTab === 'documents' ? 'bg-brand-soft text-brand-ink' : 'bg-hover text-secondary'
               }`}>
                 {docsCount}
               </span>
@@ -161,10 +161,10 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             <button
               type="button"
               onClick={() => setActiveTab('client_details')}
-              className={`pb-3 px-3 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+              className={`pb-3 px-3 text-sm font-semibold uppercase tracking-wider flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
                 activeTab === 'client_details'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
+                  ? 'border-brand-line text-brand-ink'
+                  : 'border-transparent text-muted hover:text-secondary'
               }`}
             >
               <Users size={14} />
@@ -197,52 +197,52 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
         <div className="p-6 space-y-8">
           {/* Analysis Section */}
           <section>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Travel Requirements</h3>
+            <h3 className="text-sm font-bold text-muted uppercase tracking-widest mb-4">Travel Requirements</h3>
             <div className="grid grid-cols-2 gap-4 mb-6">
-               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="block text-xs text-slate-400 font-bold mb-1">Trip Duration</span>
-                  <span className="text-lg font-bold text-slate-700">{lead.durationDays || 'N/A'} Days</span>
+               <div className="bg-canvas p-4 rounded-xl border border-line">
+                  <span className="block text-sm text-muted font-bold mb-1">Trip Duration</span>
+                  <span className="text-lg font-bold text-content">{lead.durationDays || 'N/A'} Days</span>
                </div>
-               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="block text-xs text-slate-400 font-bold mb-1">Travel Date</span>
-                  <span className="text-lg font-bold text-slate-700">{lead.travelDate || 'N/A'}</span>
+               <div className="bg-canvas p-4 rounded-xl border border-line">
+                  <span className="block text-sm text-muted font-bold mb-1">Travel Date</span>
+                  <span className="text-lg font-bold text-content">{lead.travelDate || 'N/A'}</span>
                </div>
-               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="block text-xs text-slate-400 font-bold mb-1">Travelers</span>
+               <div className="bg-canvas p-4 rounded-xl border border-line">
+                  <span className="block text-sm text-muted font-bold mb-1">Travelers</span>
                   {isEditingTravelers ? (
                     <div className="space-y-2 mt-1">
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-slate-500 font-bold w-12">Adults:</label>
+                        <label className="text-xs text-secondary font-bold w-12">Adults:</label>
                         <input
                           type="number"
                           min="1"
                           value={tempAdults}
                           onChange={(e) => setTempAdults(Number(e.target.value))}
-                          className="w-16 px-1.5 py-0.5 rounded border border-slate-300 text-xs font-bold bg-white outline-none"
+                          className="w-16 px-1.5 py-0.5 rounded border border-line text-sm font-bold bg-surface outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-slate-500 font-bold w-12">Kids:</label>
+                        <label className="text-xs text-secondary font-bold w-12">Kids:</label>
                         <input
                           type="number"
                           min="0"
                           value={tempChildren}
                           onChange={(e) => setTempChildren(Number(e.target.value))}
-                          className="w-16 px-1.5 py-0.5 rounded border border-slate-300 text-xs font-bold bg-white outline-none"
+                          className="w-16 px-1.5 py-0.5 rounded border border-line text-sm font-bold bg-surface outline-none"
                         />
                       </div>
                       <div className="flex items-center gap-1.5 pt-1">
                         <button
                           type="button"
                           onClick={handleSaveTravelers}
-                          className="px-2 py-0.5 bg-indigo-600 text-white rounded text-[11px] font-bold hover:bg-indigo-700"
+                          className="px-2 py-0.5 bg-brand text-white rounded text-xs font-bold hover:bg-brand"
                         >
                           Save
                         </button>
                         <button
                           type="button"
                           onClick={() => setIsEditingTravelers(false)}
-                          className="px-2 py-0.5 bg-slate-200 text-slate-600 rounded text-[11px] font-bold hover:bg-slate-300"
+                          className="px-2 py-0.5 bg-hover text-secondary rounded text-xs font-bold hover:bg-hover"
                         >
                           Cancel
                         </button>
@@ -250,44 +250,44 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
                     </div>
                   ) : (
                     <div className="flex items-center justify-between gap-2 mt-1">
-                      <span className="text-lg font-bold text-slate-700">
+                      <span className="text-lg font-bold text-content">
                         {lead.travelers?.adults || 0} Adults
                         {lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}
                       </span>
                       <button
                         type="button"
                         onClick={handleStartEditTravelers}
-                        className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
+                        className="text-xs text-brand-ink hover:text-brand-ink font-bold bg-surface px-2 py-0.5 rounded border border-line shadow-2xs"
                       >
                         Edit
                       </button>
                     </div>
                   )}
                </div>
-               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="block text-xs text-slate-400 font-bold mb-1">Destination</span>
-                  <span className="text-lg font-bold text-slate-700">{lead.destination}</span>
+               <div className="bg-canvas p-4 rounded-xl border border-line">
+                  <span className="block text-sm text-muted font-bold mb-1">Destination</span>
+                  <span className="text-lg font-bold text-content">{lead.destination}</span>
                </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                <span className="block text-xs text-indigo-400 font-bold mb-1">AI Score</span>
-                <span className="text-2xl font-bold text-indigo-700">{lead.score}</span>
+              <div className="bg-brand-soft p-4 rounded-xl border border-brand-line">
+                <span className="block text-sm text-brand-ink font-bold mb-1">AI Score</span>
+                <span className="text-2xl font-bold text-brand-ink">{lead.score}</span>
               </div>
-              <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                <span className="block text-xs text-emerald-400 font-bold mb-1">Tier</span>
-                <span className="text-2xl font-bold text-emerald-700">{lead.budgetTier}</span>
+              <div className="bg-success-soft p-4 rounded-xl border border-success-line">
+                <span className="block text-sm text-success-ink font-bold mb-1">Tier</span>
+                <span className="text-2xl font-bold text-success-ink">{lead.budgetTier}</span>
               </div>
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                <span className="block text-xs text-amber-400 font-bold mb-1">Intent</span>
-                <span className="text-lg font-bold text-amber-700 leading-none">{lead.intent}</span>
+              <div className="bg-warning-soft p-4 rounded-xl border border-warning-line">
+                <span className="block text-sm text-warning-ink font-bold mb-1">Intent</span>
+                <span className="text-lg font-bold text-warning-ink leading-none">{lead.intent}</span>
               </div>
             </div>
 
-            <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <h4 className="text-sm font-semibold text-slate-700 mb-2">Other Information</h4>
-              <p className="text-sm text-slate-600 italic">"{lead.otherInfo || lead.rawInquiry}"</p>
+            <div className="mt-4 p-4 bg-canvas rounded-xl border border-line">
+              <h4 className="text-sm font-semibold text-content mb-2">Other Information</h4>
+              <p className="text-sm text-secondary italic">"{lead.otherInfo || lead.rawInquiry}"</p>
             </div>
           </section>
 
@@ -296,7 +296,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             <button 
               onClick={handleGenerateItinerary}
               disabled={loading}
-              className="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="flex-1 bg-brand text-white py-3 rounded-xl font-semibold hover:bg-brand disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
               {loading ? 'AI Thinking...' : (
                 <>
@@ -310,7 +310,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
             <button 
               onClick={handleDraftEmail}
               disabled={loading}
-              className="flex-1 bg-white text-slate-700 border border-slate-200 py-3 rounded-xl font-semibold hover:bg-slate-50 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+              className="flex-1 bg-surface text-content border border-line py-3 rounded-xl font-semibold hover:bg-canvas disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
               {loading ? 'Drafting...' : (
                 <>
@@ -325,22 +325,22 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
 
           {/* Result Display */}
           {itinerary && (
-            <section className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <section className="bg-brand-soft/50 p-6 rounded-xl border border-brand-line animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-indigo-900">{itinerary.title}</h3>
-                <span className="text-sm font-bold text-indigo-600 bg-white px-3 py-1 rounded-full border border-indigo-200">
+                <h3 className="text-xl font-bold text-brand-ink">{itinerary.title}</h3>
+                <span className="text-sm font-bold text-brand-ink bg-surface px-3 py-1 rounded-full border border-brand-line">
                   Est. ${itinerary.totalPrice.toLocaleString()}
                 </span>
               </div>
               <div className="space-y-4">
                 {itinerary.days.map(day => (
-                  <div key={day.day} className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter block mb-1">Day {day.day}</span>
-                    <h4 className="font-semibold text-slate-800 mb-2">{day.title}</h4>
-                    <p className="text-xs text-slate-600 mb-2 leading-relaxed">{day.description}</p>
+                  <div key={day.day} className="bg-surface p-4 rounded-xl border border-brand-line shadow-sm">
+                    <span className="text-xs font-bold text-brand-ink uppercase tracking-tighter block mb-1">Day {day.day}</span>
+                    <h4 className="font-semibold text-content mb-2">{day.title}</h4>
+                    <p className="text-sm text-secondary mb-2 leading-relaxed">{day.description}</p>
                     <div className="flex flex-wrap gap-2">
                       {day.activities.map((act, i) => (
-                        <span key={i} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md">
+                        <span key={i} className="text-xs bg-subtle text-secondary px-2 py-0.5 rounded-md">
                           {act}
                         </span>
                       ))}
@@ -348,7 +348,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
                   </div>
                 ))}
               </div>
-              <div className="mt-6 p-4 bg-indigo-600 text-white rounded-xl text-center">
+              <div className="mt-6 p-4 bg-brand text-white rounded-xl text-center">
                 <p className="text-xs font-medium opacity-90 mb-1">Dynamic Pricing Insight</p>
                 <p className="text-sm font-bold">{itinerary.bestValueWindow}</p>
               </div>
@@ -356,14 +356,14 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
           )}
 
           {emailDraft && (
-            <section className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-              <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <section className="bg-canvas p-6 rounded-xl border border-line">
+              <h3 className="text-sm font-bold text-content mb-4 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                 </svg>
                 Email Writing Assistant (Kingsland Voice)
               </h3>
-              <div className="bg-white p-4 rounded-xl border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner">
+              <div className="bg-surface p-4 rounded-xl border border-line text-sm text-content whitespace-pre-wrap leading-relaxed shadow-inner">
                 {emailDraft}
               </div>
               <button 
@@ -371,7 +371,7 @@ const LeadDetails: React.FC<LeadDetailsProps> = ({ lead, agentName, onClose, onU
                   navigator.clipboard.writeText(emailDraft);
                   alert('Email copied to clipboard!');
                 }}
-                className="mt-4 w-full py-2 text-xs font-bold text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                className="mt-4 w-full py-2 text-sm font-bold text-brand-ink border border-brand-line rounded-lg hover:bg-brand-soft transition-colors"
               >
                 Copy to Clipboard
               </button>

@@ -1,5 +1,7 @@
+import { clearProposalPdfCache } from './services/proposalPdfService';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { applyTheme, readTheme, Theme } from './utils/theme';
 import { Lead, Agent, LeadIntent, QuoteData, LeadNote } from './types';
 import { analyzeLeadInquiry } from './services/geminiService';
 import * as api from './services/apiService';
@@ -98,22 +100,24 @@ const NavItem: React.FC<NavItemProps> = ({
   className = ''
 }) => (
   <button 
+    aria-label={id}
+    title={id}
     onClick={() => onClick(id)}
     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-semibold transition-all cursor-pointer ${
       active && !isSubItem && !isExpert
-        ? 'bg-lime-400 text-slate-950 dark:bg-lime-400/20 dark:text-lime-300 dark:border dark:border-lime-400/30 shadow-xs font-bold' 
+        ? 'bg-brand text-on-brand dark:border shadow-xs font-bold' 
         : active && isSubItem
-        ? 'bg-slate-200 text-slate-900 dark:bg-zinc-800 dark:text-lime-400 font-bold'
+        ? 'bg-hover text-content font-bold'
         : isSubItem
-        ? 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800/40 pl-9'
+        ? 'text-secondary hover:text-content hover:bg-subtle dark:hover:text-zinc-200 pl-9'
         : isExpert
-        ? (active ? 'bg-lime-400 text-slate-950 dark:bg-lime-400/20 dark:text-lime-300 font-bold' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 dark:text-zinc-300 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-100')
-        : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-zinc-300 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100'
+        ? (active ? 'bg-brand text-on-brand font-bold' : 'text-content hover:bg-subtle hover:text-content dark:text-zinc-300 dark:hover:text-zinc-100')
+        : 'text-content hover:bg-subtle hover:text-content dark:text-zinc-300 dark:hover:text-zinc-100'
     } ${className}`}
   >
     {icon && (
       <span 
-        className={`flex-shrink-0 ${active && !isSubItem && !isExpert ? 'text-slate-950 dark:text-lime-400' : 'text-slate-500 dark:text-zinc-400'}`} 
+        className={`flex-shrink-0 ${active && !isSubItem && !isExpert ? 'text-on-brand' : 'text-secondary'}`} 
         style={{ width: '18px', height: '18px' }}
       >
         {icon}
@@ -121,14 +125,14 @@ const NavItem: React.FC<NavItemProps> = ({
     )}
     <span className="truncate flex-1 text-left">{id}</span>
     {count !== undefined && count >= 0 && (
-      <span className={`ml-auto text-[11px] px-2 py-0.5 rounded-full font-bold tabular-nums ${active && !isSubItem && !isExpert ? 'bg-slate-950 text-white dark:bg-lime-400 dark:text-black' : 'bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300'}`}>
+      <span className={`ml-auto text-xs px-2 py-0.5 rounded font-semibold tabular-nums ${active && !isSubItem && !isExpert ? 'bg-white/20 text-on-brand' : 'bg-subtle text-secondary'}`}>
         {count}
       </span>
     )}
     {hasDropdown && (
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
-        className={`h-3.5 w-3.5 transition-transform ml-auto ${isOpen ? 'rotate-180' : ''} ${active ? 'text-slate-950 dark:text-lime-400' : 'text-slate-400 dark:text-zinc-500'}`} 
+        className={`h-3.5 w-3.5 transition-transform ml-auto ${isOpen ? 'rotate-180' : ''} ${active && !isSubItem ? 'text-on-brand' : 'text-muted'}`} 
         fill="none" 
         viewBox="0 0 24 24" 
         stroke="currentColor"
@@ -219,31 +223,24 @@ const App: React.FC = () => {
   });
 
   const handleLogout = () => {
+    clearProposalPdfCache();
     localStorage.removeItem('kingsland_active_user_id');
     setIsLoginModalOpen(true);
   };
 
-  // Theme State — Persisted across reloads (Default: Executive Dark Mode)
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('kingsland_theme');
-      if (saved === 'dark' || saved === 'light') return saved;
-    }
-    return 'dark';
-  });
+  const [theme, setTheme] = useState<Theme>(readTheme);
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      }
-      localStorage.setItem('kingsland_theme', theme);
-    }
+    applyTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === 'kingsland_theme') setTheme(readTheme());
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
@@ -300,7 +297,7 @@ const App: React.FC = () => {
   };
 
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 1024);
 
   const getClientDetailsTokenFromUrl = (): string | null => {
     if (typeof window === 'undefined') return null;
@@ -438,6 +435,7 @@ const App: React.FC = () => {
   };
 
   const handleSwitchUser = (user: UserAccount) => {
+    clearProposalPdfCache();
     setCurrentUser(user);
     localStorage.setItem('kingsland_active_user_id', user.id);
     if (user.permissions && user.permissions.length > 0) {
@@ -734,7 +732,7 @@ const App: React.FC = () => {
     { name: 'Won', count: leads.filter(l => l.status === 'Closed Won').length },
   ], [leads]);
 
-  const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+  const COLORS = ['var(--brand)', 'var(--success-ink)', 'var(--warning-ink)', 'var(--danger-ink)', 'var(--info-ink)'];
 
   const unquotedLeads = useMemo(() => {
     return leads.filter(l => l.status === 'New' && (!l.quotes || l.quotes.length === 0));
@@ -1082,15 +1080,15 @@ const App: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-canvas">
         <div className="text-center space-y-4">
-          <div className="bg-indigo-600 text-white w-10 h-10 rounded-lg flex items-center justify-center font-semibold text-lg mx-auto">K</div>
+          <div className="bg-brand text-white w-10 h-10 rounded-lg flex items-center justify-center font-semibold text-lg mx-auto">K</div>
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-slate-800">Kingsland Holidays</h2>
-            <p className="text-xs text-slate-400">Loading CRM...</p>
+            <h2 className="text-lg font-semibold text-content">Kingsland Holidays</h2>
+            <p className="text-sm text-muted">Loading CRM...</p>
           </div>
           <div className="flex justify-center">
-            <svg className="animate-spin h-5 w-5 text-indigo-500" viewBox="0 0 24 24">
+            <svg className="animate-spin h-5 w-5 text-brand-ink" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -1108,20 +1106,20 @@ const App: React.FC = () => {
   // Render Standalone Customer Payment View when accessing payment links
   if (isCustomerPaymentView) {
     return (
-      <div className="min-h-screen w-screen overflow-y-auto bg-[#FDFBF7] text-slate-900 flex flex-col justify-between font-sans selection:bg-[#C9922A] selection:text-white custom-scrollbar scroll-smooth">
+      <div className="min-h-screen w-screen overflow-y-auto bg-[#FDFBF7] text-slate-900 flex flex-col justify-between font-sans selection:bg-[#C9922A] selection:text-white custom-scrollbar scroll-smooth" style={{ colorScheme: 'light' }}>
         <PaymentPageView isStandalone={true} />
         
         {/* Customer Standalone Footer */}
-        <footer className="bg-[#F4ECE1] border-t border-[#E8E1D5] py-6 text-center text-xs text-[#7A6C5B] font-medium">
+        <footer className="bg-[#F4ECE1] border-t border-[#E8E1D5] py-6 text-center text-sm text-[#7A6C5B] font-medium">
           <div className="max-w-4xl mx-auto px-4 space-y-2">
-            <div className="flex flex-wrap justify-center items-center gap-6 text-[10px] font-bold uppercase tracking-wider text-[#7B1D2A] border-b border-[#E3DAC8] pb-3">
+            <div className="flex flex-wrap justify-center items-center gap-6 text-xs font-bold uppercase tracking-wider text-[#7B1D2A] border-b border-[#E3DAC8] pb-3">
               <span>🔒 256-Bit SSL Encrypted</span>
               <span>🛡️ PCI-DSS Level 1 Certified</span>
               <span>⚡ Instant Confirmation</span>
               <span>💳 Razorpay Gateway Partner</span>
             </div>
             <p className="pt-1">© {new Date().getFullYear()} Kingsland Holidays Services Pvt Ltd. All rights reserved.</p>
-            <p className="text-[10px] text-[#8C7E6C]">Official Secure Payment Portal for Kingsland Holidays Clients worldwide.</p>
+            <p className="text-xs text-[#8C7E6C]">Official Secure Payment Portal for Kingsland Holidays Clients worldwide.</p>
           </div>
         </footer>
       </div>
@@ -1129,24 +1127,24 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans bg-slate-50 dark:bg-[#0e0f0c] text-slate-900 dark:text-zinc-100">
-      <aside className={`${sidebarCollapsed ? 'w-16' : 'w-60'} bg-white dark:bg-[#161713] border-r border-slate-200 dark:border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto overflow-x-hidden custom-scrollbar sidebar-transition`}>
+    <div className="crm-app flex h-screen overflow-hidden font-sans bg-canvas text-content">
+      <aside data-collapsed={sidebarCollapsed} className={`crm-sidebar ${sidebarCollapsed ? 'w-16' : 'w-60'} bg-surface border-r border-line flex flex-col shrink-0 z-20 overflow-y-auto overflow-x-hidden custom-scrollbar sidebar-transition`}>
         <div className={`${sidebarCollapsed ? 'px-3 py-4' : 'px-4 py-5'}`}>
           {/* Logo */}
           <div className={`flex items-center gap-2.5 mb-6 ${sidebarCollapsed ? 'justify-center' : ''}`}>
-            <div className="bg-lime-400 text-black font-black w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-xs">
+            <div className="bg-brand text-on-brand font-semibold w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-xs">
               K
             </div>
             {!sidebarCollapsed && (
               <div className="leading-tight">
-                <h1 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">Kingsland</h1>
-                <span className="text-[10px] text-slate-400 dark:text-zinc-400 font-medium">Holiday CRM</span>
+                <h1 className="text-sm font-bold text-content dark:text-white tracking-tight">Kingsland</h1>
+                <span className="text-xs text-muted font-medium">Holiday CRM</span>
               </div>
             )}
           </div>
           
           {/* Navigation */}
-          {!sidebarCollapsed && <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-3 mb-2">Main</p>}
+          {!sidebarCollapsed && <p className="text-xs font-semibold text-secondary uppercase tracking-wider px-3 mb-2">Main</p>}
           <div className="space-y-0.5 mb-4">
             {/* 1. Dashboard */}
             {hasAccess('Dashboard') && (
@@ -1223,7 +1221,7 @@ const App: React.FC = () => {
 
           {/* FINANCE section */}
           {!sidebarCollapsed && (hasAccess('Payments') || hasAccess('Accounts')) && (
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2 mt-4">Finance</p>
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider px-3 mb-2 mt-4">Finance</p>
           )}
           <div className="space-y-0.5 mb-4">
             {/* Payment Desk */}
@@ -1292,7 +1290,7 @@ const App: React.FC = () => {
 
           {/* OPERATIONS section */}
           {!sidebarCollapsed && (hasAccess('Operations') || hasAccess('HotelVouchers')) && (
-            <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2 mt-4">Operations</p>
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider px-3 mb-2 mt-4">Operations</p>
           )}
           <div className="space-y-0.5 mb-4">
             {/* Operations Desk */}
@@ -1386,7 +1384,7 @@ const App: React.FC = () => {
 
           {/* ADMIN section */}
           {!sidebarCollapsed && (hasAccess('Saved Itinerary') || hasAccess('Sales Team') || hasAccess('User Management') || currentUser.role === 'Admin') && (
-            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider px-3 mb-2 mt-4">Admin</p>
+            <p className="text-xs font-semibold text-secondary uppercase tracking-wider px-3 mb-2 mt-4">Admin</p>
           )}
           <div className="space-y-0.5 mb-4">
             {hasAccess('Saved Itinerary') && (
@@ -1423,13 +1421,13 @@ const App: React.FC = () => {
 
           {/* Sales Experts List */}
           {!sidebarCollapsed && !hasAccess('Accounts') && (hasAccess('Leads') || hasAccess('Sales Team') || currentUser.role === 'Admin') && (
-            <div className="space-y-2 mt-4 pt-4 border-t border-zinc-800/80">
+            <div className="space-y-2 mt-4 pt-4 border-t border-line/80">
               <div className="flex items-center justify-between px-3">
-                <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">Sales Experts</p>
+                <p className="text-xs font-semibold text-secondary uppercase tracking-wider">Sales Experts</p>
                 {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
                   <button 
                     onClick={() => openAddAgentModal()}
-                    className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 flex items-center gap-1 hover:underline cursor-pointer"
+                    className="text-xs font-medium text-brand-ink hover:text-brand-ink flex items-center gap-1 hover:underline cursor-pointer"
                     title="Add new sales expert (Admin only)"
                   >
                     <Plus size={13} />
@@ -1460,7 +1458,7 @@ const App: React.FC = () => {
                       />
                       
                       {isExpanded && (
-                        <div className="mt-0.5 space-y-0.5 border-l border-zinc-800 ml-6 pl-1">
+                        <div className="mt-0.5 space-y-0.5 border-l border-line ml-6 pl-1">
                           {Object.keys(filterCriteria).map((cat) => {
                             const agentCatCount = leads.filter(l => l.assignedTo === agent.id && (filterCriteria as any)[cat](l)).length;
                             return (
@@ -1490,16 +1488,16 @@ const App: React.FC = () => {
         </div>
 
         {/* Sidebar Footer — User Profile, Theme Switcher & Collapse */}
-        <div className="mt-auto border-t border-slate-200 dark:border-zinc-800/80 p-3 bg-slate-100/80 dark:bg-zinc-950/80 space-y-2">
+        <div className="mt-auto border-t border-line p-3 bg-subtle/80 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-lime-400/20 dark:bg-lime-400/10 border border-lime-500/30 dark:border-lime-400/20 text-lime-800 dark:text-lime-400 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+              <div className="w-8 h-8 rounded-xl bg-brand/20 border border-brand-line/30 text-brand-ink flex items-center justify-center font-semibold text-sm shrink-0 shadow-xs">
                 {currentUser.name?.charAt(0) || 'A'}
               </div>
               {!sidebarCollapsed && (
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate">{currentUser.name}</p>
-                  <span className="text-[10px] text-slate-600 dark:text-zinc-400 font-semibold block">{currentUser.role || 'Admin'}</span>
+                  <p className="text-sm font-bold text-content dark:text-zinc-100 truncate">{currentUser.name}</p>
+                  <span className="text-xs text-secondary font-semibold block">{currentUser.role || 'Admin'}</span>
                 </div>
               )}
             </div>
@@ -1509,7 +1507,7 @@ const App: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-lime-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700"
+                className="p-1.5 rounded-lg text-content dark:text-zinc-300 hover:text-content hover:bg-hover transition-colors cursor-pointer border border-transparent hover:border-line "
                 title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
               >
                 {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
@@ -1517,7 +1515,7 @@ const App: React.FC = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="p-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-zinc-700"
+                className="p-1.5 rounded-lg text-content dark:text-zinc-300 hover:text-danger-ink hover:bg-hover transition-colors cursor-pointer border border-transparent hover:border-line "
                 title="Lock / Logout"
               >
                 <LogOut size={15} />
@@ -1527,7 +1525,7 @@ const App: React.FC = () => {
 
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-slate-700 dark:text-zinc-300 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/90 dark:hover:bg-zinc-800/80 transition-colors text-[11px] font-bold cursor-pointer border border-slate-300/70 dark:border-zinc-800/80"
+            className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg text-content dark:text-zinc-300 hover:text-content dark:hover:text-white hover:bg-hover/90 transition-colors text-xs font-bold cursor-pointer border border-line/70 "
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <ChevronRight size={14} /> : <><ChevronLeft size={14} /><span>Collapse</span></>}
@@ -1535,28 +1533,28 @@ const App: React.FC = () => {
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-[#0e0f0c] relative overflow-hidden">
-        <header className="h-14 bg-white dark:bg-[#161713] border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between px-5 shrink-0 sticky top-0 z-10 gap-3">
+      <main className="flex-1 flex flex-col min-w-0 bg-canvas relative overflow-hidden">
+        <header className="h-14 bg-surface border-b border-line flex items-center justify-between px-5 shrink-0 sticky top-0 z-10 gap-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-             <h2 className="text-base font-bold text-slate-900 dark:text-white shrink-0">{view}</h2>
-             <div className="h-4 w-px bg-slate-200 dark:bg-zinc-800 hidden sm:block"></div>
+             <h2 className="text-base font-semibold text-content truncate">{view}</h2>
+             <div className="h-4 w-px bg-hover hidden sm:block"></div>
              
              <div className="relative flex-1 max-w-sm hidden md:block">
-                <input type="text" placeholder="Search leads, trips, payments..." className="w-full bg-slate-50 dark:bg-[#0e0f0c] border border-slate-200 dark:border-zinc-700 rounded-xl px-3 pl-9 py-1.5 text-xs text-slate-800 dark:text-zinc-200 placeholder:text-slate-400 dark:placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-lime-400/50 focus:border-lime-400 transition-all" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
+                <input type="text" placeholder="Search leads, trips, payments..." className="w-full bg-canvas border border-line rounded-xl px-3 pl-9 py-1.5 text-sm text-content dark:text-zinc-200 placeholder:text-muted outline-none focus:ring-1 focus:ring-brand-line/50 focus:border-brand-line transition-all" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted " />
              </div>
           </div>
 
           {/* User info & controls */}
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/60">
-              <div className="w-6 h-6 rounded-lg bg-lime-400/10 text-lime-400 border border-lime-400/20 flex items-center justify-center text-xs font-bold flex-shrink-0">
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-xl border border-line bg-canvas ">
+              <div className="w-6 h-6 rounded-lg bg-brand/10 text-brand-ink border border-brand-line/20 flex items-center justify-center text-sm font-bold flex-shrink-0">
                 {currentUser.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
               <div className="text-left hidden sm:block">
-                <div className="text-xs font-semibold text-slate-700 dark:text-zinc-300 leading-tight flex items-center gap-1.5">
+                <div className="text-sm font-semibold text-content dark:text-zinc-300 leading-tight flex items-center gap-1.5">
                   <span>{currentUser.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-lime-400/10 text-lime-400 border border-lime-400/20">
+                  <span className="text-xs px-1.5 py-0.5 rounded font-bold bg-brand/10 text-brand-ink border border-brand-line/20">
                     {currentUser.role}
                   </span>
                 </div>
@@ -1567,7 +1565,7 @@ const App: React.FC = () => {
             <button
               type="button"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-zinc-400 hover:text-lime-400 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-muted hover:text-brand-ink hover:bg-subtle rounded-xl transition-colors cursor-pointer"
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
@@ -1576,7 +1574,7 @@ const App: React.FC = () => {
             {/* Sign Out */}
             <button
               onClick={handleLogout}
-              className="p-2 text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+              className="p-2 text-muted hover:text-danger-ink hover:bg-subtle rounded-xl transition-colors cursor-pointer"
               title="Sign Out"
             >
               <LogOut size={16} />
@@ -1590,10 +1588,10 @@ const App: React.FC = () => {
               {/* Dashboard Header */}
               <div className="flex justify-between items-center">
                  <div>
-                    <h2 className="text-xl font-semibold text-slate-800">Dashboard</h2>
-                    <p className="text-sm text-slate-500 mt-0.5">Overview of your sales pipeline and payment status</p>
+                    <h2 className="text-xl font-semibold text-content">Dashboard</h2>
+                    <p className="text-sm text-secondary mt-0.5">Overview of your sales pipeline and payment status</p>
                  </div>
-                 <button onClick={() => setView('New Inquiry')} className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium text-sm hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                 <button onClick={() => setView('New Inquiry')} className="px-4 py-2 bg-brand text-white rounded-lg font-medium text-sm hover:bg-brand transition-colors flex items-center gap-2">
                    <Plus size={16} />
                    New Inquiry
                  </button>
@@ -1602,23 +1600,23 @@ const App: React.FC = () => {
               {/* Stat Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
                 {[
-                  { label: 'Active Leads', filterKey: 'Active leads', count: stats.active, badgeClass: 'bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700' },
-                  { label: 'Update Lead', filterKey: 'Update lead', count: stats.updated, badgeClass: 'bg-zinc-100 text-zinc-800 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:border-zinc-700' },
-                  { label: 'Hot Leads', filterKey: 'Hot Lead', count: stats.hot, badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20' },
-                  { label: 'In Process', filterKey: 'In process', count: stats.inProgress, badgeClass: 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20' },
-                  { label: 'Converted', filterKey: 'Converted', count: stats.converted, badgeClass: 'bg-lime-50 text-lime-900 border-lime-200 dark:bg-lime-400/10 dark:text-lime-400 dark:border-lime-400/20' },
-                  { label: 'Cancelled', filterKey: 'Cancel', count: stats.cancel, badgeClass: 'bg-zinc-100 text-zinc-600 border-zinc-200 dark:bg-zinc-800/60 dark:text-zinc-400 dark:border-zinc-700' },
-                  { label: 'Postponed', filterKey: 'Postponed', count: stats.postponed, badgeClass: 'bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700' },
+                  { label: 'Active Leads', filterKey: 'Active leads', count: stats.active, badgeClass: 'bg-subtle text-content border-line dark:text-zinc-200 ' },
+                  { label: 'Update Lead', filterKey: 'Update lead', count: stats.updated, badgeClass: 'bg-subtle text-content border-line dark:text-zinc-200 ' },
+                  { label: 'Hot Leads', filterKey: 'Hot Lead', count: stats.hot, badgeClass: 'bg-danger-soft text-danger-ink border-danger-line ' },
+                  { label: 'In Process', filterKey: 'In process', count: stats.inProgress, badgeClass: 'bg-warning-soft text-warning-ink border-warning-line ' },
+                  { label: 'Converted', filterKey: 'Converted', count: stats.converted, badgeClass: 'bg-brand-soft text-brand-ink border-brand-line ' },
+                  { label: 'Cancelled', filterKey: 'Cancel', count: stats.cancel, badgeClass: 'bg-subtle text-secondary border-line ' },
+                  { label: 'Postponed', filterKey: 'Postponed', count: stats.postponed, badgeClass: 'bg-subtle text-content border-line dark:text-zinc-300 ' },
                 ].map((stat) => (
                   <button 
                     key={stat.label} 
                     onClick={() => { setView('Leads'); setDashboardFilter(stat.filterKey); }} 
-                    className="bg-white dark:bg-[#161713] p-3.5 rounded-2xl border border-slate-200 dark:border-zinc-800 hover:border-lime-400/50 hover:shadow-xs transition-all text-left group cursor-pointer"
+                    className="bg-surface p-3.5 rounded-xl border border-line hover:border-brand-line/50 hover:shadow-xs transition-all text-left group cursor-pointer"
                   >
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border inline-block mb-2.5 ${stat.badgeClass}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-md border inline-block mb-2.5 ${stat.badgeClass}`}>
                       {stat.label}
                     </span>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-zinc-100 tabular-nums group-hover:text-lime-400 transition-colors">
+                    <p className="text-2xl font-bold text-content dark:text-zinc-100 tabular-nums group-hover:text-brand-ink transition-colors">
                       {stat.count}
                     </p>
                   </button>
@@ -1626,19 +1624,19 @@ const App: React.FC = () => {
               </div>
 
               {/* EMI & Installments Tracker */}
-              <div className="bg-white dark:bg-[#161713] border border-slate-200 dark:border-zinc-800 rounded-xl p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800">
+              <div className="bg-surface border border-line rounded-xl p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-line ">
                   <div>
                     <div className="flex items-center gap-2">
-                      <CreditCard size={18} className="text-slate-400 dark:text-zinc-400" />
-                      <h3 className="text-base font-semibold text-slate-800 dark:text-zinc-100">Payment & EMI Tracker</h3>
+                      <CreditCard size={18} className="text-muted " />
+                      <h3 className="text-base font-semibold text-content dark:text-zinc-100">Payment & EMI Tracker</h3>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 ml-7">EMI schedules, due dates, overdue alerts, and collected revenue</p>
+                    <p className="text-sm text-secondary mt-0.5 ml-7">EMI schedules, due dates, overdue alerts, and collected revenue</p>
                   </div>
 
                   <button
                     onClick={() => { setView('Payments'); setPaymentTab('Installments'); }}
-                    className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-lime-400/10 dark:hover:bg-lime-400/20 text-indigo-600 dark:text-lime-400 font-medium text-xs transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-brand-soft hover:bg-brand-soft text-brand-ink font-medium text-sm transition-colors"
                   >
                     Open EMI Management →
                   </button>
@@ -1648,41 +1646,41 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   
                   {/* Card 1: Total EMIs Created */}
-                  <div className="px-4 py-3 rounded-lg bg-slate-50 dark:bg-zinc-900/40 border border-slate-100 dark:border-zinc-800 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-zinc-400 block">Total EMIs</span>
+                  <div className="px-4 py-3 rounded-lg bg-canvas border border-line space-y-1">
+                    <span className="text-xs font-medium uppercase tracking-wide text-secondary block">Total EMIs</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-slate-800 dark:text-zinc-100 tabular-nums">{emiStats.createdCount}</span>
-                      <span className="text-xs font-mono text-slate-500 dark:text-zinc-400 tabular-nums">₹{emiStats.createdAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-content dark:text-zinc-100 tabular-nums">{emiStats.createdCount}</span>
+                      <span className="text-sm font-mono text-secondary tabular-nums">₹{emiStats.createdAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 2: EMIs Due */}
-                  <div className="px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400 block">Due (Upcoming)</span>
+                  <div className="px-4 py-3 rounded-lg bg-warning-soft border border-warning-line space-y-1">
+                    <span className="text-xs font-medium uppercase tracking-wide text-warning-ink block">Due (Upcoming)</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-amber-700 dark:text-amber-400 tabular-nums">{emiStats.dueCount}</span>
-                      <span className="text-xs font-mono text-amber-600 dark:text-amber-400 tabular-nums">₹{emiStats.dueAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-warning-ink tabular-nums">{emiStats.dueCount}</span>
+                      <span className="text-sm font-mono text-warning-ink tabular-nums">₹{emiStats.dueAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 3: EMIs Overdue */}
-                  <div className="px-4 py-3 rounded-lg bg-red-50 dark:bg-rose-500/10 border border-red-200 dark:border-rose-500/20 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-red-600 dark:text-rose-400 block flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-rose-400"></span>
+                  <div className="px-4 py-3 rounded-lg bg-danger-soft border border-danger-line space-y-1">
+                    <span className="text-xs font-medium uppercase tracking-wide text-danger-ink block flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-danger-strong "></span>
                       Overdue
                     </span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-red-700 dark:text-rose-400 tabular-nums">{emiStats.overdueCount}</span>
-                      <span className="text-xs font-mono text-red-600 dark:text-rose-400 tabular-nums">₹{emiStats.overdueAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-danger-ink tabular-nums">{emiStats.overdueCount}</span>
+                      <span className="text-sm font-mono text-danger-ink tabular-nums">₹{emiStats.overdueAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
                   {/* Card 4: EMIs Collected */}
-                  <div className="px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 space-y-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400 block">Collected</span>
+                  <div className="px-4 py-3 rounded-lg bg-success-soft border border-success-line space-y-1">
+                    <span className="text-xs font-medium uppercase tracking-wide text-success-ink block">Collected</span>
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{emiStats.paidCount}</span>
-                      <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">₹{emiStats.paidAmount.toLocaleString('en-IN')}</span>
+                      <span className="text-2xl font-semibold text-success-ink tabular-nums">{emiStats.paidCount}</span>
+                      <span className="text-sm font-mono text-success-ink tabular-nums">₹{emiStats.paidAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
@@ -1690,19 +1688,19 @@ const App: React.FC = () => {
 
                 {/* Overdue EMI Alerts */}
                 {emiStats.overdueItems.length > 0 && (
-                  <div className="p-3 rounded-lg bg-red-50 dark:bg-rose-500/10 border border-red-200 dark:border-rose-500/20 space-y-2 text-xs">
-                    <h4 className="font-semibold text-red-700 dark:text-rose-400 text-xs uppercase tracking-wide flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-rose-400"></span>
+                  <div className="p-3 rounded-lg bg-danger-soft border border-danger-line space-y-2 text-sm">
+                    <h4 className="font-semibold text-danger-ink text-sm uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-danger-strong "></span>
                       Overdue EMI Alerts ({emiStats.overdueItems.length})
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                       {emiStats.overdueItems.map((item: any, idx: number) => (
-                        <div key={idx} className="p-2.5 rounded-md bg-white dark:bg-zinc-900/60 border border-red-100 dark:border-rose-500/30 flex items-center justify-between">
+                        <div key={idx} className="p-2.5 rounded-md bg-surface border border-danger-line flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-slate-800 dark:text-zinc-100 text-xs">{item.customerName}</p>
-                            <p className="text-[10px] text-slate-500 dark:text-zinc-400">{item.title} · Due: <strong className="text-red-600 dark:text-rose-400">{item.dueDate}</strong></p>
+                            <p className="font-medium text-content dark:text-zinc-100 text-sm">{item.customerName}</p>
+                            <p className="text-xs text-secondary ">{item.title} · Due: <strong className="text-danger-ink ">{item.dueDate}</strong></p>
                           </div>
-                          <span className="font-mono font-semibold text-red-600 dark:text-rose-400 text-sm tabular-nums">₹{item.amount?.toLocaleString('en-IN')}</span>
+                          <span className="font-mono font-semibold text-danger-ink text-sm tabular-nums">₹{item.amount?.toLocaleString('en-IN')}</span>
                         </div>
                       ))}
                     </div>
@@ -1712,34 +1710,34 @@ const App: React.FC = () => {
 
               {/* Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 h-[380px] flex flex-col">
-                  <h3 className="text-sm font-semibold text-slate-700 dark:text-zinc-100 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">Conversion Pipeline</h3>
+                <div className="bg-surface p-5 rounded-xl border border-line h-[380px] flex flex-col">
+                  <h3 className="text-sm font-semibold text-content dark:text-zinc-100 mb-4 pb-3 border-b border-line ">Conversion Pipeline</h3>
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                       <BarChart data={funnelData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: '#64748b' }} dy={8} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: '#64748b' }} />
-                        <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)', fontSize: '13px' }} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--text-muted)' }} dy={8} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--text-muted)' }} />
+                        <Tooltip cursor={{ fill: 'var(--surface-raised)' }} contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)', fontSize: '13px' }} />
                         <Bar dataKey="count" radius={[4, 4, 4, 4]} barSize={36}>{funnelData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 h-[380px] flex flex-col">
-                  <h3 className="text-sm font-semibold text-slate-700 dark:text-zinc-100 mb-4 pb-3 border-b border-slate-100 dark:border-zinc-800">Market Intent</h3>
+                <div className="bg-surface p-5 rounded-xl border border-line h-[380px] flex flex-col">
+                  <h3 className="text-sm font-semibold text-content dark:text-zinc-100 mb-4 pb-3 border-b border-line ">Market Intent</h3>
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                       <PieChart>
                         <Pie data={[{ name: 'High Intent', value: leads.filter(l => l.intent === LeadIntent.HIGH).length }, { name: 'Info Seeking', value: leads.filter(l => l.intent === LeadIntent.INFO).length }, { name: 'Urgent', value: leads.filter(l => l.intent === LeadIntent.URGENT).length }]} cx="50%" cy="50%" innerRadius={65} outerRadius={100} paddingAngle={4} dataKey="value">{COLORS.map((color, index) => <Cell key={`cell-${index}`} fill={color} />)}</Pie>
-                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)', fontSize: '13px' }} />
+                        <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.07)', fontSize: '13px' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
                   <div className="flex justify-center gap-6 mt-2">
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-indigo-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">High Intent</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Info Seeking</span></div>
-                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-amber-500 rounded-sm"></div><span className="text-xs text-slate-500 dark:text-zinc-400 font-medium">Urgent</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-brand rounded-sm"></div><span className="text-sm text-secondary font-medium">High Intent</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-success-strong rounded-sm"></div><span className="text-sm text-secondary font-medium">Info Seeking</span></div>
+                    <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 bg-warning-strong rounded-sm"></div><span className="text-sm text-secondary font-medium">Urgent</span></div>
                   </div>
                 </div>
               </div>
@@ -1749,28 +1747,28 @@ const App: React.FC = () => {
 
           {view === 'New Inquiry' && (
             <div className="max-w-4xl mx-auto animate-in fade-in duration-300 space-y-8">
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200 dark:border-zinc-800">
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-line ">
                   <div>
-                    <h2 className="text-xl font-semibold text-slate-800 dark:text-zinc-100">New Inquiry Center</h2>
-                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Register new travel inquiries, calculate AI intent score, and generate instant quotes.</p>
+                    <h2 className="text-xl font-semibold text-content dark:text-zinc-100">New Inquiry Center</h2>
+                    <p className="text-sm text-secondary mt-0.5">Register new travel inquiries, calculate AI intent score, and generate instant quotes.</p>
                   </div>
                </div>
 
-               <div className="bg-white dark:bg-[#161713] p-6 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs space-y-6">
-                  <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-100 pb-3 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-2">
-                    <Plus size={16} className="text-indigo-600 dark:text-lime-400" />
+               <div className="bg-surface p-6 rounded-xl border border-line shadow-xs space-y-6">
+                  <h3 className="text-sm font-semibold text-content dark:text-zinc-100 pb-3 border-b border-line flex items-center gap-2">
+                    <Plus size={16} className="text-brand-ink " />
                     <span>Inquiry Registration Form</span>
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Trip ID (Auto / Custom)</label>
-                      <input type="text" className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-mono font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="Auto (Leaves format to Settings)" />
+                      <label className="block text-xs font-medium text-secondary mb-1">Trip ID (Auto / Custom)</label>
+                      <input type="text" className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-mono font-medium outline-none focus:border-brand-line focus:bg-surface transition-all" value={formData.tripId} onChange={e => setFormData({...formData, tripId: e.target.value})} placeholder="Auto (Leaves format to Settings)" />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Lead Source</label>
-                      <select className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all cursor-pointer" value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})}>
+                      <label className="block text-xs font-medium text-secondary mb-1">Lead Source</label>
+                      <select className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all cursor-pointer" value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})}>
                         <option value="Google Ads">Google Ads</option>
                         <option value="Meta Ads">Meta Ads</option>
                         <option value="Website">Website</option>
@@ -1781,68 +1779,68 @@ const App: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Customer Full Name *</label>
-                      <input type="text" required className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                      <label className="block text-xs font-medium text-secondary mb-1">Customer Full Name *</label>
+                      <input type="text" required className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Phone / WhatsApp</label>
-                      <input type="text" className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="+91 00000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                      <label className="block text-xs font-medium text-secondary mb-1">Phone / WhatsApp</label>
+                      <input type="text" className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all" placeholder="+91 00000 00000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Destination *</label>
-                      <input type="text" required className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="e.g. Kashmir / Dubai / Bali" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
+                      <label className="block text-xs font-medium text-secondary mb-1">Travel Destination *</label>
+                      <input type="text" required className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all" placeholder="e.g. Kashmir / Dubai / Bali" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Travel Date</label>
+                      <label className="block text-xs font-medium text-secondary mb-1">Travel Date</label>
                       <div className="relative flex items-center">
-                        <Calendar className="w-4 h-4 text-slate-400 dark:text-lime-400 absolute left-3 pointer-events-none z-10" />
-                        <input type="date" min={todayStr} className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
+                        <Calendar className="w-4 h-4 text-muted absolute left-3 pointer-events-none z-10" />
+                        <input type="date" min={todayStr} className="w-full bg-canvas border border-line rounded-lg pl-9 pr-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Duration (Days & Nights)</label>
+                      <label className="block text-xs font-medium text-secondary mb-1">Duration (Days & Nights)</label>
                       <div className="flex gap-2">
-                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5">
+                        <div className="flex-1 bg-canvas border border-line rounded-lg flex items-center px-3 py-1.5">
                           <input type="number" min="1" className="w-full bg-transparent text-xs font-semibold outline-none" value={formData.days} onChange={e => handleDayChange(parseInt(e.target.value) || 0)} />
-                          <span className="text-[10px] text-slate-400 font-medium ml-1">Days</span>
+                          <span className="text-xs text-muted font-medium ml-1">Days</span>
                         </div>
-                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5">
+                        <div className="flex-1 bg-canvas border border-line rounded-lg flex items-center px-3 py-1.5">
                           <input type="number" min="0" className="w-full bg-transparent text-xs font-semibold outline-none" value={formData.nights} onChange={e => handleNightChange(parseInt(e.target.value) || 0)} />
-                          <span className="text-[10px] text-slate-400 font-medium ml-1">Nights</span>
+                          <span className="text-xs text-muted font-medium ml-1">Nights</span>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 mb-1">Travelers</label>
+                      <label className="block text-xs font-medium text-secondary mb-1">Travelers</label>
                       <div className="flex gap-2">
-                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5">
+                        <div className="flex-1 bg-canvas border border-line rounded-lg flex items-center px-3 py-1.5">
                           <input type="number" min="1" className="w-full bg-transparent text-xs font-semibold outline-none" value={formData.adults} onChange={e => setFormData({...formData, adults: parseInt(e.target.value) || 1})} />
-                          <span className="text-[10px] text-slate-400 font-medium ml-1">Adults</span>
+                          <span className="text-xs text-muted font-medium ml-1">Adults</span>
                         </div>
-                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5">
+                        <div className="flex-1 bg-canvas border border-line rounded-lg flex items-center px-3 py-1.5">
                           <input type="number" min="0" className="w-full bg-transparent text-xs font-semibold outline-none" value={formData.children} onChange={e => handleChildCountChange(parseInt(e.target.value) || 0)} />
-                          <span className="text-[10px] text-slate-400 font-medium ml-1">Children</span>
+                          <span className="text-xs text-muted font-medium ml-1">Children</span>
                         </div>
                       </div>
                     </div>
 
                     {formData.children > 0 && (
-                      <div className="col-span-1 md:col-span-2 bg-indigo-50/40 dark:bg-lime-400/10 p-3 rounded-lg border border-indigo-100 dark:border-lime-400/20 space-y-2">
-                        <label className="block text-[11px] font-medium text-indigo-700 dark:text-lime-400">Child Ages (for hotel / flight pricing)</label>
+                      <div className="col-span-1 md:col-span-2 bg-brand-soft/40 p-3 rounded-lg border border-brand-line space-y-2">
+                        <label className="block text-xs font-medium text-brand-ink ">Child Ages (for hotel / flight pricing)</label>
                         <div className="flex flex-wrap gap-2">
                           {formData.childAges.map((age, index) => (
-                            <div key={index} className="flex items-center gap-1.5 bg-white dark:bg-zinc-900/60 px-2.5 py-1 rounded-md border border-indigo-100 dark:border-lime-400/20 shadow-2xs">
-                              <span className="text-xs text-slate-600 dark:text-zinc-300">Child {index + 1}:</span>
+                            <div key={index} className="flex items-center gap-1.5 bg-surface px-2.5 py-1 rounded-md border border-brand-line shadow-2xs">
+                              <span className="text-sm text-secondary dark:text-zinc-300">Child {index + 1}:</span>
                               <input
                                 type="number"
                                 min="0"
                                 max="17"
-                                className="w-12 bg-slate-50 dark:bg-zinc-900 p-1 text-xs text-slate-900 dark:text-zinc-100 font-semibold rounded border border-slate-200 dark:border-zinc-700 outline-none text-center"
+                                className="w-12 bg-canvas p-1 text-sm text-content dark:text-zinc-100 font-semibold rounded border border-line outline-none text-center"
                                 value={age}
                                 onChange={(e) => {
                                   const newAges = [...formData.childAges];
@@ -1850,7 +1848,7 @@ const App: React.FC = () => {
                                   setFormData({ ...formData, childAges: newAges });
                                 }}
                               />
-                              <span className="text-[10px] text-slate-400 dark:text-zinc-500">yrs</span>
+                              <span className="text-xs text-muted ">yrs</span>
                             </div>
                           ))}
                         </div>
@@ -1859,11 +1857,11 @@ const App: React.FC = () => {
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Hotel Category</label>
+                        <label className="block text-xs font-medium text-secondary ">Hotel Category</label>
                         <button
                           type="button"
                           onClick={() => setIsCustomCategory(!isCustomCategory)}
-                          className="text-[10px] font-bold text-indigo-600 dark:text-lime-400 hover:underline cursor-pointer"
+                          className="text-xs font-bold text-brand-ink hover:underline cursor-pointer"
                         >
                           {isCustomCategory ? 'Select from list' : '+ Type custom category'}
                         </button>
@@ -1874,13 +1872,13 @@ const App: React.FC = () => {
                             type="text"
                             autoFocus
                             placeholder="e.g. 5 Star Luxury, Boutique Heritage, Swiss Tent..."
-                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-indigo-400 dark:border-lime-400 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:bg-white dark:focus:bg-zinc-900"
+                            className="flex-1 bg-canvas border border-brand-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:bg-surface "
                             value={formData.hotelCategory}
                             onChange={e => setFormData({ ...formData, hotelCategory: e.target.value })}
                           />
                         ) : (
                           <select
-                            className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900"
+                            className="flex-1 bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface "
                             value={['5 Star', '4 Star', '4/3 Star', '3 Star', 'Luxury Villa', 'Heritage Resort', 'Budget Stay'].includes(formData.hotelCategory) ? formData.hotelCategory : '__custom__'}
                             onChange={e => {
                               if (e.target.value === '__custom__') {
@@ -1900,7 +1898,7 @@ const App: React.FC = () => {
                             <option value="__custom__">✏️ + Custom (Type manually)...</option>
                           </select>
                         )}
-                        <select className="w-28 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none" value={formData.includeStay} onChange={e => setFormData({...formData, includeStay: e.target.value})}>
+                        <select className="w-28 bg-canvas border border-line rounded-lg px-2 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none" value={formData.includeStay} onChange={e => setFormData({...formData, includeStay: e.target.value})}>
                           <option value="Yes">Stay: Yes</option>
                           <option value="No">Stay: No</option>
                         </select>
@@ -1908,13 +1906,13 @@ const App: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400 mb-1">Transport Preferences</label>
+                      <label className="block text-xs font-medium text-secondary mb-1">Transport Preferences</label>
                       <div className="flex gap-2">
-                        <select className="flex-1 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900" value={formData.includeCab} onChange={e => setFormData({...formData, includeCab: e.target.value})}>
+                        <select className="flex-1 bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface " value={formData.includeCab} onChange={e => setFormData({...formData, includeCab: e.target.value})}>
                           <option value="Yes">Private Cab: Included</option>
                           <option value="No">Private Cab: Excluded</option>
                         </select>
-                        <select className="w-28 bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none" value={formData.includeFlight} onChange={e => setFormData({...formData, includeFlight: e.target.value})}>
+                        <select className="w-28 bg-canvas border border-line rounded-lg px-2 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none" value={formData.includeFlight} onChange={e => setFormData({...formData, includeFlight: e.target.value})}>
                           <option value="No">Flight: No</option>
                           <option value="Yes">Flight: Yes</option>
                         </select>
@@ -1923,24 +1921,24 @@ const App: React.FC = () => {
 
                     <div className="col-span-1 md:col-span-2 space-y-1">
                       <div className="flex items-center justify-between">
-                        <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Special Notes & Requirements</label>
-                        <label className="flex items-center gap-1.5 cursor-pointer text-xs font-medium text-slate-600 dark:text-zinc-300">
-                          <input type="checkbox" checked={formData.englishDriver} onChange={e => setFormData({...formData, englishDriver: e.target.checked})} className="rounded text-indigo-600 focus:ring-indigo-500" />
+                        <label className="block text-xs font-medium text-secondary ">Special Notes & Requirements</label>
+                        <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-secondary dark:text-zinc-300">
+                          <input type="checkbox" checked={formData.englishDriver} onChange={e => setFormData({...formData, englishDriver: e.target.checked})} className="rounded text-brand-ink focus:ring-brand-line" />
                           <span>English-Speaking Driver</span>
                         </label>
                       </div>
-                      <textarea rows={3} className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg p-3 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all" placeholder="Enter special requests, dietary preferences, flight numbers, or budget notes..." value={formData.otherInfo} onChange={e => setFormData({...formData, otherInfo: e.target.value})}></textarea>
+                      <textarea rows={3} className="w-full bg-canvas border border-line rounded-lg p-3 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all" placeholder="Enter special requests, dietary preferences, flight numbers, or budget notes..." value={formData.otherInfo} onChange={e => setFormData({...formData, otherInfo: e.target.value})}></textarea>
                     </div>
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-[11px] font-medium text-slate-600 dark:text-zinc-400">Assigned Sales Representative</label>
+                      <label className="block text-xs font-medium text-secondary ">Assigned Sales Representative</label>
                       {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
                         <button
                           type="button"
                           onClick={() => openAddAgentModal()}
-                          className="text-[11px] font-medium text-indigo-600 dark:text-lime-400 hover:text-indigo-700 dark:hover:text-lime-300 flex items-center gap-1 hover:underline cursor-pointer"
+                          className="text-xs font-medium text-brand-ink hover:text-brand-ink flex items-center gap-1 hover:underline cursor-pointer"
                         >
                           <Plus size={13} />
                           <span>Add New Representative</span>
@@ -1955,21 +1953,21 @@ const App: React.FC = () => {
                            onClick={() => setFormData({...formData, salesPersonId: a.id})}
                            className={`p-2.5 rounded-lg border transition-all flex items-center gap-2.5 text-left cursor-pointer ${
                              formData.salesPersonId === a.id
-                               ? 'bg-slate-900 dark:bg-lime-400/20 text-white dark:text-lime-400 border-slate-900 dark:border-lime-400/30 shadow-xs'
-                               : 'bg-slate-50 dark:bg-zinc-900/40 border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                               ? 'bg-inverse text-white border-line shadow-xs'
+                               : 'bg-canvas border-line hover:bg-subtle text-content dark:text-zinc-300'
                            }`}
                          >
                            {a.avatar ? (
                              <img 
                                src={a.avatar} 
-                               className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200" 
+                               className="w-7 h-7 rounded-full object-cover shrink-0 border border-line" 
                                alt={a.name}
                                onError={(e) => {
                                  (e.target as HTMLElement).style.display = 'none';
                                }}
                              />
                            ) : (
-                             <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+                             <div className="w-7 h-7 rounded-full bg-brand-soft text-brand-ink font-bold text-sm flex items-center justify-center shrink-0">
                                {a.name.charAt(0).toUpperCase()}
                              </div>
                            )}
@@ -1980,7 +1978,7 @@ const App: React.FC = () => {
                          <button
                            type="button"
                            onClick={() => openAddAgentModal()}
-                           className="p-2.5 rounded-lg border border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50 text-slate-500 hover:text-indigo-600 transition-all flex items-center justify-center gap-1.5 text-xs font-medium cursor-pointer"
+                           className="p-2.5 rounded-lg border border-dashed border-line hover:border-brand-line hover:bg-brand-soft/50 text-secondary hover:text-brand-ink transition-all flex items-center justify-center gap-1.5 text-sm font-medium cursor-pointer"
                          >
                            <Plus size={14} />
                            <span>Add Person</span>
@@ -1989,13 +1987,13 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-slate-100 dark:border-zinc-800">
+                  <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-line ">
                     <button
                       type="button"
                       onClick={() => handleFinalizeInquiry(false)}
-                      className="flex-1 py-2.5 bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 rounded-lg font-medium text-xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                      className="flex-1 py-2.5 bg-surface border border-line text-content dark:text-zinc-300 rounded-lg font-medium text-sm hover:bg-canvas transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                     >
-                      <Save size={14} className="text-slate-500 dark:text-zinc-400" />
+                      <Save size={14} className="text-secondary " />
                       <span>Save Lead</span>
                     </button>
 
@@ -2003,7 +2001,7 @@ const App: React.FC = () => {
                       type="button"
                       disabled={isAnalyzing}
                       onClick={handleAIAssessment}
-                      className="flex-1 py-2.5 bg-slate-900 dark:bg-zinc-800 hover:bg-slate-800 dark:hover:bg-zinc-700 text-white rounded-lg font-medium text-xs transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                      className="flex-1 py-2.5 bg-inverse hover:bg-inverse text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
                       {isAnalyzing ? (
                         <>
@@ -2012,7 +2010,7 @@ const App: React.FC = () => {
                         </>
                       ) : (
                         <>
-                          <Sparkles size={14} className="text-indigo-300 dark:text-lime-400" />
+                          <Sparkles size={14} className="text-brand-ink " />
                           <span>Preview AI Score</span>
                         </>
                       )}
@@ -2021,7 +2019,7 @@ const App: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleFinalizeInquiry(true)}
-                      className="flex-1 py-2.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black rounded-lg font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                      className="flex-1 py-2.5 bg-brand hover:bg-brand text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
                       <FileText size={14} />
                       <span>Save & Give Quote</span>
@@ -2029,29 +2027,29 @@ const App: React.FC = () => {
                   </div>
 
                   {previewAnalysis && (
-                    <div className="p-4 bg-indigo-50/60 dark:bg-lime-400/10 rounded-xl border border-indigo-100 dark:border-lime-400/20 flex flex-col sm:flex-row items-center gap-5 animate-in fade-in duration-300">
+                    <div className="p-4 bg-brand-soft/60 rounded-xl border border-brand-line flex flex-col sm:flex-row items-center gap-5 animate-in fade-in duration-300">
                        <div className="text-center sm:text-left shrink-0">
-                          <p className="text-[10px] font-semibold text-indigo-500 dark:text-lime-400 uppercase tracking-wide">Intent Score</p>
+                          <p className="text-xs font-semibold text-brand-ink uppercase tracking-wide">Intent Score</p>
                           <div className="flex items-center gap-2">
-                             <span className="text-3xl font-bold text-indigo-700 dark:text-lime-400">{previewAnalysis.score}</span>
+                             <span className="text-3xl font-bold text-brand-ink ">{previewAnalysis.score}</span>
                              <div className="flex flex-col text-left">
-                                <span className="text-xs font-semibold text-indigo-600 dark:text-lime-300">{previewAnalysis.intent}</span>
-                                <span className="text-[10px] text-indigo-400 dark:text-lime-500/80 font-medium">{previewAnalysis.budgetTier} Tier</span>
+                                <span className="text-sm font-semibold text-brand-ink ">{previewAnalysis.intent}</span>
+                                <span className="text-xs text-brand-ink font-medium">{previewAnalysis.budgetTier} Tier</span>
                              </div>
                           </div>
                        </div>
-                       <div className="flex-1 border-t sm:border-t-0 sm:border-l border-indigo-100 dark:border-lime-400/20 sm:pl-5 pt-3 sm:pt-0">
-                          <p className="text-[10px] font-semibold text-indigo-500 dark:text-lime-400 uppercase tracking-wide mb-0.5">AI Summary</p>
-                          <p className="text-xs text-indigo-900/90 dark:text-zinc-100 leading-relaxed font-medium italic">"{previewAnalysis.summary}"</p>
+                       <div className="flex-1 border-t sm:border-t-0 sm:border-l border-brand-line sm:pl-5 pt-3 sm:pt-0">
+                          <p className="text-xs font-semibold text-brand-ink uppercase tracking-wide mb-0.5">AI Summary</p>
+                          <p className="text-sm text-brand-ink/90 dark:text-zinc-100 leading-relaxed font-medium italic">"{previewAnalysis.summary}"</p>
                        </div>
                     </div>
                   )}
                </div>
 
                <div className="space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-zinc-800">
-                     <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-100">Unquoted Inquiries</h3>
-                     <span className="text-[10px] font-medium text-indigo-700 dark:text-lime-400 bg-indigo-50 dark:bg-lime-400/10 px-2 py-0.5 rounded border border-indigo-100 dark:border-lime-400/20">
+                  <div className="flex items-center justify-between pb-2 border-b border-line ">
+                     <h3 className="text-sm font-semibold text-content dark:text-zinc-100">Unquoted Inquiries</h3>
+                     <span className="text-xs font-medium text-brand-ink bg-brand-soft px-2 py-0.5 rounded border border-brand-line ">
                         {unquotedLeads.length} Unquoted
                      </span>
                   </div>
@@ -2070,8 +2068,8 @@ const App: React.FC = () => {
                          />
                        ))
                      ) : (
-                       <div className="py-12 text-center bg-white dark:bg-[#161713] rounded-xl border border-dashed border-slate-200 dark:border-zinc-800">
-                          <p className="text-slate-400 dark:text-zinc-500 text-xs font-medium">No unquoted leads currently.</p>
+                       <div className="py-12 text-center bg-surface rounded-xl border border-dashed border-line ">
+                          <p className="text-muted text-sm font-medium">No unquoted leads currently.</p>
                        </div>
                      )}
                   </div>
@@ -2084,43 +2082,43 @@ const App: React.FC = () => {
                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wide">Analysis Pipeline</span>
+                      <span className="text-xs font-semibold text-brand-ink uppercase tracking-wide">Analysis Pipeline</span>
                       <span className="text-slate-300">·</span>
-                      <span className="text-xs text-slate-500 font-medium">{filteredLeads.length} Inquiries</span>
+                      <span className="text-sm text-secondary font-medium">{filteredLeads.length} Inquiries</span>
                     </div>
-                    <h2 className="text-xl font-semibold text-slate-800">
+                    <h2 className="text-xl font-semibold text-content">
                       {selectedAgentFilter ? `${agents.find(a => a.id === selectedAgentFilter)?.name}${dashboardFilter ? ` • ${dashboardFilter}` : ''}` : (dashboardFilter || 'Active Pipeline')}
                     </h2>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                     <button onClick={() => setView('Operations')} className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                     <button onClick={() => setView('Operations')} className="px-3.5 py-2 bg-brand-soft hover:bg-brand-soft text-brand-ink border border-brand-line rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors cursor-pointer">
                        <Briefcase size={14} />
                        <span>Operations Desk</span>
                      </button>
-                     <button onClick={() => setView('Payments')} className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer">
+                     <button onClick={() => setView('Payments')} className="px-3.5 py-2 bg-subtle hover:bg-hover text-content border border-line rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors cursor-pointer">
                        <CreditCard size={14} />
                        <span>Payments Desk</span>
                      </button>
-                     <button onClick={() => setView('New Inquiry')} className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer">
+                     <button onClick={() => setView('New Inquiry')} className="px-3.5 py-2 bg-brand hover:bg-brand text-white rounded-lg font-medium text-sm flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer">
                        <Plus size={14} />
                        <span>New Inquiry</span>
                      </button>
                   </div>
                </div>
 
-               <div className="bg-white dark:bg-[#161713] p-3.5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs flex flex-wrap items-center justify-between gap-3">
+               <div className="bg-surface p-3.5 rounded-xl border border-line shadow-xs flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 flex-1">
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
-                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Destination:</span>
-                        <select value={filterDestination} onChange={e => setFilterDestination(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-sm text-secondary dark:text-zinc-300">
+                        <span className="text-xs font-medium text-secondary ">Destination:</span>
+                        <select value={filterDestination} onChange={e => setFilterDestination(e.target.value)} className="bg-canvas border border-line rounded-lg px-2.5 py-1.5 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line cursor-pointer">
                            <option value="All">All Destinations</option>
                            {uniqueDestinations.map(d => (<option key={d} value={d}>{d}</option>))}
                         </select>
                      </div>
 
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
-                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Travel Month:</span>
-                        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-sm text-secondary dark:text-zinc-300">
+                        <span className="text-xs font-medium text-secondary ">Travel Month:</span>
+                        <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-canvas border border-line rounded-lg px-2.5 py-1.5 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line cursor-pointer">
                            <option value="All">All Months</option>
                            <option value="01">January</option>
                            <option value="02">February</option>
@@ -2137,9 +2135,9 @@ const App: React.FC = () => {
                         </select>
                      </div>
 
-                     <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-zinc-300">
-                        <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">Source:</span>
-                        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 cursor-pointer">
+                     <div className="flex items-center gap-1.5 text-sm text-secondary dark:text-zinc-300">
+                        <span className="text-xs font-medium text-secondary ">Source:</span>
+                        <select value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-canvas border border-line rounded-lg px-2.5 py-1.5 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line cursor-pointer">
                            <option value="All">All Sources</option>
                            <option value="Google Ads">Google Ads</option>
                            <option value="Meta Ads">Meta Ads</option>
@@ -2152,7 +2150,7 @@ const App: React.FC = () => {
                   </div>
 
                   {(filterDestination !== 'All' || filterMonth !== 'All' || filterSource !== 'All') && (
-                     <button onClick={() => { setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="text-xs font-medium text-rose-600 dark:text-rose-400 hover:underline">
+                     <button onClick={() => { setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="text-sm font-medium text-danger-ink hover:underline">
                         Reset Filters
                      </button>
                   )}
@@ -2176,13 +2174,13 @@ const App: React.FC = () => {
                       />
                     ))
                   ) : (
-                    <div className="py-16 flex flex-col items-center justify-center text-center px-6 bg-white dark:bg-[#161713] border border-slate-200 dark:border-zinc-800 rounded-xl shadow-xs">
-                      <div className="w-10 h-10 bg-slate-100 dark:bg-zinc-900/40 rounded-lg flex items-center justify-center mb-3 text-slate-400 dark:text-zinc-500">
+                    <div className="py-16 flex flex-col items-center justify-center text-center px-6 bg-surface border border-line rounded-xl shadow-xs">
+                      <div className="w-10 h-10 bg-subtle rounded-lg flex items-center justify-center mb-3 text-muted ">
                         <Search size={18} />
                       </div>
-                      <h4 className="text-sm font-semibold text-slate-800 dark:text-zinc-100 mb-1">No Matching Leads</h4>
-                      <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-sm font-medium">Adjust your filters or search keywords to find leads.</p>
-                      <button onClick={() => { setGlobalSearch(''); setDashboardFilter(null); setSelectedAgentFilter(null); setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="mt-3 text-xs font-medium text-indigo-600 dark:text-lime-400 hover:underline">Clear all filters</button>
+                      <h4 className="text-sm font-semibold text-content dark:text-zinc-100 mb-1">No Matching Leads</h4>
+                      <p className="text-sm text-muted max-w-sm font-medium">Adjust your filters or search keywords to find leads.</p>
+                      <button onClick={() => { setGlobalSearch(''); setDashboardFilter(null); setSelectedAgentFilter(null); setFilterDestination('All'); setFilterMonth('All'); setFilterSource('All'); }} className="mt-3 text-sm font-medium text-brand-ink hover:underline">Clear all filters</button>
                     </div>
                   )}
                </div>
@@ -2237,15 +2235,15 @@ const App: React.FC = () => {
           )}
           {view === 'Sales Team' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-zinc-800">
+              <div className="flex justify-between items-center pb-4 border-b border-line ">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-800 dark:text-zinc-100">Sales Representatives</h2>
-                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">Manage sales team members, assigned destinations, contact details, and pipeline metrics.</p>
+                  <h2 className="text-xl font-semibold text-content dark:text-zinc-100">Sales Representatives</h2>
+                  <p className="text-sm text-secondary mt-0.5">Manage sales team members, assigned destinations, contact details, and pipeline metrics.</p>
                 </div>
                 {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
                   <button
                     onClick={() => openAddAgentModal()}
-                    className="px-4 py-2 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black rounded-lg font-medium text-xs transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                    className="px-4 py-2 bg-brand hover:bg-brand text-white rounded-lg font-medium text-sm transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
                   >
                     <Plus size={14} />
                     <span>Add Representative</span>
@@ -2255,39 +2253,39 @@ const App: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {agents.map(agent => (
-                  <div key={agent.id} className="bg-white dark:bg-[#161713] p-5 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                  <div key={agent.id} className="bg-surface p-5 rounded-xl border border-line shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
                     <div>
                       <div className="flex items-start gap-3 mb-3">
                         {agent.avatar ? (
                           <img 
                             src={agent.avatar} 
-                            className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 shadow-2xs" 
+                            className="w-12 h-12 rounded-xl object-cover border border-line shrink-0 shadow-2xs" 
                             alt={agent.name}
                             onError={(e) => {
                               (e.target as HTMLElement).style.display = 'none';
                             }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 font-bold text-base flex items-center justify-center border border-indigo-200 dark:border-lime-400/20 shrink-0">
+                          <div className="w-12 h-12 rounded-xl bg-brand-soft text-brand-ink font-bold text-base flex items-center justify-center border border-brand-line shrink-0">
                             {agent.name.charAt(0).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100 truncate">{agent.name}</h4>
-                            <span className="text-[10px] font-medium text-indigo-600 dark:text-lime-400 bg-indigo-50 dark:bg-lime-400/10 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-lime-400/20 shrink-0">Sales Expert</span>
+                            <h4 className="text-sm font-semibold text-content dark:text-zinc-100 truncate">{agent.name}</h4>
+                            <span className="text-xs font-medium text-brand-ink bg-brand-soft px-1.5 py-0.5 rounded border border-brand-line shrink-0">Sales Expert</span>
                           </div>
                           {(agent.phone || agent.email) && (
-                            <div className="mt-1 space-y-0.5 text-[11px] text-slate-500 dark:text-zinc-400">
+                            <div className="mt-1 space-y-0.5 text-xs text-secondary ">
                               {agent.phone && (
                                 <p className="flex items-center gap-1.5 truncate">
-                                  <Phone size={11} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                  <Phone size={11} className="text-muted shrink-0" />
                                   <span className="truncate">{agent.phone}</span>
                                 </p>
                               )}
                               {agent.email && (
                                 <p className="flex items-center gap-1.5 truncate">
-                                  <Mail size={11} className="text-slate-400 dark:text-zinc-500 shrink-0" />
+                                  <Mail size={11} className="text-muted shrink-0" />
                                   <span className="truncate">{agent.email}</span>
                                 </p>
                               )}
@@ -2298,37 +2296,37 @@ const App: React.FC = () => {
 
                       <div className="space-y-3 mb-4">
                         <div>
-                          <p className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wide mb-1">Destinations</p>
+                          <p className="text-xs font-medium text-muted uppercase tracking-wide mb-1">Destinations</p>
                           <div className="flex flex-wrap gap-1">
                             {agent.specialty && agent.specialty.length > 0 ? (
                               agent.specialty.map(s => (
-                                <span key={s} className="px-2 py-0.5 bg-slate-50 dark:bg-zinc-900/40 text-slate-600 dark:text-zinc-300 text-[10px] font-medium rounded border border-slate-200 dark:border-zinc-700">
+                                <span key={s} className="px-2 py-0.5 bg-canvas text-secondary dark:text-zinc-300 text-xs font-medium rounded border border-line ">
                                   {s}
                                 </span>
                               ))
                             ) : (
-                              <span className="text-[10px] text-slate-400 dark:text-zinc-500 italic">All Destinations</span>
+                              <span className="text-xs text-muted italic">All Destinations</span>
                             )}
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-slate-50 dark:bg-zinc-900/40 p-2.5 rounded-lg border border-slate-100 dark:border-zinc-800">
-                            <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium">Active Leads</p>
-                            <p className="text-base font-semibold text-slate-800 dark:text-zinc-100">{leads.filter(l => l.assignedTo === agent.id).length}</p>
+                          <div className="bg-canvas p-2.5 rounded-lg border border-line ">
+                            <p className="text-xs text-secondary font-medium">Active Leads</p>
+                            <p className="text-base font-semibold text-content dark:text-zinc-100">{leads.filter(l => l.assignedTo === agent.id).length}</p>
                           </div>
-                          <div className="bg-emerald-50/60 dark:bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
-                            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">Conversion</p>
-                            <p className="text-base font-semibold text-emerald-800 dark:text-emerald-400">12%</p>
+                          <div className="bg-success-soft/60 p-2.5 rounded-lg border border-success-line ">
+                            <p className="text-xs text-success-ink font-medium">Conversion</p>
+                            <p className="text-base font-semibold text-success-ink ">12%</p>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800 flex gap-2">
+                    <div className="pt-3 border-t border-line flex gap-2">
                       <button
                         onClick={() => { setView('Leads'); setSelectedAgentFilter(agent.id); }}
-                        className="flex-1 py-2 bg-slate-900 dark:bg-lime-400/20 hover:bg-slate-800 dark:hover:bg-lime-400/30 text-white dark:text-lime-400 rounded-lg font-medium text-xs transition-colors cursor-pointer text-center"
+                        className="flex-1 py-2 bg-inverse hover:bg-inverse text-white rounded-lg font-medium text-sm transition-colors cursor-pointer text-center"
                       >
                         View Leads
                       </button>
@@ -2336,7 +2334,7 @@ const App: React.FC = () => {
                         <>
                           <button 
                             onClick={() => openEditAgentModal(agent)} 
-                            className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg font-medium text-xs transition-colors cursor-pointer flex items-center gap-1"
+                            className="px-3 py-2 bg-subtle hover:bg-hover text-content border border-line rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center gap-1"
                             title="Edit representative (Admin only)"
                           >
                             <Edit2 size={12} />
@@ -2344,7 +2342,7 @@ const App: React.FC = () => {
                           </button>
                           <button 
                             onClick={() => setDeletingAgentId(agent.id)} 
-                            className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-medium text-xs transition-colors cursor-pointer"
+                            className="px-3 py-2 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg font-medium text-sm transition-colors cursor-pointer"
                             title="Remove representative (Admin only)"
                           >
                             Remove
@@ -2443,14 +2441,14 @@ const App: React.FC = () => {
       {quotingLead && (<GiveQuoteView lead={quotingLead} allLeads={leads} editQuoteId={editQuoteId} onClose={() => { setQuotingLead(null); setEditQuoteId(null); }} onSave={handleSaveQuote} />)}
       {/* ADD / EDIT SALES AGENT MODAL */}
       {isAddingAgent && currentUser.role === 'Admin' && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#161713] rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-inverse/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-md p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-line ">
               <div>
-                <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">
+                <h3 className="text-base font-semibold text-content dark:text-zinc-100">
                   {editingAgentId ? 'Edit Sales Representative' : 'Add Sales Representative'}
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5">
+                <p className="text-xs text-secondary mt-0.5">
                   {editingAgentId ? 'Update representative details, photo, and assigned destinations.' : 'Add a new sales team member with photo and specialties.'}
                 </p>
               </div>
@@ -2460,7 +2458,7 @@ const App: React.FC = () => {
                   setEditingAgentId(null);
                   setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
                 }}
-                className="p-1.5 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                className="p-1.5 text-muted hover:text-secondary dark:hover:text-zinc-200 rounded-lg hover:bg-subtle transition-colors"
               >
                 <X size={16} />
               </button>
@@ -2468,8 +2466,8 @@ const App: React.FC = () => {
 
             <form onSubmit={handleAddAgent} className="space-y-4">
               {/* Profile Photo Uploader */}
-              <div className="p-3 bg-slate-50 dark:bg-zinc-900/40 rounded-xl border border-slate-200/80 dark:border-zinc-800 space-y-2.5">
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">
+              <div className="p-3 bg-canvas rounded-xl border border-line/80 space-y-2.5">
+                <label className="block text-xs font-semibold text-content dark:text-zinc-300 uppercase tracking-wider">
                   Profile Photo / Avatar
                 </label>
                 <div className="flex items-center gap-4">
@@ -2478,19 +2476,19 @@ const App: React.FC = () => {
                       <img 
                         src={agentFormData.avatar} 
                         alt="Preview" 
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-500 shadow-sm"
+                        className="w-16 h-16 rounded-xl object-cover border-2 border-brand-line shadow-sm"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 border-2 border-indigo-200 dark:border-lime-400/20 flex items-center justify-center font-bold text-xl">
-                        {agentFormData.name ? agentFormData.name.charAt(0).toUpperCase() : <Users2 size={24} className="text-indigo-400 dark:text-lime-400/60" />}
+                      <div className="w-16 h-16 rounded-xl bg-brand-soft text-brand-ink border-2 border-brand-line flex items-center justify-center font-bold text-xl">
+                        {agentFormData.name ? agentFormData.name.charAt(0).toUpperCase() : <Users2 size={24} className="text-brand-ink " />}
                       </div>
                     )}
                     <label
                       htmlFor="agent-avatar-input"
-                      className="absolute -bottom-1.5 -right-1.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black p-1.5 rounded-full shadow-sm cursor-pointer transition-all"
+                      className="absolute -bottom-1.5 -right-1.5 bg-brand hover:bg-brand text-white p-1.5 rounded-full shadow-sm cursor-pointer transition-all"
                       title="Upload photo"
                     >
                       <Camera size={12} />
@@ -2521,7 +2519,7 @@ const App: React.FC = () => {
                     <div className="flex flex-wrap gap-1.5">
                       <label
                         htmlFor="agent-avatar-input"
-                        className="px-2.5 py-1.5 bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-lime-400 text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-lime-400 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                        className="px-2.5 py-1.5 bg-surface border border-line hover:border-brand-line text-content dark:text-zinc-300 hover:text-brand-ink rounded-lg text-sm font-medium cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
                       >
                         <Upload size={12} />
                         <span>Upload Photo</span>
@@ -2530,13 +2528,13 @@ const App: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setAgentFormData(prev => ({ ...prev, avatar: '' }))}
-                          className="px-2.5 py-1.5 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30 rounded-lg text-xs font-medium transition-colors"
+                          className="px-2.5 py-1.5 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg text-sm font-medium transition-colors"
                         >
                           Remove
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-500">Supports PNG, JPG, WebP (up to 4MB)</p>
+                    <p className="text-xs text-secondary ">Supports PNG, JPG, WebP (up to 4MB)</p>
                   </div>
                 </div>
 
@@ -2547,15 +2545,15 @@ const App: React.FC = () => {
                     placeholder="Or paste image URL (https://...)"
                     value={agentFormData.avatar.startsWith('data:') ? '' : agentFormData.avatar}
                     onChange={(e) => setAgentFormData(prev => ({ ...prev, avatar: e.target.value }))}
-                    className="w-full bg-white dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 dark:text-zinc-100 outline-none focus:border-indigo-400 dark:focus:border-lime-400 placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                    className="w-full bg-surface border border-line rounded-lg px-2.5 py-1.5 text-sm text-content dark:text-zinc-100 outline-none focus:border-brand-line placeholder:text-muted "
                   />
                 </div>
               </div>
 
               {/* Full Name */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
-                  Full Name <span className="text-rose-500 dark:text-rose-400">*</span>
+                <label className="block text-xs font-medium text-content dark:text-zinc-300 mb-1">
+                  Full Name <span className="text-danger-ink ">*</span>
                 </label>
                 <input
                   type="text"
@@ -2563,15 +2561,15 @@ const App: React.FC = () => {
                   placeholder="e.g. Rahul Sharma"
                   value={agentFormData.name}
                   onChange={e => setAgentFormData({...agentFormData, name: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all"
                 />
               </div>
 
               {/* Contact Information (Phone & Email) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
-                    <Phone size={11} className="text-slate-400 dark:text-zinc-500" />
+                  <label className="block text-xs font-medium text-content dark:text-zinc-300 mb-1 flex items-center gap-1">
+                    <Phone size={11} className="text-muted " />
                     <span>Phone / WhatsApp</span>
                   </label>
                   <input
@@ -2579,12 +2577,12 @@ const App: React.FC = () => {
                     placeholder="e.g. +91 98765 43210"
                     value={agentFormData.phone}
                     onChange={e => setAgentFormData({...agentFormData, phone: e.target.value})}
-                    className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1 flex items-center gap-1">
-                    <Mail size={11} className="text-slate-400 dark:text-zinc-500" />
+                  <label className="block text-xs font-medium text-content dark:text-zinc-300 mb-1 flex items-center gap-1">
+                    <Mail size={11} className="text-muted " />
                     <span>Email Address</span>
                   </label>
                   <input
@@ -2592,14 +2590,14 @@ const App: React.FC = () => {
                     placeholder="e.g. rahul@kingsland.com"
                     value={agentFormData.email}
                     onChange={e => setAgentFormData({...agentFormData, email: e.target.value})}
-                    className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all"
                   />
                 </div>
               </div>
 
               {/* Destinations / Specialties */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 dark:text-zinc-300 mb-1">
+                <label className="block text-xs font-medium text-content dark:text-zinc-300 mb-1">
                   Assigned Destinations (Comma-separated)
                 </label>
                 <input
@@ -2607,13 +2605,13 @@ const App: React.FC = () => {
                   placeholder="e.g. Dubai, Bali, Kashmir, Rajasthan, Thailand"
                   value={agentFormData.specialty}
                   onChange={e => setAgentFormData({...agentFormData, specialty: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 dark:focus:border-lime-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all"
                 />
-                <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1">Separate multiple destinations with commas</p>
+                <p className="text-xs text-muted mt-1">Separate multiple destinations with commas</p>
               </div>
 
               {/* Form Buttons */}
-              <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex gap-2 pt-2 border-t border-line ">
                 <button
                   type="button"
                   onClick={() => {
@@ -2621,13 +2619,13 @@ const App: React.FC = () => {
                     setEditingAgentId(null);
                     setAgentFormData({ name: '', specialty: '', avatar: '', phone: '', email: '' });
                   }}
-                  className="flex-1 py-2.5 bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium rounded-xl transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 bg-subtle hover:bg-hover text-content dark:text-zinc-300 text-sm font-medium rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-indigo-600 dark:bg-lime-400 hover:bg-indigo-700 dark:hover:bg-lime-300 text-white dark:text-black text-xs font-medium rounded-xl transition-colors shadow-sm hover:shadow cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 bg-brand hover:bg-brand text-white text-sm font-medium rounded-xl transition-colors shadow-sm hover:shadow cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Save size={13} />
                   <span>{editingAgentId ? 'Update Representative' : 'Save Representative'}</span>
@@ -2640,20 +2638,20 @@ const App: React.FC = () => {
 
       {/* DEACTIVATE AGENT MODAL */}
       {deletingAgentId && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#161713] rounded-xl shadow-xl w-full max-w-sm p-6 border border-slate-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200 space-y-4 text-center">
-            <div className="w-10 h-10 mx-auto rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-inverse/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-sm p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4 text-center">
+            <div className="w-10 h-10 mx-auto rounded-full bg-danger-soft border border-danger-line flex items-center justify-center text-danger-ink ">
               <AlertTriangle size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Remove Representative?</h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">This will remove this sales expert from the active assignment roster.</p>
+              <h3 className="text-sm font-semibold text-content dark:text-zinc-100">Remove Representative?</h3>
+              <p className="text-sm text-secondary mt-1">This will remove this sales expert from the active assignment roster.</p>
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setDeletingAgentId(null)} className="flex-1 py-2 bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium rounded-lg transition-colors">
+              <button onClick={() => setDeletingAgentId(null)} className="flex-1 py-2 bg-subtle hover:bg-hover text-content dark:text-zinc-300 text-sm font-medium rounded-lg transition-colors">
                 Cancel
               </button>
-              <button onClick={() => handleDeleteAgent(deletingAgentId)} className="flex-1 py-2 bg-rose-600 dark:bg-rose-500 hover:bg-rose-700 dark:hover:bg-rose-600 text-white text-xs font-medium rounded-lg transition-colors shadow-xs">
+              <button onClick={() => handleDeleteAgent(deletingAgentId)} className="flex-1 py-2 bg-danger-strong hover:bg-danger-strong text-white text-sm font-medium rounded-lg transition-colors shadow-xs">
                 Confirm Remove
               </button>
             </div>
@@ -2663,57 +2661,57 @@ const App: React.FC = () => {
 
       {/* LEAD DELETE CONFIRMATION DIALOG */}
       {leadToDelete && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#161713] rounded-xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-zinc-800 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-inverse/60 dark:bg-black/80 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-md p-6 border border-line space-y-4 animate-in zoom-in-95 duration-200">
             <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0 mt-0.5">
+              <div className="w-10 h-10 rounded-full bg-danger-soft border border-danger-line flex items-center justify-center text-danger-ink shrink-0 mt-0.5">
                 <Trash2 size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-zinc-100">Delete Lead Inquiry?</h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                <h3 className="text-base font-semibold text-content dark:text-zinc-100">Delete Lead Inquiry?</h3>
+                <p className="text-sm text-secondary mt-0.5">
                   This action cannot be undone. Please confirm you want to delete this lead.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => !isDeletingLead && setLeadToDelete(null)}
-                className="p-1 text-slate-400 dark:text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-md transition-colors"
+                className="p-1 text-muted hover:text-secondary dark:hover:text-zinc-200 rounded-md transition-colors"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-zinc-900/40 border border-slate-200 dark:border-zinc-800 text-xs space-y-1.5">
+            <div className="p-3 rounded-lg bg-canvas border border-line text-sm space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-zinc-400 font-medium">Inquiry ID:</span>
-                <span className="font-mono font-semibold text-slate-800 dark:text-zinc-100 bg-white dark:bg-zinc-900/60 px-2 py-0.5 rounded border border-slate-200 dark:border-zinc-700">#{leadToDelete.tripId}</span>
+                <span className="text-secondary font-medium">Inquiry ID:</span>
+                <span className="font-mono font-semibold text-content dark:text-zinc-100 bg-surface px-2 py-0.5 rounded border border-line ">#{leadToDelete.tripId}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-zinc-400 font-medium">Guest Name:</span>
-                <span className="font-semibold text-slate-800 dark:text-zinc-100">{leadToDelete.name}</span>
+                <span className="text-secondary font-medium">Guest Name:</span>
+                <span className="font-semibold text-content dark:text-zinc-100">{leadToDelete.name}</span>
               </div>
               {leadToDelete.destination && (
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-zinc-400 font-medium">Destination:</span>
-                  <span className="text-slate-700 dark:text-zinc-200 font-medium">{leadToDelete.destination}</span>
+                  <span className="text-secondary font-medium">Destination:</span>
+                  <span className="text-content dark:text-zinc-200 font-medium">{leadToDelete.destination}</span>
                 </div>
               )}
             </div>
 
-            <div className="p-3 rounded-lg bg-rose-50/70 dark:bg-rose-500/10 border border-rose-200/80 dark:border-rose-500/30 text-xs text-rose-800 dark:text-rose-300 flex items-start gap-2">
-              <AlertTriangle size={15} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-lg bg-danger-soft/70 border border-danger-line/80 text-sm text-danger-ink flex items-start gap-2">
+              <AlertTriangle size={15} className="text-danger-ink shrink-0 mt-0.5" />
               <p className="leading-relaxed">
                 Deleting this inquiry will permanently remove all associated quotes, custom itinerary days, notes, follow-up schedules, and payment desk links.
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-line ">
               <button
                 type="button"
                 disabled={isDeletingLead}
                 onClick={() => setLeadToDelete(null)}
-                className="px-4 py-2 rounded-lg bg-slate-100 dark:bg-zinc-900/40 hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-subtle hover:bg-hover text-content dark:text-zinc-300 text-sm font-medium transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -2721,7 +2719,7 @@ const App: React.FC = () => {
                 type="button"
                 disabled={isDeletingLead}
                 onClick={handleConfirmDeleteLead}
-                className="px-4 py-2 rounded-lg bg-rose-600 dark:bg-rose-500 hover:bg-rose-700 dark:hover:bg-rose-600 text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-danger-strong hover:bg-danger-strong text-white text-sm font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {isDeletingLead ? (
                   <>
@@ -2742,19 +2740,19 @@ const App: React.FC = () => {
 
       {/* TOAST NOTIFICATION */}
       {toastNotification && (
-        <div className={`fixed top-4 right-4 z-[200] flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-xl text-xs font-medium border animate-in slide-in-from-top-3 duration-200 max-w-md ${
+        <div className={`fixed top-4 right-4 z-[200] flex items-center gap-2.5 px-4 py-3 rounded-lg shadow-sm text-sm font-medium border animate-in slide-in-from-top-3 duration-200 max-w-md ${
           toastNotification.type === 'error'
-            ? 'bg-rose-900 text-white border-rose-800'
+            ? 'bg-danger-strong text-white border-danger-line'
             : toastNotification.type === 'info'
-            ? 'bg-slate-900 text-white border-slate-700'
-            : 'bg-emerald-900 text-white border-emerald-800'
+            ? 'bg-inverse text-white border-line'
+            : 'bg-success-strong text-white border-success-line'
         }`}>
           {toastNotification.type === 'error' ? (
-            <AlertTriangle size={16} className="text-rose-300 shrink-0" />
+            <AlertTriangle size={16} className="text-danger-ink shrink-0" />
           ) : toastNotification.type === 'info' ? (
             <Clock size={16} className="text-slate-300 shrink-0" />
           ) : (
-            <CheckCircle2 size={16} className="text-emerald-300 shrink-0" />
+            <CheckCircle2 size={16} className="text-success-ink shrink-0" />
           )}
           <span className="flex-1 leading-snug">{toastNotification.message}</span>
           <button 
@@ -2772,6 +2770,7 @@ const App: React.FC = () => {
         isOpen={isLoginModalOpen}
         users={users}
         onLoginSuccess={(user) => {
+          clearProposalPdfCache();
           setCurrentUser(user);
           localStorage.setItem('kingsland_active_user_id', user.id);
           setIsLoginModalOpen(false);

@@ -1,84 +1,43 @@
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const assert = require('assert/strict');
-const root = path.resolve(__dirname, '..');
-const esbuild = require(path.join(root, 'node_modules/esbuild'));
-const puppeteer = require(path.join(root, 'node_modules/puppeteer-core'));
-const { PDFDocument } = require(path.join(root, 'node_modules/pdf-lib'));
-
-(async () => {
-  const result = await esbuild.build({ stdin: {
-    contents: `import React from 'react';import {createRoot} from 'react-dom/client';import Preview from './components/ProposalPdfPreview';
-      const root=createRoot(document.querySelector('#root'));const ref=React.createRef();const partners=[];
-      window.mountPreview=(quoteData,designId)=>root.render(React.createElement(Preview,{ref,quoteData,designId,partnerBrands:partners}));
-      window.previewDownloadBytes=async()=>Array.from(new Uint8Array(await(await ref.current.getPdf()).arrayBuffer()));window.unmountPreview=()=>root.unmount();`,
-    resolveDir: root, loader: 'tsx',
-  }, bundle: true, write: false, format: 'iife', define: { 'process.env.NODE_ENV': '"development"' } });
-  const serverPdf = await PDFDocument.create();
-  serverPdf.addPage().drawText('Server-rendered proposal, page 1');
-  serverPdf.addPage().drawText('Server-rendered proposal, page 2');
-  const serverBytes = Buffer.from(await serverPdf.save());
-  const chrome = [process.env.CHROME_BIN, 'C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(p => p && fs.existsSync(p));
-  assert(chrome, 'Set CHROME_BIN to Chrome/Chromium');
-  const browser = await puppeteer.launch({ executablePath: chrome, headless: true });
-  try {
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1000, height: 900 });
-    let serverAvailable = true;
-    const requests = [];
-    await page.setRequestInterception(true);
-    page.on('request', async request => {
-      if (request.url().endsWith('/api/pdf-designs/render-pdf')) {
-        requests.push(JSON.parse(request.postData()));
-        await request.respond(serverAvailable ? { status: 200, contentType: 'application/pdf', body: serverBytes } : { status: 503, contentType: 'application/json', body: '{"error":"test unavailable"}' });
-      } else if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
-        await request.respond({ status: 200, contentType: 'text/html', body: '<html><head><style>*{box-sizing:border-box}body{margin:0}iframe{width:100%}</style></head><body><div id="root"></div></body></html>' });
-      } else {
-        await request.continue();
-      }
-    });
-    await page.goto('http://preview.test/');
-    await page.addScriptTag({ content: result.outputFiles[0].text });
-    const hotel = { nights: '2 Nights', name: 'Test Hotel', type: '3 Star', room: 'Standard', rooms: '2 Adults', city: 'Gangtok' };
-    const quote = { client: 'Preview Test Guest', ref: 'PREVIEW-1', packageName: 'Preview consistency', longDuration: '2 Nights / 3 Days', duration: '2N / 3D', city: 'Gangtok', services: 'Cab, Hotel', travellers: '2 Adults', priceNote: 'Private tour', price: '₹25,000', hotel, hotels: [hotel], included: ['Hotel', 'Breakfast'], excluded: ['Flights'], days: Array.from({ length: 3 }, (_, i) => ({ title: 'Day ' + (i+1), text: 'Sightseeing and hotel stay. '.repeat(8) })) };
-    await page.evaluate(quote => {
-      window.__downloadClicks = 0;
-      const click = HTMLAnchorElement.prototype.click;
-      HTMLAnchorElement.prototype.click = function () { if (this.download) window.__downloadClicks++; return click.call(this); };
-      window.mountPreview(quote, 'royal');
-    }, quote);
-    await page.waitForSelector('iframe[title="Proposal PDF preview"]');
-    const readPreview = () => page.evaluate(async () => Array.from(new Uint8Array(await (await fetch(document.querySelector('iframe[title="Proposal PDF preview"]').src.split('#')[0])).arrayBuffer())));
-    assert.deepEqual(Buffer.from(await readPreview()), serverBytes, 'Preview must show the server PDF');
-    assert.deepEqual(Buffer.from(await page.evaluate(() => window.previewDownloadBytes())), serverBytes, 'Download must reuse the exact server PDF');
-    assert.equal(requests.length, 1, 'Preview + download must generate only once');
-    console.log('PASS: server preview and download contain identical bytes; one generation');
-
-    const previousUrl = await page.$eval('iframe[title="Proposal PDF preview"]', el => el.src);
-    serverAvailable = false;
-    await page.evaluate(quote => window.mountPreview(quote, 'alpine'), quote);
-    await page.waitForFunction(previous => {
-      const preview = document.querySelector('iframe[title="Proposal PDF preview"]');
-      return preview && preview.src !== previous;
-    }, { timeout: 60000 }, previousUrl);
-    const fallbackPreview = Buffer.from(await readPreview());
-    const fallbackDownload = Buffer.from(await page.evaluate(() => window.previewDownloadBytes()));
-    assert.deepEqual(fallbackPreview, fallbackDownload, 'Browser fallback preview/download must contain identical bytes');
-    assert.equal(fallbackPreview.subarray(0,5).toString(), '%PDF-', 'Fallback must produce a valid PDF');
-    assert((await PDFDocument.load(fallbackPreview)).getPageCount() >= 3, 'Fallback must preserve paginated cover, itinerary, terms');
-    assert.equal(requests.length, 2, 'Theme switch should generate once; download must reuse it');
-    assert.equal(requests[1].designId, 'alpine', 'Theme switch must refresh the PDF');
-    assert.equal(await page.evaluate(() => window.__downloadClicks), 0, 'Preview must never automatically download a file');
-    console.log('PASS: browser fallback preview/download identical; theme refresh; no automatic download');
-    const out = path.join(os.tmpdir(), 'kingsland-pdf-preview');
-    fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, 'fallback-preview.pdf'), fallbackPreview);
-    await page.waitForNetworkIdle({ idleTime: 750, timeout: 10000 });
-    await page.screenshot({ path: path.join(out, 'preview.png'), fullPage: true });
-    const activeUrl = await page.$eval('iframe[title="Proposal PDF preview"]', el => el.src.split('#')[0]);
-    await page.evaluate(() => window.unmountPreview());
-    assert.equal(await page.evaluate(async url => { try { await fetch(url); return true; } catch { return false; } }, activeUrl), false, 'Unmount must revoke preview URL');
-    console.log('PASS: preview URL cleaned up on close');
-  } finally { await browser.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+const fs=require('fs'),path=require('path'),os=require('os'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..');
+const esbuild=require(path.join(root,'node_modules/esbuild')),puppeteer=require(path.join(root,'node_modules/puppeteer-core'));
+const {PDFDocument}=require(path.join(root,'node_modules/pdf-lib'));
+(async()=>{
+ const built=await esbuild.build({stdin:{contents:`import React from 'react';import{createRoot}from'react-dom/client';import Preview from './components/ProposalPdfPreview';import{renderCompleteProposalHtml}from'./services/quoteDesignRenderer';let root=createRoot(document.querySelector('#root'));const ref=React.createRef();window.mount=(q,d)=>root.render(React.createElement(Preview,{ref,quoteData:q,designId:d,partnerBrands:[]}));window.download=async()=>Array.from(new Uint8Array(await(await ref.current.getPdf()).arrayBuffer()));window.renderQuote=renderCompleteProposalHtml;`,resolveDir:root,loader:'tsx'},bundle:true,write:false,format:'iife',define:{'process.env.NODE_ENV':'"production"'}});
+ const chrome=[process.env.CHROME_BIN,'C:/Program Files/Google/Chrome/Application/chrome.exe','/usr/bin/chromium'].find(p=>p&&fs.existsSync(p));
+ const browser=await puppeteer.launch({executablePath:chrome,headless:true});
+ try{
+ const page=await browser.newPage();await page.setViewport({width:1000,height:1200});let apiCalls=0;const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.setRequestInterception(true);page.on('request',async r=>{if(r.isNavigationRequest())return r.respond({status:200,contentType:'text/html',body:'<html><head><style>*{box-sizing:border-box}body{margin:0}.proposal-preview-pages{display:flex;flex-direction:column;gap:24px}</style></head><body><div id="root"></div></body></html>'});if(r.url().includes('/api/')){apiCalls++;return r.respond({status:503,body:'unavailable'});}if(r.url().startsWith('http'))return r.abort();return r.continue();});
+ await page.goto('http://preview.test');await page.addScriptTag({content:built.outputFiles[0].text});
+ const hotel={nights:'1 Night',name:'Golden Signature, Jaisalmer',type:'3 Star',room:'Standard',rooms:'2 Adults',city:'Jaisalmer',mealPlan:'CPAI (Breakfast)'};
+ const image='data:image/svg+xml;base64,'+Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500"><rect width="1000" height="500" fill="#227799"/><circle cx="500" cy="250" r="200" fill="#eeb544"/></svg>').toString('base64');
+ const quote={client:'Preview Test Guest',ref:'PREVIEW-1',packageName:'Hotel options comparison',longDuration:'4 Nights / 5 Days',duration:'4N / 5D',city:'Jaisalmer',services:'Hotel, Cab',travellers:'2 Adults',priceNote:'Private tour',price:'₹17,500',hotel,hotels:[hotel,{...hotel,name:'Royal Jaisalmer Resort, Sam',city:'Sam',room:'Swiss Tent',mealPlan:'MAPAI (Breakfast & Dinner)'}],hotelAlternative:{price:'₹18,800',hotels:[{...hotel,name:'Jaigarh Palace, Jaisalmer',room:'Heritage'},{...hotel,name:'NK Desert Camp Resort, Sam',city:'Sam',room:'Swiss Tent',mealPlan:'MAPAI (Breakfast & Dinner)'}]},included:['Hotel stay','Breakfast'],excluded:['Flights'],days:Array.from({length:5},(_,i)=>({title:'Day '+(i+1)+' sightseeing',text:('Explore the city, visit local attractions, then return to the hotel. ').repeat(i===1?45:12),img:image}))};
+ const out=path.join(os.tmpdir(),'kingsland-fast-preview');fs.mkdirSync(out,{recursive:true});
+ let firstMs;
+ for(const theme of ['royal','alpine','sunset','editorial','playful','diwali']){
+  await page.evaluate(()=>document.querySelector('#root').dataset.started=String(performance.now()));await page.evaluate((q,d)=>window.mount(q,d),quote,theme);
+  await page.waitForFunction(theme=>{const el=document.querySelector('.proposal-preview-pages');return el&&el.textContent.includes('₹18,800')&&el.innerHTML.includes('Hotel Details')&&!document.querySelector('[role="status"]');},{timeout:20000},theme);
+  const stats=await page.evaluate(()=>{const preview=document.querySelector('.proposal-preview-pages'),pages=[...preview.querySelectorAll(':scope > [data-proposal-page]')];return{ms:performance.now()-Number(document.querySelector('#root').dataset.started),count:pages.length,headers:pages.filter(p=>p.dataset.pageType==='flow').map(p=>p.querySelector('.proposal-page-header').textContent),tables:preview.querySelectorAll('[data-page-type="cover"] .hotel-option-table').length,totals:[...preview.querySelectorAll('[data-page-type="cover"] .hotel-option-total')].map(x=>x.textContent),badImages:pages.flatMap(p=>{const viewport=p.querySelector('.proposal-page-body');if(!viewport)return[];const v=viewport.getBoundingClientRect();return[...viewport.querySelectorAll('.day-img-box')].filter(img=>{const r=img.getBoundingClientRect();return r.bottom>v.top+.5&&r.top<v.bottom-.5&&(r.top<v.top-.5||r.bottom>v.bottom+.5);}).map(x=>x.getBoundingClientRect().toJSON());})};});
+  if(firstMs===undefined)firstMs=stats.ms;
+  assert(stats.count>=3);assert.equal(stats.tables,2,theme+' comparison tables');assert.equal(stats.totals.length,2);assert(stats.headers.every(x=>x.includes('Kingsland')));assert.deepEqual(stats.badImages,[],theme+' split photo');assert.equal(apiCalls,0,'Opening preview must not wait for PDF server');
+  await page.screenshot({path:path.join(out,theme+'.png'),fullPage:true});
+  console.log(`PASS ${theme}: ready ${Math.round(stats.ms)}ms; ${stats.count} pages; two hotel prices; repeated headers; whole images`);
+  if(theme==='royal'){
+   const bytes=Buffer.from(await page.evaluate(()=>window.download()));fs.writeFileSync(path.join(out,'royal.pdf'),bytes);
+   assert.equal((await PDFDocument.load(bytes)).getPageCount(),stats.count,'Downloaded PDF must use preview pages');
+   assert.deepEqual(Buffer.from(await page.evaluate(()=>window.download())),bytes,'Repeated download must reuse PDF');assert.equal(apiCalls,0);
+   console.log('PASS downloaded PDF uses same pages; repeat download identical; no server wait');
+  }
+ }
+ const many={...quote,ref:'MANY-HOTELS',hotels:Array.from({length:7},(_,i)=>({...hotel,name:'Primary Stay '+i})),hotelAlternative:{price:'₹18,800',hotels:Array.from({length:7},(_,i)=>({...hotel,name:'Alternative Stay '+i}))}};
+ await page.evaluate(q=>window.mount(q,'royal'),many);await page.waitForFunction(()=>{const p=document.querySelector('.proposal-preview-pages');return p&&p.textContent.includes('MANY-HOTELS')&&!document.querySelector('[role="status"]');});
+ const visibleNames=await page.evaluate(()=>[...document.querySelectorAll('.proposal-preview-pages .proposal-page-body')].flatMap(view=>{const v=view.getBoundingClientRect();return[...view.querySelectorAll('.hotel-option-table tbody tr')].filter(row=>{const r=row.getBoundingClientRect();return r.top>=v.top-.5&&r.bottom<=v.bottom+.5}).map(row=>row.textContent)}).join('\n'));
+ for(let i=0;i<7;i++){assert(visibleNames.includes('Primary Stay '+i),'Missing primary hotel '+i);assert(visibleNames.includes('Alternative Stay '+i),'Missing secondary hotel '+i);}
+ assert.equal(await page.$$('.proposal-preview-pages [data-page-type="cover"] .hotel-option-table').then(x=>x.length),0,'Large comparisons must flow to following pages');console.log('PASS 14 hotel rows flow across pages without clipping');
+ const short={...quote,ref:'SHORT-TERMS',hotelAlternative:null,days:[{title:'Short arrival day',text:'Local sightseeing and return to the hotel.'}]};await page.evaluate(q=>window.mount(q,'royal'),short);await page.waitForFunction(()=>{const p=document.querySelector('.proposal-preview-pages');return p&&p.textContent.includes('SHORT-TERMS')&&!document.querySelector('[role="status"]');});
+ const termsTogether=await page.evaluate(()=>[...document.querySelectorAll('.proposal-preview-pages .proposal-page-body')].some(view=>{const v=view.getBoundingClientRect(),day=view.querySelector('.day-card-wrapper'),terms=view.querySelector('.terms-title');if(!day?.children.length||!terms)return false;const d=day.getBoundingClientRect(),t=terms.getBoundingClientRect();return d.bottom<=v.bottom&&t.top>=d.bottom&&t.bottom<=v.bottom&&t.top-d.bottom<70;}));assert(termsTogether,'Terms must immediately follow the last day when space exists');console.log('PASS short itinerary: terms begin immediately after final day on the same preview page');
+ await page.evaluate(q=>window.mount({...q,hotelAlternative:null},'royal'),quote);await page.waitForFunction(()=>{const p=document.querySelector('.proposal-preview-pages');return p&&!p.textContent.includes('Hotel Details – Option 2')&&!p.querySelector('.hotel-option-table')&&!document.querySelector('[role="status"]');});
+ assert.equal(await page.$$('.proposal-preview-pages .hotel-option-table').then(x=>x.length),0);assert.deepEqual(errors,[]);console.log(`PASS single-option display restored. First preview ${Math.round(firstMs)}ms. Artifacts: ${out}`);
+ }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1});

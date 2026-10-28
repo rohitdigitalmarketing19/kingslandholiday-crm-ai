@@ -64,7 +64,7 @@ export const UploadVoucherModal: React.FC<UploadVoucherModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
         
         {/* Header */}

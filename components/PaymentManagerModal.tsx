@@ -612,14 +612,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       
       {/* Header Bar in Modal Mode */}
       {!isFullPage && (
-        <div className="p-6 bg-slate-900 text-white flex justify-between items-center rounded-xl shadow-lg border border-slate-800">
+        <div className="p-6 bg-inverse text-white flex justify-between items-center rounded-xl shadow-sm border border-line">
           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-xs">
+             <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-white shadow-xs">
                 <CreditCard size={20} />
              </div>
              <div>
                 <h2 className="text-base font-semibold text-white">Payment & Collections Desk</h2>
-                <p className="text-xs text-slate-400 font-medium">Razorpay Gateway, UPI Transfers & Partial EMI Schedules</p>
+                <p className="text-sm text-muted font-medium">Razorpay Gateway, UPI Transfers & Partial EMI Schedules</p>
              </div>
           </div>
           {onClose && (
@@ -632,15 +632,15 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* Clean Full Page Header */}
       {isFullPage && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line">
           <div>
             <div className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-xl font-semibold text-slate-800">
+              <CreditCard className="w-5 h-5 text-brand-ink" />
+              <h2 className="text-xl font-semibold text-content">
                 Payment & Collections Desk
               </h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-sm text-secondary mt-0.5">
               Manage payment links, partial EMI schedules, customer submissions, and gateway settings.
             </p>
           </div>
@@ -649,7 +649,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             {activeTab !== 'CreateLink' && (
               <button 
                 onClick={() => setShowCreateChoiceModal(true)} 
-                className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2 bg-brand hover:bg-brand text-white rounded-lg text-sm font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus size={14} />
                 <span>Create Payment Link</span>
@@ -657,7 +657,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             )}
             <button 
               onClick={() => { setSelectedLink(null); setActiveTab('Portal'); }}
-              className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 bg-inverse hover:bg-inverse text-white rounded-lg text-sm font-medium shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <ExternalLink size={13} />
               <span>Customer Portal Preview</span>
@@ -668,7 +668,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* Payment Desk Sub-Navigation Tabs */}
       {isFullPage && (
-        <div className="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-1.5 bg-surface p-1.5 rounded-xl border border-line shadow-2xs">
           {[
             { id: 'Links', label: 'Payment Links' },
             { id: 'Installments', label: 'EMI Schedules' },
@@ -681,15 +681,15 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as PaymentTab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeTab === t.id
-                  ? 'bg-indigo-600 text-white shadow-2xs'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  ? 'bg-brand text-white shadow-2xs'
+                  : 'text-secondary hover:bg-subtle hover:text-content'
               }`}
             >
               <span>{t.label}</span>
               {t.id === 'Confirmation' && submissions.filter(s => s.verification_status === 'Pending Review').length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500 text-white font-semibold">
+                <span className="px-1.5 py-0.2 rounded-full text-xs bg-success-strong text-white font-semibold">
                   {submissions.filter(s => s.verification_status === 'Pending Review').length}
                 </span>
               )}
@@ -700,11 +700,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* CREATE PAYMENT LINK TYPE SELECTION MODAL */}
       {showCreateChoiceModal && (
-        <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 border border-slate-200 shadow-xl space-y-4 animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900">Create Payment Link</h3>
-              <button onClick={() => setShowCreateChoiceModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+        <div className="fixed inset-0 z-[250] bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl max-w-md w-full p-6 border border-line shadow-sm space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center pb-3 border-b border-line">
+              <h3 className="text-sm font-semibold text-content">Create Payment Link</h3>
+              <button onClick={() => setShowCreateChoiceModal(false)} className="p-1 text-muted hover:text-secondary rounded">
                 <X size={16} />
               </button>
             </div>
@@ -716,16 +716,16 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   setShowCreateChoiceModal(false);
                   setActiveTab('CreateLink');
                 }}
-                className="p-4 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 text-left space-y-2 transition-all cursor-pointer"
+                className="p-4 rounded-xl border border-line hover:border-brand-line bg-canvas/50 hover:bg-brand-soft/30 text-left space-y-2 transition-all cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-brand-soft text-brand-ink flex items-center justify-center">
                   <CreditCard size={16} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-900 text-xs">Full Package Link</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Generate a one-time full package payment link.</p>
+                  <h4 className="font-semibold text-content text-sm">Full Package Link</h4>
+                  <p className="text-xs text-secondary mt-0.5 leading-snug">Generate a one-time full package payment link.</p>
                 </div>
-                <span className="text-[10px] font-semibold text-indigo-600 flex items-center gap-1">
+                <span className="text-xs font-semibold text-brand-ink flex items-center gap-1">
                   Create Link <ChevronRight size={12} />
                 </span>
               </button>
@@ -736,16 +736,16 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   setShowCreateChoiceModal(false);
                   setActiveTab('Installments');
                 }}
-                className="p-4 rounded-xl border border-slate-200 hover:border-emerald-400 bg-slate-50/50 hover:bg-emerald-50/30 text-left space-y-2 transition-all cursor-pointer"
+                className="p-4 rounded-xl border border-line hover:border-success-line bg-canvas/50 hover:bg-success-soft/30 text-left space-y-2 transition-all cursor-pointer"
               >
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-success-soft text-success-ink flex items-center justify-center">
                   <Calendar size={16} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-900 text-xs">EMI Installments</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">Split booking into partial milestone payments.</p>
+                  <h4 className="font-semibold text-content text-sm">EMI Installments</h4>
+                  <p className="text-xs text-secondary mt-0.5 leading-snug">Split booking into partial milestone payments.</p>
                 </div>
-                <span className="text-[10px] font-semibold text-emerald-700 flex items-center gap-1">
+                <span className="text-xs font-semibold text-success-ink flex items-center gap-1">
                   Configure EMI <ChevronRight size={12} />
                 </span>
               </button>
@@ -756,24 +756,24 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* CREATED PAYMENT LINK SUCCESS POPUP */}
       {createdLinkModalData && (
-        <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 border border-slate-200 shadow-xl space-y-4 text-center animate-in zoom-in-95 duration-200">
-            <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full mx-auto flex items-center justify-center">
+        <div className="fixed inset-0 z-[250] bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl max-w-sm w-full p-6 border border-line shadow-sm space-y-4 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-10 h-10 bg-success-soft border border-success-line text-success-ink rounded-full mx-auto flex items-center justify-center">
               <CheckCircle2 size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide block">Payment Link Ready</span>
-              <h3 className="text-sm font-semibold text-slate-900 mt-0.5">{createdLinkModalData.package_name}</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Guest: <strong className="text-slate-800">{createdLinkModalData.customer_name}</strong></p>
-              <p className="text-lg font-bold text-emerald-700 mt-1">₹{(createdLinkModalData.net_amount || 0).toLocaleString('en-IN')}</p>
+              <span className="text-xs font-semibold text-success-ink uppercase tracking-wide block">Payment Link Ready</span>
+              <h3 className="text-sm font-semibold text-content mt-0.5">{createdLinkModalData.package_name}</h3>
+              <p className="text-sm text-secondary mt-0.5">Guest: <strong className="text-content">{createdLinkModalData.customer_name}</strong></p>
+              <p className="text-lg font-bold text-success-ink mt-1">₹{(createdLinkModalData.net_amount || 0).toLocaleString('en-IN')}</p>
             </div>
 
-            <div className="p-2 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-1.5">
-              <input type="text" readOnly value={createdLinkModalData.portalUrl} className="bg-transparent text-[11px] font-mono font-medium text-slate-700 flex-1 outline-none truncate" />
+            <div className="p-2 bg-canvas border border-line rounded-lg flex items-center gap-1.5">
+              <input type="text" readOnly value={createdLinkModalData.portalUrl} className="bg-transparent text-xs font-mono font-medium text-content flex-1 outline-none truncate" />
               <button 
                 onClick={() => handleCopy('createdLink', createdLinkModalData.portalUrl)}
                 className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
-                  copiedId === 'createdLink' ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  copiedId === 'createdLink' ? 'bg-success-strong text-white' : 'bg-brand text-white hover:bg-brand'
                 }`}
               >
                 {copiedId === 'createdLink' ? 'Copied' : 'Copy'}
@@ -783,14 +783,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={() => shareOnWhatsApp(createdLinkModalData.package_name, createdLinkModalData.net_amount, createdLinkModalData.portalUrl, createdLinkModalData.customer_phone)}
-                className="py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                className="py-2 bg-success-strong hover:bg-success-strong text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <MessageSquare size={13} />
                 <span>WhatsApp</span>
               </button>
               <button
                 onClick={() => shareViaEmail(createdLinkModalData.package_name, createdLinkModalData.net_amount, createdLinkModalData.portalUrl, createdLinkModalData.customer_email)}
-                className="py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                className="py-2 bg-inverse hover:bg-inverse text-white font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Mail size={13} />
                 <span>Email</span>
@@ -802,7 +802,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                 setCreatedLinkModalData(null);
                 setActiveTab('Links');
               }}
-              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-lg transition-colors cursor-pointer"
+              className="w-full py-2 bg-subtle hover:bg-hover text-content font-medium text-sm rounded-lg transition-colors cursor-pointer"
             >
               Done & View Links
             </button>
@@ -818,22 +818,22 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
            return (
              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-canvas p-4 rounded-xl border border-line">
                    <div>
-                      <h3 className="text-base font-black text-slate-900 uppercase tracking-tight">
+                      <h3 className="text-base font-semibold text-content uppercase tracking-tight">
                         {showPaidLinks ? 'All Payment Links' : 'Active Pending Payment Links'}
                       </h3>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-sm text-secondary">
                         {pendingLinks.length} pending payment link(s) waiting for client clearance.
                       </p>
                    </div>
                    <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setShowPaidLinks(!showPaidLinks)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                           showPaidLinks 
-                            ? 'bg-slate-900 text-white' 
-                            : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-100'
+                            ? 'bg-inverse text-white' 
+                            : 'bg-surface text-content border border-line hover:bg-subtle'
                         }`}
                       >
                         {showPaidLinks ? '✓ Showing Paid Links' : '👁️ Show Paid Links'}
@@ -841,7 +841,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                       {!isFullPage && (
                         <button 
                           onClick={() => setShowCreateChoiceModal(true)} 
-                          className="px-5 py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase shadow-md hover:bg-indigo-700"
+                          className="px-5 py-2 bg-brand text-white rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-brand"
                         >
                           + New Link
                         </button>
@@ -851,16 +851,16 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
                 <div className="space-y-4">
                    {visibleLinks.length === 0 ? (
-                     <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-3">
-                        <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-full mx-auto flex items-center justify-center text-xl">
+                     <div className="p-12 text-center bg-surface rounded-xl border border-line space-y-3">
+                        <div className="w-12 h-12 bg-subtle text-muted rounded-full mx-auto flex items-center justify-center text-xl">
                           💳
                         </div>
-                        <p className="text-sm font-bold text-slate-500">
+                        <p className="text-sm font-bold text-secondary">
                           {showPaidLinks ? 'No payment links created yet.' : 'All payment links are cleared! No pending payment links.'}
                         </p>
                         <button 
                           onClick={() => setShowCreateChoiceModal(true)} 
-                          className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-xs uppercase shadow-md hover:bg-indigo-700"
+                          className="px-6 py-2.5 bg-brand text-white rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-brand"
                         >
                           + Create Payment Link
                         </button>
@@ -872,28 +872,28 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                        const displayTripId = matchingLead?.tripId || link.lead_id || 'N/A';
 
                        return (
-                         <div key={link.id} className="p-6 bg-white rounded-2xl border border-slate-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 hover:shadow-lg transition-all">
+                         <div key={link.id} className="p-6 bg-surface rounded-xl border border-line flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 hover:shadow-sm transition-all">
                             <div className="space-y-2 flex-1">
                                <div className="flex flex-wrap items-center gap-2">
-                                 <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-[10px] font-black uppercase tracking-wider border border-indigo-100">
+                                 <span className="px-3 py-1 bg-brand-soft text-brand-ink rounded-lg text-xs font-semibold uppercase tracking-wider border border-brand-line">
                                    Trip ID: {displayTripId}
                                  </span>
-                                 <span className="text-xs font-mono font-bold text-slate-500">Key: {link.pay_key}</span>
-                                 <span className={`px-3 py-0.5 rounded-full text-[9px] font-black uppercase ${link.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                 <span className="text-sm font-mono font-bold text-secondary">Key: {link.pay_key}</span>
+                                 <span className={`px-3 py-0.5 rounded-full text-xs font-semibold uppercase ${link.status === 'Paid' ? 'bg-success-soft text-success-ink' : 'bg-warning-soft text-warning-ink'}`}>
                                    {link.status}
                                  </span>
                                </div>
 
-                               <h4 className="text-lg font-black text-slate-900 tracking-tight">{link.package_name}</h4>
+                               <h4 className="text-lg font-semibold text-content tracking-tight">{link.package_name}</h4>
 
-                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 font-medium">
-                                 <span>👤 Customer: <strong className="text-slate-800 font-bold">{link.customer_name}</strong></span>
-                                 {link.customer_phone && <span>📞 Phone: <strong className="text-slate-800 font-bold">{link.customer_phone}</strong></span>}
-                                 {link.customer_email && <span>✉️ Email: <strong className="text-slate-800 font-bold">{link.customer_email}</strong></span>}
+                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-secondary font-medium">
+                                 <span>👤 Customer: <strong className="text-content font-bold">{link.customer_name}</strong></span>
+                                 {link.customer_phone && <span>📞 Phone: <strong className="text-content font-bold">{link.customer_phone}</strong></span>}
+                                 {link.customer_email && <span>✉️ Email: <strong className="text-content font-bold">{link.customer_email}</strong></span>}
                                </div>
 
                                {(link.destination || link.travel_date || link.duration) && (
-                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 pt-1 border-t border-slate-100">
+                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-secondary pt-1 border-t border-line">
                                    {link.destination && <span>📍 Destination: <strong>{link.destination}</strong></span>}
                                    {link.travel_date && <span>📅 Date of Travel: <strong>{link.travel_date}</strong></span>}
                                    {link.duration && <span>⏱️ Duration: <strong>{link.duration}</strong></span>}
@@ -901,30 +901,30 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                )}
                             </div>
 
-                            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100">
+                            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-line">
                                <div className="text-left lg:text-right">
-                                  <span className="text-[9px] font-black text-slate-400 uppercase block">Net Amount</span>
-                                  <span className="text-2xl font-black text-emerald-600">₹{(link.net_amount || 0).toLocaleString('en-IN')}</span>
+                                  <span className="text-xs font-semibold text-muted uppercase block">Net Amount</span>
+                                  <span className="text-2xl font-semibold text-success-ink">₹{(link.net_amount || 0).toLocaleString('en-IN')}</span>
                                </div>
 
                                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                   <button 
                                     onClick={() => handleCopy(link.id, portalUrl)}
-                                    className={`px-3.5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-colors ${
-                                      copiedId === link.id ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                                    className={`px-3.5 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-colors ${
+                                      copiedId === link.id ? 'bg-success-soft text-success-ink border border-success-line' : 'bg-brand-soft text-brand-ink hover:bg-brand-soft'
                                     }`}
                                   >
                                     {copiedId === link.id ? '✓ Copied!' : '📋 Copy'}
                                   </button>
                                   <button 
                                     onClick={() => shareOnWhatsApp(link.package_name, link.net_amount, portalUrl, link.customer_phone)}
-                                    className="px-3.5 py-2 bg-emerald-50 text-emerald-700 rounded-xl font-bold text-xs hover:bg-emerald-100 flex items-center gap-1.5"
+                                    className="px-3.5 py-2 bg-success-soft text-success-ink rounded-xl font-bold text-sm hover:bg-success-soft flex items-center gap-1.5"
                                   >
                                     💬 WhatsApp
                                   </button>
                                   <button 
                                     onClick={() => shareViaEmail(link.package_name, link.net_amount, portalUrl, link.customer_email)}
-                                    className="px-3.5 py-2 bg-slate-100 text-slate-700 rounded-xl font-bold text-xs hover:bg-slate-200 flex items-center gap-1.5"
+                                    className="px-3.5 py-2 bg-subtle text-content rounded-xl font-bold text-sm hover:bg-hover flex items-center gap-1.5"
                                   >
                                     ✉️ Email
                                   </button>
@@ -933,12 +933,12 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       setSelectedLink(link);
                                       setActiveTab('Portal');
                                     }}
-                                    className="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold text-xs hover:bg-slate-800 flex items-center gap-1.5"
+                                    className="px-4 py-2 bg-inverse text-white rounded-xl font-bold text-sm hover:bg-inverse flex items-center gap-1.5"
                                   >
                                     💳 Pay Now
                                   </button>
                                   {link.status === 'Paid' ? (
-                                    <span className="px-3.5 py-2 bg-emerald-100 text-emerald-800 rounded-xl font-black text-xs flex items-center gap-1.5 border border-emerald-300">
+                                    <span className="px-3.5 py-2 bg-success-soft text-success-ink rounded-xl font-semibold text-sm flex items-center gap-1.5 border border-success-line">
                                       ✓ Paid Confirmed
                                     </span>
                                   ) : (
@@ -949,7 +949,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                         setConfirmComment('');
                                         setConfirmPaymentModal({ open: true, link });
                                       }}
-                                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                                      className="px-3.5 py-2 bg-success-strong hover:bg-success-strong text-white rounded-xl font-bold text-sm flex items-center gap-1.5 shadow-xs"
                                     >
                                       ✓ Confirm EMI Received
                                     </button>
@@ -969,17 +969,17 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
          {activeTab === 'Installments' && (
            <div className="space-y-6">
               {/* Customer & Trip Search Toolbar */}
-              <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4">
+              <div className="p-6 bg-inverse text-white rounded-xl space-y-4">
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                       <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-1">SEARCH CUSTOMER & TRIP ID</span>
+                       <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">SEARCH CUSTOMER & TRIP ID</span>
                        <h4 className="text-base font-bold text-white">Find Existing EMI or Create New Schedule</h4>
                     </div>
                     <div className="w-full md:w-80">
                        <select 
                          value={selectedTripId} 
                          onChange={e => handleSelectTripId(e.target.value)}
-                         className="w-full bg-slate-800 text-white border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold outline-none"
+                         className="w-full bg-inverse text-white border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none"
                        >
                           <option value="">-- Select Trip ID / Customer --</option>
                           {allLeads.map(l => (
@@ -1005,37 +1005,37 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                           if (found) handleSelectTripId(found.tripId);
                         }
                       }}
-                      className="w-full bg-slate-800/80 text-white border border-slate-700 rounded-xl px-4 py-2.5 text-xs font-bold placeholder-slate-400 outline-none focus:border-indigo-500"
+                      className="w-full bg-inverse/80 text-white border border-line rounded-xl px-4 py-2.5 text-sm font-bold placeholder-muted outline-none focus:border-brand-line"
                     />
                  </div>
               </div>
 
               {/* Lead Selected Summary / Status Banner */}
               {targetLead ? (
-                <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="p-5 bg-brand-soft border border-brand-line rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                    <div>
-                      <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block">SELECTED TRIP</span>
-                      <h4 className="text-base font-black text-slate-900">{targetLead.tripId} — {targetLead.name}</h4>
-                      <p className="text-xs text-slate-600 mt-0.5">
+                      <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block">SELECTED TRIP</span>
+                      <h4 className="text-base font-semibold text-content">{targetLead.tripId} — {targetLead.name}</h4>
+                      <p className="text-sm text-secondary mt-0.5">
                         Destination: <strong>{targetLead.destination || 'N/A'}</strong> | Mobile: <strong>{targetLead.phone || 'N/A'}</strong> | Email: <strong>{targetLead.email || 'N/A'}</strong>
                       </p>
                    </div>
                    <div className="flex items-center gap-2">
-                       <span className={`px-3 py-1 text-xs font-bold rounded-lg border ${installments.length > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                       <span className={`px-3 py-1 text-sm font-bold rounded-lg border ${installments.length > 0 ? 'bg-success-soft text-success-ink border-success-line' : 'bg-warning-soft text-warning-ink border-warning-line'}`}>
                          {installments.length > 0 ? `${installments.length} EMI Installments` : 'No EMI Schedule Yet'}
                        </span>
                     </div>
                 </div>
               ) : (
-                <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-bold">
+                <div className="p-6 bg-warning-soft border border-warning-line rounded-xl text-warning-ink text-sm font-bold">
                   ⚠️ Search or select a customer name / trip ID above to view existing EMI or create a new schedule.
                 </div>
               )}
 
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-100 pb-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-line pb-4">
                  <div>
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Installment Planner Schedule</h3>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Configure installment milestones for {targetLead?.name || lead?.name || 'Selected Customer'}.</p>
+                    <h3 className="text-xl font-semibold text-content tracking-tight">Installment Planner Schedule</h3>
+                    <p className="text-sm text-secondary font-medium mt-1">Configure installment milestones for {targetLead?.name || lead?.name || 'Selected Customer'}.</p>
                  </div>
 
                  {/* Percentage Badge */}
@@ -1044,13 +1044,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                    const isBalanced = totalAllocated === totalPackagePrice;
                    return (
                      <div className="flex items-center gap-3">
-                        <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider ${isBalanced ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                        <div className={`px-4 py-2 rounded-xl text-sm font-semibold uppercase tracking-wider ${isBalanced ? 'bg-success-soft text-success-ink border border-success-line' : 'bg-warning-soft text-warning-ink border border-warning-line'}`}>
                            Allocated: ₹{totalAllocated.toLocaleString()} / ₹{totalPackagePrice.toLocaleString()} {isBalanced ? '✓ Balanced' : `(Diff: ₹${Math.abs(totalPackagePrice - totalAllocated)})`}
                         </div>
                         <button 
                           onClick={handleSaveInstallments}
                           disabled={isSavingInstallments}
-                          className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 shadow-md transition-all disabled:opacity-50"
+                          className="px-6 py-2.5 bg-success-strong text-white rounded-xl text-sm font-semibold uppercase tracking-widest hover:bg-success-strong shadow-sm transition-all disabled:opacity-50"
                         >
                            {isSavingInstallments ? 'Saving...' : '💾 Save Schedule'}
                         </button>
@@ -1060,21 +1060,21 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
               </div>
 
               {/* Total Package Price Input & Auto-split */}
-              <div className="p-6 bg-slate-50 border border-slate-200 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="p-6 bg-canvas border border-line rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Total Package Price (INR)</label>
+                    <label className="block text-sm font-semibold text-muted uppercase tracking-widest mb-1">Total Package Price (INR)</label>
                     <input 
                       type="number" 
                       value={totalPackagePrice} 
                       onChange={e => setTotalPackagePrice(Number(e.target.value))}
-                      className="bg-white border border-slate-300 rounded-xl px-4 py-2 text-lg font-black text-slate-800 outline-none w-48"
+                      className="bg-surface border border-line rounded-xl px-4 py-2 text-lg font-semibold text-content outline-none w-48"
                     />
                  </div>
                  <div className="flex items-center gap-2">
                     <select
                       value={autoSplitCount}
                       onChange={e => setAutoSplitCount(Number(e.target.value))}
-                      className="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-none"
+                      className="bg-surface border border-line rounded-xl px-3 py-2 text-sm font-bold text-content outline-none"
                     >
                       {[2,3,4,5,6,7,8,9,10].map(n => (
                         <option key={n} value={n}>{n} Installments</option>
@@ -1100,14 +1100,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         }
                         setInstallments(newInstallments);
                       }}
-                      className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100"
+                      className="px-4 py-2 bg-brand-soft text-brand-ink rounded-xl text-sm font-bold hover:bg-brand-soft"
                     >
                        ⚡ Auto-Split Equal Installments
                     </button>
                     <button
                       type="button"
                       onClick={() => setInstallments([...installments, { title: 'New Installment', amount: 0, due_date: new Date().toISOString().split('T')[0], payment_condition: '', payment_status: 'Pending' }])}
-                      className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800"
+                      className="px-4 py-2 bg-inverse text-white rounded-xl text-sm font-bold hover:bg-inverse"
                     >
                       + Add Row
                     </button>
@@ -1121,7 +1121,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                    const instPortalUrl = `${window.location.origin}/#payment?pay_id=${instPayKey}`;
 
                    return (
-                     <div key={idx} className="p-6 bg-white rounded-3xl border border-slate-200 space-y-4 hover:border-slate-300 transition-all shadow-xs">
+                     <div key={idx} className="p-6 bg-surface rounded-xl border border-line space-y-4 hover:border-line transition-all shadow-xs">
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                            <div className="flex-1 space-y-1 w-full">
                               <input 
@@ -1133,7 +1133,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   setInstallments(updated);
                                 }}
                                 disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
-                                className="font-bold text-slate-900 text-sm bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full disabled:opacity-75"
+                                className="font-bold text-content text-sm bg-transparent border-b border-transparent hover:border-line focus:border-brand-line outline-none w-full disabled:opacity-75"
                               />
                               <input 
                                 type="text" 
@@ -1145,13 +1145,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   setInstallments(updated);
                                 }}
                                 disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
-                                className="text-xs text-slate-500 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none w-full disabled:opacity-75"
+                                className="text-sm text-secondary bg-transparent border-b border-transparent hover:border-line focus:border-brand-line outline-none w-full disabled:opacity-75"
                               />
                            </div>
 
                            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                               <div>
-                                 <span className="text-[9px] font-black text-slate-400 uppercase block">Amount (₹)</span>
+                                 <span className="text-xs font-semibold text-muted uppercase block">Amount (₹)</span>
                                  <input 
                                    type="number" 
                                    value={inst.amount}
@@ -1161,11 +1161,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                      setInstallments(updated);
                                    }}
                                    disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
-                                   className="w-28 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-black text-slate-800 outline-none disabled:opacity-75"
+                                   className="w-28 bg-canvas border border-line rounded-xl px-3 py-1.5 text-sm font-semibold text-content outline-none disabled:opacity-75"
                                  />
                               </div>
                               <div>
-                                 <span className="text-[9px] font-black text-slate-400 uppercase block">Due Date</span>
+                                 <span className="text-xs font-semibold text-muted uppercase block">Due Date</span>
                                  <input 
                                    type="date" 
                                    value={inst.due_date}
@@ -1175,11 +1175,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                      setInstallments(updated);
                                    }}
                                    disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
-                                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none disabled:opacity-75"
+                                   className="bg-canvas border border-line rounded-xl px-3 py-1.5 text-sm font-bold text-content outline-none disabled:opacity-75"
                                  />
                               </div>
                               <div className="pt-3">
-                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${inst.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${inst.payment_status === 'Paid' ? 'bg-success-soft text-success-ink' : 'bg-warning-soft text-warning-ink'}`}>
                                     {inst.payment_status}
                                  </span>
                               </div>
@@ -1188,18 +1188,18 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
                         {/* Installment Payment Comment Display Box */}
                         {(inst.comments || inst.notes) && (
-                          <div className="mt-3 px-3.5 py-2.5 bg-indigo-50/90 border border-indigo-200/80 rounded-xl flex items-start justify-between gap-2 shadow-2xs">
+                          <div className="mt-3 px-3.5 py-2.5 bg-brand-soft/90 border border-brand-line/80 rounded-xl flex items-start justify-between gap-2 shadow-2xs">
                             <div className="flex items-start gap-2 text-xs">
-                              <MessageSquare className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
+                              <MessageSquare className="w-4 h-4 text-brand-ink mt-0.5 shrink-0" />
                               <div>
-                                <span className="font-bold text-[10px] text-indigo-700 uppercase tracking-wider block">Payment Comment / Note</span>
-                                <p className="font-semibold text-slate-800 text-xs mt-0.5 whitespace-pre-wrap">{inst.comments || inst.notes}</p>
+                                <span className="font-bold text-xs text-brand-ink uppercase tracking-wider block">Payment Comment / Note</span>
+                                <p className="font-semibold text-content text-sm mt-0.5 whitespace-pre-wrap">{inst.comments || inst.notes}</p>
                               </div>
                             </div>
                             <button
                               type="button"
                               onClick={() => setInstallmentCommentModal({ open: true, instIdx: idx, comment: inst.comments || inst.notes || '' })}
-                              className="px-2.5 py-1 bg-white hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold shrink-0 transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
+                              className="px-2.5 py-1 bg-surface hover:bg-brand-soft text-brand-ink border border-brand-line rounded-lg text-xs font-bold shrink-0 transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
                               title="Edit comment"
                             >
                               ✏️ Edit
@@ -1208,9 +1208,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         )}
 
                         {/* EMI Milestone Action Toolbar */}
-                        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                           <div className="text-[11px] font-mono text-slate-500 truncate max-w-xs">
-                             {inst.pay_key ? <>Pay Key: <strong className="text-slate-800">{inst.pay_key}</strong></> : <span className="text-amber-600 font-bold">⚠️ Unsaved Link — Click 'Create Link' to generate</span>}
+                        <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-3">
+                           <div className="text-xs font-mono text-secondary truncate max-w-xs">
+                             {inst.pay_key ? <>Pay Key: <strong className="text-content">{inst.pay_key}</strong></> : <span className="text-warning-ink font-bold">⚠️ Unsaved Link — Click 'Create Link' to generate</span>}
                            </div>
 
                             <div className="flex flex-wrap items-center gap-2">
@@ -1218,7 +1218,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setInstallmentCommentModal({ open: true, instIdx: idx, comment: inst.comments || inst.notes || '' })}
-                                className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/70 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 bg-brand-soft text-brand-ink hover:bg-brand-soft border border-brand-line/70 rounded-lg text-sm font-bold flex items-center gap-1 transition-colors cursor-pointer"
                                 title="Add or edit comments for this installment"
                               >
                                 💬 Comment
@@ -1229,7 +1229,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   type="button"
                                   onClick={() => handleCreateInstallmentLink(idx)}
                                   disabled={isSavingInstallments}
-                                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                                  className="px-4 py-1.5 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-semibold uppercase tracking-wider shadow-sm flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                                 >
                                   ⚡ Create Link
                                 </button>
@@ -1238,8 +1238,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => handleCopy(inst.id || idx.toString(), instPortalUrl)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer ${
-                                      copiedId === (inst.id || idx.toString()) ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                    className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1 cursor-pointer ${
+                                      copiedId === (inst.id || idx.toString()) ? 'bg-success-soft text-success-ink border border-success-line' : 'bg-brand-soft text-brand-ink hover:bg-brand-soft'
                                     }`}
                                   >
                                     {copiedId === (inst.id || idx.toString()) ? '✓ Copied!' : '📋 Copy Link'}
@@ -1247,14 +1247,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => shareOnWhatsApp(`${targetLead?.name || 'Customer'} - ${inst.title}`, inst.amount, instPortalUrl, targetLead?.phone || custPhone)}
-                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold hover:bg-emerald-100 flex items-center gap-1 cursor-pointer"
+                                    className="px-3 py-1.5 bg-success-soft text-success-ink rounded-lg text-sm font-bold hover:bg-success-soft flex items-center gap-1 cursor-pointer"
                                   >
                                     💬 WhatsApp
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => shareViaEmail(`${targetLead?.name || 'Customer'} - ${inst.title}`, inst.amount, instPortalUrl, targetLead?.email || custEmail)}
-                                    className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-200 flex items-center gap-1 cursor-pointer"
+                                    className="px-3 py-1.5 bg-subtle text-content rounded-lg text-sm font-bold hover:bg-hover flex items-center gap-1 cursor-pointer"
                                   >
                                     ✉️ Email
                                   </button>
@@ -1264,7 +1264,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       window.location.hash = `payment?pay_id=${inst.pay_key}`;
                                       window.open(`${window.location.origin}/#payment?pay_id=${inst.pay_key}`, '_blank');
                                     }}
-                                    className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 flex items-center gap-1 cursor-pointer"
+                                    className="px-3 py-1.5 bg-inverse text-white rounded-lg text-sm font-bold hover:bg-inverse flex items-center gap-1 cursor-pointer"
                                   >
                                     💳 Pay Now
                                   </button>
@@ -1287,7 +1287,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                           }
                                         });
                                       }}
-                                      className="px-3.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
+                                      className="px-3.5 py-1.5 bg-success-soft hover:bg-success-soft text-success-ink border border-success-line rounded-lg text-sm font-semibold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
                                     >
                                       ✓ Paid / Update
                                     </button>
@@ -1310,7 +1310,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                           }
                                         });
                                       }}
-                                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-sm cursor-pointer"
+                                      className="px-3.5 py-1.5 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-semibold uppercase flex items-center gap-1 shadow-sm cursor-pointer"
                                     >
                                       ✓ Confirm EMI Received
                                     </button>
@@ -1341,7 +1341,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         }
                       ]);
                     }}
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-700 shadow-md flex items-center gap-2"
+                    className="px-5 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold uppercase tracking-wider hover:bg-brand shadow-sm flex items-center gap-2"
                   >
                     + Add Installment Row
                   </button>
@@ -1353,7 +1353,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                           setInstallments(installments.slice(0, -1));
                         }
                       }}
-                      className="px-4 py-2.5 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold hover:bg-rose-100 border border-rose-200 flex items-center gap-1"
+                      className="px-4 py-2.5 bg-danger-soft text-danger-ink rounded-xl text-sm font-bold hover:bg-danger-soft border border-danger-line flex items-center gap-1"
                     >
                       ✖ Remove Last Row
                     </button>
@@ -1362,10 +1362,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
                {/* Empty State when no installments */}
                {installments.length === 0 && (
-                 <div className="p-10 text-center bg-white rounded-3xl border border-dashed border-slate-300 space-y-3">
-                    <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full mx-auto flex items-center justify-center text-2xl">🗓️</div>
-                    <h4 className="text-base font-black text-slate-700">No EMI Schedule Created</h4>
-                    <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto">This lead does not have any installment milestones yet. Use the Auto-Split above or click "+ Add Installment Row" to create a new payment schedule.</p>
+                 <div className="p-10 text-center bg-surface rounded-xl border border-dashed border-line space-y-3">
+                    <div className="w-14 h-14 bg-subtle text-muted rounded-full mx-auto flex items-center justify-center text-2xl">🗓️</div>
+                    <h4 className="text-base font-semibold text-content">No EMI Schedule Created</h4>
+                    <p className="text-sm text-secondary font-medium max-w-sm mx-auto">This lead does not have any installment milestones yet. Use the Auto-Split above or click "+ Add Installment Row" to create a new payment schedule.</p>
                  </div>
                )}
             </div>
@@ -1378,24 +1378,24 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
             return (
               <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4 shadow-xl border border-indigo-900/40">
+                <div className="p-6 bg-inverse text-white rounded-xl space-y-4 shadow-sm border border-brand-line/40">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-black text-xs">✅ CONFIRMATION DESK</span>
-                        <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Payment Conference & EMI Reconciliation</span>
+                        <span className="p-1.5 rounded-lg bg-success-strong/20 text-success-ink font-semibold text-sm">✅ CONFIRMATION DESK</span>
+                        <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Payment Conference & EMI Reconciliation</span>
                       </div>
-                      <h3 className="text-2xl font-black text-white uppercase tracking-tight">Payment Confirmation Desk</h3>
-                      <p className="text-xs text-slate-300">Reconcile client payment proofs, confirm EMI installments received from links, and auto-update lead balances.</p>
+                      <h3 className="text-2xl font-semibold text-white uppercase tracking-tight">Payment Confirmation Desk</h3>
+                      <p className="text-sm text-slate-300">Reconcile client payment proofs, confirm EMI installments received from links, and auto-update lead balances.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="p-3.5 bg-white/10 rounded-2xl text-center min-w-[100px] backdrop-blur-md">
-                        <span className="text-[9px] font-black text-amber-300 uppercase block">Pending</span>
-                        <span className="text-2xl font-black text-amber-400">{pendingSubmissions.length}</span>
+                      <div className="p-3.5 bg-white/10 rounded-xl text-center min-w-[100px] backdrop-blur-md">
+                        <span className="text-xs font-semibold text-warning-ink uppercase block">Pending</span>
+                        <span className="text-2xl font-semibold text-warning-ink">{pendingSubmissions.length}</span>
                       </div>
-                      <div className="p-3.5 bg-white/10 rounded-2xl text-center min-w-[100px] backdrop-blur-md">
-                        <span className="text-[9px] font-black text-emerald-300 uppercase block">Confirmed</span>
-                        <span className="text-2xl font-black text-emerald-400">{approvedSubmissions.length}</span>
+                      <div className="p-3.5 bg-white/10 rounded-xl text-center min-w-[100px] backdrop-blur-md">
+                        <span className="text-xs font-semibold text-success-ink uppercase block">Confirmed</span>
+                        <span className="text-2xl font-semibold text-success-ink">{approvedSubmissions.length}</span>
                       </div>
                     </div>
                   </div>
@@ -1404,15 +1404,15 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                 {/* Submissions & Payment Link Reconciliations */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">Incoming Payment Receipts & Proofs</h4>
+                    <h4 className="text-sm font-semibold text-content uppercase tracking-wider">Incoming Payment Receipts & Proofs</h4>
                     {submissions.length > 0 && (
                       <button
                         type="button"
                         onClick={handleClearSubmissions}
-                        className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-xs ${
+                        className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-sm ${
                           confirmClearActive 
-                            ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm' 
-                            : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                            ? 'bg-warning-strong hover:bg-warning-strong text-white border-warning-line shadow-sm' 
+                            : 'bg-danger-soft hover:bg-danger-soft text-danger-ink border-danger-line'
                         }`}
                       >
                         {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
@@ -1420,49 +1420,49 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     )}
                   </div>
                   {submissions.length === 0 ? (
-                    <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 space-y-2">
-                      <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full mx-auto flex items-center justify-center text-xl font-black">✓</div>
-                      <p className="text-sm font-bold text-slate-800">All Received Payments Reconciled</p>
-                      <p className="text-xs text-slate-500">No unconfirmed payment receipts pending verification.</p>
+                    <div className="p-12 text-center bg-surface rounded-xl border border-line space-y-2">
+                      <div className="w-12 h-12 bg-success-soft text-success-ink rounded-full mx-auto flex items-center justify-center text-xl font-semibold">✓</div>
+                      <p className="text-sm font-bold text-content">All Received Payments Reconciled</p>
+                      <p className="text-sm text-secondary">No unconfirmed payment receipts pending verification.</p>
                     </div>
                   ) : (
                     submissions.map((sub) => (
-                      <div key={sub.id} className="p-6 bg-white rounded-3xl border border-slate-200 shadow-xs space-y-4 hover:border-indigo-300 transition-all">
+                      <div key={sub.id} className="p-6 bg-surface rounded-xl border border-line shadow-xs space-y-4 hover:border-brand-line transition-all">
                         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              <span className="px-2.5 py-0.5 rounded-lg text-sm font-mono font-bold bg-brand-soft text-brand-ink border border-brand-line">
                                 UTR: {sub.utr_number || 'NO-UTR'}
                               </span>
-                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                sub.verification_status === 'Approved' ? 'bg-emerald-100 text-emerald-700' :
-                                sub.verification_status === 'Rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${
+                                sub.verification_status === 'Approved' ? 'bg-success-soft text-success-ink' :
+                                sub.verification_status === 'Rejected' ? 'bg-danger-soft text-danger-ink' : 'bg-warning-soft text-warning-ink'
                               }`}>
                                 {sub.verification_status === 'Approved' ? '✓ EMI Confirmed' : sub.verification_status}
                               </span>
-                              <span className="text-xs text-slate-400 font-bold">• Mode: {sub.payment_mode || 'UPI'}</span>
+                              <span className="text-sm text-muted font-bold">• Mode: {sub.payment_mode || 'UPI'}</span>
                             </div>
-                            <h4 className="text-lg font-black text-slate-900">{sub.package_name}</h4>
-                            <p className="text-xs text-slate-600">
-                              Customer: <strong className="text-slate-800">{sub.customer_name}</strong> ({sub.mobile})
+                            <h4 className="text-lg font-semibold text-content">{sub.package_name}</h4>
+                            <p className="text-sm text-secondary">
+                              Customer: <strong className="text-content">{sub.customer_name}</strong> ({sub.mobile})
                             </p>
 
                             {/* Payment Comment Box in Confirmation Desk */}
                             {(sub.comments || sub.notes) && (
-                              <div className="mt-2 px-3 py-2 bg-indigo-50/80 border border-indigo-100 rounded-xl flex items-start gap-2 text-xs">
-                                <MessageSquare className="w-3.5 h-3.5 text-indigo-600 mt-0.5 shrink-0" />
+                              <div className="mt-2 px-3 py-2 bg-brand-soft/80 border border-brand-line rounded-xl flex items-start gap-2 text-sm">
+                                <MessageSquare className="w-3.5 h-3.5 text-brand-ink mt-0.5 shrink-0" />
                                 <div>
-                                  <span className="text-[9px] font-black text-indigo-600 uppercase block tracking-wider">Payment Confirmation Comment / Note</span>
-                                  <p className="font-semibold text-slate-800 text-xs mt-0.5 whitespace-pre-wrap">{sub.comments || sub.notes}</p>
+                                  <span className="text-xs font-semibold text-brand-ink uppercase block tracking-wider">Payment Confirmation Comment / Note</span>
+                                  <p className="font-semibold text-content text-sm mt-0.5 whitespace-pre-wrap">{sub.comments || sub.notes}</p>
                                 </div>
                               </div>
                             )}
                           </div>
 
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0 border-slate-100">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0 border-line">
                             <div className="text-left lg:text-right">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Amount Paid</span>
-                              <span className="text-2xl font-black text-emerald-600">₹{(sub.amount_paid || 0).toLocaleString('en-IN')}</span>
+                              <span className="text-xs font-semibold text-muted uppercase block">Amount Paid</span>
+                              <span className="text-2xl font-semibold text-success-ink">₹{(sub.amount_paid || 0).toLocaleString('en-IN')}</span>
                             </div>
 
                             <div className="flex flex-wrap gap-2">
@@ -1485,7 +1485,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       }
                                     });
                                   }}
-                                  className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                                  className="px-4 py-2.5 bg-success-strong hover:bg-success-strong text-white font-semibold text-sm rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
                                 >
                                   ✓ Confirm EMI Received
                                 </button>
@@ -1494,13 +1494,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => handleVerifySubmission(sub.id, 'Rejected')}
-                                  className="px-3.5 py-2.5 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs rounded-xl cursor-pointer"
+                                  className="px-3.5 py-2.5 bg-danger-soft text-danger-ink hover:bg-danger-soft font-bold text-sm rounded-xl cursor-pointer"
                                 >
                                   Reject
                                 </button>
                               )}
                               {sub.verification_status === 'Approved' && (
-                                <span className="px-4 py-2 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl border border-emerald-200 flex items-center gap-1">
+                                <span className="px-4 py-2 bg-success-soft text-success-ink font-bold text-sm rounded-xl border border-success-line flex items-center gap-1">
                                   ✓ EMI Payment Confirmed & Verified
                                 </span>
                               )}
@@ -1519,15 +1519,15 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
          {activeTab === 'Submissions' && (
            <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Payment Verification Submissions</h3>
+                <h3 className="text-lg font-semibold text-content uppercase tracking-tight">Payment Verification Submissions</h3>
                 {submissions.length > 0 && (
                   <button
                     type="button"
                     onClick={handleClearSubmissions}
-                    className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-xs ${
+                    className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-sm ${
                       confirmClearActive 
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm' 
-                        : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200'
+                        ? 'bg-warning-strong hover:bg-warning-strong text-white border-warning-line shadow-sm' 
+                        : 'bg-danger-soft hover:bg-danger-soft text-danger-ink border-danger-line'
                     }`}
                   >
                     {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
@@ -1536,32 +1536,32 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
               </div>
               <div className="space-y-4">
                  {submissions.length === 0 ? (
-                   <div className="p-12 text-center bg-white rounded-3xl border border-slate-200">
-                     <p className="text-sm font-bold text-slate-400">No payment submissions received yet.</p>
+                   <div className="p-12 text-center bg-surface rounded-xl border border-line">
+                     <p className="text-sm font-bold text-muted">No payment submissions received yet.</p>
                    </div>
                  ) : (
                    submissions.map((sub) => (
-                     <div key={sub.id} className="p-6 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                     <div key={sub.id} className="p-6 bg-surface rounded-xl border border-line flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
                            <div className="flex items-center gap-3 mb-1">
-                              <span className="text-xs font-bold text-slate-600">UTR: <strong className="font-mono text-indigo-600">{sub.utr_number}</strong></span>
-                              <span className={`px-3 py-0.5 rounded-full text-[9px] font-black uppercase ${sub.verification_status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : sub.verification_status === 'Rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                              <span className="text-sm font-bold text-secondary">UTR: <strong className="font-mono text-brand-ink">{sub.utr_number}</strong></span>
+                              <span className={`px-3 py-0.5 rounded-full text-xs font-semibold uppercase ${sub.verification_status === 'Approved' ? 'bg-success-soft text-success-ink' : sub.verification_status === 'Rejected' ? 'bg-danger-soft text-danger-ink' : 'bg-warning-soft text-warning-ink'}`}>
                                 {sub.verification_status}
                               </span>
                            </div>
-                           <h4 className="text-base font-bold text-slate-800">{sub.package_name}</h4>
-                           <p className="text-xs text-slate-500 font-medium mt-1">Paid by: <strong>{sub.customer_name}</strong> ({sub.mobile}) via {sub.payment_mode}</p>
+                           <h4 className="text-base font-bold text-content">{sub.package_name}</h4>
+                           <p className="text-sm text-secondary font-medium mt-1">Paid by: <strong>{sub.customer_name}</strong> ({sub.mobile}) via {sub.payment_mode}</p>
                         </div>
 
                         <div className="flex items-center gap-6">
                            <div className="text-right">
-                              <span className="text-[9px] font-black text-slate-400 uppercase block">Amount Paid</span>
-                              <span className="text-xl font-black text-emerald-600">₹{(sub.amount_paid || 0).toLocaleString()}</span>
+                              <span className="text-xs font-semibold text-muted uppercase block">Amount Paid</span>
+                              <span className="text-xl font-semibold text-success-ink">₹{(sub.amount_paid || 0).toLocaleString()}</span>
                            </div>
                            {sub.verification_status === 'Pending Review' && (
                              <div className="flex gap-2">
-                                <button onClick={() => handleVerifySubmission(sub.id, 'Approved')} className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700">Approve</button>
-                                <button onClick={() => handleVerifySubmission(sub.id, 'Rejected')} className="px-4 py-2 bg-rose-100 text-rose-700 rounded-xl font-bold text-xs hover:bg-rose-200">Reject</button>
+                                <button onClick={() => handleVerifySubmission(sub.id, 'Approved')} className="px-4 py-2 bg-success-strong text-white rounded-xl font-bold text-sm hover:bg-success-strong">Approve</button>
+                                <button onClick={() => handleVerifySubmission(sub.id, 'Rejected')} className="px-4 py-2 bg-danger-soft text-danger-ink rounded-xl font-bold text-sm hover:bg-danger-soft">Reject</button>
                              </div>
                            )}
                         </div>
@@ -1574,20 +1574,20 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
          {/* TAB 4: CREATE PAYMENT LINK FORM (Individual Package) */}
          {activeTab === 'CreateLink' && (
-           <form onSubmit={handleCreateLink} className="space-y-6 max-w-3xl bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+           <form onSubmit={handleCreateLink} className="space-y-6 max-w-3xl bg-surface p-8 rounded-xl border border-line shadow-sm">
               <div>
-                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Create Individual Package Payment Link</h3>
-                <p className="text-xs text-slate-500 font-medium mt-1">Fill in travel details to generate a payment link for complete deposit or custom package amount.</p>
+                <h3 className="text-xl font-semibold text-content uppercase tracking-tight">Create Individual Package Payment Link</h3>
+                <p className="text-sm text-secondary font-medium mt-1">Fill in travel details to generate a payment link for complete deposit or custom package amount.</p>
               </div>
               
               <div className="space-y-4">
                  {/* Lead Selector */}
                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Link to Lead / Trip ID (Optional)</label>
+                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Link to Lead / Trip ID (Optional)</label>
                     <select 
                       value={selectedTripId} 
                       onChange={e => handleSelectTripId(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500"
+                      className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line"
                     >
                        <option value="">-- Direct Individual Payment (No Trip Link) --</option>
                        {allLeads.map(l => (
@@ -1598,81 +1598,81 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
                  {/* Package Title */}
                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Package / Tour Title *</label>
-                    <input type="text" required value={packageName} onChange={e => setPackageName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" placeholder="e.g. Bali Luxury Beach Villa & Island Tour" />
+                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Package / Tour Title *</label>
+                    <input type="text" required value={packageName} onChange={e => setPackageName(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. Bali Luxury Beach Villa & Island Tour" />
                  </div>
 
                  {/* Customer Name & Destination */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Customer Name *</label>
-                       <input type="text" required value={custName} onChange={e => setCustName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" placeholder="Full name of customer" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Customer Name *</label>
+                       <input type="text" required value={custName} onChange={e => setCustName(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="Full name of customer" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Destination *</label>
-                       <input type="text" required value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" placeholder="e.g. Bali / Maldives / Kashmir" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Destination *</label>
+                       <input type="text" required value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. Bali / Maldives / Kashmir" />
                     </div>
                  </div>
 
                  {/* Date of Travel & Duration */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Date of Travel *</label>
-                       <input type="date" required value={travelDate} onChange={e => setTravelDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Date of Travel *</label>
+                       <input type="date" required value={travelDate} onChange={e => setTravelDate(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Duration *</label>
-                       <input type="text" required value={durationText} onChange={e => setDurationText(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" placeholder="e.g. 5 Days / 4 Nights" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Duration *</label>
+                       <input type="text" required value={durationText} onChange={e => setDurationText(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. 5 Days / 4 Nights" />
                     </div>
                  </div>
 
                  {/* Adults & Children Pax Counts */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Adults Count *</label>
-                       <input type="number" min="1" required value={adultsCount} onChange={e => setAdultsCount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Adults Count *</label>
+                       <input type="number" min="1" required value={adultsCount} onChange={e => setAdultsCount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Children Count *</label>
-                       <input type="number" min="0" required value={childrenCount} onChange={e => setChildrenCount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Children Count *</label>
+                       <input type="number" min="0" required value={childrenCount} onChange={e => setChildrenCount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
                     </div>
                  </div>
 
                  {/* Optional Contact Fields: Mobile & Gmail */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-canvas rounded-xl border border-line">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                         Customer Mobile <span className="text-[10px] text-slate-400 font-normal lowercase">(optional)</span>
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">
+                         Customer Mobile <span className="text-xs text-muted font-normal lowercase">(optional)</span>
                        </label>
-                       <input type="text" value={custPhone} onChange={e => setCustPhone(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-indigo-500" placeholder="+91 98765 43210" />
+                       <input type="text" value={custPhone} onChange={e => setCustPhone(e.target.value)} className="w-full bg-surface border border-line rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-line" placeholder="+91 98765 43210" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">
-                         Customer Gmail / Email <span className="text-[10px] text-slate-400 font-normal lowercase">(optional)</span>
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">
+                         Customer Gmail / Email <span className="text-xs text-muted font-normal lowercase">(optional)</span>
                        </label>
-                       <input type="email" value={custEmail} onChange={e => setCustEmail(e.target.value)} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-indigo-500" placeholder="customer@gmail.com" />
+                       <input type="email" value={custEmail} onChange={e => setCustEmail(e.target.value)} className="w-full bg-surface border border-line rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-line" placeholder="customer@gmail.com" />
                     </div>
                  </div>
 
                  {/* Base Price & Tax breakdown */}
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Package Price / Base Amount (₹) *</label>
-                       <input type="number" required value={baseAmount} onChange={e => setBaseAmount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Package Price / Base Amount (₹) *</label>
+                       <input type="number" required value={baseAmount} onChange={e => setBaseAmount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">GST Tax Amount (₹)</label>
-                       <input type="number" value={gstAmount} onChange={e => setGstAmount(Number(e.target.value))} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-indigo-500" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">GST Tax Amount (₹)</label>
+                       <input type="number" value={gstAmount} onChange={e => setGstAmount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
                     </div>
                  </div>
 
-                 <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center">
-                    <span className="text-xs font-bold text-indigo-900">Total Net Amount Payable:</span>
-                    <span className="text-2xl font-black text-indigo-600">₹{(baseAmount + gstAmount + feeAmount - discountAmount).toLocaleString('en-IN')}</span>
+                 <div className="p-4 bg-brand-soft rounded-xl border border-brand-line flex justify-between items-center">
+                    <span className="text-sm font-bold text-brand-ink">Total Net Amount Payable:</span>
+                    <span className="text-2xl font-semibold text-brand-ink">₹{(baseAmount + gstAmount + feeAmount - discountAmount).toLocaleString('en-IN')}</span>
                  </div>
               </div>
 
-              <button type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md transition-all">
+              <button type="submit" className="w-full py-4 bg-brand hover:bg-brand text-white rounded-xl font-semibold text-sm uppercase tracking-widest shadow-sm transition-all">
                 🚀 Generate Link & Open Share Options
               </button>
            </form>
@@ -1680,61 +1680,61 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
          {/* TAB 5: GATEWAY & BANK SETTINGS */}
          {activeTab === 'Settings' && (
-           <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Razorpay API Keys & Bank Credentials</h3>
+           <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl bg-surface p-8 rounded-xl border border-line shadow-sm">
+              <h3 className="text-lg font-semibold text-content uppercase tracking-tight">Razorpay API Keys & Bank Credentials</h3>
               
               <div className="space-y-4">
                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Razorpay Key ID</label>
-                    <input type="text" value={settings.key_id} onChange={e => setSettings({...settings, key_id: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold outline-none" />
+                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Razorpay Key ID</label>
+                    <input type="text" value={settings.key_id} onChange={e => setSettings({...settings, key_id: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-mono font-bold outline-none" />
                  </div>
 
                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Razorpay Key Secret</label>
-                    <input type="password" value={settings.key_secret} onChange={e => setSettings({...settings, key_secret: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold outline-none" placeholder="••••••••••••••••" />
+                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Razorpay Key Secret</label>
+                    <input type="password" value={settings.key_secret} onChange={e => setSettings({...settings, key_secret: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-mono font-bold outline-none" placeholder="••••••••••••••••" />
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">UPI ID</label>
-                       <input type="text" value={settings.upi_id} onChange={e => setSettings({...settings, upi_id: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">UPI ID</label>
+                       <input type="text" value={settings.upi_id} onChange={e => setSettings({...settings, upi_id: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">UPI Payee Name</label>
-                       <input type="text" value={settings.upi_payee} onChange={e => setSettings({...settings, upi_payee: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none" />
-                    </div>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Bank Name</label>
-                       <input type="text" value={settings.bank_name} onChange={e => setSettings({...settings, bank_name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none" />
-                    </div>
-                    <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Account Number</label>
-                       <input type="text" value={settings.bank_acc_num} onChange={e => setSettings({...settings, bank_acc_num: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold outline-none" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">UPI Payee Name</label>
+                       <input type="text" value={settings.upi_payee} onChange={e => setSettings({...settings, upi_payee: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none" />
                     </div>
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">IFSC Code</label>
-                       <input type="text" value={settings.bank_ifsc} onChange={e => setSettings({...settings, bank_ifsc: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold outline-none" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Bank Name</label>
+                       <input type="text" value={settings.bank_name} onChange={e => setSettings({...settings, bank_name: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none" />
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Branch Name</label>
-                       <input type="text" value={settings.bank_branch} onChange={e => setSettings({...settings, bank_branch: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none" />
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Account Number</label>
+                       <input type="text" value={settings.bank_acc_num} onChange={e => setSettings({...settings, bank_acc_num: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-mono font-bold outline-none" />
                     </div>
                  </div>
 
-                 <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200">
-                    <label className="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Credit Card Surcharge / Processing Fee (%)</label>
-                    <p className="text-[11px] text-amber-700 mb-2">Customers selecting Card payment will be notified and charged this percentage as card processing fee.</p>
-                    <input type="number" step="0.1" value={settings.card_fee_percentage !== undefined ? settings.card_fee_percentage : 2.5} onChange={e => setSettings({...settings, card_fee_percentage: parseFloat(e.target.value) || 0})} className="w-full bg-white border border-amber-300 rounded-xl px-4 py-2.5 text-xs font-extrabold outline-none text-amber-950" />
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">IFSC Code</label>
+                       <input type="text" value={settings.bank_ifsc} onChange={e => setSettings({...settings, bank_ifsc: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-mono font-bold outline-none" />
+                    </div>
+                    <div>
+                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Branch Name</label>
+                       <input type="text" value={settings.bank_branch} onChange={e => setSettings({...settings, bank_branch: e.target.value})} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none" />
+                    </div>
+                 </div>
+
+                 <div className="bg-warning-soft p-4 rounded-xl border border-warning-line">
+                    <label className="block text-sm font-bold text-warning-ink uppercase tracking-wider mb-1">Credit Card Surcharge / Processing Fee (%)</label>
+                    <p className="text-xs text-warning-ink mb-2">Customers selecting Card payment will be notified and charged this percentage as card processing fee.</p>
+                    <input type="number" step="0.1" value={settings.card_fee_percentage !== undefined ? settings.card_fee_percentage : 2.5} onChange={e => setSettings({...settings, card_fee_percentage: parseFloat(e.target.value) || 0})} className="w-full bg-surface border border-warning-line rounded-xl px-4 py-2.5 text-sm font-semibold outline-none text-warning-ink" />
                  </div>
               </div>
 
-              <button type="submit" className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md hover:bg-slate-800">
+              <button type="submit" className="w-full py-3.5 bg-inverse text-white rounded-xl font-semibold text-sm uppercase tracking-widest shadow-sm hover:bg-inverse">
                 💾 Save Gateway Settings
               </button>
            </form>
@@ -1742,7 +1742,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
          {/* TAB 6: CUSTOMER PAYMENT PORTAL (6 RESPONSIVE THEMES) */}
          {activeTab === 'Portal' && (
-           <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-sm animate-in fade-in duration-300">
+           <div className="rounded-xl overflow-hidden border border-line shadow-sm animate-in fade-in duration-300">
              <PaymentPageView
                targetLead={targetLead || lead}
                initialLinkKey={selectedLink?.pay_key}
@@ -1756,22 +1756,22 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
          )}
       </div>
       {localToast && (
-        <div className="fixed bottom-6 right-6 z-[250] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-slate-800 animate-in slide-in-from-bottom duration-300">
-          <span className="text-emerald-400 font-extrabold">✓</span>
+        <div className="fixed bottom-6 right-6 z-[250] bg-inverse text-white px-5 py-3 rounded-xl shadow-sm flex items-center gap-2 border border-line animate-in slide-in-from-bottom duration-300">
+          <span className="text-success-ink font-semibold">✓</span>
           <span className="text-xs font-bold">{localToast.message}</span>
         </div>
       )}
       {/* Payment Confirmation Modal */}
       {confirmPaymentModal.open && confirmPaymentModal.link && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-lg mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
             {/* Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-5 text-white">
+            <div className="bg-gradient-to-r from-success-strong to-success-strong px-6 py-5 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200">Confirm Payment Received</p>
-                  <h3 className="text-lg font-black mt-0.5">{confirmPaymentModal.link.customer_name}</h3>
-                  <p className="text-xs text-emerald-100 mt-0.5">{confirmPaymentModal.link.package_name} · ₹{(confirmPaymentModal.link.net_amount || 0).toLocaleString()}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-success-ink">Confirm Payment Received</p>
+                  <h3 className="text-lg font-semibold mt-0.5">{confirmPaymentModal.link.customer_name}</h3>
+                  <p className="text-sm text-success-ink mt-0.5">{confirmPaymentModal.link.package_name} · ₹{(confirmPaymentModal.link.net_amount || 0).toLocaleString()}</p>
                 </div>
                 <button onClick={() => setConfirmPaymentModal({ open: false, link: null })} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
                   <X className="w-4 h-4" />
@@ -1782,27 +1782,27 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             {/* Body */}
             <div className="p-6 space-y-5">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Transaction Ref / UTR Number *</label>
+                <label className="block text-xs font-semibold text-secondary uppercase tracking-widest">Transaction Ref / UTR Number *</label>
                 <input
                   type="text"
                   value={confirmRef}
                   onChange={e => setConfirmRef(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full border border-line rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-success-line focus:border-success-line"
                   placeholder="e.g. UTR-123456789012 or TXN-REF"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Mode</label>
+                <label className="block text-xs font-semibold text-secondary uppercase tracking-widest">Payment Mode</label>
                 <div className="grid grid-cols-4 gap-2">
                   {['UPI', 'Cash', 'Bank Transfer', 'Card'].map(mode => (
                     <button
                       key={mode}
                       onClick={() => setConfirmMode(mode)}
-                      className={`px-3 py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      className={`px-3 py-2.5 rounded-xl text-sm font-bold border transition-all ${
                         confirmMode === mode
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-200'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          ? 'bg-success-strong text-white border-success-line shadow-sm shadow-success-line'
+                          : 'bg-surface text-secondary border-line hover:bg-canvas'
                       }`}
                     >
                       {mode === 'UPI' && '📱 '}
@@ -1816,11 +1816,11 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">💬 Payment Comment / Notes (Optional)</label>
+                <label className="block text-xs font-semibold text-brand-ink uppercase tracking-widest">💬 Payment Comment / Notes (Optional)</label>
                 <textarea
                   value={confirmComment}
                   onChange={e => setConfirmComment(e.target.value)}
-                  className="w-full border border-indigo-100 rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                  className="w-full border border-brand-line rounded-xl px-4 py-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-line focus:border-brand-line resize-none"
                   rows={3}
                   placeholder="e.g. Client paid via Google Pay. Balance ₹5000 pending for next installment. Spoke with Mr. Sharma on call."
                 />
@@ -1831,7 +1831,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
             <div className="px-6 pb-6 flex gap-3">
               <button
                 onClick={() => setConfirmPaymentModal({ open: false, link: null })}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all"
+                className="flex-1 px-4 py-3 rounded-xl border border-line text-secondary font-bold text-sm hover:bg-canvas transition-all"
               >
                 Cancel
               </button>
@@ -1872,7 +1872,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     setIsConfirmingPayment(false);
                   }
                 }}
-                className="flex-1 px-4 py-3 rounded-xl bg-emerald-600 text-white font-black text-sm hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 px-4 py-3 rounded-xl bg-success-strong text-white font-semibold text-sm hover:bg-success-strong disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm shadow-success-line flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isConfirmingPayment ? (
                   <><RefreshCw className="w-4 h-4 animate-spin" /> Processing...</>
@@ -1887,9 +1887,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
       {/* Edit Installment Comment Modal */}
       {installmentCommentModal.open && (
-        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-gradient-to-r from-indigo-600 to-blue-600 text-white flex justify-between items-center">
+        <div className="fixed inset-0 z-[9999] bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-surface rounded-xl max-w-md w-full shadow-sm border border-line overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-gradient-to-r from-brand to-brand text-white flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 <h3 className="font-bold text-base">Installment Payment Comment</h3>
@@ -1904,23 +1904,23 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-xs text-slate-500 mb-2 font-medium">
-                  Add operational remarks, verification details, or payment notes for <strong className="text-slate-800 font-bold">{installments[installmentCommentModal.instIdx]?.title || 'Installment'}</strong>:
+                <p className="text-sm text-secondary mb-2 font-medium">
+                  Add operational remarks, verification details, or payment notes for <strong className="text-content font-bold">{installments[installmentCommentModal.instIdx]?.title || 'Installment'}</strong>:
                 </p>
                 <textarea
                   value={installmentCommentModal.comment}
                   onChange={e => setInstallmentCommentModal(prev => ({ ...prev, comment: e.target.value }))}
                   rows={4}
                   placeholder="e.g. Received ₹23,333 via GPay (UTR: 3291039103). Verified in HDFC Bank account by Rahul."
-                  className="w-full border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-slate-800"
+                  className="w-full border border-line rounded-xl p-3 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-line focus:border-brand-line resize-none text-content"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setInstallmentCommentModal({ open: false, instIdx: -1, comment: '' })}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-sm font-bold text-secondary hover:bg-subtle transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1946,7 +1946,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                       console.error('Error saving installment comment:', err);
                     }
                   }}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2 rounded-xl text-sm font-bold bg-brand hover:bg-brand text-white transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
                 >
                   💾 Save Comment
                 </button>

@@ -156,8 +156,8 @@ export function logDocumentAudit(
   details = ''
 ): void {
   try {
-    const rawFwd = req.headers['x-forwarded-for'];
-    const ip = (Array.isArray(rawFwd) ? rawFwd[0] : (typeof rawFwd === 'string' ? rawFwd.split(',')[0].trim() : '')) || req.socket.remoteAddress || '127.0.0.1';
+    // Express resolves forwarded addresses only through configured trusted proxies.
+    const ip = req.ip || req.socket.remoteAddress || 'unknown-ip';
     const rawUa = req.headers['user-agent'];
     const userAgent = Array.isArray(rawUa) ? rawUa[0] : (rawUa || '');
     // Security: Ensure full ID numbers are never in details

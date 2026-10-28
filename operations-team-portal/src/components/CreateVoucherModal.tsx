@@ -103,28 +103,28 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static">
-      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-6xl h-[94vh] max-h-[94vh] shadow-xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:max-w-none print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none">
+    <div className="fixed inset-0 z-50 bg-inverse/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden print:p-0 print:bg-white print:static">
+      <div className="bg-surface border border-line rounded-xl w-full max-w-6xl h-[94vh] max-h-[94vh] shadow-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 print:max-w-none print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none">
         
         {/* Modal Top Toolbar (Hidden on print) */}
-        <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-900 text-white print:hidden shrink-0 z-10 shadow-sm">
+        <div className="px-6 py-4 border-b border-line flex flex-wrap items-center justify-between gap-3 bg-inverse text-white print:hidden shrink-0 z-10 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-teal-500 text-slate-900 font-bold">
+            <div className="p-2 rounded-xl bg-success-strong text-content font-bold">
               <Hotel className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-base flex items-center gap-2">
+              <h3 className="font-semibold text-base flex items-center gap-2">
                 Official Kingsland Hotel Voucher Generator
-                <span className="text-[10px] bg-teal-400/20 text-teal-300 px-2.5 py-0.5 rounded-full font-mono border border-teal-400/30">PDF Layout Replica</span>
+                <span className="text-xs bg-success-strong/20 text-success-ink px-2.5 py-0.5 rounded-full font-mono border border-success-line/30">PDF Layout Replica</span>
               </h3>
-              <p className="text-xs text-slate-400">Fill box details manually or pre-fill from customer records. Fixed header, logo & conditions.</p>
+              <p className="text-sm text-muted">Fill box details manually or pre-fill from customer records. Fixed header, logo & conditions.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={handleDownloadPdf}
-              className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-md"
+              className="px-3.5 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-content font-semibold text-sm flex items-center gap-1.5 transition-all shadow-sm"
             >
               <Download className="w-4 h-4" />
               <span>Download PDF</span>
@@ -132,7 +132,7 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
 
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all border border-slate-700"
+              className="px-3.5 py-2 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm flex items-center gap-1.5 transition-all border border-line"
             >
               <Printer className="w-4 h-4" />
               <span>Print</span>
@@ -140,7 +140,7 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
 
             <button
               onClick={handleSaveAndConfirm}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-md"
+              className="px-4 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-white font-bold text-sm flex items-center gap-1.5 transition-all shadow-sm"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Save to Active Vouchers</span>
@@ -148,7 +148,7 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-xl text-muted hover:text-white hover:bg-inverse transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -159,21 +159,21 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
         <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden print:overflow-visible">
           
           {/* Left Form: Manual Box Details Input (Hidden on Print) */}
-          <div className="w-full lg:w-96 p-5 border-r border-slate-200 bg-slate-50/70 space-y-4 shrink-0 h-full overflow-y-auto print:hidden text-xs custom-scrollbar">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-              <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1">
-                <FileText className="w-4 h-4 text-teal-600" /> Fill Box Details (Manual)
+          <div className="w-full lg:w-96 p-5 border-r border-line bg-canvas/70 space-y-4 shrink-0 h-full overflow-y-auto print:hidden text-sm custom-scrollbar">
+            <div className="flex items-center justify-between pb-2 border-b border-line">
+              <span className="font-bold text-content uppercase tracking-wider text-xs flex items-center gap-1">
+                <FileText className="w-4 h-4 text-success-ink" /> Fill Box Details (Manual)
               </span>
             </div>
 
             {/* Customer Selector */}
             {customers.length > 0 && (
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Select Customer / Lead:</label>
+                <label className="font-bold text-content block mb-1">Select Customer / Lead:</label>
                 <select
                   value={selectedCustomerId}
                   onChange={(e) => handleCustomerChange(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 font-bold text-slate-900 outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line font-bold text-content outline-none focus:ring-2 focus:ring-success-line"
                 >
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -186,153 +186,153 @@ export const CreateVoucherModal: React.FC<CreateVoucherModalProps> = ({
 
             {/* Hotel Name & Address */}
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Hotel Name & Destination:</label>
+              <label className="font-bold text-content block mb-1">Hotel Name & Destination:</label>
               <input
                 type="text"
                 value={hotelName}
                 onChange={(e) => setHotelName(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold text-slate-900"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold text-content"
                 placeholder="e.g. Heena Heritage Resort, Jaipur"
               />
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Hotel Full Address:</label>
+              <label className="font-bold text-content block mb-1">Hotel Full Address:</label>
               <textarea
                 rows={2}
                 value={hotelAddress}
                 onChange={(e) => setHotelAddress(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-800"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-content"
               />
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Hotel Phone No:</label>
+              <label className="font-bold text-content block mb-1">Hotel Phone No:</label>
               <input
                 type="text"
                 value={hotelPhone}
                 onChange={(e) => setHotelPhone(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 text-slate-800 font-mono"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line text-content font-mono"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Hotel Booking No:</label>
+                <label className="font-bold text-content block mb-1">Hotel Booking No:</label>
                 <input
                   type="text"
                   value={hotelBookingNo}
                   onChange={(e) => setHotelBookingNo(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-mono font-bold text-content"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Kingsland Voucher No:</label>
+                <label className="font-bold text-content block mb-1">Kingsland Voucher No:</label>
                 <input
                   type="text"
                   value={voucherNo}
                   onChange={(e) => setVoucherNo(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-mono font-bold text-content"
                 />
               </div>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Guest Name:</label>
+              <label className="font-bold text-content block mb-1">Guest Name:</label>
               <input
                 type="text"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-extrabold text-slate-900"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-semibold text-content"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Check In Date:</label>
+                <label className="font-bold text-content block mb-1">Check In Date:</label>
                 <input
                   type="text"
                   value={checkIn}
                   onChange={(e) => setCheckIn(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Check Out Date:</label>
+                <label className="font-bold text-content block mb-1">Check Out Date:</label>
                 <input
                   type="text"
                   value={checkOut}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">No of Persons:</label>
+                <label className="font-bold text-content block mb-1">No of Persons:</label>
                 <input
                   type="text"
                   value={noOfPersons}
                   onChange={(e) => setNoOfPersons(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">No of Nights:</label>
+                <label className="font-bold text-content block mb-1">No of Nights:</label>
                 <input
                   type="text"
                   value={noOfNights}
                   onChange={(e) => setNoOfNights(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Room Details:</label>
+              <label className="font-bold text-content block mb-1">Room Details:</label>
               <textarea
                 rows={2}
                 value={roomDetails}
                 onChange={(e) => setRoomDetails(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Meal Plan:</label>
+                <label className="font-bold text-content block mb-1">Meal Plan:</label>
                 <input
                   type="text"
                   value={mealPlan}
                   onChange={(e) => setMealPlan(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Extra Inclusions:</label>
+                <label className="font-bold text-content block mb-1">Extra Inclusions:</label>
                 <input
                   type="text"
                   value={extraInclusions}
                   onChange={(e) => setExtraInclusions(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-bold"
+                  className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-bold"
                 />
               </div>
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Payment Status:</label>
+              <label className="font-bold text-content block mb-1">Payment Status:</label>
               <input
                 type="text"
                 value={paymentStatus}
                 onChange={(e) => setPaymentStatus(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-extrabold text-teal-800"
+                className="w-full px-3 py-1.5 rounded-lg bg-surface border border-line font-semibold text-success-ink"
               />
             </div>
           </div>
 
           {/* Right Panel: Official Kingsland Holiday Voucher PDF Replica */}
-          <div className="flex-1 min-h-0 h-full p-4 sm:p-8 bg-slate-200/70 overflow-y-scroll overflow-x-hidden flex flex-col items-center custom-scrollbar print:bg-white print:p-0 print:overflow-visible">
+          <div className="flex-1 min-h-0 h-full p-4 sm:p-8 bg-hover/70 overflow-y-scroll overflow-x-hidden flex flex-col items-center custom-scrollbar print:bg-white print:p-0 print:overflow-visible">
             
             <div 
               ref={printRef}

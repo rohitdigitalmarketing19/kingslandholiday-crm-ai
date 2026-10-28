@@ -69,34 +69,34 @@ const StagedFileItem: React.FC<{ file: File; onRemove: () => void }> = ({ file, 
   }, [file, isImage]);
 
   return (
-    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 flex items-center justify-between text-xs hover:border-slate-300 dark:hover:border-zinc-600 transition-colors shadow-2xs">
+    <div className="p-2.5 rounded-xl bg-subtle border border-line flex items-center justify-between text-sm hover:border-line transition-colors shadow-2xs">
       <div className="flex items-center gap-2.5 truncate pr-2">
         {isImage && thumbUrl ? (
           <img
             src={thumbUrl}
             alt={file.name}
-            className="w-9 h-9 object-cover rounded-lg border border-slate-300 dark:border-zinc-700 shrink-0 shadow-2xs"
+            className="w-9 h-9 object-cover rounded-lg border border-line shrink-0 shadow-2xs"
           />
         ) : file.type === 'application/pdf' || /\.pdf$/i.test(file.name) ? (
-          <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center shrink-0">
-            <FileText size={18} className="text-rose-500" />
+          <div className="w-9 h-9 rounded-lg bg-danger-soft border border-danger-line flex items-center justify-center shrink-0">
+            <FileText size={18} className="text-danger-ink" />
           </div>
         ) : (
-          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-center shrink-0">
-            <ImageIcon size={18} className="text-indigo-500" />
+          <div className="w-9 h-9 rounded-lg bg-brand-soft border border-brand-line flex items-center justify-center shrink-0">
+            <ImageIcon size={18} className="text-brand-ink" />
           </div>
         )}
         <div className="truncate">
-          <div className="font-bold text-slate-800 dark:text-zinc-100 truncate" title={file.name}>
+          <div className="font-bold text-content dark:text-zinc-100 truncate" title={file.name}>
             {file.name}
           </div>
-          <div className="text-[10px] text-slate-400 font-mono">{formatFileSize(file.size)}</div>
+          <div className="text-xs text-muted font-mono">{formatFileSize(file.size)}</div>
         </div>
       </div>
       <button
         type="button"
         onClick={onRemove}
-        className="p-1 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-lg text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+        className="p-1 hover:bg-hover rounded-lg text-muted hover:text-danger-ink transition-colors cursor-pointer"
         title="Remove file"
       >
         <X size={14} />
@@ -360,37 +360,37 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
     <div className="space-y-6 font-sans">
       {/* Alert Notices */}
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-start gap-3 text-rose-800 dark:text-rose-300 text-xs animate-in fade-in">
+        <div className="p-4 rounded-xl bg-danger-soft border border-danger-line flex items-start gap-3 text-danger-ink text-sm animate-in fade-in">
           <AlertCircle size={16} className="shrink-0 mt-0.5" />
           <div className="flex-1 font-semibold">{errorMsg}</div>
-          <button onClick={() => setErrorMsg(null)} className="text-rose-500 hover:text-rose-700">
+          <button onClick={() => setErrorMsg(null)} className="text-danger-ink hover:text-danger-ink">
             <X size={14} />
           </button>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-3 text-emerald-800 dark:text-emerald-300 text-xs animate-in fade-in">
+        <div className="p-4 rounded-xl bg-success-soft border border-success-line flex items-start gap-3 text-success-ink text-sm animate-in fade-in">
           <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
           <div className="flex-1 font-semibold">{successMsg}</div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+          <button onClick={() => setSuccessMsg(null)} className="text-success-ink hover:text-success-ink">
             <X size={14} />
           </button>
         </div>
       )}
 
       {/* Security Banner */}
-      <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-slate-800">
+      <div className="bg-inverse text-white p-4 sm:p-5 rounded-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-line">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-lime-400/20 text-lime-400 flex items-center justify-center shrink-0 border border-lime-400/30">
+          <div className="w-10 h-10 rounded-xl bg-brand/20 text-brand-ink flex items-center justify-center shrink-0 border border-brand-line/30">
             <ShieldCheck size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-lime-400">Restricted Admin Storage</span>
-              <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full font-mono">Encrypted 256-Bit</span>
+              <span className="text-sm font-semibold uppercase tracking-wider text-brand-ink">Restricted Admin Storage</span>
+              <span className="text-xs bg-inverse text-slate-300 px-2 py-0.5 rounded-full font-mono">Encrypted 256-Bit</span>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-sm text-slate-300 mt-0.5">
               Client identification documents (Passport, Aadhaar, PAN) are stored outside web root with signed access tickets & audit logging.
             </p>
           </div>
@@ -400,7 +400,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
           <button
             type="button"
             onClick={handleDownloadAllZip}
-            className="px-4 py-2.5 bg-lime-400 hover:bg-lime-300 text-black rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 shadow-sm cursor-pointer"
+            className="px-4 py-2.5 bg-brand hover:bg-brand text-on-brand rounded-xl text-sm font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 shadow-sm cursor-pointer"
           >
             <FileArchive size={15} />
             <span>Download All ({documents.length}) as ZIP</span>
@@ -410,27 +410,27 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
       {/* Upload Zone (Admin Only) */}
       {isAdmin && (
-        <form onSubmit={handleUpload} onPaste={handlePaste} className="bg-white dark:bg-[#161713] p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-5">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
+        <form onSubmit={handleUpload} onPaste={handlePaste} className="bg-surface p-6 rounded-xl border border-line shadow-sm space-y-5">
+          <div className="flex items-center justify-between border-b border-line pb-3">
             <div className="flex items-center gap-2">
-              <UploadCloud size={16} className="text-indigo-600 dark:text-lime-400" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-zinc-100">
+              <UploadCloud size={16} className="text-brand-ink " />
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-content dark:text-zinc-100">
                 Upload Client Documents
               </h3>
             </div>
-            <span className="text-[10px] text-slate-400 font-bold">Max 10 MB per file · JPG, PNG, WebP, PDF</span>
+            <span className="text-xs text-muted font-bold">Max 10 MB per file · JPG, PNG, WebP, PDF</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Document Type Dropdown */}
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
-                Document Type <span className="text-rose-500">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5">
+                Document Type <span className="text-danger-ink">*</span>
               </label>
               <select
                 value={selectedDocType}
                 onChange={e => setSelectedDocType(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 cursor-pointer"
+                className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold text-content dark:text-zinc-100 outline-none focus:border-brand-line cursor-pointer"
               >
                 {DOC_TYPES.map(t => (
                   <option key={t} value={t}>{t}</option>
@@ -440,13 +440,13 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
             {/* Optional Belongs To Traveller */}
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5">
                 Belongs To (Traveller)
               </label>
               <select
                 value={selectedTravellerId}
                 onChange={e => setSelectedTravellerId(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500 cursor-pointer"
+                className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold text-content dark:text-zinc-100 outline-none focus:border-brand-line cursor-pointer"
               >
                 <option value="">General / Lead Customer ({leadName || 'Primary'})</option>
                 {travellers.map((t, idx) => (
@@ -459,7 +459,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
             {/* Optional Note */}
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1.5">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1.5">
                 Document Note / Description
               </label>
               <input
@@ -467,7 +467,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                 placeholder="e.g. Front & Back scan, valid till 2030"
                 value={documentNote}
                 onChange={e => setDocumentNote(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-500"
+                className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold text-content dark:text-zinc-100 outline-none focus:border-brand-line"
               />
             </div>
           </div>
@@ -479,10 +479,10 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all select-none ${
+            className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all select-none ${
               isDragging
-                ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 ring-4 ring-indigo-500/20 scale-[1.008]'
-                : 'border-slate-300 dark:border-zinc-700 hover:border-indigo-400 dark:hover:border-zinc-500 bg-slate-50/50 dark:bg-zinc-900/30'
+                ? 'border-brand-line bg-brand-soft/80 ring-4 ring-brand-line/20 scale-[1.008]'
+                : 'border-line hover:border-brand-line bg-canvas/50 '
             }`}
           >
             <input
@@ -495,25 +495,25 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
             />
             <div className="pointer-events-none">
               <div
-                className={`w-12 h-12 rounded-2xl mx-auto flex items-center justify-center mb-3 transition-transform ${
+                className={`w-12 h-12 rounded-xl mx-auto flex items-center justify-center mb-3 transition-transform ${
                   isDragging
-                    ? 'bg-indigo-600 text-white scale-110 shadow-md animate-bounce'
-                    : 'bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-lime-400'
+                    ? 'bg-brand text-white scale-110 shadow-sm animate-bounce'
+                    : 'bg-brand-soft text-brand-ink '
                 }`}
               >
                 <UploadCloud size={24} />
               </div>
-              <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">
+              <p className="text-sm font-bold text-content dark:text-zinc-200">
                 {isDragging ? (
-                  <span className="text-indigo-600 dark:text-indigo-400 font-extrabold text-sm">Drop document images here!</span>
+                  <span className="text-brand-ink font-semibold text-sm">Drop document images here!</span>
                 ) : (
                   <>
                     Drag & drop client document images here, or{' '}
-                    <span className="text-indigo-600 dark:text-lime-400 underline font-extrabold">browse files</span>
+                    <span className="text-brand-ink underline font-semibold">browse files</span>
                   </>
                 )}
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+              <p className="text-xs text-muted mt-1">
                 Supports multiple images or PDFs (Passport front/back, Aadhaar, Visa, PAN) · Paste with Ctrl+V
               </p>
             </div>
@@ -522,7 +522,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
           {/* Staged Files Preview */}
           {selectedFiles.length > 0 && (
             <div className="space-y-2">
-              <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <div className="text-xs font-semibold uppercase tracking-wider text-secondary ">
                 Ready to Upload ({selectedFiles.length} file{selectedFiles.length > 1 ? 's' : ''}):
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -539,7 +539,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-2 transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-brand hover:bg-brand disabled:opacity-50 text-white rounded-xl text-sm font-semibold uppercase tracking-wider shadow-sm flex items-center gap-2 transition-all cursor-pointer"
                 >
                   {uploading ? (
                     <>
@@ -560,18 +560,18 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
       )}
 
       {/* Documents List & Filters */}
-      <div className="bg-white dark:bg-[#161713] p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-zinc-800 pb-4">
+      <div className="bg-surface p-6 rounded-xl border border-line shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-slate-900 dark:text-zinc-100 tracking-tight">
+              <h3 className="text-base font-semibold text-content dark:text-zinc-100 tracking-tight">
                 Stored Documents
               </h3>
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 border border-indigo-200 dark:border-lime-400/20 text-xs font-black">
+              <span className="px-2.5 py-0.5 rounded-full bg-brand-soft text-brand-ink border border-brand-line text-sm font-semibold">
                 {documents.length} Total
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-sm text-secondary mt-0.5">
               Verified identity and travel documents linked to this booking.
             </p>
           </div>
@@ -579,20 +579,20 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
           {/* Type Filter & Search Bar */}
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
                 placeholder="Search documents..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 text-xs text-slate-800 dark:text-zinc-100 font-medium outline-none focus:border-indigo-400 w-44"
+                className="pl-8 pr-3 py-1.5 rounded-xl bg-canvas border border-line text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line w-44"
               />
             </div>
 
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
-              className="bg-slate-50 dark:bg-zinc-900/60 border border-slate-200 dark:border-zinc-700 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 dark:text-zinc-100 outline-none focus:border-indigo-400 cursor-pointer"
+              className="bg-canvas border border-line rounded-xl px-3 py-1.5 text-sm font-bold text-content dark:text-zinc-100 outline-none focus:border-brand-line cursor-pointer"
             >
               <option value="All">All Types ({documents.length})</option>
               {DOC_TYPES.map(t => {
@@ -607,8 +607,8 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
         {/* Thumbnail Grid */}
         {loading ? (
-          <div className="py-16 text-center text-xs text-slate-400 font-bold">
-            <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-indigo-500" />
+          <div className="py-16 text-center text-sm text-muted font-bold">
+            <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-brand-ink" />
             Loading client documents...
           </div>
         ) : filteredDocs.length > 0 ? (
@@ -619,44 +619,44 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
               return (
                 <div
                   key={doc.id}
-                  className="bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all group flex flex-col justify-between"
+                  className="bg-canvas border border-line rounded-xl overflow-hidden shadow-2xs hover:shadow-sm transition-all group flex flex-col justify-between"
                 >
                   {/* Top Thumbnail Preview Area */}
                   <div
                     onClick={() => handleOpenPreview(doc)}
-                    className="h-36 bg-slate-100 dark:bg-zinc-800 relative flex items-center justify-center cursor-pointer overflow-hidden border-b border-slate-200 dark:border-zinc-800 group-hover:bg-slate-200 dark:group-hover:bg-zinc-700/60 transition-colors"
+                    className="h-36 bg-subtle relative flex items-center justify-center cursor-pointer overflow-hidden border-b border-line group-hover:bg-hover transition-colors"
                   >
                     {isPdf ? (
-                      <div className="flex flex-col items-center gap-1.5 text-rose-500">
+                      <div className="flex flex-col items-center gap-1.5 text-danger-ink">
                         <FileText size={44} className="drop-shadow-sm" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-900/50">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-danger-ink bg-danger-soft px-2 py-0.5 rounded border border-danger-line ">
                           PDF Document
                         </span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-1.5 text-indigo-500">
+                      <div className="flex flex-col items-center gap-1.5 text-brand-ink">
                         <ImageIcon size={44} className="drop-shadow-sm" />
-                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-900/50">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-brand-ink bg-brand-soft px-2 py-0.5 rounded border border-brand-line ">
                           Image Scan
                         </span>
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-2xs">
-                      <div className="px-3 py-1.5 rounded-xl bg-white text-slate-900 text-xs font-black flex items-center gap-1.5 shadow-lg">
+                    <div className="absolute inset-0 bg-inverse/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-2xs">
+                      <div className="px-3 py-1.5 rounded-xl bg-surface text-content text-sm font-semibold flex items-center gap-1.5 shadow-sm">
                         <Maximize2 size={13} />
                         <span>Preview</span>
                       </div>
                     </div>
 
                     <div className="absolute top-2.5 left-2.5">
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-white/90 dark:bg-black/80 text-slate-800 dark:text-zinc-200 shadow-xs border border-slate-200 dark:border-zinc-700">
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider bg-white/90 dark:bg-black/80 text-content dark:text-zinc-200 shadow-xs border border-line ">
                         {doc.doc_type}
                       </span>
                     </div>
 
                     <div className="absolute top-2.5 right-2.5">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-slate-900/70 text-white backdrop-blur-xs">
+                      <span className="px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-inverse/70 text-white backdrop-blur-xs">
                         {formatBytes(doc.size_bytes)}
                       </span>
                     </div>
@@ -665,29 +665,29 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                   {/* Card Details */}
                   <div className="p-4 space-y-2.5 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="font-bold text-xs text-slate-900 dark:text-zinc-100 truncate" title={doc.original_filename}>
+                      <div className="font-bold text-sm text-content dark:text-zinc-100 truncate" title={doc.original_filename}>
                         {doc.original_filename}
                       </div>
 
                       {doc.traveller_name ? (
-                        <div className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-lime-400 font-bold mt-1">
+                        <div className="flex items-center gap-1 text-xs text-brand-ink font-bold mt-1">
                           <User size={12} />
                           <span>Belongs to: {doc.traveller_name}</span>
                         </div>
                       ) : (
-                        <div className="text-[11px] text-slate-400 dark:text-zinc-500 mt-1">
+                        <div className="text-xs text-muted mt-1">
                           Booking / Primary Lead
                         </div>
                       )}
 
                       {doc.note && (
-                        <p className="text-[11px] text-slate-600 dark:text-zinc-300 italic mt-1.5 line-clamp-2 bg-white dark:bg-zinc-800/50 p-2 rounded-lg border border-slate-100 dark:border-zinc-800">
+                        <p className="text-xs text-secondary dark:text-zinc-300 italic mt-1.5 line-clamp-2 bg-surface p-2 rounded-lg border border-line ">
                           "{doc.note}"
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-2 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-[10px] text-slate-400">
+                    <div className="pt-2 border-t border-line flex items-center justify-between text-xs text-muted">
                       <div className="flex items-center gap-1">
                         <Calendar size={11} />
                         <span>{new Date(doc.created_at).toLocaleDateString()}</span>
@@ -697,11 +697,11 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                   </div>
 
                   {/* Card Action Buttons */}
-                  <div className="p-3 bg-white dark:bg-[#161713] border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between gap-2">
+                  <div className="p-3 bg-surface border-t border-line flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => handleOpenPreview(doc)}
-                      className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="flex-1 py-1.5 bg-subtle hover:bg-hover text-content dark:text-zinc-200 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                     >
                       <Eye size={13} />
                       <span>Preview</span>
@@ -710,7 +710,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => handleDownloadDoc(doc)}
-                      className="p-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-indigo-600 dark:text-lime-400 rounded-xl transition-all cursor-pointer"
+                      className="p-1.5 bg-brand-soft hover:bg-brand-soft text-brand-ink rounded-xl transition-all cursor-pointer"
                       title="Download document file"
                     >
                       <Download size={14} />
@@ -720,7 +720,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                       <button
                         type="button"
                         onClick={() => setDeletingDoc(doc)}
-                        className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 rounded-xl transition-all cursor-pointer"
+                        className="p-1.5 hover:bg-danger-soft text-muted hover:text-danger-ink rounded-xl transition-all cursor-pointer"
                         title="Delete document (Soft Delete)"
                       >
                         <Trash2 size={14} />
@@ -732,14 +732,14 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
             })}
           </div>
         ) : (
-          <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-2xl p-8">
-            <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-800 text-slate-400 mx-auto rounded-2xl flex items-center justify-center mb-3">
+          <div className="py-16 text-center border-2 border-dashed border-line rounded-xl p-8">
+            <div className="w-12 h-12 bg-subtle text-muted mx-auto rounded-xl flex items-center justify-center mb-3">
               <FileCheck size={24} />
             </div>
-            <h4 className="text-sm font-black text-slate-800 dark:text-zinc-100 mb-1">
+            <h4 className="text-sm font-semibold text-content dark:text-zinc-100 mb-1">
               No Client Documents Found
             </h4>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+            <p className="text-sm text-muted max-w-sm mx-auto">
               {typeFilter !== 'All' || searchQuery
                 ? 'No documents matched your search or type filter.'
                 : 'Upload Passport, Aadhaar, PAN card, or Visa copies above to securely store them.'}
@@ -750,19 +750,19 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
       {/* PREVIEW MODAL / LIGHTBOX */}
       {previewDoc && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-slate-200 dark:border-zinc-700 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-inverse/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden border border-line animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50">
+            <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-canvas ">
               <div className="flex items-center gap-3">
-                <span className="px-2.5 py-1 rounded-lg text-xs font-black uppercase tracking-wider bg-indigo-50 dark:bg-lime-400/10 text-indigo-700 dark:text-lime-400 border border-indigo-200 dark:border-lime-400/20">
+                <span className="px-2.5 py-1 rounded-lg text-sm font-semibold uppercase tracking-wider bg-brand-soft text-brand-ink border border-brand-line ">
                   {previewDoc.doc_type}
                 </span>
                 <div>
-                  <h4 className="text-sm font-black text-slate-900 dark:text-zinc-100 truncate max-w-md">
+                  <h4 className="text-sm font-semibold text-content dark:text-zinc-100 truncate max-w-md">
                     {previewDoc.original_filename}
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-xs text-muted">
                     {formatBytes(previewDoc.size_bytes)} · Uploaded by {previewDoc.uploaded_by} on {new Date(previewDoc.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -772,7 +772,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => handleDownloadDoc(previewDoc)}
-                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                  className="px-3.5 py-1.5 bg-brand hover:bg-brand text-white rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm"
                 >
                   <Download size={13} />
                   <span>Download</span>
@@ -780,7 +780,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => { setPreviewDoc(null); setPreviewTicket(null); }}
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-100 transition-colors"
+                  className="p-1.5 hover:bg-hover rounded-xl text-muted hover:text-content dark:hover:text-zinc-100 transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -788,17 +788,17 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
             </div>
 
             {/* Viewer Content Area */}
-            <div className="flex-1 bg-slate-100 dark:bg-black/90 p-4 flex items-center justify-center overflow-auto">
+            <div className="flex-1 bg-subtle dark:bg-black/90 p-4 flex items-center justify-center overflow-auto">
               {previewLoading ? (
-                <div className="text-center text-xs text-slate-400 font-bold">
-                  <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-indigo-500" />
+                <div className="text-center text-sm text-muted font-bold">
+                  <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-brand-ink" />
                   Generating secure document view...
                 </div>
               ) : previewTicket ? (
                 previewDoc.mime_type === 'application/pdf' ? (
                   <iframe
                     src={`/api/leads/${leadId}/documents/${previewDoc.id}/file?ticket=${encodeURIComponent(previewTicket)}#toolbar=1`}
-                    className="w-full h-full rounded-xl border border-slate-200 dark:border-zinc-800 shadow-inner bg-white"
+                    className="w-full h-full rounded-xl border border-line shadow-inner bg-surface"
                     title={previewDoc.original_filename}
                   />
                 ) : (
@@ -806,20 +806,20 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                     <img
                       src={`/api/leads/${leadId}/documents/${previewDoc.id}/file?ticket=${encodeURIComponent(previewTicket)}`}
                       alt={previewDoc.original_filename}
-                      className="max-w-full max-h-[70vh] object-contain rounded-xl shadow-lg border border-slate-200 dark:border-zinc-800"
+                      className="max-w-full max-h-[70vh] object-contain rounded-xl shadow-sm border border-line "
                     />
                   </div>
                 )
               ) : (
-                <div className="text-center text-xs text-rose-500 font-bold">
+                <div className="text-center text-sm text-danger-ink font-bold">
                   Unable to load secure preview. Please try downloading the document.
                 </div>
               )}
             </div>
 
             {previewDoc.note && (
-              <div className="px-6 py-3 bg-slate-50 dark:bg-zinc-800/60 border-t border-slate-200 dark:border-zinc-800 text-xs text-slate-700 dark:text-zinc-300">
-                <span className="font-bold text-slate-400 uppercase text-[10px] mr-2">Note:</span>
+              <div className="px-6 py-3 bg-canvas border-t border-line text-sm text-content dark:text-zinc-300">
+                <span className="font-bold text-muted uppercase text-xs mr-2">Note:</span>
                 {previewDoc.note}
               </div>
             )}
@@ -829,20 +829,20 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
 
       {/* DELETE CONFIRMATION DIALOG */}
       {deletingDoc && (
-        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md p-6 border border-slate-200 dark:border-zinc-700 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-md p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="w-12 h-12 rounded-xl bg-danger-soft text-danger-ink flex items-center justify-center mx-auto">
               <Trash2 size={24} />
             </div>
 
             <div className="text-center space-y-1">
-              <h4 className="text-base font-black text-slate-900 dark:text-zinc-100">
+              <h4 className="text-base font-semibold text-content dark:text-zinc-100">
                 Delete Client Document?
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">
-                Are you sure you want to delete <strong className="text-slate-800 dark:text-zinc-200">"{deletingDoc.original_filename}"</strong> ({deletingDoc.doc_type})?
+              <p className="text-sm text-secondary ">
+                Are you sure you want to delete <strong className="text-content dark:text-zinc-200">"{deletingDoc.original_filename}"</strong> ({deletingDoc.doc_type})?
               </p>
-              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold pt-1">
+              <p className="text-xs text-warning-ink font-bold pt-1">
                 This document will be soft-deleted. A secure audit log will be preserved.
               </p>
             </div>
@@ -851,7 +851,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
               <button
                 type="button"
                 onClick={() => setDeletingDoc(null)}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 font-bold text-xs hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors"
+                className="flex-1 py-2.5 rounded-xl border border-line text-content dark:text-zinc-300 font-bold text-sm hover:bg-canvas transition-colors"
               >
                 Cancel
               </button>
@@ -859,7 +859,7 @@ export const ClientDocumentsSection: React.FC<ClientDocumentsSectionProps> = ({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-danger-strong hover:bg-danger-strong text-white font-bold text-sm transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
               >
                 {isDeleting ? <RefreshCw size={13} className="animate-spin" /> : <Trash2 size={13} />}
                 <span>{isDeleting ? 'Deleting...' : 'Yes, Delete'}</span>

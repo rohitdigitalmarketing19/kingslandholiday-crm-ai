@@ -1,3 +1,4 @@
+import { quoteMealPlan } from '../utils/hotelOptions';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Trash2, Palette, Sparkles, Check, Download, FileText, Users } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
@@ -133,14 +134,14 @@ Pure Agent Declaration (Terms & Conditions):
   }
 
   return (
-    <div className="border border-[#D7E0EA] rounded-xl p-5 bg-white space-y-4 text-xs">
+    <div className="border border-[#D7E0EA] rounded-xl p-5 bg-surface space-y-4 text-sm">
       {sections.map((sec, sIdx) => (
         <div key={sIdx} className="space-y-1.5">
-          <h5 className="font-bold text-[#12233D] text-xs pb-1 border-b border-slate-100 flex items-center gap-1.5 uppercase tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+          <h5 className="font-bold text-[#12233D] text-sm pb-1 border-b border-line flex items-center gap-1.5 uppercase tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>
             {sec.title}
           </h5>
-          <ul className="text-[11px] text-slate-600 list-disc pl-5 space-y-1 leading-relaxed">
+          <ul className="text-xs text-secondary list-disc pl-5 space-y-1 leading-relaxed">
             {sec.items.map((it, iIdx) => (
               <li key={iIdx}>{it}</li>
             ))}
@@ -570,19 +571,19 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   };
 
   const statusOptions: { label: string; status: Lead['status']; color: string; bg: string; badgeBg: string }[] = [
-    { label: 'ACTIVE LEAD', status: 'Qualified', color: 'text-indigo-600', bg: 'bg-indigo-50', badgeBg: 'bg-indigo-500' },
-    { label: 'FOLLOW-UP', status: 'Follow-up', color: 'text-amber-600', bg: 'bg-amber-50', badgeBg: 'bg-amber-500' },
-    { label: 'HOT LEAD', status: 'Hot', color: 'text-rose-500', bg: 'bg-rose-50', badgeBg: 'bg-rose-500' },
-    { label: 'UPDATE LEAD', status: 'Updated', color: 'text-blue-600', bg: 'bg-blue-50', badgeBg: 'bg-blue-500' },
-    { label: 'IN PROGRESS LEAD', status: 'Itinerary Sent', color: 'text-amber-600', bg: 'bg-amber-50', badgeBg: 'bg-amber-500' },
-    { label: 'CONVERTED', status: 'Closed Won', color: 'text-emerald-600', bg: 'bg-emerald-50', badgeBg: 'bg-emerald-500' },
-    { label: 'CANCEL', status: 'Closed Lost', color: 'text-slate-400', bg: 'bg-slate-50', badgeBg: 'bg-slate-400' },
-    { label: 'POSTPONED', status: 'Postponed', color: 'text-purple-600', bg: 'bg-purple-50', badgeBg: 'bg-purple-500' },
+    { label: 'ACTIVE LEAD', status: 'Qualified', color: 'text-brand-ink', bg: 'bg-brand-soft', badgeBg: 'bg-brand' },
+    { label: 'FOLLOW-UP', status: 'Follow-up', color: 'text-warning-ink', bg: 'bg-warning-soft', badgeBg: 'bg-warning-strong' },
+    { label: 'HOT LEAD', status: 'Hot', color: 'text-danger-ink', bg: 'bg-danger-soft', badgeBg: 'bg-danger-strong' },
+    { label: 'UPDATE LEAD', status: 'Updated', color: 'text-brand-ink', bg: 'bg-brand-soft', badgeBg: 'bg-brand' },
+    { label: 'IN PROGRESS LEAD', status: 'Itinerary Sent', color: 'text-warning-ink', bg: 'bg-warning-soft', badgeBg: 'bg-warning-strong' },
+    { label: 'CONVERTED', status: 'Closed Won', color: 'text-success-ink', bg: 'bg-success-soft', badgeBg: 'bg-success-strong' },
+    { label: 'CANCEL', status: 'Closed Lost', color: 'text-muted', bg: 'bg-canvas', badgeBg: 'bg-inverse' },
+    { label: 'POSTPONED', status: 'Postponed', color: 'text-brand-ink', bg: 'bg-brand-soft', badgeBg: 'bg-brand' },
   ];
 
   const currentOption = statusOptions.find(o => o.status === lead?.status);
   const currentStatusLabel = currentOption?.label || lead?.status || 'NEW LEAD';
-  const currentBadgeBg = currentOption?.badgeBg || 'bg-slate-500';
+  const currentBadgeBg = currentOption?.badgeBg || 'bg-inverse';
 
   const handleConfirmStatusUpdate = () => {
     if (pendingStatus && lead) {
@@ -883,7 +884,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             type: h.category || lead.hotelCategory || '4 Star Premium',
             room: h.roomType || 'Standard Deluxe Room',
             rooms: h.comments || `${lead.travelers?.adults || 2} Adults with breakfast & dinner`,
-            city: h.city || lead.destination || ''
+            city: h.city || lead.destination || '',
+            mealPlan: h.mealPlan || quoteMealPlan(currentQuote), notes: h.comments || ''
           };
         })
       : [
@@ -931,6 +933,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       coverImage: (currentQuote as any)?.coverImage || (lead as any)?.coverImage || '',
       hotel: mappedHotels[0],
       hotels: mappedHotels,
+      hotelAlternative: currentQuote.hotelAlternative ? {
+        price: `₹${currentQuote.hotelAlternative.price.toLocaleString('en-IN')}`,
+        hotels: currentQuote.hotelAlternative.hotels.map(h => ({ nights: `${h.nights} Night${h.nights === 1 ? '' : 's'}`, name: h.hotelName, type: h.category, room: h.roomType, rooms: h.comments || '', city: h.city, mealPlan: h.mealPlan || quoteMealPlan(currentQuote), notes: h.comments || '' }))
+      } : null,
       flightDetails: effectiveFlightDetails,
       cabDetails: effectiveCabDetails,
       advisor: {
@@ -953,34 +959,34 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign]);
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-xl flex flex-col justify-between">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-inverse/40 backdrop-blur-xl flex flex-col justify-between">
       {/* Main Top Header Bar */}
-      <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-8 py-5 flex items-center justify-between shadow-sm shrink-0">
+      <header className="bg-surface border-b border-line px-8 py-5 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-6">
-          <button onClick={onClose} className="p-3 bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-zinc-400 hover:bg-slate-200 dark:hover:bg-zinc-700 hover:text-slate-800 dark:hover:text-zinc-100 rounded-2xl transition-all cursor-pointer">
+          <button onClick={onClose} className="p-3 bg-subtle text-secondary hover:bg-hover hover:text-content dark:hover:text-zinc-100 rounded-xl transition-all cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+              <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest bg-brand-soft px-3 py-1 rounded-lg border border-brand-line ">
                 PROPOSAL VIEWER
               </span>
-              <span className="text-xs font-black text-slate-400">#{lead?.tripId}</span>
+              <span className="text-sm font-semibold text-muted">#{lead?.tripId}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-zinc-100 tracking-tight mt-1">{lead?.name} — {lead?.destination}</h1>
+            <h1 className="text-2xl font-semibold text-content dark:text-zinc-100 tracking-tight mt-1">{lead?.name} — {lead?.destination}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           {pdfDesigns.length > 0 && (
-            <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-800 px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-zinc-700 shadow-xs">
+            <div className="flex items-center gap-2 bg-subtle px-3.5 py-2.5 rounded-xl border border-line shadow-xs">
               <span
                 className="w-3 h-3 rounded-full border border-black/20"
                 style={{ backgroundColor: selectedDesign?.primary_color || (AVAILABLE_QUOTE_DESIGNS.find(d => d.id === selectedDesign?.id)?.dot) || '#d4af37' }}
               />
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">Design:</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-secondary ">Design:</span>
               <select
                 value={selectedDesign?.id || 'royal'}
                 onChange={(e) => {
@@ -996,10 +1002,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                     api.setActivePdfDesign(newId).catch(() => {});
                   }
                 }}
-                className="text-xs font-bold text-slate-800 dark:text-zinc-200 bg-transparent outline-none cursor-pointer"
+                className="text-sm font-bold text-content dark:text-zinc-200 bg-transparent outline-none cursor-pointer"
               >
                 {AVAILABLE_QUOTE_DESIGNS.map(d => (
-                  <option key={d.id} value={d.id} className="text-slate-900 bg-white dark:bg-zinc-800 dark:text-zinc-100">
+                  <option key={d.id} value={d.id} className="text-content bg-surface dark:text-zinc-100">
                     {d.name} {selectedDesign?.id === d.id ? '✓' : ''}
                   </option>
                 ))}
@@ -1013,7 +1019,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
               onClick={() => {
                 onDeleteLead(lead.id);
               }}
-              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-2 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg font-medium text-sm transition-all flex items-center gap-1.5 shadow-xs"
               title="Delete Lead"
             >
               <Trash2 size={14} />
@@ -1025,7 +1031,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             type="button"
             onClick={handleDownloadB2BPDF} 
             disabled={isDownloadingB2B || isDownloading || !currentQuote}
-            className="px-5 py-3.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
+            className="px-5 py-3.5 bg-gradient-to-r from-warning-strong to-warning-strong hover:from-warning-strong hover:to-warning-strong text-white rounded-xl font-semibold text-sm uppercase tracking-wider transition-all shadow-sm flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
             title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
           >
             {isDownloadingB2B ? (
@@ -1039,7 +1045,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           <button 
             onClick={handleDownloadPDF} 
             disabled={isDownloading || !currentQuote}
-            className="px-6 py-3.5 bg-[#12233D] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg flex items-center gap-3 disabled:opacity-50"
+            className="px-6 py-3.5 bg-[#12233D] text-white rounded-xl font-semibold text-sm uppercase tracking-widest hover:bg-inverse transition-all shadow-sm flex items-center gap-3 disabled:opacity-50"
             style={{ backgroundColor: designColors.secondary }}
           >
             {isDownloading ? (
@@ -1056,14 +1062,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
       {/* Tab Navigation for Converted Leads */}
       {isConverted && (
-        <div className="bg-slate-100 dark:bg-zinc-800/80 px-8 pt-3 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-3 shrink-0">
+        <div className="bg-subtle px-8 pt-3 border-b border-line flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={() => setLeadViewTab('proposal')}
-            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 px-4 text-sm font-semibold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               leadViewTab === 'proposal'
-                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ? 'border-brand-line text-brand-ink '
+                : 'border-transparent text-secondary hover:text-content dark:hover:text-zinc-200'
             }`}
           >
             <FileText size={15} />
@@ -1073,18 +1079,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           <button
             type="button"
             onClick={() => setLeadViewTab('documents')}
-            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 px-4 text-sm font-semibold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               leadViewTab === 'documents'
-                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ? 'border-brand-line text-brand-ink '
+                : 'border-transparent text-secondary hover:text-content dark:hover:text-zinc-200'
             }`}
           >
             <FileText size={15} />
             <span>Client Documents</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
               leadViewTab === 'documents'
-                ? 'bg-indigo-600 text-white dark:bg-lime-400 dark:text-black'
-                : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300'
+                ? 'bg-brand text-white '
+                : 'bg-hover text-content dark:text-zinc-300'
             }`}>
               {docsCount}
             </span>
@@ -1093,10 +1099,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           <button
             type="button"
             onClick={() => setLeadViewTab('client_details')}
-            className={`pb-3 px-4 text-xs font-black uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
+            className={`pb-3 px-4 text-sm font-semibold uppercase tracking-wider flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
               leadViewTab === 'client_details'
-                ? 'border-indigo-600 text-indigo-600 dark:border-lime-400 dark:text-lime-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                ? 'border-brand-line text-brand-ink '
+                : 'border-transparent text-secondary hover:text-content dark:hover:text-zinc-200'
             }`}
           >
             <Users size={15} />
@@ -1131,39 +1137,39 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           <>
          {/* STATUS CONFIRMATION MODAL */}
          {pendingStatus && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300">
-               <div className={`w-16 h-16 mx-auto rounded-3xl ${pendingStatus.bg} flex items-center justify-center mb-6 text-2xl`}>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-sm">
+             <div className="bg-surface rounded-xl shadow-sm w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300">
+               <div className={`w-16 h-16 mx-auto rounded-xl ${pendingStatus.bg} flex items-center justify-center mb-6 text-2xl`}>
                  {pendingStatus.status === 'Postponed' ? '📅' : pendingStatus.status === 'Follow-up' ? '⏰' : '📌'}
                </div>
-               <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">
+               <h3 className="text-xl font-semibold text-content mb-2 tracking-tight">
                  {pendingStatus.status === 'Postponed' ? 'Postpone Lead Trip' : pendingStatus.status === 'Follow-up' ? 'Schedule Follow-up' : 'Update Lead Status?'}
                </h3>
-               <p className="text-xs text-slate-500 mb-6 font-medium">
+               <p className="text-sm text-secondary mb-6 font-medium">
                  {pendingStatus.status === 'Postponed' 
                    ? 'Please select the next follow-up or postponed travel date for this lead.' 
                    : pendingStatus.status === 'Follow-up'
                    ? 'Set scheduled customer touchpoint date, time & action note.'
-                   : <>Change status to <span className={`font-black ${pendingStatus.color}`}>{pendingStatus.label}</span>.</>}
+                   : <>Change status to <span className={`font-semibold ${pendingStatus.color}`}>{pendingStatus.label}</span>.</>}
                </p>
 
                {pendingStatus.status === 'Postponed' && (
                  <div className="space-y-4 mb-6 text-left">
                    <div>
-                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                       📅 Postponed Date <span className="text-rose-500">*</span>
+                     <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
+                       📅 Postponed Date <span className="text-danger-ink">*</span>
                      </label>
                      <input 
                        type="date" 
                        min={todayStr}
                        value={postponeDate} 
                        onChange={e => setPostponeDate(e.target.value)} 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 focus:outline-indigo-500" 
+                       className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold text-content focus:outline-indigo-500" 
                        required 
                      />
                    </div>
                    <div>
-                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+                     <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
                        📝 Reason / Notes (Optional)
                      </label>
                      <input 
@@ -1171,7 +1177,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        placeholder="e.g., Client requested trip next quarter" 
                        value={postponeReason} 
                        onChange={e => setPostponeReason(e.target.value)} 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-800 focus:outline-indigo-500" 
+                       className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold text-content focus:outline-indigo-500" 
                      />
                    </div>
                  </div>
@@ -1181,34 +1187,34 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                  <div className="space-y-4 mb-6 text-left">
                    <div className="grid grid-cols-2 gap-3">
                      <div>
-                       <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                         📅 Date <span className="text-rose-500">*</span>
+                       <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
+                         📅 Date <span className="text-danger-ink">*</span>
                        </label>
                        <input 
                          type="date" 
                          min={todayStr}
                          value={followUpDate} 
                          onChange={e => setFollowUpDate(e.target.value)} 
-                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-indigo-500" 
+                         className="w-full bg-canvas border border-line rounded-xl px-3 py-2.5 text-sm font-bold text-content focus:outline-indigo-500" 
                          required 
                        />
                      </div>
                      <div>
-                       <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
-                         ⏰ Time <span className="text-rose-500">*</span>
+                       <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
+                         ⏰ Time <span className="text-danger-ink">*</span>
                        </label>
                        <input 
                          type="time" 
                          value={followUpTime} 
                          onChange={e => setFollowUpTime(e.target.value)} 
-                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-indigo-500" 
+                         className="w-full bg-canvas border border-line rounded-xl px-3 py-2.5 text-sm font-bold text-content focus:outline-indigo-500" 
                          required 
                        />
                      </div>
                    </div>
 
                    <div>
-                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+                     <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
                        Touchpoint Type
                      </label>
                      <div className="grid grid-cols-4 gap-1.5">
@@ -1217,10 +1223,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                            key={t}
                            type="button"
                            onClick={() => setFollowUpType(t)}
-                           className={`py-2 px-1 rounded-xl text-[10px] font-extrabold uppercase transition-all ${
+                           className={`py-2 px-1 rounded-xl text-xs font-semibold uppercase transition-all ${
                              followUpType === t 
-                               ? 'bg-amber-500 text-white shadow-xs font-black' 
-                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                               ? 'bg-warning-strong text-white shadow-xs font-semibold' 
+                               : 'bg-subtle text-secondary hover:bg-hover'
                            }`}
                          >
                            {t === 'Call' ? '📞 Call' : t === 'WhatsApp' ? '💬 WA' : t === 'Email' ? '✉️ Mail' : '🤝 Meet'}
@@ -1230,7 +1236,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                    </div>
 
                    <div>
-                     <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+                     <label className="text-xs font-semibold uppercase tracking-wider text-muted block mb-1.5">
                        📝 Note / Agenda
                      </label>
                      <textarea 
@@ -1238,15 +1244,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        placeholder="e.g., Share room-upgrade options and child policy in writing." 
                        value={followUpNote} 
                        onChange={e => setFollowUpNote(e.target.value)} 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-indigo-500 resize-none" 
+                       className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-medium text-content focus:outline-indigo-500 resize-none" 
                      />
                    </div>
                  </div>
                )}
 
                <div className="flex gap-4">
-                 <button onClick={() => setPendingStatus(null)} className="flex-1 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl border border-slate-100 hover:bg-slate-50">Cancel</button>
-                 <button onClick={handleConfirmStatusUpdate} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-slate-800">Confirm</button>
+                 <button onClick={() => setPendingStatus(null)} className="flex-1 py-4 text-muted font-semibold text-xs uppercase tracking-widest rounded-xl border border-line hover:bg-canvas">Cancel</button>
+                 <button onClick={handleConfirmStatusUpdate} className="flex-1 py-4 bg-inverse text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm hover:bg-inverse">Confirm</button>
                </div>
              </div>
            </div>
@@ -1254,14 +1260,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
          {/* DELETE CONFIRMATION MODAL */}
          {isConfirmingDelete && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300">
-               <div className="w-16 h-16 mx-auto rounded-3xl bg-rose-50 flex items-center justify-center mb-6 text-2xl text-rose-500">⚠️</div>
-               <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Delete Quotation?</h3>
-               <p className="text-xs text-slate-500 mb-8 font-medium">This quote option will be permanently removed.</p>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-sm">
+             <div className="bg-surface rounded-xl shadow-sm w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300">
+               <div className="w-16 h-16 mx-auto rounded-xl bg-danger-soft flex items-center justify-center mb-6 text-2xl text-danger-ink">⚠️</div>
+               <h3 className="text-xl font-semibold text-content mb-2 tracking-tight">Delete Quotation?</h3>
+               <p className="text-sm text-secondary mb-8 font-medium">This quote option will be permanently removed.</p>
                <div className="flex gap-4">
-                 <button onClick={() => setIsConfirmingDelete(false)} className="flex-1 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl border border-slate-100 hover:bg-slate-50">Cancel</button>
-                 <button onClick={handleConfirmDelete} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-rose-700">Delete</button>
+                 <button onClick={() => setIsConfirmingDelete(false)} className="flex-1 py-4 text-muted font-semibold text-xs uppercase tracking-widest rounded-xl border border-line hover:bg-canvas">Cancel</button>
+                 <button onClick={handleConfirmDelete} className="flex-1 py-4 bg-danger-strong text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm hover:bg-danger-strong">Delete</button>
                </div>
              </div>
            </div>
@@ -1269,17 +1275,17 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
          {/* REMINDER SETTER MODAL */}
          {pendingReminder && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-             <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300 space-y-6">
-               <div className="w-16 h-16 mx-auto rounded-3xl bg-indigo-50 flex items-center justify-center text-2xl text-indigo-600">⏰</div>
-               <h3 className="text-xl font-black text-slate-900 tracking-tight">Schedule Call Reminder</h3>
+           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-sm">
+             <div className="bg-surface rounded-xl shadow-sm w-full max-w-sm p-10 text-center animate-in zoom-in-95 duration-300 space-y-6">
+               <div className="w-16 h-16 mx-auto rounded-xl bg-brand-soft flex items-center justify-center text-2xl text-brand-ink">⏰</div>
+               <h3 className="text-xl font-semibold text-content tracking-tight">Schedule Call Reminder</h3>
                <div className="space-y-4">
-                 <input type="date" min={todayStr} value={pendingReminder.date} onChange={e => setPendingReminder({ ...pendingReminder, date: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold" />
-                 <input type="time" value={pendingReminder.time} onChange={e => setPendingReminder({ ...pendingReminder, time: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold" />
+                 <input type="date" min={todayStr} value={pendingReminder.date} onChange={e => setPendingReminder({ ...pendingReminder, date: e.target.value })} className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold" />
+                 <input type="time" value={pendingReminder.time} onChange={e => setPendingReminder({ ...pendingReminder, time: e.target.value })} className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold" />
                </div>
                <div className="flex gap-4 pt-2">
-                 <button onClick={() => setPendingReminder(null)} className="flex-1 py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl">Cancel</button>
-                 <button onClick={handleConfirmReminder} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl">Set Reminder</button>
+                 <button onClick={() => setPendingReminder(null)} className="flex-1 py-4 text-muted font-semibold text-xs uppercase tracking-widest rounded-xl">Cancel</button>
+                 <button onClick={handleConfirmReminder} className="flex-1 py-4 bg-brand text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm">Set Reminder</button>
                </div>
              </div>
            </div>
@@ -1292,26 +1298,26 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             <div className="lg:col-span-1 space-y-8">
                
                {/* LEAD STATUS CONTROL CARD WITH CONFIRMATION */}
-               <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
-                  <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+               <div className="bg-surface p-8 rounded-xl shadow-sm border border-line space-y-6">
+                  <div className="flex justify-between items-center pb-4 border-b border-line">
                     <div>
-                      <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-1">LEAD STATUS CONTROL</span>
-                      <h3 className="text-lg font-black text-slate-900 tracking-tight">{lead.name}</h3>
+                      <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">LEAD STATUS CONTROL</span>
+                      <h3 className="text-lg font-semibold text-content tracking-tight">{lead.name}</h3>
                     </div>
-                    <span className="text-xs font-black text-slate-400">#{lead.tripId}</span>
+                    <span className="text-sm font-semibold text-muted">#{lead.tripId}</span>
                   </div>
 
                   {/* Current Active Status Badge */}
-                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Status</span>
-                    <span className={`px-4 py-1.5 ${currentBadgeBg} text-white text-[10px] font-black rounded-full uppercase tracking-wider`}>
+                  <div className="p-4 bg-canvas rounded-xl border border-line flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted uppercase tracking-widest">Current Status</span>
+                    <span className={`px-4 py-1.5 ${currentBadgeBg} text-white text-xs font-semibold rounded-full uppercase tracking-wider`}>
                       {currentStatusLabel}
                     </span>
                   </div>
 
                   {/* Interactive Status Changer Buttons (All Trigger Confirmation Modal) */}
                   <div className="space-y-2">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Update Lead Status (Requires Approval):</p>
+                    <p className="text-xs font-semibold text-muted uppercase tracking-widest px-1">Update Lead Status (Requires Approval):</p>
                     <div className="grid grid-cols-1 gap-2">
                       {statusOptions.map((opt) => {
                         const isCurrent = lead.status === opt.status;
@@ -1319,10 +1325,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                           <button
                             key={opt.status}
                             onClick={() => setPendingStatus(opt)}
-                            className={`w-full p-3.5 rounded-2xl text-left font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-between border ${
+                            className={`w-full p-3.5 rounded-xl text-left font-semibold text-xs uppercase tracking-widest transition-all flex items-center justify-between border ${
                               isCurrent 
-                                ? 'bg-slate-900 text-white border-slate-900 shadow-md' 
-                                : `${opt.bg} ${opt.color} border-slate-100 hover:scale-[1.02] hover:shadow-sm`
+                                ? 'bg-inverse text-white border-line shadow-sm' 
+                                : `${opt.bg} ${opt.color} border-line hover:scale-[1.02] hover:shadow-sm`
                             }`}
                           >
                             <span>{opt.label}</span>
@@ -1335,14 +1341,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                </div>
 
                 {/* TRAVELER REQUIREMENTS CARD */}
-                <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
-                   <div className="flex items-center justify-between border-b border-slate-50 pb-3">
-                      <h3 className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.25em]">TRAVELER REQUIREMENTS</h3>
+                <div className="bg-surface p-8 rounded-xl shadow-sm border border-line space-y-6">
+                   <div className="flex items-center justify-between border-b border-line pb-3">
+                      <h3 className="text-xs font-semibold text-success-ink uppercase tracking-[0.25em]">TRAVELER REQUIREMENTS</h3>
                       {!isReadOnly && !isEditingReqs && (
                         <button
                           type="button"
                           onClick={() => setIsEditingReqs(true)}
-                          className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-100 transition-colors"
+                          className="px-3 py-1 bg-brand-soft text-brand-ink rounded-lg text-xs font-semibold uppercase hover:bg-brand-soft transition-colors"
                         >
                           ✏️ Edit Reqs
                         </button>
@@ -1353,45 +1359,45 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      <div className="space-y-4 text-xs">
                        <div className="grid grid-cols-2 gap-3">
                          <div>
-                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Adults</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Adults</label>
                            <input
                              type="number"
                              min={0}
                              value={tempAdults}
                              onChange={(e) => setTempAdults(Number(e.target.value))}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold outline-none"
                            />
                          </div>
                          <div>
-                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Children</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Children</label>
                            <input
                              type="number"
                              min={0}
                              value={tempChildren}
                              onChange={(e) => setTempChildren(Number(e.target.value))}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold outline-none"
                            />
                          </div>
                        </div>
 
                        <div>
-                         <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Child Ages (comma separated)</label>
+                         <label className="block text-xs font-semibold text-muted uppercase mb-1">Child Ages (comma separated)</label>
                          <input
                            type="text"
                            placeholder="e.g. 5, 8"
                            value={tempChildAgesStr}
                            onChange={(e) => setTempChildAgesStr(e.target.value)}
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                           className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold outline-none"
                          />
                        </div>
 
                        <div className="grid grid-cols-2 gap-3">
                          <div>
-                           <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Budget Tier</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Budget Tier</label>
                            <select
                              value={tempBudgetTier}
                              onChange={(e) => setTempBudgetTier(e.target.value as 'Luxury' | 'Mid' | 'Budget')}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold outline-none"
                            >
                              <option value="Budget">Budget</option>
                              <option value="Mid">Mid</option>
@@ -1400,11 +1406,11 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                          </div>
                          <div>
                            <div className="flex items-center justify-between mb-1">
-                             <label className="block text-[9px] font-black text-slate-400 uppercase">Hotel Category</label>
+                             <label className="block text-xs font-semibold text-muted uppercase">Hotel Category</label>
                              <button
                                type="button"
                                onClick={() => setIsCustomHotelCategory(!isCustomHotelCategory)}
-                               className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                               className="text-xs font-bold text-brand-ink hover:text-brand-ink underline cursor-pointer"
                              >
                                {isCustomHotelCategory ? "Select list" : "+ Type custom"}
                              </button>
@@ -1416,7 +1422,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                value={tempHotelCategory}
                                onChange={(e) => setTempHotelCategory(e.target.value)}
                                placeholder="e.g. 5 Star Luxury, Boutique..."
-                               className="w-full bg-slate-50 border border-indigo-300 rounded-xl px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
+                               className="w-full bg-canvas border border-brand-line rounded-xl px-3 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line"
                              />
                            ) : (
                              <select
@@ -1428,7 +1434,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                    setTempHotelCategory(e.target.value);
                                  }
                                }}
-                               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold outline-none"
+                               className="w-full bg-canvas border border-line rounded-xl px-3 py-2 text-sm font-bold outline-none"
                              >
                                <option value="2 Star">2 Star</option>
                                <option value="3 Star">3 Star</option>
@@ -1446,33 +1452,33 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                        <div className="grid grid-cols-3 gap-2">
                          <div>
-                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Stay</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Stay</label>
                            <select
                              value={tempIncludeStay}
                              onChange={(e) => setTempIncludeStay(e.target.value)}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-2 py-2 text-sm font-bold outline-none"
                            >
                              <option value="Yes">Yes</option>
                              <option value="No">No</option>
                            </select>
                          </div>
                          <div>
-                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Flights</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Flights</label>
                            <select
                              value={tempIncludeFlight}
                              onChange={(e) => setTempIncludeFlight(e.target.value)}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-2 py-2 text-sm font-bold outline-none"
                            >
                              <option value="Yes">Yes</option>
                              <option value="No">No</option>
                            </select>
                          </div>
                          <div>
-                           <label className="block text-[8px] font-black text-slate-400 uppercase mb-1">Cab</label>
+                           <label className="block text-xs font-semibold text-muted uppercase mb-1">Cab</label>
                            <select
                              value={tempIncludeCab}
                              onChange={(e) => setTempIncludeCab(e.target.value)}
-                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-xs font-bold outline-none"
+                             className="w-full bg-canvas border border-line rounded-xl px-2 py-2 text-sm font-bold outline-none"
                            >
                              <option value="Yes">Yes</option>
                              <option value="No">No</option>
@@ -1481,12 +1487,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        </div>
 
                        <div>
-                         <label className="block text-[9px] font-black text-slate-400 uppercase mb-1">Special Comments</label>
+                         <label className="block text-xs font-semibold text-muted uppercase mb-1">Special Comments</label>
                          <textarea
                            rows={2}
                            value={tempOtherInfo}
                            onChange={(e) => setTempOtherInfo(e.target.value)}
-                           className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none resize-none"
+                           className="w-full bg-canvas border border-line rounded-xl p-3 text-sm font-medium outline-none resize-none"
                            placeholder="Add requirements comments..."
                          />
                        </div>
@@ -1495,14 +1501,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                          <button
                            type="button"
                            onClick={() => setIsEditingReqs(false)}
-                           className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors"
+                           className="flex-1 py-2.5 bg-subtle hover:bg-hover text-content rounded-xl font-semibold text-xs uppercase tracking-widest transition-colors"
                          >
                            Cancel
                          </button>
                          <button
                            type="button"
                            onClick={handleSaveTravelerRequirements}
-                           className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors"
+                           className="flex-1 py-2.5 bg-brand hover:bg-brand text-white rounded-xl font-semibold text-xs uppercase tracking-widest transition-colors"
                          >
                            Save Reqs
                          </button>
@@ -1510,18 +1516,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                      </div>
                    ) : (
                      <div className="space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-slate-50">
+                        <div className="flex justify-between items-center pb-3 border-b border-line">
                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase mb-1">TRIP ROSTER</p>
-                              <p className="text-base font-black text-slate-800">{lead.travelers?.adults || 0} Adults, {lead.travelers?.children || 0} Children</p>
+                              <p className="text-xs font-semibold text-muted uppercase mb-1">TRIP ROSTER</p>
+                              <p className="text-base font-semibold text-content">{lead.travelers?.adults || 0} Adults, {lead.travelers?.children || 0} Children</p>
                            </div>
-                           <span className="text-[9px] font-black bg-slate-50 px-3 py-1 rounded-lg text-slate-500 border border-slate-100">{lead.budgetTier} Tier</span>
+                           <span className="text-xs font-semibold bg-canvas px-3 py-1 rounded-lg text-secondary border border-line">{lead.budgetTier} Tier</span>
                         </div>
 
                         {lead.travelers?.childAges && lead.travelers.childAges.length > 0 && (
-                          <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-center justify-between">
-                            <span className="text-[9px] font-black text-indigo-400 uppercase">Child Ages</span>
-                            <span className="text-xs font-black text-indigo-700">{lead.travelers.childAges.join(', ')} yrs</span>
+                          <div className="p-3 bg-brand-soft/50 rounded-xl border border-brand-line/50 flex items-center justify-between">
+                            <span className="text-xs font-semibold text-brand-ink uppercase">Child Ages</span>
+                            <span className="text-sm font-semibold text-brand-ink">{lead.travelers.childAges.join(', ')} yrs</span>
                           </div>
                         )}
 
@@ -1532,18 +1538,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                              { l: 'Private Cab', v: lead.includeCab || 'N/A', icon: '🚗' },
                              { l: 'Hotel Star', v: lead.hotelCategory || 'N/A', icon: '⭐' },
                            ].map((pref, i) => (
-                             <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                             <div key={i} className="p-3 bg-canvas rounded-xl border border-line">
                                 <span className="text-sm block mb-1">{pref.icon}</span>
-                                <span className="text-[8px] font-black text-slate-400 uppercase block">{pref.l}</span>
-                                <span className="text-xs font-black text-slate-800 truncate block">{pref.v}</span>
+                                <span className="text-xs font-semibold text-muted uppercase block">{pref.l}</span>
+                                <span className="text-sm font-semibold text-content truncate block">{pref.v}</span>
                              </div>
                            ))}
                         </div>
 
                         {lead.otherInfo && (
                           <div className="pt-2">
-                            <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Special Comments</span>
-                            <p className="text-xs text-slate-600 font-medium bg-amber-50/50 p-3 rounded-xl border border-amber-100">{lead.otherInfo}</p>
+                            <span className="text-xs font-semibold text-muted uppercase block mb-1">Special Comments</span>
+                            <p className="text-sm text-secondary font-medium bg-warning-soft/50 p-3 rounded-xl border border-warning-line">{lead.otherInfo}</p>
                           </div>
                         )}
                      </div>
@@ -1551,8 +1557,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                 </div>
 
                {/* LOG ACTIVITY & NOTES CARD (Matching Screenshot Design) */}
-               <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-6">
-                  <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.25em] border-b border-slate-100 pb-3">LOG ACTIVITY & NOTES</h3>
+               <div className="bg-surface p-8 rounded-xl shadow-sm border border-line space-y-6">
+                  <h3 className="text-xs font-semibold text-muted uppercase tracking-[0.25em] border-b border-line pb-3">LOG ACTIVITY & NOTES</h3>
                   
                   <div className="grid grid-cols-2 gap-3">
                     <button 
@@ -1561,7 +1567,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         onAddNote(lead.id, 'CNP (Call Not Picked)', 'Action');
                         alert(`📞 CNP (Call Not Picked) logged for ${lead.name}.`);
                       }} 
-                      className="py-4 px-4 bg-[#FAFBFD] hover:bg-rose-50 text-[#8C2C5E] hover:text-rose-700 font-extrabold text-[11px] uppercase tracking-wider rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-center gap-2 transition-all group"
+                      className="py-4 px-4 bg-[#FAFBFD] hover:bg-danger-soft text-[#8C2C5E] hover:text-danger-ink font-semibold text-xs uppercase tracking-wider rounded-xl border border-line shadow-2xs flex items-center justify-center gap-2 transition-all group"
                     >
                       <span className="text-base group-hover:scale-110 transition-transform">📞</span>
                       <span>CNP (NO PICK)</span>
@@ -1570,7 +1576,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                     <button 
                       type="button"
                       onClick={() => setPendingReminder({ date: new Date().toISOString().split('T')[0], time: '14:00' })} 
-                      className="py-4 px-4 bg-[#FAFBFD] hover:bg-indigo-50 text-[#3A3550] hover:text-indigo-700 font-extrabold text-[11px] uppercase tracking-wider rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-center gap-2 transition-all group"
+                      className="py-4 px-4 bg-[#FAFBFD] hover:bg-brand-soft text-[#3A3550] hover:text-brand-ink font-semibold text-xs uppercase tracking-wider rounded-xl border border-line shadow-2xs flex items-center justify-center gap-2 transition-all group"
                     >
                       <span className="text-base group-hover:scale-110 transition-transform">⏰</span>
                       <span>SCHEDULE CALL</span>
@@ -1583,12 +1589,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                       value={noteText} 
                       onChange={e => setNoteText(e.target.value)} 
                       placeholder="Add follow-up note..." 
-                      className="w-full bg-[#F7F9FC] border border-slate-200 rounded-2xl p-4 text-xs font-medium text-slate-800 outline-none focus:border-indigo-500 focus:bg-white transition-all resize-none shadow-inner"
+                      className="w-full bg-[#F7F9FC] border border-line rounded-xl p-4 text-sm font-medium text-content outline-none focus:border-brand-line focus:bg-surface transition-all resize-none shadow-inner"
                     />
                     <button 
                       type="button"
                       onClick={handleAddNote} 
-                      className="w-full py-4 bg-[#0F172A] hover:bg-slate-800 text-white font-extrabold text-xs uppercase tracking-widest rounded-2xl shadow-lg transition-all"
+                      className="w-full py-4 bg-[#0F172A] hover:bg-inverse text-white font-semibold text-sm uppercase tracking-widest rounded-xl shadow-sm transition-all"
                     >
                       ADD NOTE TO LEAD
                     </button>
@@ -1596,10 +1602,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                </div>
 
                {/* LEAD COMMENTS & SCHEDULED CALLS LOG (Rendered below the box) */}
-               <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.25em]">LEAD COMMENTS & SCHEDULED CALLS</h3>
-                    <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full border border-indigo-100">
+               <div className="bg-surface p-8 rounded-xl shadow-sm border border-line space-y-4">
+                  <div className="flex items-center justify-between border-b border-line pb-3">
+                    <h3 className="text-xs font-semibold text-muted uppercase tracking-[0.25em]">LEAD COMMENTS & SCHEDULED CALLS</h3>
+                    <span className="text-xs font-bold bg-brand-soft text-brand-ink px-3 py-1 rounded-full border border-brand-line">
                       {lead.notes?.length || 0} Logs
                     </span>
                   </div>
@@ -1613,25 +1619,25 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         return (
                           <div 
                             key={note.id} 
-                            className={`p-4 rounded-2xl border text-xs space-y-1.5 transition-all ${
+                            className={`p-4 rounded-xl border text-sm space-y-1.5 transition-all ${
                               isCnp 
-                                ? 'bg-rose-50/70 border-rose-200 text-rose-950' 
+                                ? 'bg-danger-soft/70 border-danger-line text-danger-ink' 
                                 : isReminder 
-                                  ? 'bg-indigo-50/70 border-indigo-200 text-indigo-950' 
-                                  : 'bg-slate-50 border-slate-100 text-slate-800'
+                                  ? 'bg-brand-soft/70 border-brand-line text-brand-ink' 
+                                  : 'bg-canvas border-line text-content'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                              <span className={`text-xs font-semibold uppercase px-2.5 py-0.5 rounded-full ${
                                 isCnp 
-                                  ? 'bg-rose-200 text-rose-800 border border-rose-300' 
+                                  ? 'bg-danger-soft text-danger-ink border border-danger-line' 
                                   : isReminder 
-                                    ? 'bg-indigo-200 text-indigo-800 border border-indigo-300' 
-                                    : 'bg-slate-200 text-slate-700'
+                                    ? 'bg-brand-soft text-brand-ink border border-brand-line' 
+                                    : 'bg-hover text-content'
                               }`}>
                                 {isCnp ? '📞 CNP (No Pick)' : isReminder ? '⏰ Scheduled Call' : note.type}
                               </span>
-                              <span className="text-[10px] font-bold text-slate-400">
+                              <span className="text-xs font-bold text-muted">
                                 {new Date(note.timestamp).toLocaleDateString()} at {new Date(note.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
@@ -1640,7 +1646,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         );
                       })
                     ) : (
-                      <div className="py-8 text-center text-slate-400 text-xs font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <div className="py-8 text-center text-muted text-sm font-bold bg-canvas rounded-xl border border-dashed border-line">
                         No activity comments or scheduled calls logged yet.
                       </div>
                     )}
@@ -1656,21 +1662,21 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                {/* PACKAGE SELECTOR TABS */}
                <div className="flex flex-col gap-6">
                   <div className="flex items-center justify-between">
-                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                     <h2 className="text-3xl font-semibold text-content tracking-tight">
                        {lead.destination} Proposals
                      </h2>
-                     <span className="text-xs font-black text-slate-400">{quotes.length} Option{quotes.length === 1 ? '' : 's'} Created</span>
+                     <span className="text-sm font-semibold text-muted">{quotes.length} Option{quotes.length === 1 ? '' : 's'} Created</span>
                   </div>
 
                   {quotes.length > 0 && (
-                    <div className="flex flex-wrap gap-4 border-b border-slate-200 pb-6">
+                    <div className="flex flex-wrap gap-4 border-b border-line pb-6">
                        {quotes.map((q, idx) => (
-                         <button key={q.id} onClick={() => setActiveQuoteIndex(idx)} className={`px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all ${activeQuoteIndex === idx ? 'bg-[#3a3550] text-white shadow-xl scale-105' : 'bg-white text-slate-400 border border-slate-200 hover:bg-slate-50'}`}>
+                         <button key={q.id} onClick={() => setActiveQuoteIndex(idx)} className={`px-8 py-4 rounded-xl font-semibold text-xs uppercase tracking-widest transition-all ${activeQuoteIndex === idx ? 'bg-[#3a3550] text-white shadow-sm scale-105' : 'bg-surface text-muted border border-line hover:bg-canvas'}`}>
                             Package {idx + 1}
                          </button>
                        ))}
                        {!isReadOnly && (
-                         <button onClick={() => onNewQuote(lead)} className="px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 transition-all">+ New Option</button>
+                         <button onClick={() => onNewQuote(lead)} className="px-8 py-4 rounded-xl font-semibold text-xs uppercase tracking-widest bg-brand-soft text-brand-ink border border-brand-line hover:bg-brand-soft transition-all">+ New Option</button>
                        )}
                     </div>
                   )}
@@ -1680,19 +1686,19 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                  <div className="space-y-8 animate-in fade-in duration-500">
                    
                    {/* PACKAGE OPTIONS MANAGEMENT CARD — 3 ACTION BUTTONS (PDF, EDIT, DELETE) */}
-                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-2xl border border-slate-100 shadow-xl">
+                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-surface p-8 rounded-xl border border-line shadow-sm">
                       <div className="flex-1">
-                         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Viewing Package {activeQuoteIndex + 1}</p>
-                         <h3 className="text-2xl font-black text-slate-900 tracking-tight">{currentQuote.packageTitle || 'Package Proposal'}</h3>
+                         <p className="text-xs font-semibold text-brand-ink uppercase tracking-widest mb-1">Viewing Package {activeQuoteIndex + 1}</p>
+                         <h3 className="text-2xl font-semibold text-content tracking-tight">{currentQuote.packageTitle || 'Package Proposal'}</h3>
                          <div className="flex items-center gap-6 mt-3">
                             <div className="flex flex-col">
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Investment</span>
-                               <span className="text-xl font-black text-emerald-600">₹{pricingData.finalPrice.toLocaleString()}</span>
+                               <span className="text-xs font-semibold text-muted uppercase tracking-widest">Investment</span>
+                               <span className="text-xl font-semibold text-success-ink">₹{pricingData.finalPrice.toLocaleString()}</span>
                             </div>
-                            <div className="w-px h-7 bg-slate-100"></div>
+                            <div className="w-px h-7 bg-subtle"></div>
                             <div className="flex flex-col">
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Duration</span>
-                               <span className="text-sm font-black text-slate-800">{currentQuote.itinerary?.length || lead.durationDays || 7} Days</span>
+                               <span className="text-xs font-semibold text-muted uppercase tracking-widest">Duration</span>
+                               <span className="text-sm font-semibold text-content">{currentQuote.itinerary?.length || lead.durationDays || 7} Days</span>
                             </div>
                          </div>
                       </div>
@@ -1729,18 +1735,18 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             className="flex flex-col items-center gap-2 group"
                             title="Save this itinerary proposal to Saved Itineraries section"
                           >
-                             <div className="w-13 h-13 p-3 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                             <div className="w-13 h-13 p-3 bg-success-soft rounded-xl flex items-center justify-center text-success-ink group-hover:bg-success-strong group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                                 </svg>
                              </div>
-                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Save Draft</span>
+                             <span className="text-xs font-semibold text-muted uppercase tracking-widest">Save Draft</span>
                           </button>
                         )}
 
                         {/* Button 1: Download PDF */}
                         <button onClick={handleDownloadPDF} disabled={isDownloading} className="flex flex-col items-center gap-2 group disabled:opacity-50">
-                           <div className="w-13 h-13 p-3 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                           <div className="w-13 h-13 p-3 bg-brand-soft rounded-xl flex items-center justify-center text-brand-ink group-hover:bg-brand group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                               {isDownloading ? (
                                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                               ) : (
@@ -1749,7 +1755,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                 </svg>
                               )}
                            </div>
-                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">PDF</span>
+                           <span className="text-xs font-semibold text-muted uppercase tracking-widest">PDF</span>
                         </button>
 
                         {/* Button: B2B PDF */}
@@ -1759,14 +1765,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                           className="flex flex-col items-center gap-2 group disabled:opacity-50"
                           title="Download unbranded B2B PDF without company branding or contacts"
                         >
-                           <div className="w-13 h-13 p-3 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                           <div className="w-13 h-13 p-3 bg-warning-soft rounded-xl flex items-center justify-center text-warning-ink group-hover:bg-warning-strong group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                               {isDownloadingB2B ? (
                                 <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                               ) : (
                                 <Download className="h-5 w-5" />
                               )}
                            </div>
-                           <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">B2B PDF</span>
+                           <span className="text-xs font-semibold text-warning-ink uppercase tracking-widest">B2B PDF</span>
                         </button>
 
                         {/* Button 2: Edit Quote */}
@@ -1776,12 +1782,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             className="flex flex-col items-center gap-2 group"
                             title="Edit details, days, prices, and hotels of this package proposal"
                           >
-                             <div className="w-13 h-13 p-3 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:bg-amber-500 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                             <div className="w-13 h-13 p-3 bg-warning-soft rounded-xl flex items-center justify-center text-warning-ink group-hover:bg-warning-strong group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                              </div>
-                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Edit Quote</span>
+                             <span className="text-xs font-semibold text-muted uppercase tracking-widest">Edit Quote</span>
                           </button>
                         )}
 
@@ -1792,12 +1798,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                             className="flex flex-col items-center gap-2 group"
                             title="Delete this quote option"
                           >
-                             <div className="w-13 h-13 p-3 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
+                             <div className="w-13 h-13 p-3 bg-danger-soft rounded-xl flex items-center justify-center text-danger-ink group-hover:bg-danger-strong group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                              </div>
-                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Delete Option</span>
+                             <span className="text-xs font-semibold text-muted uppercase tracking-widest">Delete Option</span>
                           </button>
                         )}
                        </div>
@@ -1806,14 +1812,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                     {/* PROPOSAL PRESENTATION STAGE */}
                     <div className="space-y-4">
                       {/* CHOOSE PROPOSAL DESIGN / THEME BAR */}
-                      <div className="p-4 sm:p-5 rounded-3xl bg-slate-900 border border-slate-800 text-white shadow-xl space-y-3.5">
+                      <div className="p-4 sm:p-5 rounded-xl bg-inverse border border-line text-white shadow-sm space-y-3.5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-amber-400">
-                              <Palette className="w-4 h-4 text-indigo-400" />
+                            <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-warning-ink">
+                              <Palette className="w-4 h-4 text-brand-ink" />
                               <span>CHOOSE PROPOSAL DESIGN / THEME:</span>
                             </span>
-                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-success-strong/20 text-success-ink border border-success-line/30">
                               Active: {selectedDesign?.title || 'Royal Gold'}
                             </span>
                           </div>
@@ -1824,7 +1830,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                               type="button"
                               onClick={handleDownloadB2BPDF}
                               disabled={isDownloadingB2B || isDownloading}
-                              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
+                              className="px-4 py-2.5 bg-gradient-to-r from-warning-strong to-warning-strong hover:from-warning-strong hover:to-warning-strong text-white rounded-xl text-sm font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm hover:shadow-sm cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
                               title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
                             >
                               {isDownloadingB2B ? (
@@ -1844,7 +1850,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                               type="button"
                               onClick={handleDownloadPDF}
                               disabled={isDownloading}
-                              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
+                              className="px-5 py-2.5 bg-success-strong hover:bg-success-strong text-white rounded-xl text-sm font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm hover:shadow-sm cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
                             >
                               {isDownloading ? (
                                 <>
@@ -1871,10 +1877,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                 key={def.id}
                                 type="button"
                                 onClick={() => handleSelectDesign(def.id)}
-                                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                                className={`px-3.5 py-1.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer border ${
                                   isSel
-                                    ? 'bg-amber-400 text-black border-amber-300 shadow-sm font-black'
-                                    : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 border-slate-700/60'
+                                    ? 'bg-warning-strong text-content border-warning-line shadow-sm font-semibold'
+                                    : 'bg-inverse/80 hover:bg-inverse text-slate-300 border-line/60'
                                 }`}
                               >
                                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: def.dot }} />
@@ -1886,7 +1892,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                           {/* Uploaded Festival Themes Dropdown */}
                           <div className="flex items-center gap-1.5 sm:ml-auto">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <Sparkles className="w-3.5 h-3.5 text-warning-ink shrink-0" />
                             <select
                               value={uploadedThemes.some(t => t.id === selectedDesign?.id) ? selectedDesign?.id : (selectedDesign?.id === 'diwali' ? 'diwali-preset' : '')}
                               onChange={(e) => {
@@ -1897,7 +1903,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                   handleSelectUploadedTheme(val);
                                 }
                               }}
-                              className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:border-amber-400 cursor-pointer"
+                              className="bg-inverse border border-line text-white rounded-xl px-3 py-1.5 text-sm font-bold outline-none focus:border-warning-line cursor-pointer"
                             >
                               <option value="">✨ Choose Festival Theme Pack...</option>
                               <option value="diwali-preset">🪔 Diwali theme (Diwali) {selectedDesign?.id === 'diwali' ? '✓' : ''}</option>
@@ -1911,7 +1917,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         </div>
                       </div>
 
-                      <div className="flex justify-center p-4 sm:p-8 bg-slate-100 dark:bg-zinc-950/80 rounded-3xl border border-slate-200 dark:border-zinc-800 overflow-x-auto shadow-inner">
+                      <div className="flex justify-center p-4 sm:p-8 bg-subtle rounded-xl border border-line overflow-x-auto shadow-inner">
                         {currentQuoteDataModel && (
                           <ProposalPdfPreview
                             ref={pdfPreviewRef}
@@ -2230,13 +2236,13 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
                  </div>
                ) : (
-                 <div className="py-32 flex flex-col items-center justify-center text-center px-12 bg-white rounded-2xl border border-dashed border-slate-200">
-                     <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-8 shadow-xl">
+                 <div className="py-32 flex flex-col items-center justify-center text-center px-12 bg-surface rounded-xl border border-dashed border-line">
+                     <div className="w-24 h-24 bg-canvas rounded-[2rem] flex items-center justify-center mb-8 shadow-sm">
                        <span className="text-5xl grayscale opacity-30">📜</span>
                      </div>
-                     <h4 className="text-2xl font-black text-slate-900 mb-3 tracking-tighter uppercase">No Packages Found</h4>
-                     <p className="text-sm text-slate-400 max-w-sm font-bold leading-relaxed mb-10">Start by creating your first itinerary proposal for this customer.</p>
-                     <button onClick={() => onNewQuote(lead)} className="px-12 py-5 bg-[#12233D] text-white rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all">Create Package 1</button>
+                     <h4 className="text-2xl font-semibold text-content mb-3 tracking-tighter uppercase">No Packages Found</h4>
+                     <p className="text-sm text-muted max-w-sm font-bold leading-relaxed mb-10">Start by creating your first itinerary proposal for this customer.</p>
+                     <button onClick={() => onNewQuote(lead)} className="px-12 py-5 bg-[#12233D] text-white rounded-xl font-semibold text-sm uppercase tracking-widest shadow-sm hover:bg-inverse transition-all">Create Package 1</button>
                  </div>
                )}
             </div>

@@ -62,7 +62,7 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
     <div className="space-y-6">
       
       {/* Top Banner */}
-      <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-xl bg-gradient-to-r from-success-strong to-success-strong text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-white/20 backdrop-blur-xs">
@@ -70,19 +70,19 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
             </span>
             <h3 className="font-bold text-lg">Uploaded Hotel Vouchers Repository</h3>
           </div>
-          <p className="text-xs text-emerald-100 mt-1 max-w-xl">
+          <p className="text-sm text-success-ink mt-1 max-w-xl">
             Verified hotel confirmation vouchers ready for delivery or archived for past trips. Send directly to customer via WhatsApp or Email.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
-            <span className="text-[10px] uppercase font-semibold text-emerald-200 block">Verified Vouchers</span>
-            <span className="text-2xl font-black">{uploadedVouchers.length}</span>
+            <span className="text-xs uppercase font-semibold text-success-ink block">Verified Vouchers</span>
+            <span className="text-2xl font-semibold">{uploadedVouchers.length}</span>
           </div>
-          <div className="px-4 py-2 rounded-xl bg-emerald-900/50 backdrop-blur-md border border-emerald-400/30 text-center">
-            <span className="text-[10px] uppercase font-semibold text-emerald-200 block">Delivered</span>
-            <span className="text-2xl font-black text-emerald-100">
+          <div className="px-4 py-2 rounded-xl bg-success-soft/50 backdrop-blur-md border border-success-line/30 text-center">
+            <span className="text-xs uppercase font-semibold text-success-ink block">Delivered</span>
+            <span className="text-2xl font-semibold text-success-ink">
               {uploadedVouchers.filter(v => v.status === 'Sent to Customer').length}
             </span>
           </div>
@@ -90,16 +90,16 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
       </div>
 
       {/* Filter Row */}
-      <div className="p-4 rounded-xl bg-white border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 rounded-xl bg-surface border border-line flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 text-xs">
-          <span className="font-semibold text-slate-700">Delivery Filter:</span>
+          <span className="font-semibold text-content">Delivery Filter:</span>
           
           <button
             onClick={() => setDeliveryFilter('all')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
               deliveryFilter === 'all'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100  text-slate-600  hover:bg-slate-200'
+                ? 'bg-success-strong text-white shadow-xs'
+                : 'bg-subtle text-secondary hover:bg-hover'
             }`}
           >
             All Uploaded ({uploadedVouchers.length})
@@ -109,8 +109,8 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
             onClick={() => setDeliveryFilter('pending_delivery')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
               deliveryFilter === 'pending_delivery'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-slate-100  text-slate-600  hover:bg-slate-200'
+                ? 'bg-warning-strong text-white shadow-xs'
+                : 'bg-subtle text-secondary hover:bg-hover'
             }`}
           >
             Ready to Send ({uploadedVouchers.filter(v => v.status === 'Uploaded').length})
@@ -120,25 +120,25 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
             onClick={() => setDeliveryFilter('sent')}
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all ${
               deliveryFilter === 'sent'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-100  text-slate-600  hover:bg-slate-200'
+                ? 'bg-brand text-white shadow-xs'
+                : 'bg-subtle text-secondary hover:bg-hover'
             }`}
           >
             Sent to Customer ({uploadedVouchers.filter(v => v.status === 'Sent to Customer').length})
           </button>
         </div>
 
-        <span className="text-xs text-slate-500">
-          Showing <span className="font-bold text-slate-800">{filtered.length}</span> documents
+        <span className="text-sm text-secondary">
+          Showing <span className="font-bold text-content">{filtered.length}</span> documents
         </span>
       </div>
 
       {/* Uploaded Vouchers Grid */}
       {filtered.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-white border border-dashed border-slate-300">
+        <div className="p-12 text-center rounded-xl bg-surface border border-dashed border-line">
           <FileCheck2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="font-bold text-slate-800 text-base">No Uploaded Vouchers Found</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+          <h3 className="font-bold text-content text-base">No Uploaded Vouchers Found</h3>
+          <p className="text-sm text-secondary mt-1 max-w-sm mx-auto">
             Uploaded vouchers will appear here once verified and processed from the Pending Hotels Vouchers tab.
           </p>
         </div>
@@ -149,19 +149,19 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
             return (
               <div
                 key={v.id}
-                className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-emerald-300 transition-all shadow-2xs flex flex-col justify-between"
+                className="bg-surface border border-line rounded-xl p-5 hover:border-success-line transition-all shadow-2xs flex flex-col justify-between"
               >
                 <div>
                   {/* Header: Booking ID & Delivery Status */}
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 /50 px-2.5 py-0.5 rounded border border-blue-200">
+                    <span className="text-sm font-mono font-bold text-brand-ink bg-brand-soft /50 px-2.5 py-0.5 rounded border border-brand-line">
                       {v.bookingId}
                     </span>
 
                     <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold flex items-center gap-1 ${
                       isSent 
-                        ? 'bg-blue-50 text-blue-700 /40  border border-blue-200' 
-                        : 'bg-emerald-50 text-emerald-700 /40  border border-emerald-200'
+                        ? 'bg-brand-soft text-brand-ink /40 border border-brand-line' 
+                        : 'bg-success-soft text-success-ink /40 border border-success-line'
                     }`}>
                       {isSent ? <Check className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                       {v.status}
@@ -170,44 +170,44 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
 
                   {/* Hotel Name & City */}
                   <div className="flex items-start gap-2">
-                    <Hotel className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                    <Hotel className="w-5 h-5 text-success-ink mt-0.5 flex-shrink-0" />
                     <div>
-                      <h4 className="font-bold text-slate-900 text-base leading-snug">
+                      <h4 className="font-bold text-content text-base leading-snug">
                         {v.hotelName}
                       </h4>
-                      <p className="text-xs text-slate-500 font-medium">{v.city}</p>
+                      <p className="text-sm text-secondary font-medium">{v.city}</p>
                     </div>
                   </div>
 
                   {/* Details Box */}
-                  <div className="mt-3 p-3 rounded-xl bg-slate-50 /60 border border-slate-100 text-xs space-y-1.5 text-slate-600">
+                  <div className="mt-3 p-3 rounded-xl bg-canvas /60 border border-line text-sm space-y-1.5 text-secondary">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Guest Name:</span>
-                      <strong className="text-slate-900">{v.customerName}</strong>
+                      <span className="text-secondary">Guest Name:</span>
+                      <strong className="text-content">{v.customerName}</strong>
                     </div>
 
-                    <div className="flex flex-col gap-1 py-1 border-y border-slate-200/60 /60 my-1">
+                    <div className="flex flex-col gap-1 py-1 border-y border-line/60 /60 my-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Check-In:</span>
-                        <strong className="text-emerald-600 font-mono font-bold">{v.checkIn}</strong>
+                        <span className="text-secondary">Check-In:</span>
+                        <strong className="text-success-ink font-mono font-bold">{v.checkIn}</strong>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500">Check-Out:</span>
-                        <strong className="text-rose-600 font-mono font-bold">{v.checkOut}</strong>
+                        <span className="text-secondary">Check-Out:</span>
+                        <strong className="text-danger-ink font-mono font-bold">{v.checkOut}</strong>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                      <div className="flex items-center justify-between text-xs text-muted pt-0.5">
                         <span>Duration:</span>
                         <span>{v.nights} {v.nights === 1 ? 'Night' : 'Nights'}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-500">Room Type:</span>
-                      <span className="font-medium text-slate-800 truncate max-w-[160px]">{v.roomType}</span>
+                      <span className="text-secondary">Room Type:</span>
+                      <span className="font-medium text-content truncate max-w-[160px]">{v.roomType}</span>
                     </div>
 
                     {v.confirmationNumber && (
-                      <div className="flex items-center justify-between text-emerald-600 font-mono text-[11px] font-semibold pt-1 border-t border-slate-200/60">
+                      <div className="flex items-center justify-between text-success-ink font-mono text-xs font-semibold pt-1 border-t border-line/60">
                         <span>Conf No:</span>
                         <span>{v.confirmationNumber}</span>
                       </div>
@@ -215,17 +215,17 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
                   </div>
 
                   {/* Upload Info */}
-                  <div className="mt-2 text-[11px] text-slate-400 flex items-center justify-between">
+                  <div className="mt-2 text-xs text-muted flex items-center justify-between">
                     <span>Uploaded by {v.uploadedBy || 'Ops Staff'}</span>
                     <span>{v.uploadedAt || 'Recent'}</span>
                   </div>
                 </div>
 
                 {/* Bottom Action Controls */}
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-2">
                   <button
                     onClick={() => onPreviewVoucher(v)}
-                    className="flex-1 py-2 px-2.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-semibold flex items-center justify-center gap-1 transition-colors"
+                    className="flex-1 py-2 px-2.5 rounded-lg bg-subtle text-content hover:bg-hover text-sm font-semibold flex items-center justify-center gap-1 transition-colors"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>View Voucher</span>
@@ -233,8 +233,8 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
 
                   <button
                     onClick={() => onSendToCustomer(v)}
-                    className={`py-2 px-3 rounded-lg text-xs font-bold text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer ${
-                      isSent ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                    className={`py-2 px-3 rounded-lg text-sm font-bold text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer ${
+                      isSent ? 'bg-brand hover:bg-brand' : 'bg-success-strong hover:bg-success-strong'
                     }`}
                     title="Send Voucher PDF via WhatsApp / Email"
                   >
@@ -244,7 +244,7 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
 
                   <button
                     onClick={() => onReuploadVoucher(v)}
-                    className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                    className="p-2 rounded-lg text-muted hover:text-secondary hover:bg-subtle transition-colors"
                     title="Re-upload or Update Voucher Document"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -257,7 +257,7 @@ export const UploadedVouchersModule: React.FC<UploadedVouchersModuleProps> = ({
                           onDeleteVoucher(v.id);
                         }
                       }}
-                      className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      className="p-2 rounded-lg text-danger-ink hover:text-danger-ink hover:bg-danger-soft transition-colors"
                       title="Delete Voucher"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

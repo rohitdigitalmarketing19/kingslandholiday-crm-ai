@@ -164,19 +164,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200/60 overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-inverse/85 backdrop-blur-xl flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-surface w-full max-w-md rounded-xl shadow-sm border border-line/60 overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Header Branding */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white px-8 pt-7 pb-6 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="bg-gradient-to-br from-line via-line to-line text-white px-8 pt-7 pb-6 text-center relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-brand/5 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand/5 rounded-full blur-2xl pointer-events-none"></div>
           
-          <div className="w-11 h-11 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-lg mx-auto mb-3 border border-white/10 shadow-lg">
+          <div className="w-11 h-11 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-lg mx-auto mb-3 border border-white/10 shadow-sm">
             <span className="font-bold text-white tracking-tight">K</span>
           </div>
           <h2 className="text-lg font-semibold tracking-tight text-white">Kingsland Holidays CRM</h2>
-          <p className="text-xs text-slate-400 font-medium mt-0.5">
+          <p className="text-sm text-muted font-medium mt-0.5">
             {mode === 'login' ? 'Secure Staff Sign-In' : 'Admin OTP Password Recovery'}
           </p>
         </div>
@@ -186,31 +186,31 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div>
             <form onSubmit={handleLoginSubmit} className="px-8 pb-7 pt-5 space-y-4">
               {successMsg && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-medium flex items-center gap-2">
-                  <CheckCircle2 size={14} className="shrink-0 text-emerald-600" />
+                <div className="p-3 bg-success-soft border border-success-line text-success-ink rounded-lg text-sm font-medium flex items-center gap-2">
+                  <CheckCircle2 size={14} className="shrink-0 text-success-ink" />
                   <span>{successMsg}</span>
                 </div>
               )}
 
               {errorMsg && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-medium flex items-center gap-2">
-                  <AlertTriangle size={14} className="shrink-0 text-red-600" />
+                <div className="p-3 bg-danger-soft border border-danger-line text-danger-ink rounded-lg text-sm font-medium flex items-center gap-2">
+                  <AlertTriangle size={14} className="shrink-0 text-danger-ink" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
               {/* Email Address */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Email Address</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     placeholder="name@kingslandholidays.com"
                     value={emailInput}
                     onChange={e => setEmailInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2.5 text-xs font-medium text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                    className="w-full bg-canvas border border-line rounded-lg pl-9 pr-3 py-2.5 text-sm font-medium text-content outline-none focus:border-brand-line focus:bg-surface transition-all"
                   />
                 </div>
               </div>
@@ -218,7 +218,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-medium text-slate-600">Password</label>
+                  <label className="text-xs font-medium text-secondary">Password</label>
                   <button
                     type="button"
                     onClick={() => {
@@ -228,25 +228,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       setOtpStatusMsg('');
                       setMode('forgot');
                     }}
-                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer"
+                    className="text-xs font-medium text-brand-ink hover:text-brand-ink hover:underline cursor-pointer"
                   >
                     Forgot Password?
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="Enter your password"
                     value={passwordInput}
                     onChange={e => setPasswordInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-9 py-2.5 text-xs font-mono font-medium text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                    className="w-full bg-canvas border border-line rounded-lg pl-9 pr-9 py-2.5 text-sm font-mono font-medium text-content outline-none focus:border-brand-line focus:bg-surface transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-secondary transition-colors cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
@@ -257,7 +257,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
+                className="w-full py-2.5 bg-brand hover:bg-brand text-white rounded-lg text-sm font-semibold shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
                 {isLoading ? (
                   <>
@@ -272,7 +272,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 )}
               </button>
 
-              <p className="text-[10px] text-slate-400 text-center pt-2">
+              <p className="text-xs text-muted text-center pt-2">
                 Authorized staff access only. Activity is monitored and logged.
               </p>
             </form>
@@ -284,11 +284,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div>
             <div className="px-8 pt-5 pb-1 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
-                  <Key size={14} className="text-amber-500" />
+                <h3 className="text-sm font-semibold text-content flex items-center gap-1.5">
+                  <Key size={14} className="text-warning-ink" />
                   <span>Reset Password</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Authorize password reset via Admin Security OTP.</p>
+                <p className="text-sm text-muted mt-0.5">Authorize password reset via Admin Security OTP.</p>
               </div>
               <button
                 type="button"
@@ -296,7 +296,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   setErrorMsg('');
                   setMode('login');
                 }}
-                className="text-[11px] font-medium text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer"
+                className="text-xs font-medium text-secondary hover:text-content flex items-center gap-1 cursor-pointer"
               >
                 <ArrowLeft size={12} />
                 <span>Back to Login</span>
@@ -305,15 +305,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <form onSubmit={handleResetPasswordSubmit} className="px-8 pb-7 pt-3 space-y-3.5">
               {otpStatusMsg && (
-                <div className={`p-3 rounded-lg text-xs font-medium border flex items-start gap-2 ${
+                <div className={`p-3 rounded-lg text-sm font-medium border flex items-start gap-2 ${
                   otpStatusMsg.includes('✓')
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-amber-50 text-amber-900 border-amber-200'
+                    ? 'bg-success-soft text-success-ink border-success-line'
+                    : 'bg-warning-soft text-warning-ink border-warning-line'
                 }`}>
                   {otpStatusMsg.includes('✓') ? (
-                    <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={14} className="text-success-ink shrink-0 mt-0.5" />
                   ) : (
-                    <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                    <AlertTriangle size={14} className="text-warning-ink shrink-0 mt-0.5" />
                   )}
                   <span className="leading-snug">{otpStatusMsg}</span>
                 </div>
@@ -321,32 +321,32 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
               {/* Account Email */}
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Your Account Email</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Your Account Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     placeholder="name@kingslandholidays.com"
                     value={forgotEmail}
                     onChange={e => setForgotEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-medium text-slate-900 outline-none focus:border-indigo-400 focus:bg-white transition-all"
+                    className="w-full bg-canvas border border-line rounded-lg pl-9 pr-3 py-2 text-sm font-medium text-content outline-none focus:border-brand-line focus:bg-surface transition-all"
                   />
                 </div>
               </div>
 
               {/* Admin OTP Authorization Box */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <div className="p-3 bg-canvas rounded-xl border border-line space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-medium text-slate-600">Admin Authorization OTP</span>
-                  <span className="text-[10px] text-slate-400 font-medium">(Check your admin Gmail)</span>
+                  <span className="text-xs font-medium text-secondary">Admin Authorization OTP</span>
+                  <span className="text-xs text-muted font-medium">(Check your admin Gmail)</span>
                 </div>
 
                 <button
                   type="button"
                   onClick={handleSendAdminOtp}
                   disabled={isSendingOtp || otpCountdown > 0}
-                  className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                  className="w-full py-2 bg-inverse hover:bg-inverse text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                 >
                   <RefreshCw size={12} className={isSendingOtp ? 'animate-spin' : ''} />
                   <span>
@@ -362,7 +362,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {/* New Password & 6-Digit OTP */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">New Password</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">New Password</label>
                   <div className="relative">
                     <input
                       type={showNewPassword ? 'text' : 'password'}
@@ -370,12 +370,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                       placeholder="Min 4 characters"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-3 pr-8 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                      className="w-full bg-canvas border border-line rounded-lg pl-3 pr-8 py-2 text-sm font-mono font-medium outline-none focus:border-brand-line focus:bg-surface"
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-secondary"
                     >
                       {showNewPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
@@ -383,7 +383,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">6-Digit OTP Code</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">6-Digit OTP Code</label>
                   <input
                     type="text"
                     required
@@ -391,7 +391,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     placeholder="e.g. 123456"
                     value={otpCodeInput}
                     onChange={e => setOtpCodeInput(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-bold text-center tracking-widest text-indigo-700 outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-mono font-bold text-center tracking-widest text-brand-ink outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="submit"
                 disabled={isResettingPassword || !otpSent || !otpCodeInput}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 mt-1"
+                className="w-full py-2.5 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-medium shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 mt-1"
               >
                 {isResettingPassword ? (
                   <>

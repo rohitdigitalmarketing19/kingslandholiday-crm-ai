@@ -21,3 +21,6 @@ Thumbs.db
 
 # Archives
 *.zip
+
+# Local browser and PDF review artifacts
+tmp/

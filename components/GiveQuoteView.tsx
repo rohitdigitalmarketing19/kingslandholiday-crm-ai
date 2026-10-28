@@ -5,6 +5,8 @@ import { generateItinerary } from '../services/geminiService';
 import * as api from '../services/apiService';
 import { DestinationPhotoItem } from '../services/apiService';
 import { compressImageFile } from '../utils/imageCompressor';
+import HotelAlternativeEditor from './HotelAlternativeEditor';
+import { normalizeHotelAlternative, quoteMealPlan } from '../utils/hotelOptions';
 
 interface GiveQuoteViewProps {
   lead: Lead;
@@ -61,7 +63,7 @@ Pure Agent Declaration (Terms & Conditions):
 • We recover only the actual amount incurred for third-party services, in addition to our separately charged service fee.
 • All legal obligations are subject to Jaipur jurisdiction only.`;
 
-const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-slate-800", disabled = false, placeholder = "0" }: { label: string, value: number, onChange: (v: number) => void, icon?: string, colorClass?: string, disabled?: boolean, placeholder?: string }) => {
+const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-content", disabled = false, placeholder = "0" }: { label: string, value: number, onChange: (v: number) => void, icon?: string, colorClass?: string, disabled?: boolean, placeholder?: string }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\D/g, '');
     onChange(val === '' ? 0 : parseInt(val, 10));
@@ -69,16 +71,16 @@ const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-s
 
   return (
     <div className="flex-1 min-w-[120px]">
-      <label className="block text-[9px] font-black text-slate-400 uppercase mb-1.5 tracking-widest truncate">{label}</label>
-      <div className={`flex items-center gap-2 border border-slate-200 rounded-xl px-3 py-2 ${disabled ? 'bg-slate-50' : 'bg-white'} shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 transition-all`}>
-         <span className={`${colorClass} font-black text-xs opacity-40`}>{icon}</span>
+      <label className="block text-xs font-semibold text-muted uppercase mb-1.5 tracking-widest truncate">{label}</label>
+      <div className={`flex items-center gap-2 border border-line rounded-xl px-3 py-2 ${disabled ? 'bg-canvas' : 'bg-surface'} shadow-sm focus-within:ring-2 focus-within:ring-brand-line transition-all`}>
+         <span className={`${colorClass} font-semibold text-sm opacity-40`}>{icon}</span>
          <input 
           type="text" 
           inputMode="numeric"
           disabled={disabled}
           value={isNaN(value) || value === 0 ? '' : value} 
           onChange={handleChange} 
-          className={`w-full text-xs outline-none font-black ${colorClass} placeholder:text-slate-200 bg-transparent`} 
+          className={`w-full text-sm outline-none font-semibold ${colorClass} placeholder:text-slate-200 bg-transparent`} 
           placeholder={placeholder}
          />
       </div>
@@ -87,8 +89,8 @@ const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-s
 };
 
 const InclusionRow: React.FC<{ label: string; item: InclusionEntry; onChange: (newItem: InclusionEntry) => void }> = ({ label, item, onChange }) => (
-  <div className="flex items-center justify-between py-3.5 border-b border-slate-100/60 last:border-none group">
-    <span className="text-sm font-semibold text-slate-700 transition-colors group-hover:text-slate-900">{label}</span>
+  <div className="flex items-center justify-between py-3.5 border-b border-line/60 last:border-none group">
+    <span className="text-sm font-semibold text-content transition-colors group-hover:text-content">{label}</span>
     <button 
       type="button" 
       onClick={() => onChange({ ...item, included: !item.included })}
@@ -97,13 +99,13 @@ const InclusionRow: React.FC<{ label: string; item: InclusionEntry; onChange: (n
       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
         item.included 
           ? 'border-[#4ec1bd] bg-[#4ec1bd] text-white shadow-xs' 
-          : 'border-slate-300 bg-white text-transparent hover:border-slate-400'
+          : 'border-line bg-surface text-transparent hover:border-line'
       }`}>
         <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <span className={`text-xs font-black uppercase tracking-wider ${item.included ? 'text-[#0d827e]' : 'text-slate-400'}`}>
+      <span className={`text-sm font-semibold uppercase tracking-wider ${item.included ? 'text-[#0d827e]' : 'text-muted'}`}>
         {item.included ? 'Included' : 'Excluded'}
       </span>
     </button>
@@ -141,28 +143,28 @@ const NightSelectDropdown = ({ totalNights, selectedIndices = [], usedIndices = 
       <button 
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-800 bg-white flex justify-between items-center text-xs font-bold shadow-sm outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full border border-line rounded-xl px-3 py-2 text-content bg-surface flex justify-between items-center text-sm font-bold shadow-sm outline-none focus:ring-2 focus:ring-brand-line"
       >
         <span className={selectedIndices.length === 0 ? 'text-slate-300' : ''}>{displayText}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3.5 w-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3.5 w-3.5 text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute z-[220] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl p-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+        <div className="absolute z-[220] mt-1 w-full bg-surface border border-line rounded-xl shadow-sm p-1.5 max-h-48 overflow-y-auto custom-scrollbar">
           {Array.from({ length: totalNights }).map((_, i) => {
             const isTaken = usedIndices.includes(i) && !selectedIndices.includes(i);
             return (
-              <label key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors group ${isTaken ? 'opacity-30 cursor-not-allowed' : ''}`}>
+              <label key={i} className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-canvas cursor-pointer transition-colors group ${isTaken ? 'opacity-30 cursor-not-allowed' : ''}`}>
                 <input 
                   type="checkbox" 
                   disabled={isTaken}
                   checked={selectedIndices.includes(i)}
                   onChange={() => toggleNight(i)}
-                  className="w-3.5 h-3.5 rounded-md border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  className="w-3.5 h-3.5 rounded-md border-line text-brand-ink focus:ring-brand-line cursor-pointer"
                 />
-                <span className="text-[10px] text-slate-700 font-black uppercase tracking-widest group-hover:text-slate-900 transition-colors">
+                <span className="text-xs text-content font-semibold uppercase tracking-widest group-hover:text-content transition-colors">
                   {getOrdinal(i + 1)} Night {isTaken && '(Assigned)'}
                 </span>
               </label>
@@ -176,8 +178,8 @@ const NightSelectDropdown = ({ totalNights, selectedIndices = [], usedIndices = 
 
 const SectionHeader = ({ title, icon }: { title: string; icon: React.ReactNode }) => (
   <div className="mt-8 mb-4 flex items-center gap-3">
-    <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-md border border-slate-800">{icon}</div>
-    <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em] border-b-2 border-slate-100 pb-1.5 flex-1">{title}</h4>
+    <div className="w-8 h-8 bg-inverse rounded-xl flex items-center justify-center text-white shadow-sm border border-line">{icon}</div>
+    <h4 className="text-xs font-semibold text-content uppercase tracking-[0.2em] border-b-2 border-line pb-1.5 flex-1">{title}</h4>
   </div>
 );
 
@@ -204,6 +206,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
       id: `quote-${Date.now()}`,
       packageTitle: `${lead.destination} Option ${quoteCount}`,
       finalSellingPrice: 0,
+      hotelAlternative: null,
       visaCost: 0,
       flightCost: 0,
       landPackageCost: 0,
@@ -474,70 +477,79 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   };
 
   const usedNightIndices = quote.hotels.flatMap(h => h.selectedNightIndices || []);
+  const [saveError, setSaveError] = useState('');
+  const handleSaveQuote = () => {
+    try {
+      const hotelAlternative = normalizeHotelAlternative(quote.hotelAlternative);
+      if (hotelAlternative && (!Number.isFinite(quote.finalSellingPrice) || quote.finalSellingPrice <= 0)) throw new Error('Enter a valid price for Hotel Option 1.');
+      setSaveError('');
+      onSave({ ...quote, hotelAlternative });
+    } catch (error) { setSaveError(error instanceof Error ? error.message : 'Please check the hotel options.'); }
+  };
 
   return (
-    <div className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10 custom-scrollbar">
-      <div className="bg-white w-full max-w-5xl rounded-2xl shadow-xl overflow-hidden flex flex-col mb-10 animate-in zoom-in-95 duration-300">
-        <header className="p-10 bg-slate-50 border-b border-slate-100 flex justify-between items-center sticky top-0 z-[120]">
+    <div className="fixed inset-0 z-[110] bg-inverse/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10 custom-scrollbar">
+      <div className="bg-surface w-full max-w-5xl rounded-xl shadow-sm overflow-hidden flex flex-col mb-10 animate-in zoom-in-95 duration-300">
+        <header className="p-10 bg-canvas border-b border-line flex justify-between items-center sticky top-0 z-[120]">
           <div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">PACKAGE QUOTATION MANAGER</h2>
-            <p className="text-sm font-medium text-slate-500 mt-1">Configure itinerary and pricing for <span className="font-black text-indigo-600">{lead.name}</span></p>
+            <h2 className="text-3xl font-semibold text-content tracking-tighter">PACKAGE QUOTATION MANAGER</h2>
+            <p className="text-sm font-medium text-secondary mt-1">Configure itinerary and pricing for <span className="font-semibold text-brand-ink">{lead.name}</span></p>
           </div>
           <div className="flex gap-4">
-            <button onClick={onClose} className="px-6 py-3 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-slate-900">Cancel</button>
-            <button onClick={() => onSave(quote)} className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all">Save Quotation</button>
+            <button onClick={onClose} className="px-6 py-3 text-muted font-semibold text-xs uppercase tracking-widest hover:text-content">Cancel</button>
+            <button onClick={handleSaveQuote} className="px-10 py-3 bg-brand text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-brand-line hover:bg-brand transition-all">Save Quotation</button>
           </div>
         </header>
 
         <div className="p-10 space-y-12">
           {/* LEAD CONTEXT SUMMARY BANNER */}
-          <div className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl space-y-4">
-             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+          <div className="bg-inverse text-white p-8 rounded-xl shadow-sm space-y-4">
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-line pb-4">
                 <div>
-                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-1">CUSTOMER REQS</span>
-                  <h3 className="text-xl font-black tracking-tight">{lead.name} — {lead.destination} ({lead.durationDays || 7} Days)</h3>
+                  <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">CUSTOMER REQS</span>
+                  <h3 className="text-xl font-semibold tracking-tight">{lead.name} — {lead.destination} ({lead.durationDays || 7} Days)</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-[10px] font-bold">👥 {lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}</span>
+                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-xs font-bold">👥 {lead.travelers?.adults || 2} Adults{lead.travelers?.children ? `, ${lead.travelers.children} Children` : ''}</span>
                   {lead.travelers?.childAges && lead.travelers.childAges.length > 0 && (
-                    <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-[10px] font-bold border border-indigo-500/30">👶 Ages: {lead.travelers.childAges.join(', ')} yrs</span>
+                    <span className="px-3 py-1 bg-brand/20 text-brand-ink rounded-lg text-xs font-bold border border-brand-line/30">👶 Ages: {lead.travelers.childAges.join(', ')} yrs</span>
                   )}
-                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-[10px] font-bold">⭐ {lead.hotelCategory || '4 Star'}</span>
-                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-[10px] font-bold">🚗 Cab: {lead.includeCab || 'Yes'}</span>
-                  {lead.englishDriver && <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-lg text-[10px] font-bold border border-emerald-500/30">🗣️ English Driver</span>}
+                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-xs font-bold">⭐ {lead.hotelCategory || '4 Star'}</span>
+                  <span className="px-3 py-1 bg-white/10 text-white rounded-lg text-xs font-bold">🚗 Cab: {lead.includeCab || 'Yes'}</span>
+                  {lead.englishDriver && <span className="px-3 py-1 bg-success-strong/20 text-success-ink rounded-lg text-xs font-bold border border-success-line/30">🗣️ English Driver</span>}
                 </div>
              </div>
              {lead.otherInfo && (
-               <p className="text-xs text-slate-300 italic leading-relaxed font-medium">💬 "{lead.otherInfo}"</p>
+               <p className="text-sm text-slate-300 italic leading-relaxed font-medium">💬 "{lead.otherInfo}"</p>
              )}
           </div>
 
           {/* SEARCH / TEMPLATES */}
-          <section className="bg-indigo-50/50 p-8 rounded-2xl border border-indigo-100/50 space-y-6">
+          <section className="bg-brand-soft/50 p-8 rounded-xl border border-brand-line/50 space-y-6">
              <div className="flex justify-between items-center">
                 <div>
-                   <h4 className="text-[11px] font-black text-indigo-600 uppercase tracking-widest">Intelligent Library Search</h4>
-                   <p className="text-xs text-slate-500 font-medium">Search past quotations to use as templates</p>
+                   <h4 className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Intelligent Library Search</h4>
+                   <p className="text-sm text-secondary font-medium">Search past quotations to use as templates</p>
                 </div>
-                <div className="flex bg-white p-1 rounded-xl border border-slate-200">
-                   <button onClick={() => setSearchMode('Best')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${searchMode === 'Best' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Destination</button>
-                   <button onClick={() => setSearchMode('TripId')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${searchMode === 'TripId' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Trip ID</button>
+                <div className="flex bg-surface p-1 rounded-xl border border-line">
+                   <button onClick={() => setSearchMode('Best')} className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-widest transition-all ${searchMode === 'Best' ? 'bg-brand text-white shadow-sm' : 'text-muted hover:text-secondary'}`}>Destination</button>
+                   <button onClick={() => setSearchMode('TripId')} className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-widest transition-all ${searchMode === 'TripId' ? 'bg-brand text-white shadow-sm' : 'text-muted hover:text-secondary'}`}>Trip ID</button>
                 </div>
              </div>
              <div className="relative">
                 <input 
                   type="text" 
                   placeholder={searchMode === 'TripId' ? "Enter Trip ID (e.g. KL-1001)..." : "Search destinations or package names..."}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
+                  className="w-full bg-surface border border-line rounded-xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-brand-line/10 shadow-sm"
                   value={itinerarySearch}
                   onChange={e => setItinerarySearch(e.target.value)}
                 />
                 {searchResults.length > 0 && (
-                  <div className="absolute z-[130] mt-2 w-full bg-white border border-slate-200 rounded-3xl shadow-xl p-4 space-y-2 animate-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto custom-scrollbar">
+                  <div className="absolute z-[130] mt-2 w-full bg-surface border border-line rounded-xl shadow-sm p-4 space-y-2 animate-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto custom-scrollbar">
                     {searchResults.map((res, i) => (
                       <div 
                         key={res.id || i}
-                        className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-2xl group transition-colors border border-transparent hover:border-slate-100"
+                        className="flex items-center justify-between p-3 hover:bg-canvas rounded-xl group transition-colors border border-transparent hover:border-line"
                       >
                         <button
                           type="button"
@@ -565,8 +577,8 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                           }}
                           className="flex-1 text-left cursor-pointer"
                         >
-                          <p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest mb-0.5">{res.tagText}</p>
-                          <p className="text-sm font-bold text-slate-800">{res.titleText}</p>
+                          <p className="text-xs font-semibold text-brand-ink uppercase tracking-widest mb-0.5">{res.tagText}</p>
+                          <p className="text-sm font-bold text-content">{res.titleText}</p>
                         </button>
 
                         <div className="flex items-center gap-2 shrink-0">
@@ -594,7 +606,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                               }));
                               setItinerarySearch('');
                             }}
-                            className="text-[9px] font-black bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all uppercase cursor-pointer"
+                            className="text-xs font-semibold bg-subtle text-secondary px-3 py-1.5 rounded-lg group-hover:bg-brand group-hover:text-white transition-all uppercase cursor-pointer"
                           >
                             Apply Template
                           </button>
@@ -615,7 +627,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                   alert('Failed to delete template.');
                                 }
                               }}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                              className="p-1.5 text-muted hover:text-danger-ink hover:bg-danger-soft rounded-lg transition-colors cursor-pointer"
                               title="Delete this template from library"
                             >
                               <Trash2 size={13} />
@@ -632,18 +644,18 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           {/* PACKAGE BASIC CONFIG */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Package Marketing Title</label>
+              <label className="block text-xs font-semibold text-muted uppercase tracking-widest ml-2">Package Marketing Title</label>
               <input 
                 type="text" 
-                className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10" 
+                className="w-full bg-canvas border border-line rounded-xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-brand-line/10" 
                 value={quote.packageTitle} 
                 onChange={e => setQuote({...quote, packageTitle: e.target.value})}
               />
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-6">
-                 <PriceInput label="Final Selling Price (₹)" value={quote.finalSellingPrice} onChange={v => setQuote({...quote, finalSellingPrice: v})} colorClass="text-emerald-600" />
-                 <PriceInput label="Discount (% OFF)" value={quote.discountPercentage} onChange={v => setQuote({...quote, discountPercentage: v})} colorClass="text-rose-500" icon="%" />
+                 <PriceInput label="Final Selling Price (₹)" value={quote.finalSellingPrice} onChange={v => setQuote({...quote, finalSellingPrice: v})} colorClass="text-success-ink" />
+                 <PriceInput label="Discount (% OFF)" value={quote.discountPercentage} onChange={v => setQuote({...quote, discountPercentage: v})} colorClass="text-danger-ink" icon="%" />
               </div>
               {(() => {
                 const finalP = quote.finalSellingPrice || 0;
@@ -652,19 +664,19 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                 const savings = mrp - finalP;
                 if (disc <= 0) return null;
                 return (
-                  <div className="p-4 bg-rose-50/70 border border-rose-100 rounded-2xl flex items-center justify-between text-xs">
+                  <div className="p-4 bg-danger-soft/70 border border-danger-line rounded-xl flex items-center justify-between text-sm">
                     <div>
-                      <span className="font-bold text-slate-500 block text-[10px] uppercase tracking-wider">Standard Price (MRP)</span>
-                      <span className="font-extrabold text-slate-700 line-through">₹{mrp.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-secondary block text-xs uppercase tracking-wider">Standard Price (MRP)</span>
+                      <span className="font-semibold text-content line-through">₹{mrp.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="text-center">
-                      <span className="px-2.5 py-1 bg-rose-500 text-white font-black text-[10px] rounded-lg uppercase tracking-wider">
+                      <span className="px-2.5 py-1 bg-danger-strong text-white font-semibold text-xs rounded-lg uppercase tracking-wider">
                         {disc}% OFF · Save ₹{savings.toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-emerald-600 block text-[10px] uppercase tracking-wider">Payable Price</span>
-                      <span className="font-black text-emerald-700 text-sm">₹{finalP.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-success-ink block text-xs uppercase tracking-wider">Payable Price</span>
+                      <span className="font-semibold text-success-ink text-sm">₹{finalP.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 );
@@ -672,17 +684,18 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             </div>
           </section>
 
+          {saveError && <p role="alert" className="rounded-xl bg-danger-soft p-4 font-semibold text-danger-ink">{saveError}</p>}
           {/* HOSPITALITY MAP */}
           <section>
             <SectionHeader title="Hospitality & Stay Plan" icon="🏨" />
             <div className="space-y-6">
                {quote.hotels.map((hotel, idx) => (
-                  <div key={idx} className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-4 relative group">
-                    <button onClick={() => setQuote({...quote, hotels: quote.hotels.filter((_, i) => i !== idx)})} className="absolute -right-2 -top-2 w-8 h-8 bg-white border border-slate-100 rounded-full text-rose-500 flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                  <div key={idx} className="bg-canvas p-6 rounded-xl border border-line space-y-4 relative group">
+                    <button onClick={() => setQuote({...quote, hotels: quote.hotels.filter((_, i) => i !== idx)})} className="absolute -right-2 -top-2 w-8 h-8 bg-surface border border-line rounded-full text-danger-ink flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                     
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Nights Selection</label>
+                        <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Nights Selection</label>
                         <NightSelectDropdown 
                           totalNights={quote.nights} 
                           selectedIndices={hotel.selectedNightIndices || []} 
@@ -691,23 +704,23 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Property Name</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.hotelName} onChange={e => handleHotelChange(idx, 'hotelName', e.target.value)} placeholder="e.g. Grand Resort & Spa" />
+                        <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Property Name</label>
+                        <input type="text" className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line" value={hotel.hotelName} onChange={e => handleHotelChange(idx, 'hotelName', e.target.value)} placeholder="e.g. Grand Resort & Spa" />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">City / Destination</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.city} onChange={e => handleHotelChange(idx, 'city', e.target.value)} placeholder="e.g. Gangtok" />
+                        <label className="block text-xs font-semibold text-muted uppercase tracking-widest">City / Destination</label>
+                        <input type="text" className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line" value={hotel.city} onChange={e => handleHotelChange(idx, 'city', e.target.value)} placeholder="e.g. Gangtok" />
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Hotel Category</label>
+                          <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Hotel Category</label>
                           <button
                             type="button"
                             onClick={() => {
                               const cur = Boolean(customCategoryIndices[idx] || (hotel.category && !STANDARD_HOTEL_CATEGORIES.includes(hotel.category)));
                               setCustomCategoryIndices(prev => ({ ...prev, [idx]: !cur }));
                             }}
-                            className="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                            className="text-xs font-bold text-brand-ink hover:text-brand-ink underline cursor-pointer"
                           >
                             {(customCategoryIndices[idx] || (hotel.category && !STANDARD_HOTEL_CATEGORIES.includes(hotel.category)))
                               ? 'Select list'
@@ -718,14 +731,14 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                           <input
                             type="text"
                             autoFocus
-                            className="w-full bg-white border border-indigo-300 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 placeholder:font-normal placeholder:text-slate-400"
+                            className="w-full bg-surface border border-brand-line rounded-xl px-4 py-2.5 text-sm font-bold text-content outline-none focus:ring-2 focus:ring-brand-line placeholder:font-normal placeholder:text-muted"
                             value={hotel.category}
                             onChange={e => handleHotelChange(idx, 'category', e.target.value)}
                             placeholder="e.g. 5 Star Luxury, Boutique Heritage, Swiss Tent"
                           />
                         ) : (
                           <select
-                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full bg-surface border border-line rounded-xl px-3 py-2.5 text-sm font-bold text-content outline-none focus:ring-2 focus:ring-brand-line"
                             value={STANDARD_HOTEL_CATEGORIES.includes(hotel.category) ? hotel.category : '__custom__'}
                             onChange={e => {
                               if (e.target.value === '__custom__') {
@@ -756,24 +769,29 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Room Type</label>
-                        <input type="text" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.roomType} onChange={e => handleHotelChange(idx, 'roomType', e.target.value)} placeholder="e.g. Deluxe Mountain View Room, Double Occupancy" />
+                        <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Room Type</label>
+                        <input type="text" className="w-full bg-surface border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line" value={hotel.roomType} onChange={e => handleHotelChange(idx, 'roomType', e.target.value)} placeholder="e.g. Deluxe Mountain View Room, Double Occupancy" />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-[9px] font-black text-indigo-600 uppercase tracking-widest">Hotel Special Comments / Inclusions (Shows on PDF)</label>
-                        <input type="text" className="w-full bg-white border border-indigo-100 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500" value={hotel.comments || ''} onChange={e => handleHotelChange(idx, 'comments', e.target.value)} placeholder="e.g. Candlelight dinner included on Day 2; Complimentary welcome drink" />
+                        <label className="block text-xs font-semibold text-brand-ink uppercase tracking-widest">Hotel Special Comments / Inclusions (Shows on PDF)</label>
+                        <input type="text" className="w-full bg-surface border border-brand-line rounded-xl px-4 py-2.5 text-sm font-medium text-content outline-none focus:ring-2 focus:ring-brand-line" value={hotel.comments || ''} onChange={e => handleHotelChange(idx, 'comments', e.target.value)} placeholder="e.g. Candlelight dinner included on Day 2; Complimentary welcome drink" />
                       </div>
+                      <label className="block space-y-1.5 text-sm font-bold text-secondary">Meal Type
+                        <input aria-label={`Hotel ${idx + 1} Meal Type`} type="text" className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm" value={hotel.mealPlan || ''} placeholder={quoteMealPlan(quote)} onChange={event => handleHotelChange(idx, 'mealPlan', event.target.value)} />
+                      </label>
                     </div>
                   </div>
                ))}
-               <button onClick={handleAddHotel} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-3xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-600 transition-all">+ Add Another Hotel Entry</button>
+               <button onClick={handleAddHotel} className="w-full py-4 border-2 border-dashed border-line rounded-xl text-xs font-semibold text-muted uppercase tracking-widest hover:bg-canvas hover:border-brand-line hover:text-brand-ink transition-all">+ Add Another Hotel Entry</button>
             </div>
           </section>
+
+          <HotelAlternativeEditor value={quote.hotelAlternative} onChange={hotelAlternative => setQuote({ ...quote, hotelAlternative })} price={quote.finalSellingPrice} onPriceChange={finalSellingPrice => setQuote({ ...quote, finalSellingPrice })} city={lead.destination || ''} mealPlan={quoteMealPlan(quote)} />
 
           {/* INCLUSIONS MATRIX */}
           <section>
             <SectionHeader title="Inclusions Atlas" icon="📦" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-2 bg-slate-50/50 p-8 rounded-3xl border border-slate-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-2 bg-canvas/50 p-8 rounded-xl border border-line">
                 <InclusionRow label="Accommodation (Single)" item={quote.inclusions.accommodation.single} onChange={v => handleUpdateInclusion('accommodation', 'single', v.included)} />
                 <InclusionRow label="Accommodation (Double)" item={quote.inclusions.accommodation.double} onChange={v => handleUpdateInclusion('accommodation', 'double', v.included)} />
                 <InclusionRow label="Accommodation (Triple)" item={quote.inclusions.accommodation.triple} onChange={v => handleUpdateInclusion('accommodation', 'triple', v.included)} />
@@ -792,20 +810,20 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             <SectionHeader title="Custom Inclusions, Exclusions & Terms" icon="✏️" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-emerald-600 uppercase tracking-widest">Additional Custom Inclusions (One per line or comma-separated)</label>
+                  <label className="block text-xs font-semibold text-success-ink uppercase tracking-widest">Additional Custom Inclusions (One per line or comma-separated)</label>
                   <textarea 
                     rows={3} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                    className="w-full bg-canvas border border-line rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-success-line resize-none"
                     placeholder="e.g. Candlelight Dinner, Flower Bed Decoration, Speedboat Ride, Welcome Drinks"
                     value={quote.otherInclusions || ''}
                     onChange={e => setQuote({...quote, otherInclusions: e.target.value})}
                   />
                </div>
                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest">Additional Custom Exclusions (One per line or comma-separated)</label>
+                  <label className="block text-xs font-semibold text-danger-ink uppercase tracking-widest">Additional Custom Exclusions (One per line or comma-separated)</label>
                   <textarea 
                     rows={3} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-rose-500 resize-none"
+                    className="w-full bg-canvas border border-line rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-danger-line resize-none"
                     placeholder="e.g. 5% GST, 5% TCS, Personal laundry & tips, Monument entry tickets"
                     value={quote.otherExclusions || ''}
                     onChange={e => setQuote({...quote, otherExclusions: e.target.value})}
@@ -815,20 +833,20 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Flight Details</label>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Flight Details</label>
                   <input 
                     type="text" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none"
+                    className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold outline-none"
                     placeholder="e.g. Indigo 6E-1605 (DEL-SXR) Direct Flight Included"
                     value={quote.flightDetails || ''}
                     onChange={e => setQuote({...quote, flightDetails: e.target.value})}
                   />
                </div>
                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Cab & Transit Details</label>
+                  <label className="block text-xs font-semibold text-muted uppercase tracking-widest">Cab & Transit Details</label>
                   <input 
                     type="text" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none"
+                    className="w-full bg-canvas border border-line rounded-xl px-4 py-3 text-sm font-bold outline-none"
                     placeholder="e.g. Private Toyota Innova Crysta with English Speaking Driver"
                     value={quote.cabDetails || ''}
                     onChange={e => setQuote({...quote, cabDetails: e.target.value})}
@@ -837,10 +855,10 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             </div>
 
             <div className="space-y-2">
-               <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest">Custom Terms & Cancellation Policy</label>
+               <label className="block text-xs font-semibold text-brand-ink uppercase tracking-widest">Custom Terms & Cancellation Policy</label>
                <textarea 
                  rows={3} 
-                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                 className="w-full bg-canvas border border-line rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line resize-none"
                  placeholder="Custom terms or cancellation policy lines..."
                  value={quote.termsAndConditions || ''}
                  onChange={e => setQuote({...quote, termsAndConditions: e.target.value})}
@@ -853,7 +871,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                <div>
                   <SectionHeader title="Day-wise Itinerary" icon="🗺️" />
-                  <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg uppercase tracking-wider mt-1 inline-block">
+                  <span className="text-xs font-semibold text-brand-ink bg-brand-soft px-3 py-1 rounded-lg uppercase tracking-wider mt-1 inline-block">
                     {quote.nights || Math.max(1, quote.itinerary.length - 1)} Nights / {quote.itinerary.length} Days (Auto-Updated)
                   </span>
                </div>
@@ -861,7 +879,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                   <button 
                     type="button" 
                     onClick={handleAddDay} 
-                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md transition-all flex items-center gap-1.5"
+                    className="px-5 py-2.5 bg-success-strong hover:bg-success-strong text-white rounded-xl text-xs font-semibold uppercase tracking-widest shadow-sm transition-all flex items-center gap-1.5"
                   >
                     <span>+</span>
                     <span>Add Day</span>
@@ -870,7 +888,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                     type="button" 
                     onClick={handleGenerateAI} 
                     disabled={isGeneratingAI} 
-                    className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md flex items-center gap-2 hover:bg-indigo-700 disabled:opacity-50 transition-all"
+                    className="px-5 py-2.5 bg-brand text-white rounded-xl text-xs font-semibold uppercase tracking-widest shadow-sm flex items-center gap-2 hover:bg-brand disabled:opacity-50 transition-all"
                   >
                     {isGeneratingAI ? 'GENERATING...' : '✨ GENERATE WITH AI'}
                   </button>
@@ -878,14 +896,14 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             </div>
             <div className="space-y-4">
                {quote.itinerary.map((day, idx) => (
-                 <div key={idx} className="flex gap-6 items-start bg-white p-6 rounded-3xl border border-slate-100 group hover:shadow-lg transition-all relative">
-                    <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xs shrink-0">{day.day}</div>
+                 <div key={idx} className="flex gap-6 items-start bg-surface p-6 rounded-xl border border-line group hover:shadow-sm transition-all relative">
+                    <div className="w-10 h-10 bg-inverse text-white rounded-xl flex items-center justify-center font-semibold text-sm shrink-0">{day.day}</div>
                     <div className="flex-1 space-y-4">
                        <div className="flex justify-between items-center gap-4">
                           <input 
                            type="text" 
                            placeholder="Day Title (e.g. Arrival & Leisure)" 
-                           className="w-full text-lg font-black text-slate-800 outline-none border-b border-transparent focus:border-indigo-500 pb-1" 
+                           className="w-full text-lg font-semibold text-content outline-none border-b border-transparent focus:border-brand-line pb-1" 
                            value={day.title} 
                            onChange={e => {
                              const newItin = [...quote.itinerary];
@@ -901,10 +919,10 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                 e.stopPropagation();
                                 setPhotoPickerDayIndex(idx);
                               }}
-                              className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
                                 (day as any).imageUrl || (day as any).img
-                                  ? 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800 border border-indigo-300'
-                                  : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
+                                  ? 'bg-brand-soft hover:bg-brand-soft text-brand-ink border border-brand-line'
+                                  : 'bg-brand hover:bg-brand text-white shadow-brand-line/20'
                               }`}
                               title="Search saved images by city name and attach to Day"
                             >
@@ -913,7 +931,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                             </button>
 
                             <label
-                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-300 transition-colors cursor-pointer flex items-center justify-center shrink-0 border border-slate-200 dark:border-zinc-700"
+                              className="p-1.5 rounded-xl bg-subtle hover:bg-hover text-content dark:text-zinc-300 transition-colors cursor-pointer flex items-center justify-center shrink-0 border border-line "
                               title="Upload image directly from device for this day"
                             >
                               <Upload className="w-3.5 h-3.5" />
@@ -933,7 +951,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                   e.stopPropagation();
                                   handleRemoveDay(idx);
                                 }}
-                                className="px-3 py-1.5 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer"
+                                className="px-3 py-1.5 bg-danger-soft text-danger-ink hover:bg-danger-strong hover:text-white rounded-xl text-xs font-semibold uppercase tracking-wider transition-all shrink-0 cursor-pointer"
                                 title="Delete this day"
                               >
                                 🗑️ Remove Day
@@ -944,21 +962,21 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
                        {/* INLINE PHOTO PICKER (Opens right inside this day card where Add Image button is) */}
                        {photoPickerDayIndex === idx && (
-                         <div className="p-4 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                         <div className="p-4 rounded-xl bg-inverse text-white border border-line shadow-sm space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
                            {/* Inline Header */}
-                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800">
+                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-line">
                              <div className="flex items-center gap-2">
-                               <span className="w-2 h-2 rounded-full bg-lime-400"></span>
-                               <span className="text-xs font-black uppercase tracking-wider text-white">
+                               <span className="w-2 h-2 rounded-full bg-brand"></span>
+                               <span className="text-sm font-semibold uppercase tracking-wider text-white">
                                  Select Photo for Day {day.day}
                                 </span>
-                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-lime-400/20 text-lime-400 font-bold border border-lime-400/30">
+                               <span className="text-xs px-2 py-0.5 rounded-full bg-brand/20 text-brand-ink font-bold border border-brand-line/30">
                                  Click Photo to Attach
                                </span>
                              </div>
 
                              <div className="flex items-center gap-2">
-                               <label className="px-3 py-1 rounded-xl bg-lime-400 hover:bg-lime-300 text-black text-[11px] font-black cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs">
+                               <label className="px-3 py-1 rounded-xl bg-brand hover:bg-brand text-on-brand text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs">
                                  <Upload className="w-3.5 h-3.5" />
                                  <span>Upload New</span>
                                  <input type="file" accept="image/*" onChange={(e) => handleDirectDayUpload(idx, e)} className="hidden" />
@@ -970,7 +988,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                    e.stopPropagation();
                                    setPhotoPickerDayIndex(null);
                                  }}
-                                 className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                                 className="p-1 rounded-lg text-muted hover:text-white hover:bg-inverse transition-colors cursor-pointer"
                                  title="Close picker"
                                >
                                  <X className="w-4 h-4" />
@@ -981,20 +999,20 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                            {/* Search & Quick Pills */}
                            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                              <div className="relative flex-1">
-                               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                                <input
                                  type="text"
                                  placeholder="Search by city or title (e.g. Manali, Kashmir, Goa, Taj Mahal)..."
                                  value={photoSearchQuery}
                                  onChange={(e) => setPhotoSearchQuery(e.target.value)}
-                                 className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 outline-none focus:ring-2 focus:ring-lime-400"
+                                 className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-inverse border border-line text-sm text-white placeholder-muted outline-none focus:ring-2 focus:ring-brand-line"
                                  autoFocus
                                />
                                {photoSearchQuery && (
                                  <button
                                    type="button"
                                    onClick={() => setPhotoSearchQuery('')}
-                                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-white"
                                  >
                                    <X className="w-3 h-3" />
                                  </button>
@@ -1010,10 +1028,10 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                      key={c}
                                      type="button"
                                      onClick={() => setPhotoSearchQuery(c === 'All' ? '' : c!)}
-                                     className={`px-2 py-0.5 rounded-lg text-[10px] font-bold shrink-0 transition-colors ${
+                                     className={`px-2 py-0.5 rounded-lg text-xs font-bold shrink-0 transition-colors ${
                                        (c === 'All' && !photoSearchQuery) || photoSearchQuery.toLowerCase() === c!.toLowerCase()
-                                         ? 'bg-lime-400 text-black'
-                                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                                         ? 'bg-brand text-on-brand'
+                                         : 'bg-inverse text-slate-300 hover:bg-inverse'
                                      }`}
                                    >
                                      {c}
@@ -1025,12 +1043,12 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                            {/* Inline Photos Grid */}
                            <div className="max-h-60 overflow-y-auto pr-1 custom-scrollbar">
                              {displayedInlinePhotos.length === 0 ? (
-                               <div className="py-6 text-center text-slate-400 text-xs space-y-1">
+                               <div className="py-6 text-center text-muted text-sm space-y-1">
                                  <p>No photos found matching "{photoSearchQuery}".</p>
                                  <button
                                    type="button"
                                    onClick={() => setPhotoSearchQuery('')}
-                                   className="text-lime-400 underline font-bold"
+                                   className="text-brand-ink underline font-bold"
                                  >
                                    Show all saved photos ({libraryPhotos.length})
                                  </button>
@@ -1049,9 +1067,9 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                        setQuote({ ...quote, itinerary: newItin });
                                        setPhotoPickerDayIndex(null);
                                      }}
-                                     className="group relative rounded-xl overflow-hidden border border-slate-700 hover:border-lime-400 bg-slate-800/80 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col"
+                                     className="group relative rounded-xl overflow-hidden border border-line hover:border-brand-line bg-inverse/80 cursor-pointer transition-all hover:scale-[1.02] shadow-sm flex flex-col"
                                    >
-                                     <div className="aspect-video relative overflow-hidden bg-slate-900">
+                                     <div className="aspect-video relative overflow-hidden bg-inverse">
                                        <img
                                          src={item.image_url}
                                          alt={item.title || item.city}
@@ -1059,15 +1077,15 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                          loading="lazy"
                                        />
                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-90" />
-                                       <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-black/60 text-[9px] font-bold text-lime-400">
+                                       <span className="absolute top-1 left-1 px-1.5 py-0.5 rounded-md bg-black/60 text-xs font-bold text-brand-ink">
                                          {item.city}
                                        </span>
-                                       <span className="absolute bottom-1 left-1.5 right-1.5 text-[10px] font-bold text-white truncate drop-shadow-sm">
+                                       <span className="absolute bottom-1 left-1.5 right-1.5 text-xs font-bold text-white truncate drop-shadow-sm">
                                          {item.title || item.city}
                                        </span>
                                      </div>
-                                     <div className="p-1 bg-slate-800/95 text-center">
-                                       <span className="text-[10px] font-black text-lime-400 group-hover:underline">
+                                     <div className="p-1 bg-inverse/95 text-center">
+                                       <span className="text-xs font-semibold text-brand-ink group-hover:underline">
                                          ✓ Add to Day {day.day}
                                        </span>
                                      </div>
@@ -1080,15 +1098,15 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                        )}
 
                        {Boolean((day as any).imageUrl || (day as any).img) && (
-                         <div className="flex items-center gap-3 p-3 bg-indigo-50/70 rounded-2xl border border-indigo-100 animate-in fade-in">
+                         <div className="flex items-center gap-3 p-3 bg-brand-soft/70 rounded-xl border border-brand-line animate-in fade-in">
                            <img
                              src={(day as any).imageUrl || (day as any).img}
                              alt={day.title || `Day ${day.day}`}
-                             className="w-16 h-12 object-cover rounded-xl border border-indigo-200 shrink-0 shadow-2xs"
+                             className="w-16 h-12 object-cover rounded-xl border border-brand-line shrink-0 shadow-2xs"
                            />
                            <div className="flex-1 min-w-0">
-                             <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block">Photo Attached</span>
-                             <span className="text-[11px] text-slate-500 truncate block">Will be displayed on Day {day.day} in PDF proposal</span>
+                             <span className="text-xs font-semibold uppercase tracking-wider text-brand-ink block">Photo Attached</span>
+                             <span className="text-xs text-secondary truncate block">Will be displayed on Day {day.day} in PDF proposal</span>
                            </div>
                            <button
                              type="button"
@@ -1102,7 +1120,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                                  )
                                }));
                              }}
-                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                             className="p-1.5 rounded-lg text-muted hover:text-danger-ink hover:bg-danger-soft transition-colors cursor-pointer"
                              title="Remove photo from this day"
                            >
                              <X className="w-4 h-4" />
@@ -1111,7 +1129,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                        )}
                        <textarea 
                         placeholder="Activity details..." 
-                        className="w-full text-sm text-slate-500 font-medium outline-none h-20 resize-none bg-slate-50/50 p-4 rounded-2xl" 
+                        className="w-full text-sm text-secondary font-medium outline-none h-20 resize-none bg-canvas/50 p-4 rounded-xl" 
                         value={day.description}
                         onChange={e => {
                           const newItin = [...quote.itinerary];
@@ -1126,8 +1144,8 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           </section>
         </div>
 
-        <footer className="p-8 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 sticky bottom-0 z-20">
-          <button onClick={onClose} className="px-6 py-3.5 text-slate-400 font-black text-[11px] uppercase tracking-widest hover:text-slate-900 transition-colors">
+        <footer className="p-8 bg-canvas border-t border-line flex flex-wrap items-center justify-between gap-4 sticky bottom-0 z-20">
+          <button onClick={onClose} className="px-6 py-3.5 text-muted font-semibold text-xs uppercase tracking-widest hover:text-content transition-colors">
             Discard Draft
           </button>
           
@@ -1160,15 +1178,15 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                   alert('Failed to save itinerary template.');
                 }
               }} 
-              className="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2"
+              className="px-8 py-4 bg-success-strong hover:bg-success-strong text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-success-line/20 transition-all flex items-center gap-2"
             >
               <span>💾</span>
               <span>Save Draft to Saved Itineraries</span>
             </button>
 
             <button 
-              onClick={() => onSave(quote)} 
-              className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all"
+              onClick={handleSaveQuote}
+              className="px-10 py-4 bg-inverse text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-line hover:bg-inverse transition-all"
             >
               Publish & Send Package
             </button>

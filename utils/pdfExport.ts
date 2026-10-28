@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { normalizePdfColors } from './pdfColors';
 import { fitProposalTermsSheets } from '../services/quoteDesignRenderer';
 
 export interface PdfExportOptions {
@@ -46,16 +47,21 @@ const CORE_QUOTE_FONTS = [
   '800 16px "Nunito"'
 ];
 
-export async function ensureAllQuoteFontsLoaded(): Promise<void> {
+export async function ensureAllQuoteFontsLoaded(element?: HTMLElement): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return;
+  // Load the fonts used by this document, rather than every available theme.
+  const fonts = new Set<string>(element ? [] : CORE_QUOTE_FONTS);
+  if (element) {
+    for (const node of [element, ...Array.from(element.querySelectorAll('*'))]) {
+      const style = getComputedStyle(node);
+      if (style.fontFamily) fonts.add(`${style.fontStyle} ${style.fontWeight} 16px ${style.fontFamily}`);
+    }
+  }
   try {
-    await Promise.allSettled(CORE_QUOTE_FONTS.map(f => document.fonts.load(f)));
+    await Promise.allSettled(Array.from(fonts).filter(font => !document.fonts.check(font)).map(font => document.fonts.load(font)));
   } catch (e) {
     // Ignore individual font loading issues
   }
-  try {
-    await document.fonts.ready;
-  } catch (e) {}
 }
 
 /**
@@ -85,7 +91,7 @@ export async function exportElementToPdf(
   } = options;
 
   // Pre-load and await all Google Fonts before capture
-  await ensureAllQuoteFontsLoaded();
+  await ensureAllQuoteFontsLoaded(element);
 
   // Detect document structure: discrete sheets, continuous tables, or a hybrid mix
   const directSheets = Array.from(element.querySelectorAll<HTMLElement>('.sheet, .pdf-page'));
@@ -127,7 +133,7 @@ export async function exportElementToPdf(
   document.head.appendChild(h2cFix);
 
   // Wait for layout and web fonts to settle
-  await new Promise(resolve => setTimeout(resolve, 120));
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
   // Off-screen container + clone (used only for pure continuous path, but declared here for finally block)
   let container: HTMLDivElement | null = null;
@@ -172,7 +178,7 @@ export async function exportElementToPdf(
       const sheetImgs = Array.from(singleSheetClone.querySelectorAll('img'));
       await Promise.all(
         sheetImgs.map(img => {
-          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          if (img.complete) return Promise.resolve();
           return new Promise(res => {
             img.onload = () => res(null);
             img.onerror = () => res(null);
@@ -180,9 +186,8 @@ export async function exportElementToPdf(
           });
         })
       );
-      if (document.fonts) await document.fonts.ready;
       fitProposalTermsSheets(isolatedFrame);
-      await new Promise(r => setTimeout(r, 60));
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
       // Overflow check
       const sheetH = 1123;
@@ -205,6 +210,7 @@ export async function exportElementToPdf(
       }
 
       const canvas = await html2canvas(singleSheetClone, {
+        onclone: normalizePdfColors,
         scale,
         useCORS: true,
         logging: false,
@@ -268,7 +274,7 @@ export async function exportElementToPdf(
       const allImgs = Array.from(contClone.querySelectorAll('img'));
       await Promise.all(
         allImgs.map(img => {
-          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          if (img.complete) return Promise.resolve();
           return new Promise(res => {
             img.onload = () => res(null);
             img.onerror = () => res(null);
@@ -276,8 +282,7 @@ export async function exportElementToPdf(
           });
         })
       );
-      if (document.fonts) await document.fonts.ready;
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
       try {
         // Reserve the same brand header on every itinerary page. Capture it
@@ -285,6 +290,7 @@ export async function exportElementToPdf(
         // split, or overlap a photo/continued description.
         const header = contClone.querySelector<HTMLElement>('thead.itin-thead');
         const headerCanvas = header ? await html2canvas(header, {
+        onclone: normalizePdfColors,
           scale,
           useCORS: true,
           logging: false,
@@ -296,6 +302,7 @@ export async function exportElementToPdf(
         }) : null;
         header?.remove();
         const canvas = await html2canvas(contContainer, {
+        onclone: normalizePdfColors,
           scale,
           useCORS: true,
           logging: false,
@@ -315,7 +322,7 @@ export async function exportElementToPdf(
         const containerRect = contClone.getBoundingClientRect();
         const breakableEls = Array.from(
           contClone.querySelectorAll<HTMLElement>(
-            '.avoid-page-break, .day, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, .terms-title, .terms-card-heading, .terms-partners, .terms-advisor, .terms-flow tr, section'
+            '.avoid-page-break, .day, .day-card-header, .hrow, .hstays, .box, .two-col, .quotebox, .meta-strip, .trust-strip, .partners, .signblock, .footer, .terms-title, .terms-card-heading, .terms-partners, .terms-advisor, .terms-flow tr, .hotel-option-table tr, section'
           )
         );
         const elementBoxes = breakableEls.map(el => {
@@ -542,9 +549,10 @@ export async function exportElementToPdf(
       document.body.appendChild(container);
 
       // Wait for layout
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
       const canvas = await html2canvas(container, {
+        onclone: normalizePdfColors,
         scale,
         useCORS: true,
         logging: false,

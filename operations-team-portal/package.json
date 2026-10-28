@@ -34,7 +34,8 @@
   },
   "overrides": {
     "jspdf": "^4.2.1",
-    "dompurify": "^3.4.13",
+    "dompurify": "^3.4.17",
+    "proxy-addr": "^2.0.8",
     "nanoid": "^5.1.6"
   }
 }

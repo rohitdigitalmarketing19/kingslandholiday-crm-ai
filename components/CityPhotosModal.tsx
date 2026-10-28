@@ -192,22 +192,22 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-      <div className="w-full max-w-4xl max-h-[92vh] rounded-3xl bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="w-full max-w-4xl max-h-[92vh] rounded-xl bg-surface border border-line shadow-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-900/80 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between shrink-0">
+        <div className="px-6 py-4 bg-canvas border-b border-line flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div className="w-10 h-10 rounded-xl bg-brand-soft border border-brand-line flex items-center justify-center text-brand-ink ">
               <ImageIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+              <h3 className="text-base font-semibold text-content dark:text-zinc-100 flex items-center gap-2">
                 <span>{isPickMode ? `Select Photo for Day ${targetDay || 1}` : 'Destination & City Photo Library'}</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-ink ">
                   {isPickMode ? 'Click to Attach' : 'Saved Photos & Upload'}
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400">
+              <p className="text-sm text-secondary ">
                 {isPickMode
                   ? 'Search by city name or title and click to attach this photo to Day ' + (targetDay || 1)
                   : 'Add and organize destination photos used in day-wise proposal PDFs'}
@@ -218,7 +218,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 cursor-pointer transition-colors"
+            className="p-2 rounded-xl text-muted hover:text-content dark:hover:text-zinc-200 bg-surface border border-line cursor-pointer transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -226,19 +226,19 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
 
         {/* Target Selector Toolbar (shown in manage mode) */}
         {!isPickMode && (
-          <div className="px-6 py-3 bg-white dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+          <div className="px-6 py-3 bg-surface border-b border-line flex flex-wrap items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400">
+              <span className="text-sm font-semibold uppercase tracking-wider text-secondary ">
                 Preview Target:
               </span>
               <div className="flex items-center gap-1.5 overflow-x-auto py-1">
                 <button
                   type="button"
                   onClick={() => setSelectedTarget('cover')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                     selectedTarget === 'cover'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                      ? 'bg-brand text-white shadow-xs'
+                      : 'bg-subtle text-content dark:text-zinc-300 hover:bg-hover '
                   }`}
                 >
                   Cover Hero
@@ -250,10 +250,10 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                       key={dayNum}
                       type="button"
                       onClick={() => setSelectedTarget(dayNum)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                         selectedTarget === dayNum
-                          ? 'bg-indigo-600 text-white shadow-xs'
-                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                          ? 'bg-brand text-white shadow-xs'
+                          : 'bg-subtle text-content dark:text-zinc-300 hover:bg-hover '
                       }`}
                     >
                       Day {dayNum}
@@ -272,7 +272,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     onSelectPhoto('');
                   }
                 }}
-                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ml-1"
+                className="px-3 py-1.5 rounded-xl bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer ml-1"
                 title={`Remove attached image from ${selectedTarget === 'cover' ? 'Cover Hero' : `Day ${selectedTarget}`}`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -283,7 +283,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
             <button
               type="button"
               onClick={() => setShowUploadForm(!showUploadForm)}
-              className="px-3.5 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-300 text-black text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 rounded-xl bg-brand hover:bg-brand text-on-brand text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
               <span>{showUploadForm ? 'Cancel' : 'Add New Photo'}</span>
@@ -293,8 +293,8 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
 
         {/* When in pick mode, allow uploading as well as removing current image */}
         {isPickMode && (
-          <div className="px-6 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 flex items-center justify-between gap-3">
-            <span className="text-xs text-indigo-900 dark:text-indigo-200 font-bold">
+          <div className="px-6 py-2.5 bg-brand-soft/50 border-b border-brand-line flex items-center justify-between gap-3">
+            <span className="text-sm text-brand-ink font-bold">
               Tip: Click any photo below to attach to Day {targetDay || 1}, or click Remove Image to use default artwork.
             </span>
             <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                   if (onSelectPhoto) onSelectPhoto('');
                   onClose();
                 }}
-                className="px-3 py-1 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3 py-1 rounded-xl bg-danger-soft hover:bg-danger-soft text-danger-ink text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
                 title="Remove attached image and use default scenic artwork"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -313,7 +313,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
               <button
                 type="button"
                 onClick={() => setShowUploadForm(!showUploadForm)}
-                className="px-3 py-1 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className="px-3 py-1 rounded-xl bg-brand hover:bg-brand text-white text-sm font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 {showUploadForm ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 stroke-[3]" />}
                 <span>{showUploadForm ? 'Cancel Upload' : 'Upload New Photo'}</span>
@@ -326,11 +326,11 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
         {showUploadForm && (
           <form
             onSubmit={handleSaveCustomPhoto}
-            className="p-5 bg-indigo-50/50 dark:bg-indigo-950/20 border-b border-indigo-100 dark:border-indigo-900/30 space-y-4 shrink-0"
+            className="p-5 bg-brand-soft/50 border-b border-brand-line space-y-4 shrink-0"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1">
                   City / Destination Name *
                 </label>
                 <input
@@ -339,12 +339,12 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                   placeholder="e.g. Manali, Kashmir, Goa, Jaipur"
                   value={newCity}
                   onChange={(e) => setNewCity(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1">
                   Photo Title / Landmark *
                 </label>
                 <input
@@ -353,14 +353,14 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                   placeholder="e.g. Hadimba Temple, Solang Snow Peaks, Dal Lake"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-secondary mb-1">
                   Choose Photo File or Paste Image URL *
                 </label>
                 <div className="flex gap-2">
@@ -369,9 +369,9 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     placeholder="https://... or click browse"
                     value={newImageUrl.startsWith('data:') ? '[Local Image Loaded]' : newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none truncate"
+                    className="flex-1 px-3 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none truncate"
                   />
-                  <label className="px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
+                  <label className="px-3.5 py-2 rounded-xl bg-hover hover:bg-hover text-content dark:text-zinc-200 text-sm font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
                     <Upload className="w-3.5 h-3.5" />
                     <span>Browse</span>
                     <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
@@ -380,7 +380,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setNewImageUrl('')}
-                      className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold cursor-pointer flex items-center gap-1"
+                      className="px-3 py-2 rounded-xl bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line text-sm font-bold cursor-pointer flex items-center gap-1"
                       title="Delete / Clear chosen image"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -394,14 +394,14 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowUploadForm(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-subtle text-content dark:text-zinc-300 text-sm font-bold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading}
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-brand hover:bg-brand text-white text-sm font-semibold shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
                   {isUploading ? 'Saving...' : 'Save Photo to Library'}
                 </button>
@@ -409,18 +409,18 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
             </div>
 
             {newImageUrl && (
-              <div className="flex items-center justify-between gap-3 p-2.5 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="flex items-center justify-between gap-3 p-2.5 bg-surface rounded-xl border border-line ">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={newImageUrl}
                     alt="Preview"
-                    className="w-16 h-12 object-cover rounded-lg border border-slate-200 dark:border-zinc-700 shrink-0"
+                    className="w-16 h-12 object-cover rounded-lg border border-line shrink-0"
                   />
                   <div className="min-w-0">
-                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate block">
+                    <span className="text-sm font-bold text-content dark:text-zinc-200 truncate block">
                       {newTitle || 'Ready to save'}
                     </span>
-                    <span className="text-[11px] text-slate-400 dark:text-zinc-500 truncate block">
+                    <span className="text-xs text-muted truncate block">
                       Destination: {newCity || 'Default'}
                     </span>
                   </div>
@@ -428,7 +428,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setNewImageUrl('')}
-                  className="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
+                  className="px-2.5 py-1.5 rounded-lg bg-danger-soft hover:bg-danger-soft text-danger-ink text-sm font-bold flex items-center gap-1 cursor-pointer shrink-0"
                   title="Remove image"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -440,22 +440,22 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
         )}
 
         {/* Search Bar */}
-        <div className="px-6 py-3 bg-slate-50/70 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800 flex items-center gap-3 shrink-0">
+        <div className="px-6 py-3 bg-canvas/70 border-b border-line flex items-center gap-3 shrink-0">
           <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
                 placeholder="Search via city name or title (e.g. Manali, Kashmir, Goa, Kerala, Jaipur)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="w-full pl-9 pr-8 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md cursor-pointer"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-muted hover:text-secondary rounded-md cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -463,7 +463,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
             </div>
             <button
               type="submit"
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer transition-colors"
+              className="px-4 py-2 rounded-xl bg-brand hover:bg-brand text-white text-sm font-bold cursor-pointer transition-colors"
             >
               Search
             </button>
@@ -482,10 +482,10 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     const q = c === 'All' ? '' : c;
                     setSearchQuery(q);
                   }}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
                     (c === 'All' && !searchQuery) || searchQuery.toLowerCase() === c.toLowerCase()
-                      ? 'bg-slate-900 dark:bg-white text-white dark:text-black shadow-xs'
-                      : 'bg-white dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-700'
+                      ? 'bg-inverse text-white shadow-xs'
+                      : 'bg-surface text-secondary hover:bg-subtle '
                   }`}
                 >
                   {c}
@@ -497,17 +497,17 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
         {/* Photos Grid */}
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
           {loading ? (
-            <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
-              <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <div className="py-20 flex flex-col items-center justify-center gap-3 text-muted">
+              <div className="w-8 h-8 border-3 border-brand-line border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-semibold">Loading destination photos...</span>
             </div>
           ) : displayedPhotos.length === 0 ? (
-            <div className="py-16 text-center text-slate-400 space-y-3">
-              <MapPin className="w-10 h-10 mx-auto text-slate-300 dark:text-zinc-600 stroke-[1.5]" />
-              <p className="text-sm font-bold text-slate-700 dark:text-zinc-300">
+            <div className="py-16 text-center text-muted space-y-3">
+              <MapPin className="w-10 h-10 mx-auto text-slate-300 stroke-[1.5]" />
+              <p className="text-sm font-bold text-content dark:text-zinc-300">
                 No photos found matching "{searchQuery}"
               </p>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
+              <p className="text-sm text-secondary max-w-sm mx-auto">
                 Clear the search query to see all saved photos or upload a new photo above.
               </p>
               <button
@@ -516,7 +516,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                   setSearchQuery('');
                   loadPhotos('');
                 }}
-                className="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold cursor-pointer transition-colors"
+                className="px-4 py-2 rounded-xl bg-brand-soft hover:bg-brand-soft text-brand-ink text-sm font-bold cursor-pointer transition-colors"
               >
                 Show All Saved Photos ({photos.length})
               </button>
@@ -527,9 +527,9 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                 <div
                   key={item.id}
                   onClick={() => handleApplyPhoto(item.image_url)}
-                  className="group relative rounded-2xl overflow-hidden border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-2xs hover:shadow-lg transition-all flex flex-col cursor-pointer"
+                  className="group relative rounded-xl overflow-hidden border border-line bg-surface shadow-2xs hover:shadow-sm transition-all flex flex-col cursor-pointer"
                 >
-                  <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-zinc-800">
+                  <div className="relative aspect-video overflow-hidden bg-subtle ">
                     <img
                       src={item.image_url}
                       alt={item.title || item.city}
@@ -538,15 +538,15 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-80" />
 
-                    <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-lime-400" />
+                    <div className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-white text-xs font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-brand-ink" />
                       <span>{item.city}</span>
                     </div>
 
                     <button
                       type="button"
                       onClick={(e) => handleDelete(item.id, e)}
-                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-rose-600 text-white transition-colors cursor-pointer opacity-80 group-hover:opacity-100"
+                      className="absolute top-2.5 right-2.5 p-1.5 rounded-lg bg-black/60 hover:bg-danger-strong text-white transition-colors cursor-pointer opacity-80 group-hover:opacity-100"
                       title="Delete photo from library"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -557,8 +557,8 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     </div>
                   </div>
 
-                  <div className="p-3 bg-white dark:bg-zinc-900 flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500 truncate">
+                  <div className="p-3 bg-surface flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-muted truncate">
                       {item.city}
                     </span>
 
@@ -568,7 +568,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                         e.stopPropagation();
                         handleApplyPhoto(item.image_url);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white dark:bg-indigo-950/60 dark:hover:bg-indigo-600 dark:text-indigo-300 dark:hover:text-white text-xs font-black transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1.5 rounded-xl bg-brand-soft hover:bg-brand text-brand-ink hover:text-white dark:hover:text-white text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                     >
                       <Check className="w-3.5 h-3.5 stroke-[3]" />
                       <span>
@@ -583,12 +583,12 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 bg-slate-50 dark:bg-zinc-900 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-500 dark:text-zinc-400">
+        <div className="px-6 py-3.5 bg-canvas border-t border-line flex items-center justify-between text-sm text-secondary ">
           <span>{photos.length} destination photos in library</span>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-zinc-100 dark:hover:bg-white text-white dark:text-black font-bold cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-inverse hover:bg-inverse text-white font-bold cursor-pointer"
           >
             Close
           </button>

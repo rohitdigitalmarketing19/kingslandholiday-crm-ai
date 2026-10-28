@@ -123,21 +123,21 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-surface border border-line rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-sm animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 /80">
+        <div className="px-6 py-4 border-b border-line flex items-center justify-between bg-canvas /80">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-blue-600 text-white">
+            <span className="p-1.5 rounded-lg bg-brand text-white">
               <Plus className="w-4 h-4" />
             </span>
-            <h3 className="font-bold text-slate-900 text-base">
+            <h3 className="font-bold text-content text-base">
               Add New Post-Sales Customer Booking
             </h3>
           </div>
 
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-muted hover:text-secondary">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -147,22 +147,22 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
           
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Booking ID</label>
+              <label className="font-semibold text-content block mb-1">Booking ID</label>
               <input
                 type="text"
                 value={bookingId}
                 onChange={(e) => setBookingId(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 font-mono font-bold text-blue-600"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line font-mono font-bold text-brand-ink"
                 required
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Assigned Ops Manager</label>
+              <label className="font-semibold text-content block mb-1">Assigned Ops Manager</label>
               <select
                 value={opsManager}
                 onChange={(e) => setOpsManager(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 font-medium"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line font-medium"
               >
                 <option value="Ananya Roy">Ananya Roy</option>
                 <option value="Vikram Malhotra">Vikram Malhotra</option>
@@ -172,111 +172,111 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
           </div>
 
           <div>
-            <label className="font-semibold text-slate-700 block mb-1">Customer / Guest Name</label>
+            <label className="font-semibold text-content block mb-1">Customer / Guest Name</label>
             <input
               type="text"
               placeholder="e.g. Rahul & Priya Sharma"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 font-semibold"
+              className="w-full px-3 py-2 rounded-lg bg-canvas border border-line font-semibold"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Phone Number</label>
+              <label className="font-semibold text-content block mb-1">Phone Number</label>
               <input
                 type="text"
                 placeholder="+91 98765 43210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
                 required
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Email Address</label>
+              <label className="font-semibold text-content block mb-1">Email Address</label>
               <input
                 type="email"
                 placeholder="guest@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-3 sm:col-span-1">
-              <label className="font-semibold text-slate-700 block mb-1">Destination</label>
+              <label className="font-semibold text-content block mb-1">Destination</label>
               <input
                 type="text"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Start Date</label>
+              <label className="font-semibold text-content block mb-1">Start Date</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">End Date</label>
+              <label className="font-semibold text-content block mb-1">End Date</label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Adult PAX</label>
+              <label className="font-semibold text-content block mb-1">Adult PAX</label>
               <input
                 type="number"
                 min={1}
                 value={paxAdults}
                 onChange={(e) => setPaxAdults(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Child PAX</label>
+              <label className="font-semibold text-content block mb-1">Child PAX</label>
               <input
                 type="number"
                 min={0}
                 value={paxChildren}
                 onChange={(e) => setPaxChildren(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line"
               />
             </div>
 
             <div>
-              <label className="font-semibold text-slate-700 block mb-1">Total ($ USD)</label>
+              <label className="font-semibold text-content block mb-1">Total ($ USD)</label>
               <input
                 type="number"
                 value={totalAmount}
                 onChange={(e) => setTotalAmount(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-300 font-bold"
+                className="w-full px-3 py-2 rounded-lg bg-canvas border border-line font-bold"
               />
             </div>
           </div>
 
           {/* Optional Initial Hotel Booking */}
-          <div className="p-3.5 rounded-xl bg-slate-50 /60 border border-slate-200 space-y-2">
-            <span className="font-bold text-slate-800 block">
+          <div className="p-3.5 rounded-xl bg-canvas /60 border border-line space-y-2">
+            <span className="font-bold text-content block">
               + Add Pending Hotel Booking (Optional):
             </span>
 
@@ -286,14 +286,14 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
                 placeholder="Hotel Name (e.g. Centara Grand)"
                 value={hotelName}
                 onChange={(e) => setHotelName(e.target.value)}
-                className="px-3 py-1.5 rounded bg-white border border-slate-300"
+                className="px-3 py-1.5 rounded bg-surface border border-line"
               />
               <input
                 type="text"
                 placeholder="City (e.g. Phuket)"
                 value={hotelCity}
                 onChange={(e) => setHotelCity(e.target.value)}
-                className="px-3 py-1.5 rounded bg-white border border-slate-300"
+                className="px-3 py-1.5 rounded bg-surface border border-line"
               />
             </div>
           </div>
@@ -302,13 +302,13 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 font-semibold hover:bg-slate-100"
+              className="px-4 py-2 rounded-lg text-secondary font-semibold hover:bg-subtle"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xs"
+              className="px-5 py-2 rounded-lg bg-brand hover:bg-brand text-white font-bold shadow-xs"
             >
               Save Customer Booking
             </button>

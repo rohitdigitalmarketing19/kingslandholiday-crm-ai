@@ -16,6 +16,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { HotelVoucher, Customer } from '../types';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 interface SendCustomerVoucherPdfModalProps {
   isOpen: boolean;
@@ -45,41 +46,14 @@ export const SendCustomerVoucherPdfModal: React.FC<SendCustomerVoucherPdfModalPr
   const voucherNo = `3${Math.floor(300 + Math.random() * 680)}`;
   const fileName = `Official_Hotel_Voucher_${(voucher.bookingId || 'KL').replace(/\s+/g, '_')}_${(voucher.customerName || 'Guest').replace(/\s+/g, '_')}.pdf`;
 
-  // Generate and Download PDF using html2pdf
+  // Generate the voucher through the shared, document-safe PDF exporter.
   const handleDownloadPdf = async (): Promise<boolean> => {
     if (!printRef.current) return false;
     setIsGeneratingPdf(true);
     const element = printRef.current;
 
-    const opt = {
-      margin: [0.2, 0.2, 0.2, 0.2],
-      filename: fileName,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        scrollY: 0,
-        scrollX: 0,
-        windowWidth: 1200
-      },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    const h2cFix = document.createElement('style');
-    h2cFix.setAttribute('data-h2c-fix', '1');
-    h2cFix.textContent =
-      'body > div[style*="visibility: hidden"] > img { display: inline-block !important; }';
-    document.head.appendChild(h2cFix);
-
     try {
-      const pdfFunc = typeof (window as any).html2pdf === 'function' ? (window as any).html2pdf : (window as any).html2pdf;
-      if (pdfFunc) {
-        await pdfFunc().set(opt).from(element).save();
-      } else {
-        window.print();
-      }
+      await exportElementToPdf(element, { filename: fileName, margin: 5 });
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 4000);
       setIsGeneratingPdf(false);
@@ -89,8 +63,6 @@ export const SendCustomerVoucherPdfModal: React.FC<SendCustomerVoucherPdfModalPr
       window.print();
       setIsGeneratingPdf(false);
       return false;
-    } finally {
-      h2cFix.remove();
     }
   };
 
@@ -137,7 +109,7 @@ export const SendCustomerVoucherPdfModal: React.FC<SendCustomerVoucherPdfModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static custom-scrollbar">
+    <div className="fixed inset-0 z-50 bg-inverse/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto print:p-0 print:bg-white print:static custom-scrollbar">
       <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-2xl w-full shadow-xl overflow-hidden my-auto flex flex-col animate-in zoom-in-95 duration-150">
         
         {/* MODAL HEADER */}

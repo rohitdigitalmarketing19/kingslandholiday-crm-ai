@@ -40,24 +40,24 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="bg-surface border border-line rounded-xl max-w-lg w-full p-6 shadow-sm space-y-4 animate-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <div className="flex items-center justify-between pb-3 border-b border-line">
           <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-emerald-600 text-white">
+            <span className="p-2 rounded-xl bg-success-strong text-white">
               <Share2 className="w-5 h-5" />
             </span>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">
+              <h3 className="font-bold text-content text-base">
                 Share Quotes & Vouchers Instantly
               </h3>
-              <p className="text-xs text-slate-500">Formatted for WhatsApp, Email & Customer Portals</p>
+              <p className="text-sm text-secondary">Formatted for WhatsApp, Email & Customer Portals</p>
             </div>
           </div>
 
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+          <button onClick={onClose} className="text-muted hover:text-secondary">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -65,15 +65,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
         {/* Message Editor */}
         <div className="space-y-3 text-xs">
           <div className="flex items-center justify-between">
-            <label className="font-bold text-slate-700">Formatted Message Text:</label>
-            <span className="text-[11px] text-emerald-600 font-semibold">Ready for WhatsApp Markdown</span>
+            <label className="font-bold text-content">Formatted Message Text:</label>
+            <span className="text-xs text-success-ink font-semibold">Ready for WhatsApp Markdown</span>
           </div>
 
           <textarea
             rows={8}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-50 border border-slate-300 font-mono text-xs text-slate-900 leading-relaxed focus:ring-2 focus:ring-emerald-500/30"
+            className="w-full p-3 rounded-xl bg-canvas border border-line font-mono text-sm text-content leading-relaxed focus:ring-2 focus:ring-success-line/30"
           />
 
           {/* Quick Sharing Options */}
@@ -81,15 +81,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             
             <button
               onClick={handleCopy}
-              className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold flex items-center justify-center gap-1.5 transition-colors"
+              className="py-2.5 px-3 rounded-xl bg-subtle hover:bg-hover text-content font-bold flex items-center justify-center gap-1.5 transition-colors"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
+              {copied ? <Check className="w-4 h-4 text-success-ink" /> : <Copy className="w-4 h-4 text-secondary" />}
               <span>{copied ? 'Copied!' : 'Copy Text'}</span>
             </button>
 
             <button
               onClick={handleOpenWhatsApp}
-              className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              className="py-2.5 px-3 rounded-xl bg-success-strong hover:bg-success-strong text-white font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
             >
               <MessageSquare className="w-4 h-4" />
               <span>WhatsApp</span>
@@ -97,7 +97,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
             <button
               onClick={handleOpenEmail}
-              className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              className="py-2.5 px-3 rounded-xl bg-brand hover:bg-brand text-white font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors"
             >
               <Mail className="w-4 h-4" />
               <span>Email</span>

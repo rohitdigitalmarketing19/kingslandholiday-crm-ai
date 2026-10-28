@@ -14,8 +14,7 @@ import {
   Download
 } from 'lucide-react';
 import { HotelVoucher } from '../types';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+import { exportElementToPdf } from '../utils/pdfExport';
 
 interface VoucherPreviewModalProps {
   voucher: HotelVoucher | null;
@@ -41,40 +40,11 @@ export const VoucherPreviewModal: React.FC<VoucherPreviewModalProps> = ({
     const element = printRef.current;
     const filename = `Hotel_Voucher_${(voucher.hotelName || 'Reservation').replace(/\s+/g, '_')}.pdf`;
     
-    const opt = {
-      margin: [0.2, 0.2, 0.2, 0.2],
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false,
-        scrollY: 0,
-        scrollX: 0,
-        windowWidth: 1200
-      },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    const h2cFix = document.createElement('style');
-    h2cFix.setAttribute('data-h2c-fix', '1');
-    h2cFix.textContent =
-      'body > div[style*="visibility: hidden"] > img { display: inline-block !important; }';
-    document.head.appendChild(h2cFix);
-
     try {
-      const pdfFunc = typeof html2pdf === 'function' ? html2pdf : (window as any).html2pdf;
-      if (pdfFunc) {
-        await pdfFunc().set(opt).from(element).save();
-      } else {
-        window.print();
-      }
+      await exportElementToPdf(element, { filename: filename, margin: 5 });
     } catch (e) {
       console.error('PDF export error, falling back to print:', e);
       window.print();
-    } finally {
-      h2cFix.remove();
     }
   };
 
@@ -87,7 +57,7 @@ export const VoucherPreviewModal: React.FC<VoucherPreviewModalProps> = ({
   const voucherNo = `3${Math.floor(300 + Math.random() * 680)}`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden print:p-0 print:bg-white print:static">
+    <div className="fixed inset-0 z-50 bg-inverse/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-hidden print:p-0 print:bg-white print:static">
       <div className="hotel-voucher-fixed doc-preview-protected bg-white border border-slate-200 rounded-3xl max-w-4xl w-full h-[94vh] max-h-[94vh] flex flex-col overflow-hidden shadow-xl animate-in zoom-in-95 duration-150 print:max-w-none print:max-h-none print:h-auto print:shadow-none print:border-none print:rounded-none">
         
         {/* Modal Top Bar (Hidden on Print) */}

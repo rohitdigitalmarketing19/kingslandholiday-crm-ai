@@ -454,13 +454,13 @@ const ItineraryLibrary: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Top Banner & Actions Header */}
-      <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-surface rounded-xl p-5 border border-line shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Map className="w-5 h-5 text-indigo-600" />
-            <h2 className="text-xl font-semibold text-slate-800">Itinerary Library & Templates</h2>
+            <Map className="w-5 h-5 text-brand-ink" />
+            <h2 className="text-xl font-semibold text-content">Itinerary Library & Templates</h2>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-sm text-secondary mt-0.5">
             Pre-built day-wise packages, manual itinerary builders, and AI-powered custom itineraries.
           </p>
         </div>
@@ -468,15 +468,15 @@ const ItineraryLibrary: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button 
             onClick={() => setShowApiKeyModal(true)}
-            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium border border-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-2 bg-canvas hover:bg-subtle text-content rounded-lg text-sm font-medium border border-line transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <Key size={13} className="text-slate-500" />
+            <Key size={13} className="text-secondary" />
             <span>API Settings</span>
           </button>
           
           <button 
             onClick={() => setShowManualModal(true)}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="px-3.5 py-2 bg-brand hover:bg-brand text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Plus size={14} />
             <span>Add Template</span>
@@ -485,9 +485,9 @@ const ItineraryLibrary: React.FC = () => {
           <button 
             onClick={() => setShowAIModal(true)}
             disabled={isGeneratingAI}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
+            className="px-3.5 py-2 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
           >
-            <Sparkles size={14} className="text-emerald-200" />
+            <Sparkles size={14} className="text-success-ink" />
             <span>Generate with AI</span>
           </button>
         </div>
@@ -495,11 +495,11 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* Search Bar */}
       <div className="relative max-w-md">
-         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
          <input 
            type="text" 
            placeholder="Search templates by destination or package name..." 
-           className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800 outline-none focus:border-indigo-400 shadow-2xs transition-all"
+           className="w-full pl-9 pr-4 py-2 bg-surface border border-line rounded-lg text-sm font-medium text-content outline-none focus:border-brand-line shadow-2xs transition-all"
            value={searchQuery}
            onChange={(e) => setSearchQuery(e.target.value)}
          />
@@ -511,34 +511,34 @@ const ItineraryLibrary: React.FC = () => {
           const days = item.templateData?.days || item.templateData?.itinerary || [];
           const photoCount = Array.isArray(days) ? days.filter((d: any) => d.imageUrl || d.img || d.image).length : 0;
           return (
-            <div key={item.id} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-sm transition-all flex flex-col justify-between">
+            <div key={item.id} className="bg-surface border border-line rounded-xl overflow-hidden hover:shadow-sm transition-all flex flex-col justify-between">
               <div className="p-4 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-1">
-                  <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                  <span className="text-xs font-semibold text-brand-ink bg-brand-soft px-2 py-0.5 rounded border border-brand-line">
                     {item.destination}
                   </span>
                   <div className="flex items-center gap-1.5">
                     {photoCount > 0 && (
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      <span className="text-xs font-semibold text-success-ink bg-success-soft px-1.5 py-0.5 rounded border border-success-line">
                         📷 {photoCount} {photoCount === 1 ? 'photo' : 'photos'}
                       </span>
                     )}
-                    <span className="text-[11px] font-medium text-slate-500">
+                    <span className="text-xs font-medium text-secondary">
                       {item.nights}N / {item.nights + 1}D
                     </span>
                   </div>
                 </div>
 
-                <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 leading-snug">
+                <h4 className="text-sm font-semibold text-content line-clamp-2 leading-snug">
                   {item.title}
                 </h4>
               </div>
 
-              <div className="px-3.5 py-2.5 bg-slate-50/70 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1.5">
+              <div className="px-3.5 py-2.5 bg-canvas/70 border-t border-line flex flex-wrap items-center justify-between gap-1.5">
                  <div className="flex flex-wrap items-center gap-1">
                    <button 
                      onClick={() => setPreviewTemplate(item)}
-                     className="px-2 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                     className="px-2 py-1 bg-surface hover:bg-brand-soft text-brand-ink border border-line hover:border-brand-line rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
                      title="View Itinerary Details"
                    >
                      <Eye size={12} />
@@ -546,7 +546,7 @@ const ItineraryLibrary: React.FC = () => {
                    </button>
                    <button 
                      onClick={() => handleStartEditTemplate(item)}
-                     className="px-2 py-1 bg-white hover:bg-amber-50 text-amber-700 border border-slate-200 hover:border-amber-200 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                     className="px-2 py-1 bg-surface hover:bg-warning-soft text-warning-ink border border-line hover:border-warning-line rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
                      title="Edit Template & Photos"
                    >
                      <Edit2 size={12} />
@@ -554,7 +554,7 @@ const ItineraryLibrary: React.FC = () => {
                    </button>
                    <button 
                      onClick={() => handleOpenPdfModal(item)}
-                     className="px-2 py-1 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                     className="px-2 py-1 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
                      title="Generate Themed PDF"
                    >
                      <FileText size={12} />
@@ -564,7 +564,7 @@ const ItineraryLibrary: React.FC = () => {
 
                  <button 
                    onClick={() => handleDeleteTemplate(item.id, item.title)}
-                   className="px-2 py-1 text-rose-600 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer" 
+                   className="px-2 py-1 text-danger-ink bg-surface hover:bg-danger-soft border border-line hover:border-danger-line rounded-lg text-sm font-medium transition-colors flex items-center gap-1 cursor-pointer" 
                    title="Delete Itinerary Template"
                  >
                    <Trash2 size={12} />
@@ -576,26 +576,26 @@ const ItineraryLibrary: React.FC = () => {
         })}
 
         {filteredTemplates.length === 0 && (
-          <div className="col-span-full py-16 bg-white border border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-center p-6 space-y-2">
-             <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
+          <div className="col-span-full py-16 bg-surface border border-dashed border-line rounded-xl flex flex-col items-center justify-center text-center p-6 space-y-2">
+             <div className="w-10 h-10 bg-canvas rounded-lg flex items-center justify-center text-muted">
                 <Map size={20} />
              </div>
-             <h4 className="text-sm font-semibold text-slate-800">No Templates Found</h4>
-             <p className="text-xs text-slate-400 max-w-sm">Create a manual package or generate a master template using AI above.</p>
+             <h4 className="text-sm font-semibold text-content">No Templates Found</h4>
+             <p className="text-sm text-muted max-w-sm">Create a manual package or generate a master template using AI above.</p>
           </div>
         )}
       </div>
 
       {/* MODAL 1: ADD MANUAL ITINERARY */}
       {showManualModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 my-8 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-2xl p-6 my-8 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-line">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Create Itinerary Template</h3>
-                <p className="text-[11px] text-slate-500">Configure day-by-day plan and attach destination photos.</p>
+                <h3 className="text-sm font-semibold text-content">Create Itinerary Template</h3>
+                <p className="text-xs text-secondary">Configure day-by-day plan and attach destination photos.</p>
               </div>
-              <button onClick={() => setShowManualModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+              <button onClick={() => setShowManualModal(false)} className="p-1 text-muted hover:text-secondary rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -603,25 +603,25 @@ const ItineraryLibrary: React.FC = () => {
             <form onSubmit={handleSaveManualTemplate} className="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Package Title *</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Package Title *</label>
                   <input 
                     type="text" 
                     required 
                     value={manualTitle}
                     onChange={e => setManualTitle(e.target.value)}
                     placeholder="e.g. Kashmir 6N/7D Premium Paradise"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Destination *</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Destination *</label>
                   <input 
                     type="text" 
                     required 
                     value={manualDestination}
                     onChange={e => setManualDestination(e.target.value)}
                     placeholder="e.g. Kashmir"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
               </div>
@@ -629,26 +629,26 @@ const ItineraryLibrary: React.FC = () => {
               {/* Day-Wise Plan Editor */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-semibold text-slate-800">Day-Wise Plan ({manualDays.length} Days)</h4>
+                  <h4 className="text-sm font-semibold text-content">Day-Wise Plan ({manualDays.length} Days)</h4>
                   <button 
                     type="button" 
                     onClick={handleAddManualDay}
-                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium transition-colors cursor-pointer"
+                    className="px-2.5 py-1 bg-brand-soft text-brand-ink hover:bg-brand-soft rounded text-sm font-medium transition-colors cursor-pointer"
                   >
                     + Add Day
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50/50 custom-scrollbar">
+                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-line rounded-lg bg-canvas/50 custom-scrollbar">
                   {manualDays.map((d, idx) => (
-                    <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2.5 shadow-2xs">
+                    <div key={idx} className="p-3 bg-surface rounded-xl border border-line space-y-2.5 shadow-2xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold text-indigo-700">Day {d.day}</span>
+                        <span className="text-xs font-bold text-brand-ink">Day {d.day}</span>
                         {manualDays.length > 1 && (
                           <button 
                             type="button" 
                             onClick={() => handleRemoveManualDay(idx)} 
-                            className="px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-0.5 text-xs font-medium text-danger-ink hover:bg-danger-soft rounded transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <Trash2 size={11} />
                             <span>Remove Day</span>
@@ -664,7 +664,7 @@ const ItineraryLibrary: React.FC = () => {
                           setManualDays(updated);
                         }}
                         placeholder="Day Title (e.g. Arrival in Srinagar & Shikara Ride)"
-                        className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                        className="w-full bg-canvas border border-line rounded px-2.5 py-1.5 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                       />
                       <textarea 
                         rows={2}
@@ -675,26 +675,26 @@ const ItineraryLibrary: React.FC = () => {
                           setManualDays(updated);
                         }}
                         placeholder="Day Activities / Description..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white resize-none"
+                        className="w-full bg-canvas border border-line rounded p-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface resize-none"
                       />
 
                       {/* Photo Attachment Bar */}
-                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                      <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2">
                         {(d.imageUrl || d.img) ? (
                           <div className="flex items-center gap-2.5">
                             <img 
                               src={d.imageUrl || d.img} 
                               alt={`Day ${d.day}`} 
-                              className="w-16 h-11 rounded-lg object-cover border border-slate-200 shadow-2xs" 
+                              className="w-16 h-11 rounded-lg object-cover border border-line shadow-2xs" 
                             />
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              <span className="text-xs font-bold text-success-ink bg-success-soft px-2 py-0.5 rounded border border-success-line">
                                 ✓ Photo Attached
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveDayPhoto('manual', idx)}
-                                className="text-[11px] text-rose-600 hover:text-rose-700 hover:underline font-medium cursor-pointer"
+                                className="text-xs text-danger-ink hover:text-danger-ink hover:underline font-medium cursor-pointer"
                               >
                                 Remove Photo
                               </button>
@@ -708,12 +708,12 @@ const ItineraryLibrary: React.FC = () => {
                                 setPhotoPickerTargetForm('manual');
                                 setPhotoPickerDayIndex(idx);
                               }}
-                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-medium border border-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-2.5 py-1 bg-brand-soft hover:bg-brand-soft text-brand-ink rounded-lg text-xs font-medium border border-brand-line flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                               <ImageIcon size={12} />
                               <span>+ Add Photo from Library</span>
                             </button>
-                            <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer">
+                            <label className="px-2.5 py-1 bg-subtle hover:bg-hover text-content rounded-lg text-xs font-medium border border-line flex items-center gap-1.5 transition-colors cursor-pointer">
                               <Upload size={12} />
                               <span>Upload Photo</span>
                               <input 
@@ -731,11 +731,11 @@ const ItineraryLibrary: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" onClick={() => setShowManualModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-line">
+                <button type="button" onClick={() => setShowManualModal(false)} className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-medium rounded-lg transition-colors cursor-pointer">
                   Cancel
                 </button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs cursor-pointer">
+                <button type="submit" className="px-4 py-2 bg-brand hover:bg-brand text-white rounded-lg text-sm font-medium transition-colors shadow-xs cursor-pointer">
                   Save Template
                 </button>
               </div>
@@ -746,49 +746,49 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* MODAL 2: GENERATE ITINERARY WITH AI */}
       {showAIModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
-                <Sparkles size={15} className="text-emerald-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-md p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-line">
+              <h3 className="text-sm font-semibold text-content flex items-center gap-1.5">
+                <Sparkles size={15} className="text-success-ink" />
                 <span>AI Itinerary Generator</span>
               </h3>
-              <button onClick={() => setShowAIModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+              <button onClick={() => setShowAIModal(false)} className="p-1 text-muted hover:text-secondary rounded">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleGenerateAITemplate} className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Destination *</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Destination *</label>
                 <input 
                   type="text" 
                   required 
                   value={aiDestination}
                   onChange={e => setAiDestination(e.target.value)}
                   placeholder="e.g. Dubai / Bali / Switzerland"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Duration (Days)</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Duration (Days)</label>
                   <input 
                     type="number" 
                     min="2"
                     max="30"
                     value={aiDaysCount}
                     onChange={e => setAiDaysCount(parseInt(e.target.value) || 5)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Travel Style</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Travel Style</label>
                   <select 
                     value={aiVibe} 
                     onChange={e => setAiVibe(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   >
                     <option value="Luxury & Scenic">Luxury & Scenic</option>
                     <option value="Family Friendly">Family Friendly</option>
@@ -800,24 +800,24 @@ const ItineraryLibrary: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">Custom Inclusions / Requests</label>
+                <label className="block text-xs font-medium text-secondary mb-1">Custom Inclusions / Requests</label>
                 <textarea 
                   rows={2}
                   value={aiNotes}
                   onChange={e => setAiNotes(e.target.value)}
                   placeholder="e.g. Include Burj Khalifa, Desert Safari with BBQ, Dhow Cruise..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white resize-none"
+                  className="w-full bg-canvas border border-line rounded-lg p-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface resize-none"
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" onClick={() => setShowAIModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-line">
+                <button type="button" onClick={() => setShowAIModal(false)} className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-medium rounded-lg transition-colors">
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isGeneratingAI}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-medium transition-colors shadow-xs disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <Sparkles size={13} />
                   <span>{isGeneratingAI ? 'Generating...' : 'Craft Master Itinerary'}</span>
@@ -830,39 +830,39 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* MODAL 3: API KEY SETTINGS */}
       {showApiKeyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
-                <Key size={14} className="text-indigo-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-sm p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-line">
+              <h3 className="text-sm font-semibold text-content flex items-center gap-1.5">
+                <Key size={14} className="text-brand-ink" />
                 <span>Gemini API Key Settings</span>
               </h3>
-              <button onClick={() => setShowApiKeyModal(false)} className="p-1 text-slate-400 hover:text-slate-600 rounded">
+              <button onClick={() => setShowApiKeyModal(false)} className="p-1 text-muted hover:text-secondary rounded">
                 <X size={16} />
               </button>
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-secondary">
                 Provide a personal Google Gemini API Key for AI itinerary generation.
               </p>
 
               <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">API Key</label>
+                <label className="block text-xs font-medium text-secondary mb-1">API Key</label>
                 <input 
                   type="password"
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                  className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-mono font-medium outline-none focus:border-brand-line focus:bg-surface"
                 />
               </div>
 
-              <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-                <button type="button" onClick={() => setShowApiKeyModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors">
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-line">
+                <button type="button" onClick={() => setShowApiKeyModal(false)} className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-medium rounded-lg transition-colors">
                   Cancel
                 </button>
-                <button type="button" onClick={handleSaveApiKey} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs">
+                <button type="button" onClick={handleSaveApiKey} className="px-4 py-2 bg-brand hover:bg-brand text-white rounded-lg text-sm font-medium transition-colors shadow-xs">
                   Save Key
                 </button>
               </div>
@@ -873,16 +873,16 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* MODAL 4: VIEW PREVIEW TEMPLATE */}
       {previewTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 my-8 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-2xl p-6 my-8 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-start pb-3 border-b border-line">
               <div>
-                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                <span className="text-xs font-semibold text-brand-ink bg-brand-soft px-2 py-0.5 rounded border border-brand-line">
                   {previewTemplate.destination} · {previewTemplate.nights} Nights / {(previewTemplate.nights || 1) + 1} Days
                 </span>
-                <h3 className="text-base font-semibold text-slate-900 mt-1">{previewTemplate.title}</h3>
+                <h3 className="text-base font-semibold text-content mt-1">{previewTemplate.title}</h3>
               </div>
-              <button onClick={() => setPreviewTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+              <button onClick={() => setPreviewTemplate(null)} className="p-1 text-muted hover:text-secondary rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -891,16 +891,16 @@ const ItineraryLibrary: React.FC = () => {
               {(previewTemplate.templateData?.days || previewTemplate.templateData?.itinerary || []).map((day: any, idx: number, arr: any[]) => {
                 const dayImg = day.imageUrl || day.img || day.image;
                 return (
-                  <div key={idx} className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2 relative group">
+                  <div key={idx} className="p-3.5 bg-canvas/80 rounded-xl border border-line space-y-2 relative group">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs font-bold text-indigo-700">
+                      <span className="text-sm font-bold text-brand-ink">
                         Day {String(day.day || idx + 1).padStart(2, '0')} — {day.title || (idx === 0 ? `Arrival in ${previewTemplate.destination}` : idx === arr.length - 1 ? `Departure` : `Sightseeing Tour`)}
                       </span>
                       {arr.length > 1 && (
                         <button
                           type="button"
                           onClick={() => handleDeletePreviewDay(idx)}
-                          className="px-2 py-0.5 text-[10px] font-semibold text-rose-600 hover:text-white bg-rose-50 hover:bg-rose-600 border border-rose-200 rounded transition-all cursor-pointer flex items-center gap-1"
+                          className="px-2 py-0.5 text-xs font-semibold text-danger-ink hover:text-white bg-danger-soft hover:bg-danger-strong border border-danger-line rounded transition-all cursor-pointer flex items-center gap-1"
                           title="Delete this day from itinerary template"
                         >
                           <Trash2 size={11} />
@@ -910,7 +910,7 @@ const ItineraryLibrary: React.FC = () => {
                     </div>
 
                     {dayImg && (
-                      <div className="w-full h-36 rounded-lg overflow-hidden border border-slate-200 shadow-2xs">
+                      <div className="w-full h-36 rounded-lg overflow-hidden border border-line shadow-2xs">
                         <img 
                           src={dayImg} 
                           alt={day.title || `Day ${idx + 1}`} 
@@ -919,17 +919,17 @@ const ItineraryLibrary: React.FC = () => {
                       </div>
                     )}
 
-                    <p className="text-xs text-slate-600 leading-relaxed font-normal">{day.description}</p>
+                    <p className="text-sm text-secondary leading-relaxed font-normal">{day.description}</p>
                   </div>
                 );
               })}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line">
               <button 
                 type="button" 
                 onClick={() => handleDeleteTemplate(previewTemplate.id, previewTemplate.title)}
-                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Permanently delete this itinerary template"
               >
                 <Trash2 size={13} />
@@ -940,7 +940,7 @@ const ItineraryLibrary: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => handleStartEditTemplate(previewTemplate)}
-                  className="px-3.5 py-2 bg-white hover:bg-amber-50 text-amber-700 border border-slate-200 hover:border-amber-200 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  className="px-3.5 py-2 bg-surface hover:bg-warning-soft text-warning-ink border border-line hover:border-warning-line text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <Edit2 size={13} />
                   <span>Edit Itinerary</span>
@@ -952,7 +952,7 @@ const ItineraryLibrary: React.FC = () => {
                     setPreviewTemplate(null);
                     handleOpenPdfModal(curr);
                   }}
-                  className="px-4 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer hover:opacity-95"
+                  className="px-4 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] text-white text-sm font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer hover:opacity-95"
                 >
                   <FileText size={13} />
                   <span>Generate PDF</span>
@@ -960,7 +960,7 @@ const ItineraryLibrary: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setPreviewTemplate(null)} 
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer"
+                  className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-medium rounded-lg transition-colors cursor-pointer"
                 >
                   Close
                 </button>
@@ -972,14 +972,14 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* MODAL 5: EDIT ITINERARY TEMPLATE */}
       {editingTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 my-8 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-2xl p-6 my-8 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-line">
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Edit Itinerary Template</h3>
-                <p className="text-[11px] text-slate-500">Update package details, day-by-day plan, and attach destination photos.</p>
+                <h3 className="text-sm font-semibold text-content">Edit Itinerary Template</h3>
+                <p className="text-xs text-secondary">Update package details, day-by-day plan, and attach destination photos.</p>
               </div>
-              <button onClick={() => setEditingTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+              <button onClick={() => setEditingTemplate(null)} className="p-1 text-muted hover:text-secondary rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -987,25 +987,25 @@ const ItineraryLibrary: React.FC = () => {
             <form onSubmit={handleSaveEditTemplate} className="space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar pr-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Package Title *</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Package Title *</label>
                   <input 
                     type="text" 
                     required 
                     value={editTitle}
                     onChange={e => setEditTitle(e.target.value)}
                     placeholder="e.g. Kashmir 6N/7D Premium Paradise"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-slate-600 mb-1">Destination *</label>
+                  <label className="block text-xs font-medium text-secondary mb-1">Destination *</label>
                   <input 
                     type="text" 
                     required 
                     value={editDestination}
                     onChange={e => setEditDestination(e.target.value)}
                     placeholder="e.g. Kashmir"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                    className="w-full bg-canvas border border-line rounded-lg px-3 py-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                   />
                 </div>
               </div>
@@ -1013,26 +1013,26 @@ const ItineraryLibrary: React.FC = () => {
               {/* Day-Wise Plan Editor */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <h4 className="text-xs font-semibold text-slate-800">Day-Wise Plan ({editDays.length} Days)</h4>
+                  <h4 className="text-sm font-semibold text-content">Day-Wise Plan ({editDays.length} Days)</h4>
                   <button 
                     type="button" 
                     onClick={handleAddEditDay}
-                    className="px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-medium transition-colors cursor-pointer"
+                    className="px-2.5 py-1 bg-brand-soft text-brand-ink hover:bg-brand-soft rounded text-sm font-medium transition-colors cursor-pointer"
                   >
                     + Add Day
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50/50 custom-scrollbar">
+                <div className="space-y-3 max-h-80 overflow-y-auto p-2 border border-line rounded-lg bg-canvas/50 custom-scrollbar">
                   {editDays.map((d, idx) => (
-                    <div key={idx} className="p-3 bg-white rounded-xl border border-slate-200 space-y-2.5 shadow-2xs">
+                    <div key={idx} className="p-3 bg-surface rounded-xl border border-line space-y-2.5 shadow-2xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold text-indigo-700">Day {d.day}</span>
+                        <span className="text-xs font-bold text-brand-ink">Day {d.day}</span>
                         {editDays.length > 1 && (
                           <button 
                             type="button" 
                             onClick={() => handleRemoveEditDay(idx)} 
-                            className="px-2 py-0.5 text-[11px] font-medium text-rose-600 hover:bg-rose-50 rounded transition-colors flex items-center gap-1 cursor-pointer"
+                            className="px-2 py-0.5 text-xs font-medium text-danger-ink hover:bg-danger-soft rounded transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <Trash2 size={11} />
                             <span>Remove Day</span>
@@ -1048,7 +1048,7 @@ const ItineraryLibrary: React.FC = () => {
                           setEditDays(updated);
                         }}
                         placeholder="Day Title (e.g. Arrival in Srinagar & Shikara Ride)"
-                        className="w-full bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white"
+                        className="w-full bg-canvas border border-line rounded px-2.5 py-1.5 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface"
                       />
                       <textarea 
                         rows={2}
@@ -1059,26 +1059,26 @@ const ItineraryLibrary: React.FC = () => {
                           setEditDays(updated);
                         }}
                         placeholder="Day Activities / Description..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-medium outline-none focus:border-indigo-400 focus:bg-white resize-none"
+                        className="w-full bg-canvas border border-line rounded p-2 text-sm font-medium outline-none focus:border-brand-line focus:bg-surface resize-none"
                       />
 
                       {/* Photo Attachment Bar */}
-                      <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                      <div className="pt-2 border-t border-line flex flex-wrap items-center justify-between gap-2">
                         {(d.imageUrl || d.img) ? (
                           <div className="flex items-center gap-2.5">
                             <img 
                               src={d.imageUrl || d.img} 
                               alt={`Day ${d.day}`} 
-                              className="w-16 h-11 rounded-lg object-cover border border-slate-200 shadow-2xs" 
+                              className="w-16 h-11 rounded-lg object-cover border border-line shadow-2xs" 
                             />
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              <span className="text-xs font-bold text-success-ink bg-success-soft px-2 py-0.5 rounded border border-success-line">
                                 ✓ Photo Attached
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveDayPhoto('edit', idx)}
-                                className="text-[11px] text-rose-600 hover:text-rose-700 hover:underline font-medium cursor-pointer"
+                                className="text-xs text-danger-ink hover:text-danger-ink hover:underline font-medium cursor-pointer"
                               >
                                 Remove Photo
                               </button>
@@ -1092,12 +1092,12 @@ const ItineraryLibrary: React.FC = () => {
                                 setPhotoPickerTargetForm('edit');
                                 setPhotoPickerDayIndex(idx);
                               }}
-                              className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-[11px] font-medium border border-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                              className="px-2.5 py-1 bg-brand-soft hover:bg-brand-soft text-brand-ink rounded-lg text-xs font-medium border border-brand-line flex items-center gap-1.5 transition-colors cursor-pointer"
                             >
                               <ImageIcon size={12} />
                               <span>+ Add Photo from Library</span>
                             </button>
-                            <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-medium border border-slate-200 flex items-center gap-1.5 transition-colors cursor-pointer">
+                            <label className="px-2.5 py-1 bg-subtle hover:bg-hover text-content rounded-lg text-xs font-medium border border-line flex items-center gap-1.5 transition-colors cursor-pointer">
                               <Upload size={12} />
                               <span>Upload Photo</span>
                               <input 
@@ -1115,11 +1115,11 @@ const ItineraryLibrary: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+              <div className="flex justify-between items-center pt-2 border-t border-line">
                 <button 
                   type="button" 
                   onClick={() => handleDeleteTemplate(editingTemplate.id, editingTemplate.title)}
-                  className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-2 bg-danger-soft hover:bg-danger-soft text-danger-ink border border-danger-line rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
                   title="Permanently delete this itinerary template"
                 >
                   <Trash2 size={13} />
@@ -1127,10 +1127,10 @@ const ItineraryLibrary: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setEditingTemplate(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition-colors cursor-pointer">
+                  <button type="button" onClick={() => setEditingTemplate(null)} className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-medium rounded-lg transition-colors cursor-pointer">
                     Cancel
                   </button>
-                  <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors shadow-xs cursor-pointer">
+                  <button type="submit" className="px-4 py-2 bg-brand hover:bg-brand text-white rounded-lg text-sm font-medium transition-colors shadow-xs cursor-pointer">
                     Save Changes
                   </button>
                 </div>
@@ -1156,17 +1156,17 @@ const ItineraryLibrary: React.FC = () => {
 
       {/* MODAL 5: GENERATE PDF WITH THEME DROPDOWN */}
       {pdfModalTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-slate-200 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-inverse/60 backdrop-blur-xs">
+          <div className="bg-surface rounded-xl shadow-sm w-full max-w-md p-6 border border-line animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex justify-between items-start pb-3 border-b border-line">
               <div>
-                <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-200 uppercase tracking-wider">
+                <span className="text-xs font-bold text-warning-ink bg-warning-soft px-2 py-0.5 rounded-full border border-warning-line uppercase tracking-wider">
                   PDF Theme Engine
                 </span>
-                <h3 className="text-base font-bold text-slate-900 mt-1">Generate Package PDF</h3>
-                <p className="text-xs text-slate-500">{pdfModalTemplate.title}</p>
+                <h3 className="text-base font-bold text-content mt-1">Generate Package PDF</h3>
+                <p className="text-sm text-secondary">{pdfModalTemplate.title}</p>
               </div>
-              <button onClick={() => setPdfModalTemplate(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded cursor-pointer">
+              <button onClick={() => setPdfModalTemplate(null)} className="p-1 text-muted hover:text-secondary rounded cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -1174,13 +1174,13 @@ const ItineraryLibrary: React.FC = () => {
             <div className="space-y-4 text-xs">
               {/* Theme Selector */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-sm font-bold text-content mb-1">
                   Select PDF Theme / Skin
                 </label>
                 <select
                   value={selectedThemeId}
                   onChange={e => setSelectedThemeId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-[#FF6B35]"
+                  className="w-full bg-canvas border border-line rounded-xl px-3.5 py-2.5 text-sm font-medium text-content outline-none focus:border-[#FF6B35]"
                 >
                   <option value="auto">🌟 Auto (Active Festival / Seasonal Window)</option>
                   <option value="brand-default">🏛️ Kingsland Brand Default</option>
@@ -1192,16 +1192,16 @@ const ItineraryLibrary: React.FC = () => {
                       </option>
                     ))}
                 </select>
-                <span className="text-[10px] text-slate-500 mt-1 block">
+                <span className="text-xs text-secondary mt-1 block">
                   Auto matches active seasonal festival skins (Diwali, Holi, Christmas) based on current date.
                 </span>
               </div>
 
               {/* Detailed Itinerary Toggle */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div className="p-3.5 bg-canvas rounded-xl border border-line flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-slate-800 text-xs">Detailed Itinerary</div>
-                  <div className="text-[10px] text-slate-500">
+                  <div className="font-bold text-content text-sm">Detailed Itinerary</div>
+                  <div className="text-xs text-secondary">
                     Include full day-by-day sightseeing cards with alternating 3:2 photos.
                   </div>
                 </div>
@@ -1215,28 +1215,28 @@ const ItineraryLibrary: React.FC = () => {
               </div>
 
               {/* Package Specs Summary */}
-              <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1 text-[11px] text-orange-950">
+              <div className="p-3 bg-warning-soft/50 rounded-xl border border-warning-line space-y-1 text-xs text-warning-ink">
                 <div className="flex justify-between">
-                  <span className="text-orange-700 font-semibold">Destination:</span>
+                  <span className="text-warning-ink font-semibold">Destination:</span>
                   <span className="font-bold">{pdfModalTemplate.destination}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-orange-700 font-semibold">Duration:</span>
+                  <span className="text-warning-ink font-semibold">Duration:</span>
                   <span className="font-bold">{pdfModalTemplate.nights} Nights / {pdfModalTemplate.nights + 1} Days</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-orange-700 font-semibold">Smart Packing:</span>
+                  <span className="text-warning-ink font-semibold">Smart Packing:</span>
                   <span className="font-bold">Continuous flow &amp; ≤30% empty space filler</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-line">
               <button
                 type="button"
                 disabled={isGeneratingPdf}
                 onClick={() => setPdfModalTemplate(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer"
+                className="px-4 py-2 bg-subtle hover:bg-hover text-content text-sm font-semibold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -1244,7 +1244,7 @@ const ItineraryLibrary: React.FC = () => {
                 type="button"
                 disabled={isGeneratingPdf}
                 onClick={handleGeneratePackagePdf}
-                className="px-5 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 bg-gradient-to-r from-[#FF6B35] to-[#D9582B] hover:opacity-95 text-white text-sm font-bold rounded-xl shadow-sm shadow-warning-line/20 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
               >
                 {isGeneratingPdf ? <RefreshCw size={13} className="animate-spin" /> : <Download size={13} />}
                 <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>

@@ -781,27 +781,27 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
     <div className="space-y-6 animate-in fade-in duration-200">
       
       {isReadOnly && (
-        <div className="bg-amber-50 border border-amber-300 text-amber-900 p-4 rounded-2xl flex items-center justify-between shadow-xs">
+        <div className="bg-warning-soft border border-warning-line text-warning-ink p-4 rounded-xl flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-2">
             <span className="text-xl">👁️</span>
             <div>
-              <h4 className="text-xs font-black uppercase tracking-wider">Read-Only Mode Enabled</h4>
-              <p className="text-xs text-amber-800 font-medium">You are logged in as an Accounts View-Only User. Editing & settlement modification tools are restricted.</p>
+              <h4 className="text-sm font-semibold uppercase tracking-wider">Read-Only Mode Enabled</h4>
+              <p className="text-sm text-warning-ink font-medium">You are logged in as an Accounts View-Only User. Editing & settlement modification tools are restricted.</p>
             </div>
           </div>
-          <span className="text-[10px] font-black uppercase bg-amber-200 text-amber-900 px-2.5 py-1 rounded-full border border-amber-400">View Only</span>
+          <span className="text-xs font-semibold uppercase bg-warning-soft text-warning-ink px-2.5 py-1 rounded-full border border-warning-line">View Only</span>
         </div>
       )}
 
       {/* Top Banner & Title */}
-      <div className="p-6 rounded-3xl bg-slate-900 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-            <Briefcase className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center gap-2 text-warning-ink font-bold text-sm uppercase tracking-wider">
+            <Briefcase className="w-4 h-4 text-warning-ink" />
             <span>Kingsland Financial Management</span>
           </div>
-          <h2 className="text-2xl font-black text-white mt-1">Accounts & Settlement Desk</h2>
-          <p className="text-xs text-slate-400 mt-0.5 max-w-2xl leading-relaxed">
+          <h2 className="text-2xl font-semibold text-white mt-1">Accounts & Settlement Desk</h2>
+          <p className="text-sm text-muted mt-0.5 max-w-2xl leading-relaxed">
             Professional accounting ledger for <strong>completed trips only</strong>. Click any row to inspect the complete financial audit, including multi-hotel vouchers, paid/pending status, payment timestamps, and cab settlements.
           </p>
         </div>
@@ -817,9 +817,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-2 border border-white/20 transition-all cursor-pointer shadow-sm"
+            className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm flex items-center gap-2 border border-white/20 transition-all cursor-pointer shadow-sm"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-success-ink" />
             <span>Export Accounts Ledger</span>
           </button>
         </div>
@@ -829,68 +829,68 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1: Total Customer Collections */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Completed Inflows</span>
-            <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+            <div className="p-2 rounded-xl bg-success-soft text-success-ink">
               <DollarSign className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-semibold text-content font-mono">
             ₹{metrics.totalCustomerPaid.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+          <div className="text-xs text-success-ink font-semibold flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>{metrics.totalCompletedTrips} Completed Trips</span>
           </div>
         </div>
 
         {/* Card 2: Hotel Vendor Payouts */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Hotel Paid Amount</span>
-            <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+            <div className="p-2 rounded-xl bg-warning-soft text-warning-ink">
               <Building2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-semibold text-content font-mono">
             ₹{metrics.totalHotelPaid.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-amber-700 font-semibold">
+          <div className="text-xs text-warning-ink font-semibold">
             Actual disbursed hotel payments
           </div>
         </div>
 
         {/* Card 3: Cab & Driver Outflow */}
-        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="p-5 rounded-xl bg-surface border border-line shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-secondary">
             <span className="text-xs font-bold uppercase tracking-wider">Cab & Driver Outflow</span>
-            <div className="p-2 rounded-xl bg-teal-100 text-teal-700">
+            <div className="p-2 rounded-xl bg-success-soft text-success-ink">
               <Car className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-semibold text-content font-mono">
             ₹{metrics.totalCabPaid.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-teal-700 font-semibold">
+          <div className="text-xs text-success-ink font-semibold">
             Driver payments & fuel settlements
           </div>
         </div>
 
         {/* Card 4: Net Realized Profit */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white shadow-md space-y-2">
-          <div className="flex items-center justify-between text-indigo-200">
+        <div className="p-5 rounded-xl bg-inverse text-white shadow-sm space-y-2">
+          <div className="flex items-center justify-between text-brand-ink">
             <span className="text-xs font-bold uppercase tracking-wider">Net Realized Profit</span>
-            <div className="p-2 rounded-xl bg-white/10 text-amber-300">
+            <div className="p-2 rounded-xl bg-white/10 text-warning-ink">
               <TrendingUp className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-2xl font-black text-white font-mono">
+          <div className="text-2xl font-semibold text-white font-mono">
             ₹{metrics.netProfit.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-amber-300 font-bold flex items-center justify-between">
+          <div className="text-xs text-warning-ink font-bold flex items-center justify-between">
             <span>Realized Margin:</span>
-            <span className="px-2 py-0.5 rounded-md bg-amber-400/20 border border-amber-400/30">
+            <span className="px-2 py-0.5 rounded-md bg-warning-strong/20 border border-warning-line/30">
               {metrics.profitMargin}% Gross Margin
             </span>
           </div>
@@ -899,26 +899,26 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
       </div>
 
       {/* Search & Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+      <div className="p-4 rounded-xl bg-surface border border-line flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Guest, Booking ID, Destination, Phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-900"
+              className="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-canvas border border-line focus:outline-none focus:ring-2 focus:ring-brand-line font-medium text-content"
             />
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-              <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+            <div className="flex items-center gap-1.5 bg-canvas border border-line rounded-xl px-2.5 py-1.5">
+              <Calendar className="w-3.5 h-3.5 text-brand-ink" />
               <select
                 value={monthFilter}
                 onChange={(e) => setMonthFilter(e.target.value)}
-                className="bg-transparent text-xs font-semibold focus:outline-none text-slate-800 cursor-pointer"
+                className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
               >
                 <option value="all">All Months ({availableMonths.length})</option>
                 {availableMonths.map((m) => (
@@ -929,12 +929,12 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-              <Filter className="w-3.5 h-3.5 text-slate-500" />
+            <div className="flex items-center gap-1.5 bg-canvas border border-line rounded-xl px-2.5 py-1.5">
+              <Filter className="w-3.5 h-3.5 text-secondary" />
               <select
                 value={destinationFilter}
                 onChange={(e) => setDestinationFilter(e.target.value)}
-                className="bg-transparent text-xs font-semibold focus:outline-none text-slate-800 cursor-pointer"
+                className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
               >
                 <option value="all">All Destinations ({uniqueDestinations.length})</option>
                 {uniqueDestinations.map((d) => (
@@ -947,19 +947,19 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           </div>
         </div>
 
-        <div className="text-xs text-slate-500 font-medium self-end sm:self-center">
+        <div className="text-sm text-secondary font-medium self-end sm:self-center">
           Showing <strong>{filteredTrips.length}</strong> completed accounts · Click row to view audit details
         </div>
       </div>
 
       {/* Main Executive Single-Row Financial Ledger Table */}
-      <div className="border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden">
+      <div className="border border-line rounded-xl bg-surface shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             
             {/* Table Header */}
             <thead>
-              <tr className="bg-slate-900 text-white font-extrabold border-b border-slate-800 uppercase tracking-wider text-[10px]">
+              <tr className="bg-inverse text-white font-semibold border-b border-line uppercase tracking-wider text-xs">
                 <th className="py-4 px-4 whitespace-nowrap">Booking Code & Guest</th>
                 <th className="py-4 px-4 whitespace-nowrap">Travel Dates</th>
                 <th className="py-4 px-4 whitespace-nowrap">Customer Inflow</th>
@@ -971,13 +971,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             </thead>
 
             {/* Table Body */}
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-line">
               {filteredTrips.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-14 text-center text-slate-500 space-y-2">
+                  <td colSpan={7} className="py-14 text-center text-secondary space-y-2">
                     <Briefcase className="w-9 h-9 mx-auto text-slate-300" />
-                    <p className="font-bold text-base text-slate-800">No Completed Trips in Accounts</p>
-                    <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    <p className="font-bold text-base text-content">No Completed Trips in Accounts</p>
+                    <p className="text-sm text-muted max-w-md mx-auto">
                       Only trips marked as <strong>'Completed'</strong> in the Operations Desk appear in this financial audit ledger.
                     </p>
                   </td>
@@ -996,24 +996,24 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                     <tr 
                       key={trip.id} 
                       onClick={() => setSelectedAuditTrip(trip)}
-                      className={`hover:bg-indigo-50/50 transition-colors cursor-pointer group ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'
+                      className={`hover:bg-brand-soft/50 transition-colors cursor-pointer group ${
+                        index % 2 === 0 ? 'bg-surface' : 'bg-canvas/40'
                       }`}
                     >
                       {/* 1. Booking Code & Guest */}
                       <td className="py-3.5 px-4 align-middle">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-mono font-black text-[11px] border border-amber-300 shrink-0">
+                          <span className="px-2 py-0.5 rounded-md bg-warning-soft text-warning-ink font-mono font-semibold text-xs border border-warning-line shrink-0">
                             {trip.bookingId}
                           </span>
                           <div>
-                            <div className="font-extrabold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                            <div className="font-semibold text-content text-sm group-hover:text-brand-ink transition-colors">
                               {trip.name}
                             </div>
-                            <div className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                            <div className="text-xs text-secondary font-medium flex items-center gap-1.5 mt-0.5">
                               <span>📍 {trip.destination}</span>
                               <span className="text-slate-300">•</span>
-                              <span className="font-mono text-slate-600">{trip.phone}</span>
+                              <span className="font-mono text-secondary">{trip.phone}</span>
                             </div>
                           </div>
                         </div>
@@ -1021,21 +1021,21 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
                       {/* 2. Travel Dates */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                        <div className="font-extrabold text-slate-800 text-xs flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                        <div className="font-semibold text-content text-sm flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-brand-ink" />
                           <span>{trip.startDate}</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+                        <div className="text-xs text-secondary font-medium mt-0.5">
                           {trip.durationDays} Days ({trip.paxAdults} Adults)
                         </div>
                       </td>
 
                       {/* 3. Customer Inflow */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                        <div className="font-mono font-black text-slate-900 text-sm">
+                        <div className="font-mono font-semibold text-content text-sm">
                           ₹{trip.totalAmount.toLocaleString('en-IN')}
                         </div>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block mt-0.5">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-success-soft text-success-ink border border-success-line inline-block mt-0.5">
                           ✓ 100% Cleared
                         </span>
                       </td>
@@ -1043,27 +1043,27 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                       {/* 4. Hotel Disbursements */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                         <div className="flex items-baseline gap-1.5">
-                          <span className="font-mono font-black text-amber-950 text-sm">
+                          <span className="font-mono font-semibold text-warning-ink text-sm">
                             ₹{trip.hotelPaidAmount.toLocaleString('en-IN')}
                           </span>
                           {trip.hotelTotalCost > trip.hotelPaidAmount && (
-                            <span className="text-[10px] text-slate-400 font-mono line-through">
+                            <span className="text-xs text-muted font-mono line-through">
                               ₹{trip.hotelTotalCost.toLocaleString('en-IN')}
                             </span>
                           )}
                         </div>
                         <div className="mt-0.5 flex items-center gap-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${
                             trip.hotelPaymentStatus === 'Paid to Hotel' 
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                              ? 'bg-success-soft text-success-ink border border-success-line' 
                               : trip.hotelPaymentStatus === 'Partially Paid' 
-                              ? 'bg-amber-100 text-amber-900 border border-amber-200' 
-                              : 'bg-rose-100 text-rose-800 border border-rose-200'
+                              ? 'bg-warning-soft text-warning-ink border border-warning-line' 
+                              : 'bg-danger-soft text-danger-ink border border-danger-line'
                           }`}>
                             {trip.hotelPaymentStatus}
                           </span>
                           {totalHotelsCount > 1 && (
-                            <span className="text-[10px] text-slate-500 font-medium">
+                            <span className="text-xs text-secondary font-medium">
                               ({paidHotelsCount}/{totalHotelsCount} Hotels Paid)
                             </span>
                           )}
@@ -1072,18 +1072,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
                       {/* 5. Cab & Driver Outflow */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                        <div className="font-mono font-black text-teal-950 text-sm">
+                        <div className="font-mono font-semibold text-success-ink text-sm">
                           ₹{trip.cabPaidAmount.toLocaleString('en-IN')}
                         </div>
-                        <div className="text-[10px] text-slate-600 font-medium mt-0.5 flex items-center gap-1">
+                        <div className="text-xs text-secondary font-medium mt-0.5 flex items-center gap-1">
                           <span className={`px-1.5 py-0.5 rounded font-bold ${
                             trip.cabPaymentStatus === 'Paid to Driver'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
+                              ? 'bg-success-soft text-success-ink'
+                              : 'bg-warning-soft text-warning-ink'
                           }`}>
                             {trip.cabPaymentStatus}
                           </span>
-                          <span className="truncate max-w-[100px] text-slate-500">
+                          <span className="truncate max-w-[100px] text-secondary">
                             • {trip.driverName}
                           </span>
                         </div>
@@ -1091,10 +1091,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
                       {/* 6. Net Margin & Profit */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
-                        <div className="font-mono font-black text-emerald-700 text-sm">
+                        <div className="font-mono font-semibold text-success-ink text-sm">
                           +₹{netProfit.toLocaleString('en-IN')}
                         </div>
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 inline-block mt-0.5">
+                        <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-success-soft text-success-ink inline-block mt-0.5">
                           {marginPct}% Margin
                         </span>
                       </td>
@@ -1108,7 +1108,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                                 e.stopPropagation();
                                 handleViewProposalForTrip(trip);
                               }}
-                              className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 hover:text-white text-indigo-700 font-extrabold text-xs flex items-center gap-1 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1.5 rounded-xl bg-brand-soft hover:bg-brand hover:text-white text-brand-ink font-semibold text-sm flex items-center gap-1 border border-brand-line transition-all cursor-pointer shadow-2xs"
                               title="View & Download Quotation Itinerary PDF"
                             >
                               <FileText className="w-3.5 h-3.5" />
@@ -1120,7 +1120,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                               e.stopPropagation();
                               setSelectedAuditTrip(trip);
                             }}
-                            className="px-2.5 py-1.5 rounded-xl bg-slate-100 group-hover:bg-slate-800 group-hover:text-white text-slate-700 font-bold text-xs flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-xl bg-subtle group-hover:bg-inverse group-hover:text-white text-content font-bold text-sm flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             <span>Details</span>
@@ -1141,28 +1141,28 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
       {/* DETAILED AUDIT SLIDE-OVER MODAL */}
       {selectedAuditTrip && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-start justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-xl border border-slate-100 my-auto">
+        <div className="fixed inset-0 z-50 bg-inverse/60 backdrop-blur-xs flex items-start justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-surface rounded-xl max-w-4xl w-full p-6 sm:p-8 space-y-6 shadow-sm border border-line my-auto">
             
             {/* Modal Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line pb-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-indigo-600 text-white shadow-md">
+                <div className="p-3 rounded-xl bg-brand text-white shadow-sm">
                   <Receipt className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 font-mono font-black text-xs border border-amber-300">
+                    <span className="px-2.5 py-0.5 rounded-md bg-warning-soft text-warning-ink font-mono font-semibold text-sm border border-warning-line">
                       {selectedAuditTrip.bookingId}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Completed Trip
+                    <span className="px-2.5 py-0.5 rounded-md bg-success-soft text-success-ink font-bold text-sm flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-success-ink" /> Completed Trip
                     </span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 mt-1">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-content mt-1">
                     {selectedAuditTrip.name}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-sm text-secondary font-medium">
                     📍 {selectedAuditTrip.destination} · 🗓️ {selectedAuditTrip.startDate} {selectedAuditTrip.endDate ? `to ${selectedAuditTrip.endDate}` : ''} ({selectedAuditTrip.durationDays} Days) · 👥 {selectedAuditTrip.paxAdults} Adults {selectedAuditTrip.paxChildren > 0 ? `& ${selectedAuditTrip.paxChildren} Children` : ''}
                   </p>
                 </div>
@@ -1174,7 +1174,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                     onClick={() => {
                       handleViewProposalForTrip(selectedAuditTrip);
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer"
+                    className="px-3.5 py-2 rounded-xl bg-brand hover:bg-brand text-white font-semibold text-sm flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
                     <FileText className="w-4 h-4" />
                     <span>View Itinerary PDF</span>
@@ -1182,14 +1182,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                 )}
                 <button
                   onClick={() => window.print()}
-                  className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-subtle hover:bg-hover text-content font-bold text-sm flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print Audit</span>
                 </button>
                 <button
                   onClick={() => setSelectedAuditTrip(null)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                  className="p-2 rounded-xl text-muted hover:text-content hover:bg-subtle transition-all cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1198,38 +1198,38 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
             {/* P&L Executive Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-emerald-800 block">
+              <div className="p-4 rounded-xl bg-success-soft/80 border border-success-line space-y-1">
+                <span className="text-xs uppercase font-bold text-success-ink block">
                   Gross Revenue (Customer Inflow)
                 </span>
-                <div className="text-2xl font-black text-emerald-950 font-mono">
+                <div className="text-2xl font-semibold text-success-ink font-mono">
                   ₹{selectedAuditTrip.totalAmount.toLocaleString('en-IN')}
                 </div>
-                <div className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+                <div className="text-xs text-success-ink font-bold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" /> 100% Cleared
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
-                <span className="text-[10px] uppercase font-bold text-amber-800 block">
+              <div className="p-4 rounded-xl bg-warning-soft/80 border border-warning-line space-y-1">
+                <span className="text-xs uppercase font-bold text-warning-ink block">
                   Total Disbursed Outflow
                 </span>
-                <div className="text-2xl font-black text-amber-950 font-mono">
+                <div className="text-2xl font-semibold text-warning-ink font-mono">
                   ₹{(selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount).toLocaleString('en-IN')}
                 </div>
-                <div className="text-[11px] text-slate-600 font-medium">
+                <div className="text-xs text-secondary font-medium">
                   Hotels: ₹{selectedAuditTrip.hotelPaidAmount.toLocaleString('en-IN')} · Cab: ₹{selectedAuditTrip.cabPaidAmount.toLocaleString('en-IN')}
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-indigo-900 text-white shadow-md space-y-1">
-                <span className="text-[10px] uppercase font-bold text-indigo-200 block">
+              <div className="p-4 rounded-xl bg-brand text-white shadow-sm space-y-1">
+                <span className="text-xs uppercase font-bold text-brand-ink block">
                   Realized Gross Margin
                 </span>
-                <div className="text-2xl font-black text-white font-mono">
+                <div className="text-2xl font-semibold text-white font-mono">
                   ₹{(selectedAuditTrip.totalAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)).toLocaleString('en-IN')}
                 </div>
-                <div className="text-[11px] text-amber-300 font-bold">
+                <div className="text-xs text-warning-ink font-bold">
                   {selectedAuditTrip.totalAmount > 0 
                     ? Math.round(((selectedAuditTrip.totalAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)) / selectedAuditTrip.totalAmount) * 100)
                     : 0}% Gross Margin
@@ -1238,13 +1238,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             </div>
 
             {/* Section 1: Customer Inflow Installments */}
-            <div className="border border-slate-200 rounded-2xl p-5 space-y-3 bg-white">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
+            <div className="border border-line rounded-xl p-5 space-y-3 bg-surface">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <h4 className="font-semibold text-sm text-content flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-success-ink" />
                   <span>Customer Payments & Installments Inflow</span>
                 </h4>
-                <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                <span className="text-xs font-mono font-bold text-success-ink bg-success-soft px-2 py-0.5 rounded">
                   Total: ₹{selectedAuditTrip.totalAmount.toLocaleString('en-IN')}
                 </span>
               </div>
@@ -1252,7 +1252,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-slate-100 text-slate-700 font-bold uppercase text-[9px]">
+                    <tr className="bg-subtle text-content font-bold uppercase text-xs">
                       <th className="py-2 px-3">Installment Title</th>
                       <th className="py-2 px-3">Amount (₹)</th>
                       <th className="py-2 px-3">Payment Date</th>
@@ -1261,18 +1261,18 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                       <th className="py-2 px-3 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-line">
                     {selectedAuditTrip.installments.map((inst, iIdx) => (
-                      <tr key={inst.id || iIdx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-3 font-bold text-slate-900">{inst.title}</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-emerald-800">
+                      <tr key={inst.id || iIdx} className="hover:bg-canvas">
+                        <td className="py-2.5 px-3 font-bold text-content">{inst.title}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-success-ink">
                           ₹{inst.amount.toLocaleString('en-IN')}
                         </td>
-                        <td className="py-2.5 px-3 font-mono text-slate-600">{inst.paidAt || inst.dueDate}</td>
-                        <td className="py-2.5 px-3 text-slate-700 font-semibold">{inst.paymentMode || 'UPI / Bank'}</td>
-                        <td className="py-2.5 px-3 font-mono text-slate-500">{inst.transactionRef || 'TXN-CLEARED'}</td>
+                        <td className="py-2.5 px-3 font-mono text-secondary">{inst.paidAt || inst.dueDate}</td>
+                        <td className="py-2.5 px-3 text-content font-semibold">{inst.paymentMode || 'UPI / Bank'}</td>
+                        <td className="py-2.5 px-3 font-mono text-secondary">{inst.transactionRef || 'TXN-CLEARED'}</td>
                         <td className="py-2.5 px-3 text-center">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800">
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-success-soft text-success-ink">
                             {inst.status}
                           </span>
                         </td>
@@ -1284,20 +1284,20 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             </div>
 
             {/* Section 2: Multi-Hotel Vendor Disbursements Breakdown */}
-            <div className="border border-slate-200 rounded-2xl p-5 space-y-3 bg-white">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="border border-line rounded-xl p-5 space-y-3 bg-surface">
+              <div className="flex items-center justify-between border-b border-line pb-2">
                 <div>
-                  <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-amber-600" />
+                  <h4 className="font-semibold text-sm text-content flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-warning-ink" />
                     <span>Multi-Hotel Vendor Disbursements</span>
                   </h4>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-xs text-secondary font-medium">
                     Showing individual hotel records with real payment status, mode, and UTR refs.
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-500 block">Total Hotel Paid:</span>
-                  <span className="font-mono font-black text-amber-900 text-sm">
+                  <span className="text-xs text-secondary block">Total Hotel Paid:</span>
+                  <span className="font-mono font-semibold text-warning-ink text-sm">
                     ₹{selectedAuditTrip.hotelPaidAmount.toLocaleString('en-IN')} / ₹{selectedAuditTrip.hotelTotalCost.toLocaleString('en-IN')}
                   </span>
                 </div>
@@ -1306,7 +1306,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-amber-50 text-amber-950 font-bold uppercase text-[9px]">
+                    <tr className="bg-warning-soft text-warning-ink font-bold uppercase text-xs">
                       <th className="py-2.5 px-3">Hotel Name & City</th>
                       <th className="py-2.5 px-3">Room & Nights</th>
                       <th className="py-2.5 px-3">Total Cost</th>
@@ -1316,44 +1316,44 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                       <th className="py-2.5 px-3 text-center">Disbursement Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-amber-100">
+                  <tbody className="divide-y divide-warning-line">
                     {selectedAuditTrip.hotelsList.map((hotel, hIdx) => {
                       const isCleared = hotel.paymentStatus === 'Paid to Hotel';
                       const isPartial = hotel.paymentStatus === 'Partially Paid';
 
                       return (
                         <React.Fragment key={hotel.id || hIdx}>
-                          <tr className="hover:bg-amber-50/40">
+                          <tr className="hover:bg-warning-soft/40">
                             <td className="py-2.5 px-3">
-                              <div className="font-extrabold text-slate-900">{hotel.hotelName}</div>
-                              <div className="text-[10px] text-slate-500">📍 {hotel.city}</div>
+                              <div className="font-semibold text-content">{hotel.hotelName}</div>
+                              <div className="text-xs text-secondary">📍 {hotel.city}</div>
                             </td>
-                            <td className="py-2.5 px-3 text-slate-700 font-medium">
+                            <td className="py-2.5 px-3 text-content font-medium">
                               <div>{hotel.roomType}</div>
-                              <div className="text-[10px] text-slate-400">{hotel.nights} Night(s)</div>
+                              <div className="text-xs text-muted">{hotel.nights} Night(s)</div>
                             </td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-slate-700">
+                            <td className="py-2.5 px-3 font-mono font-bold text-content">
                               ₹{hotel.totalCost.toLocaleString('en-IN')}
                             </td>
-                            <td className="py-2.5 px-3 font-mono font-black text-amber-900">
+                            <td className="py-2.5 px-3 font-mono font-semibold text-warning-ink">
                               ₹{hotel.paidAmount.toLocaleString('en-IN')}
                             </td>
-                            <td className="py-2.5 px-3 font-mono text-slate-600">
+                            <td className="py-2.5 px-3 font-mono text-secondary">
                               {hotel.paidAt}
                             </td>
-                            <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700">
+                            <td className="py-2.5 px-3 font-mono text-xs text-content">
                               <div>{hotel.paymentMode}</div>
                               {hotel.paymentRef && hotel.paymentRef !== '—' && (
-                                <div className="text-[10px] text-slate-400">Ref: {hotel.paymentRef}</div>
+                                <div className="text-xs text-muted">Ref: {hotel.paymentRef}</div>
                               )}
                             </td>
                             <td className="py-2.5 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                                 isCleared 
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' 
+                                  ? 'bg-success-soft text-success-ink border border-success-line' 
                                   : isPartial 
-                                  ? 'bg-amber-100 text-amber-900 border border-amber-200' 
-                                  : 'bg-rose-100 text-rose-800 border border-rose-200'
+                                  ? 'bg-warning-soft text-warning-ink border border-warning-line' 
+                                  : 'bg-danger-soft text-danger-ink border border-danger-line'
                               }`}>
                                 {isCleared ? '✓ Paid to Hotel' : isPartial ? 'Partially Paid' : 'Pending / Unpaid'}
                               </span>
@@ -1362,36 +1362,36 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
                           {/* Render Individual Hotel Payment Parts if available */}
                           {Array.isArray(hotel.paymentLogs) && hotel.paymentLogs.length > 0 && (
-                            <tr className="bg-amber-50/30">
-                              <td colSpan={7} className="px-4 py-2 border-b border-amber-100">
-                                <div className="p-2.5 rounded-xl bg-white border border-amber-200/80 shadow-2xs space-y-1.5">
-                                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-900 flex items-center justify-between">
+                            <tr className="bg-warning-soft/30">
+                              <td colSpan={7} className="px-4 py-2 border-b border-warning-line">
+                                <div className="p-2.5 rounded-xl bg-surface border border-warning-line/80 shadow-2xs space-y-1.5">
+                                  <div className="text-xs font-semibold uppercase tracking-wider text-warning-ink flex items-center justify-between">
                                     <span className="flex items-center gap-1.5">
-                                      <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                      <Clock className="w-3.5 h-3.5 text-warning-ink" />
                                       <span>Payment Parts Log ({hotel.paymentLogs.length} Part{hotel.paymentLogs.length > 1 ? 's' : ''})</span>
                                     </span>
-                                    <span className="font-mono text-emerald-800 font-bold">
+                                    <span className="font-mono text-success-ink font-bold">
                                       Total Paid: ₹{hotel.paymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
                                     {hotel.paymentLogs.map((part, pIdx) => (
-                                      <div key={part.id || pIdx} className="p-2 rounded-lg bg-amber-50/50 border border-amber-200 text-[11px] space-y-0.5">
+                                      <div key={part.id || pIdx} className="p-2 rounded-lg bg-warning-soft/50 border border-warning-line text-xs space-y-0.5">
                                         <div className="flex items-center justify-between font-bold">
-                                          <span className="text-amber-950">Part {pIdx + 1}: <strong className="font-mono text-emerald-800">₹{part.amount.toLocaleString('en-IN')}</strong></span>
-                                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-amber-100 text-amber-900 font-bold">{part.paymentMode || 'Bank'}</span>
+                                          <span className="text-warning-ink">Part {pIdx + 1}: <strong className="font-mono text-success-ink">₹{part.amount.toLocaleString('en-IN')}</strong></span>
+                                          <span className="px-1.5 py-0.2 rounded text-xs bg-warning-soft text-warning-ink font-bold">{part.paymentMode || 'Bank'}</span>
                                         </div>
-                                        <div className="text-slate-600 font-mono text-[10px] flex items-center gap-1">
-                                          <Clock className="w-3 h-3 text-slate-400" />
+                                        <div className="text-secondary font-mono text-xs flex items-center gap-1">
+                                          <Clock className="w-3 h-3 text-muted" />
                                           <span>{part.paidAt}</span>
                                         </div>
                                         {part.paymentRef && (
-                                          <div className="text-[10px] text-slate-500 font-mono">
+                                          <div className="text-xs text-secondary font-mono">
                                             Ref: {part.paymentRef}
                                           </div>
                                         )}
                                         {part.remarks && (
-                                          <div className="text-[10px] text-slate-500 italic">
+                                          <div className="text-xs text-secondary italic">
                                             {part.remarks}
                                           </div>
                                         )}
@@ -1411,84 +1411,84 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             </div>
 
             {/* Section 3: Cab Logistics & Driver Settlement */}
-            <div className="border border-slate-200 rounded-2xl p-5 space-y-3 bg-white">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <Car className="w-4 h-4 text-teal-600" />
+            <div className="border border-line rounded-xl p-5 space-y-3 bg-surface">
+              <div className="flex items-center justify-between border-b border-line pb-2">
+                <h4 className="font-semibold text-sm text-content flex items-center gap-2">
+                  <Car className="w-4 h-4 text-success-ink" />
                   <span>Cab Logistics & Driver Settlement</span>
                 </h4>
-                <span className="font-mono font-black text-teal-900 text-sm">
+                <span className="font-mono font-semibold text-success-ink text-sm">
                   Paid: ₹{selectedAuditTrip.cabPaidAmount.toLocaleString('en-IN')} / ₹{selectedAuditTrip.cabTotalCost.toLocaleString('en-IN')}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-teal-800 block">
+                <div className="p-4 rounded-xl bg-success-soft/70 border border-success-line space-y-2">
+                  <span className="text-xs uppercase font-bold text-success-ink block">
                     Driver & Vehicle Details
                   </span>
-                  <div className="font-extrabold text-slate-900 text-sm">
+                  <div className="font-semibold text-content text-sm">
                     {selectedAuditTrip.driverName}
                   </div>
-                  <div className="text-slate-600 font-medium">
+                  <div className="text-secondary font-medium">
                     Vehicle: <strong>{selectedAuditTrip.cabModel}</strong> ({selectedAuditTrip.cabNumber})
                   </div>
-                  <div className="font-mono text-teal-800 font-bold">
+                  <div className="font-mono text-success-ink font-bold">
                     📞 {selectedAuditTrip.driverPhone}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-2">
-                  <span className="text-[10px] uppercase font-bold text-teal-800 block">
+                <div className="p-4 rounded-xl bg-success-soft/70 border border-success-line space-y-2">
+                  <span className="text-xs uppercase font-bold text-success-ink block">
                     Settlement Status & Transaction
                   </span>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-600">Disbursement Status:</span>
-                    <span className="px-2 py-0.5 rounded font-black text-[10px] bg-emerald-100 text-emerald-800">
+                    <span className="text-secondary">Disbursement Status:</span>
+                    <span className="px-2 py-0.5 rounded font-semibold text-xs bg-success-soft text-success-ink">
                       ✓ {selectedAuditTrip.cabPaymentStatus}
                     </span>
                   </div>
                   <div className="flex items-center justify-between font-mono">
-                    <span className="text-slate-600">Settled On:</span>
-                    <strong className="text-slate-900">{selectedAuditTrip.cabPaymentDate}</strong>
+                    <span className="text-secondary">Settled On:</span>
+                    <strong className="text-content">{selectedAuditTrip.cabPaymentDate}</strong>
                   </div>
                   <div className="flex items-center justify-between font-mono">
-                    <span className="text-slate-600">Mode & UTR:</span>
-                    <strong className="text-teal-900">{selectedAuditTrip.cabPaymentMode} ({selectedAuditTrip.cabPaymentRef})</strong>
+                    <span className="text-secondary">Mode & UTR:</span>
+                    <strong className="text-success-ink">{selectedAuditTrip.cabPaymentMode} ({selectedAuditTrip.cabPaymentRef})</strong>
                   </div>
                 </div>
               </div>
 
               {/* Cab Payment Parts Breakdown with Date & Time */}
               {Array.isArray(selectedAuditTrip.cabPaymentLogs) && selectedAuditTrip.cabPaymentLogs.length > 0 && (
-                <div className="mt-3 p-3.5 rounded-xl bg-teal-50/50 border border-teal-200 space-y-2">
-                  <div className="text-[11px] font-black uppercase tracking-wider text-teal-950 flex items-center justify-between">
+                <div className="mt-3 p-3.5 rounded-xl bg-success-soft/50 border border-success-line space-y-2">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-success-ink flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-teal-700" />
+                      <Clock className="w-3.5 h-3.5 text-success-ink" />
                       <span>Cab Driver Payment Parts & Advances Log ({selectedAuditTrip.cabPaymentLogs.length} Part{selectedAuditTrip.cabPaymentLogs.length > 1 ? 's' : ''})</span>
                     </span>
-                    <span className="font-mono text-teal-900 font-bold">
+                    <span className="font-mono text-success-ink font-bold">
                       Total Paid: ₹{selectedAuditTrip.cabPaymentLogs.reduce((acc, p) => acc + (p.amount || 0), 0).toLocaleString('en-IN')}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
                     {selectedAuditTrip.cabPaymentLogs.map((part, pIdx) => (
-                      <div key={part.id || pIdx} className="p-2.5 rounded-lg bg-white border border-teal-200/80 shadow-2xs text-[11px] space-y-1">
+                      <div key={part.id || pIdx} className="p-2.5 rounded-lg bg-surface border border-success-line/80 shadow-2xs text-xs space-y-1">
                         <div className="flex items-center justify-between font-bold">
-                          <span className="text-teal-950">Part {pIdx + 1}: <strong className="font-mono text-teal-900">₹{part.amount.toLocaleString('en-IN')}</strong></span>
-                          <span className="px-1.5 py-0.2 rounded text-[9px] bg-teal-100 text-teal-900 font-bold">{part.paymentMode || 'UPI'}</span>
+                          <span className="text-success-ink">Part {pIdx + 1}: <strong className="font-mono text-success-ink">₹{part.amount.toLocaleString('en-IN')}</strong></span>
+                          <span className="px-1.5 py-0.2 rounded text-xs bg-success-soft text-success-ink font-bold">{part.paymentMode || 'UPI'}</span>
                         </div>
-                        <div className="text-slate-600 font-mono text-[10px] flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-slate-400" />
+                        <div className="text-secondary font-mono text-xs flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-muted" />
                           <span>{part.paidAt}</span>
                         </div>
                         {part.paymentRef && (
-                          <div className="text-[10px] text-slate-500 font-mono">
+                          <div className="text-xs text-secondary font-mono">
                             Ref: {part.paymentRef}
                           </div>
                         )}
                         {part.remarks && (
-                          <div className="text-[10px] text-slate-500 italic">
+                          <div className="text-xs text-secondary italic">
                             {part.remarks}
                           </div>
                         )}
@@ -1500,10 +1500,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             </div>
 
             {/* Modal Footer */}
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end pt-2 border-t border-line">
               <button
                 onClick={() => setSelectedAuditTrip(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all cursor-pointer shadow-md"
+                className="px-6 py-2.5 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm transition-all cursor-pointer shadow-sm"
               >
                 Close Audit Details
               </button>

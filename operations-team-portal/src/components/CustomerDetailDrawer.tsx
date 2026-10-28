@@ -73,26 +73,26 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
   const balanceDue = customer.totalAmount - totalPaid;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
-      <div className="bg-white w-full max-w-xl h-full shadow-xl flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
+    <div className="fixed inset-0 z-50 bg-inverse/60 backdrop-blur-xs flex justify-end">
+      <div className="bg-surface w-full max-w-xl h-full shadow-sm flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
         
         {/* Drawer Header */}
-        <div className="px-6 py-5 border-b border-slate-200 flex items-center justify-between bg-slate-50 /80">
+        <div className="px-6 py-5 border-b border-line flex items-center justify-between bg-canvas /80">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 /50 px-2.5 py-0.5 rounded border border-blue-200">
+              <span className="text-sm font-mono font-bold text-brand-ink bg-brand-soft /50 px-2.5 py-0.5 rounded border border-brand-line">
                 {customer.bookingId}
               </span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="text-sm px-2.5 py-0.5 rounded-full font-bold bg-success-soft text-success-ink border border-success-line">
                 {customer.status}
               </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-lg mt-1">{customer.name}</h3>
+            <h3 className="font-bold text-content text-lg mt-1">{customer.name}</h3>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            className="p-2 rounded-lg text-muted hover:text-secondary hover:bg-hover/60 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -103,103 +103,103 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
           
           {/* Key Overview Cards */}
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3.5 rounded-xl bg-slate-50 /60 border border-slate-200">
-              <span className="text-slate-500 font-semibold block mb-0.5">Destination:</span>
-              <span className="font-bold text-slate-900 text-sm">{customer.destination}</span>
+            <div className="p-3.5 rounded-xl bg-canvas /60 border border-line">
+              <span className="text-secondary font-semibold block mb-0.5">Destination:</span>
+              <span className="font-bold text-content text-sm">{customer.destination}</span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 /60 border border-slate-200">
-              <span className="text-slate-500 font-semibold block mb-0.5">Travel Dates:</span>
-              <span className="font-bold text-slate-900">{customer.startDate} to {customer.endDate}</span>
+            <div className="p-3.5 rounded-xl bg-canvas /60 border border-line">
+              <span className="text-secondary font-semibold block mb-0.5">Travel Dates:</span>
+              <span className="font-bold text-content">{customer.startDate} to {customer.endDate}</span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 /60 border border-slate-200">
-              <span className="text-slate-500 font-semibold block mb-0.5">PAX Count:</span>
-              <span className="font-bold text-slate-900">{customer.paxAdults} Adults {customer.paxChildren > 0 ? `, ${customer.paxChildren} Children` : ''}</span>
+            <div className="p-3.5 rounded-xl bg-canvas /60 border border-line">
+              <span className="text-secondary font-semibold block mb-0.5">PAX Count:</span>
+              <span className="font-bold text-content">{customer.paxAdults} Adults {customer.paxChildren > 0 ? `, ${customer.paxChildren} Children` : ''}</span>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-slate-50 /60 border border-slate-200">
-              <span className="text-slate-500 font-semibold block mb-0.5">Total Package:</span>
-              <span className="font-bold text-slate-900 text-sm">₹{customer.totalAmount.toLocaleString()} {customer.currency === 'USD' ? 'INR' : (customer.currency || 'INR')}</span>
+            <div className="p-3.5 rounded-xl bg-canvas /60 border border-line">
+              <span className="text-secondary font-semibold block mb-0.5">Total Package:</span>
+              <span className="font-bold text-content text-sm">₹{customer.totalAmount.toLocaleString()} {customer.currency === 'USD' ? 'INR' : (customer.currency || 'INR')}</span>
             </div>
           </div>
 
           {/* PAYMENT INSTALLMENTS & RECONCILIATION SECTION */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Receipt className="w-4 h-4 text-emerald-600" /> Payment Schedule & Installments
+              <h4 className="text-sm font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <Receipt className="w-4 h-4 text-success-ink" /> Payment Schedule & Installments
               </h4>
-              <span className="text-[11px] font-bold text-slate-600">
+              <span className="text-xs font-bold text-secondary">
                 Paid: ₹{totalPaid.toLocaleString()} / ₹{customer.totalAmount.toLocaleString()}
               </span>
             </div>
 
             {/* Financial Status Summary */}
-            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-slate-50 /80 border border-slate-200 text-xs">
+            <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-canvas /80 border border-line text-sm">
               <div>
-                <span className="text-slate-500 text-[10px] uppercase font-bold block">Received</span>
-                <span className="text-emerald-600 font-black text-sm">₹{totalPaid.toLocaleString()}</span>
+                <span className="text-secondary text-xs uppercase font-bold block">Received</span>
+                <span className="text-success-ink font-semibold text-sm">₹{totalPaid.toLocaleString()}</span>
               </div>
               <div>
-                <span className="text-slate-500 text-[10px] uppercase font-bold block">Overdue</span>
-                <span className={`font-black text-sm ${totalOverdue > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-400'}`}>
+                <span className="text-secondary text-xs uppercase font-bold block">Overdue</span>
+                <span className={`font-semibold text-sm ${totalOverdue > 0 ? 'text-danger-ink animate-pulse' : 'text-muted'}`}>
                   ₹{totalOverdue.toLocaleString()}
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 text-[10px] uppercase font-bold block">Remaining</span>
-                <span className="text-slate-900 font-black text-sm">₹{balanceDue.toLocaleString()}</span>
+                <span className="text-secondary text-xs uppercase font-bold block">Remaining</span>
+                <span className="text-content font-semibold text-sm">₹{balanceDue.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Installment Items */}
             {installments.length === 0 ? (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-1">
+              <div className="p-4 rounded-xl bg-warning-soft border border-warning-line text-sm text-warning-ink space-y-1">
                 <p className="font-bold">Package Amount Not Added</p>
-                <p className="text-[11px] text-amber-700">Add a package total amount and save to view the EMI installment schedule.</p>
+                <p className="text-xs text-warning-ink">Add a package total amount and save to view the EMI installment schedule.</p>
               </div>
             ) : (
               <div className="space-y-2.5">
                 {installments.map((inst) => (
                   <div
                     key={inst.id}
-                    className={`p-3.5 rounded-xl border text-xs transition-all space-y-1.5 ${
+                    className={`p-3.5 rounded-xl border text-sm transition-all space-y-1.5 ${
                       inst.status === 'Paid'
-                        ? 'bg-emerald-50/60 /30 border-emerald-200 '
+                        ? 'bg-success-soft/60 /30 border-success-line '
                         : inst.status === 'Overdue'
-                        ? 'bg-rose-50 /40 border-rose-300  ring-1 ring-rose-500/20'
-                        : 'bg-slate-50 /70 border-slate-200 '
+                        ? 'bg-danger-soft /40 border-danger-line ring-1 ring-danger-line/20'
+                        : 'bg-canvas /70 border-line '
                     }`}
                   >
                     <div className="flex items-center justify-between font-bold">
-                      <span className="text-slate-900 flex items-center gap-1.5">
-                        {inst.status === 'Overdue' && <AlertTriangle className="w-3.5 h-3.5 text-rose-600 animate-bounce" />}
+                      <span className="text-content flex items-center gap-1.5">
+                        {inst.status === 'Overdue' && <AlertTriangle className="w-3.5 h-3.5 text-danger-ink animate-bounce" />}
                         {inst.title}
                       </span>
-                      <span className="text-sm text-slate-900">₹{inst.amount.toLocaleString()}</span>
+                      <span className="text-sm text-content">₹{inst.amount.toLocaleString()}</span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <div className="flex items-center justify-between text-xs text-secondary">
                       <span>Due Date: <strong>{inst.dueDate}</strong></span>
 
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-[10px] ${
-                          inst.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                          inst.status === 'Overdue' ? 'bg-rose-600 text-white font-black animate-pulse' :
-                          'bg-amber-100 text-amber-800'
+                        <span className={`px-2 py-0.5 rounded-full font-bold uppercase text-xs ${
+                          inst.status === 'Paid' ? 'bg-success-soft text-success-ink' :
+                          inst.status === 'Overdue' ? 'bg-danger-strong text-white font-semibold animate-pulse' :
+                          'bg-warning-soft text-warning-ink'
                         }`}>
                           {inst.status}
                         </span>
 
                         <button
                           onClick={() => onRecordPaymentClick(customer, inst)}
-                          className={`px-2.5 py-1 rounded font-bold text-[11px] transition-colors shadow-2xs ${
+                          className={`px-2.5 py-1 rounded font-bold text-xs transition-colors shadow-2xs ${
                             inst.status === 'Paid'
-                              ? 'bg-slate-200 text-slate-800 hover:bg-slate-300'
+                              ? 'bg-hover text-content hover:bg-hover'
                               : inst.status === 'Overdue'
-                              ? 'bg-rose-600 hover:bg-rose-700 text-white font-extrabold'
-                              : 'bg-emerald-600 hover:bg-emerald-700 text-white font-bold'
+                              ? 'bg-danger-strong hover:bg-danger-strong text-white font-semibold'
+                              : 'bg-success-strong hover:bg-success-strong text-white font-bold'
                           }`}
                         >
                           {inst.status === 'Paid' ? 'Edit / Update EMI' : '✓ Confirm EMI Received'}
@@ -208,14 +208,14 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                     </div>
 
                     {inst.status === 'Paid' && (
-                      <div className="pt-1 text-[11px] text-emerald-800 font-medium flex items-center justify-between border-t border-emerald-200/60 /60">
+                      <div className="pt-1 text-xs text-success-ink font-medium flex items-center justify-between border-t border-success-line/60 /60">
                         <span>Received on: {inst.paidAt || 'Confirmed'}</span>
                         <span>Mode: {inst.paymentMode || 'Direct'} ({inst.transactionRef || 'N/A'})</span>
                       </div>
                     )}
 
                     {inst.notes && (
-                      <p className="text-[10px] text-slate-400 italic">Note: {inst.notes}</p>
+                      <p className="text-xs text-muted italic">Note: {inst.notes}</p>
                     )}
                   </div>
                 ))}
@@ -224,122 +224,122 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
           </div>
 
           {/* CAB DRIVER LOGISTICS SECTION (OPERATIONS ONLY) */}
-          <div className="space-y-3 p-4 rounded-2xl bg-teal-50/40 border border-teal-200">
-            <h4 className="text-xs font-black uppercase tracking-wider text-teal-900 flex items-center gap-1.5">
-              <Car className="w-4 h-4 text-teal-700" /> Assigned Cab Driver & Vehicle Details
+          <div className="space-y-3 p-4 rounded-xl bg-success-soft/40 border border-success-line">
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-success-ink flex items-center gap-1.5">
+              <Car className="w-4 h-4 text-success-ink" /> Assigned Cab Driver & Vehicle Details
             </h4>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2.5 rounded-xl bg-white border border-teal-100">
-                <span className="text-[10px] text-slate-500 font-bold block">Driver Name</span>
-                <strong className="text-slate-900 font-extrabold">{customer.driverName || ''}</strong>
+              <div className="p-2.5 rounded-xl bg-surface border border-success-line">
+                <span className="text-xs text-secondary font-bold block">Driver Name</span>
+                <strong className="text-content font-semibold">{customer.driverName || ''}</strong>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-white border border-teal-100">
-                <span className="text-[10px] text-slate-500 font-bold block">Driver Mobile</span>
+              <div className="p-2.5 rounded-xl bg-surface border border-success-line">
+                <span className="text-xs text-secondary font-bold block">Driver Mobile</span>
                 {customer.driverPhone ? (
-                  <a href={`tel:${customer.driverPhone}`} className="text-teal-700 font-mono font-bold hover:underline">
+                  <a href={`tel:${customer.driverPhone}`} className="text-success-ink font-mono font-bold hover:underline">
                     {customer.driverPhone}
                   </a>
                 ) : (
-                  <span className="text-slate-400">—</span>
+                  <span className="text-muted">—</span>
                 )}
               </div>
 
-              <div className="p-2.5 rounded-xl bg-white border border-teal-100">
-                <span className="text-[10px] text-slate-500 font-bold block">Vehicle Model</span>
-                <strong className="text-slate-900 font-bold">{customer.cabModel || ''}</strong>
+              <div className="p-2.5 rounded-xl bg-surface border border-success-line">
+                <span className="text-xs text-secondary font-bold block">Vehicle Model</span>
+                <strong className="text-content font-bold">{customer.cabModel || ''}</strong>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-white border border-teal-100">
-                <span className="text-[10px] text-slate-500 font-bold block">Cab Reg No</span>
-                <strong className="text-slate-900 font-mono">{customer.cabNumber || ''}</strong>
+              <div className="p-2.5 rounded-xl bg-surface border border-success-line">
+                <span className="text-xs text-secondary font-bold block">Cab Reg No</span>
+                <strong className="text-content font-mono">{customer.cabNumber || ''}</strong>
               </div>
             </div>
           </div>
 
           {/* PAYMENT CONFIRMATION BOXES (HOTEL & CAB) */}
           <div className="space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <CreditCard className="w-4 h-4 text-emerald-600" /> Vendor Payment Confirmation Boxes
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-content flex items-center gap-1.5">
+              <CreditCard className="w-4 h-4 text-success-ink" /> Vendor Payment Confirmation Boxes
             </h4>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               {/* Hotel Payment Box */}
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div className="p-3 rounded-xl bg-canvas border border-line space-y-1">
                 <div className="flex items-center justify-between font-bold">
-                  <span className="text-slate-800 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-teal-700" /> Hotel Payment
+                  <span className="text-content flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5 text-success-ink" /> Hotel Payment
                   </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    customer.hotelPaymentStatus === 'Paid to Hotel' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    customer.hotelPaymentStatus === 'Paid to Hotel' ? 'bg-success-soft text-success-ink' : 'bg-warning-soft text-warning-ink'
                   }`}>
                     {customer.hotelPaymentStatus || 'Pending'}
                   </span>
                 </div>
-                <p className="text-[11px] font-black text-slate-900">
+                <p className="text-xs font-semibold text-content">
                   ₹{(computedHotelTotalCost || customer.hotelPaymentAmount || 0).toLocaleString()}
                 </p>
-                <p className="text-[10px] text-slate-500">Mode: {customer.hotelPaymentMode || ''}</p>
+                <p className="text-xs text-secondary">Mode: {customer.hotelPaymentMode || ''}</p>
               </div>
 
               {/* Cab Payment Box */}
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+              <div className="p-3 rounded-xl bg-canvas border border-line space-y-1">
                 <div className="flex items-center justify-between font-bold">
-                  <span className="text-slate-800 flex items-center gap-1">
-                    <Car className="w-3.5 h-3.5 text-emerald-600" /> Cab Payment
+                  <span className="text-content flex items-center gap-1">
+                    <Car className="w-3.5 h-3.5 text-success-ink" /> Cab Payment
                   </span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    customer.cabPaymentStatus === 'Paid to Driver' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    customer.cabPaymentStatus === 'Paid to Driver' ? 'bg-success-soft text-success-ink' : 'bg-warning-soft text-warning-ink'
                   }`}>
                     {customer.cabPaymentStatus || 'Pending'}
                   </span>
                 </div>
-                <p className="text-[11px] font-black text-slate-900">
+                <p className="text-xs font-semibold text-content">
                   ₹{(customer.cabTotalCost || customer.cabPaymentAmount || 0).toLocaleString()}
                 </p>
-                <p className="text-[10px] text-slate-500">Mode: {customer.cabPaymentMode || ''}</p>
+                <p className="text-xs text-secondary">Mode: {customer.cabPaymentMode || ''}</p>
               </div>
             </div>
           </div>
 
           {/* INTERNAL OPERATIONS REMARKS */}
           <div className="space-y-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <MessageSquare className="w-4 h-4 text-indigo-600" /> Internal Operations Remarks
+            <h4 className="text-sm font-semibold uppercase tracking-wider text-content flex items-center gap-1.5">
+              <MessageSquare className="w-4 h-4 text-brand-ink" /> Internal Operations Remarks
             </h4>
-            <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium italic">
+            <div className="p-3 rounded-xl bg-canvas border border-line text-sm text-content font-medium italic">
               {customer.opsRemarks || customer.specialRequests || ''}
             </div>
           </div>
 
           {/* Contact Details & Emergency */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-secondary">
               Contact & Emergency Information
             </h4>
             
-            <div className="p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <div className="p-4 rounded-xl border border-line space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-blue-600" /> Phone:
+                <span className="text-secondary flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-brand-ink" /> Phone:
                 </span>
-                <strong className="text-slate-900">{customer.phone}</strong>
+                <strong className="text-content">{customer.phone}</strong>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-blue-600" /> Email:
+                <span className="text-secondary flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-brand-ink" /> Email:
                 </span>
-                <strong className="text-slate-900">{customer.email}</strong>
+                <strong className="text-content">{customer.email}</strong>
               </div>
 
               {customer.emergencyContact && (
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                  <span className="text-slate-500 flex items-center gap-1.5 text-rose-600 font-semibold">
+                <div className="flex items-center justify-between pt-2 border-t border-line">
+                  <span className="text-secondary flex items-center gap-1.5 text-danger-ink font-semibold">
                     <ShieldAlert className="w-3.5 h-3.5" /> Emergency Contact:
                   </span>
-                  <strong className="text-slate-900">{customer.emergencyContact}</strong>
+                  <strong className="text-content">{customer.emergencyContact}</strong>
                 </div>
               )}
             </div>
@@ -348,30 +348,30 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
           {/* Linked Hotel Vouchers Section */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Hotel className="w-4 h-4 text-amber-600" /> Linked Hotel Vouchers ({customerVouchers.length})
+              <h4 className="text-sm font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <Hotel className="w-4 h-4 text-warning-ink" /> Linked Hotel Vouchers ({customerVouchers.length})
               </h4>
             </div>
 
             {customerVouchers.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No hotel vouchers linked yet.</p>
+              <p className="text-sm text-muted italic">No hotel vouchers linked yet.</p>
             ) : (
               <div className="space-y-2.5">
                 {customerVouchers.map((v) => (
                   <div
                     key={v.id}
-                    className="p-3.5 rounded-xl bg-slate-50 /80 border border-slate-200 flex items-center justify-between gap-3 text-xs"
+                    className="p-3.5 rounded-xl bg-canvas /80 border border-line flex items-center justify-between gap-3 text-sm"
                   >
                     <div>
-                      <h5 className="font-bold text-slate-900">{v.hotelName} ({v.city})</h5>
-                      <p className="text-slate-500 text-[11px]">{v.checkIn} - {v.checkOut} ({v.roomType})</p>
+                      <h5 className="font-bold text-content">{v.hotelName} ({v.city})</h5>
+                      <p className="text-secondary text-xs">{v.checkIn} - {v.checkOut} ({v.roomType})</p>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                         v.status === 'Uploaded' || v.status === 'Sent to Customer'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                          ? 'bg-success-soft text-success-ink'
+                          : 'bg-warning-soft text-warning-ink'
                       }`}>
                         {v.status}
                       </span>
@@ -379,7 +379,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                       {(v.status === 'Uploaded' || v.status === 'Sent to Customer') && (
                         <button
                           onClick={() => onPreviewVoucher(v)}
-                          className="px-2.5 py-1 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors"
+                          className="px-2.5 py-1 rounded bg-brand text-white font-semibold hover:bg-brand transition-colors"
                         >
                           View
                         </button>
@@ -393,7 +393,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
 
           {/* Notes & Requests */}
           {(customer.notes || customer.specialRequests) && (
-            <div className="p-4 rounded-xl bg-blue-50/60 /20 border border-blue-200 text-xs text-blue-950 space-y-1">
+            <div className="p-4 rounded-xl bg-brand-soft/60 /20 border border-brand-line text-sm text-brand-ink space-y-1">
               <span className="font-bold block">Ops Notes & Requests:</span>
               <p>{customer.notes}</p>
               {customer.specialRequests && <p className="italic">"{customer.specialRequests}"</p>}
@@ -403,23 +403,23 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
         </div>
 
         {/* Drawer Bottom Actions */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 /80 flex items-center justify-between gap-2">
+        <div className="p-4 border-t border-line bg-canvas /80 flex items-center justify-between gap-2">
           {onNavigateToInvoices && (
             <button
               onClick={() => {
                 onClose();
                 onNavigateToInvoices(customer.id);
               }}
-              className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+              className="py-2.5 px-3 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-xs transition-colors"
             >
-              <Receipt className="w-4 h-4 text-emerald-400" />
+              <Receipt className="w-4 h-4 text-success-ink" />
               <span>Generate Invoice</span>
             </button>
           )}
 
           <button
             onClick={() => onOpenShare(customer)}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+            className="flex-1 py-2.5 px-3 rounded-xl bg-success-strong hover:bg-success-strong text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-xs transition-colors"
           >
             <Share2 className="w-4 h-4" />
             <span>Share</span>
@@ -430,7 +430,7 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
               onClose();
               onNavigateToDayWise(customer.id);
             }}
-            className="py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+            className="py-2.5 px-3 rounded-xl bg-brand hover:bg-brand text-white font-bold text-sm flex items-center justify-center gap-1.5 shadow-xs transition-colors"
           >
             <span>Day-Wise</span>
             <ChevronRight className="w-4 h-4" />
