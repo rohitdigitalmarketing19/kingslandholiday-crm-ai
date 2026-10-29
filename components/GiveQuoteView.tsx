@@ -75,6 +75,7 @@ const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-c
       <div className={`flex items-center gap-2 border border-line rounded-xl px-3 py-2 ${disabled ? 'bg-canvas' : 'bg-surface'} shadow-sm focus-within:ring-2 focus-within:ring-brand-line transition-all`}>
          <span className={`${colorClass} font-semibold text-sm opacity-40`}>{icon}</span>
          <input 
+          aria-label={label}
           type="text" 
           inputMode="numeric"
           disabled={disabled}
@@ -488,11 +489,11 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   };
 
   return (
-    <div className="fixed inset-0 z-[110] bg-inverse/60 backdrop-blur-sm flex justify-center items-start overflow-y-auto p-4 md:p-10 custom-scrollbar">
-      <div className="bg-surface w-full max-w-5xl rounded-xl shadow-sm overflow-hidden flex flex-col mb-10 animate-in zoom-in-95 duration-300">
-        <header className="p-10 bg-canvas border-b border-line flex justify-between items-center sticky top-0 z-[120]">
+    <div role="dialog" aria-modal="true" aria-label="Quotation editor" className="fixed inset-0 z-[110] bg-inverse/60 backdrop-blur-sm flex justify-center items-center p-2 md:p-6 custom-scrollbar">
+      <div className="bg-surface w-full max-w-5xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[94dvh] animate-in zoom-in-95 duration-300">
+        <header className="px-5 py-4 md:px-8 bg-surface border-b border-line flex flex-wrap gap-4 justify-between items-center shrink-0">
           <div>
-            <h2 className="text-3xl font-semibold text-content tracking-tighter">PACKAGE QUOTATION MANAGER</h2>
+            <h2 className="text-2xl font-semibold text-content tracking-tight">{editQuoteId ? 'Edit quotation' : 'Create quotation'}</h2>
             <p className="text-sm font-medium text-secondary mt-1">Configure itinerary and pricing for <span className="font-semibold text-brand-ink">{lead.name}</span></p>
           </div>
           <div className="flex gap-4">
@@ -501,9 +502,9 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           </div>
         </header>
 
-        <div className="p-10 space-y-12">
+        <div className="p-4 md:p-8 space-y-8 overflow-y-auto custom-scrollbar">
           {/* LEAD CONTEXT SUMMARY BANNER */}
-          <div className="bg-inverse text-white p-8 rounded-xl shadow-sm space-y-4">
+          <div className="bg-inverse text-white p-5 rounded-xl shadow-sm space-y-4">
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-line pb-4">
                 <div>
                   <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">CUSTOMER REQS</span>
@@ -525,8 +526,8 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           </div>
 
           {/* SEARCH / TEMPLATES */}
-          <section className="bg-brand-soft/50 p-8 rounded-xl border border-brand-line/50 space-y-6">
-             <div className="flex justify-between items-center">
+          <section className="bg-brand-soft/50 p-5 rounded-xl border border-brand-line/50 space-y-6">
+             <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
                 <div>
                    <h4 className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Intelligent Library Search</h4>
                    <p className="text-sm text-secondary font-medium">Search past quotations to use as templates</p>
@@ -644,18 +645,18 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           {/* PACKAGE BASIC CONFIG */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <div className="space-y-4">
-              <label className="block text-xs font-semibold text-muted uppercase tracking-widest ml-2">Package Marketing Title</label>
+              <label htmlFor="quote-package-title" className="block text-xs font-semibold text-muted uppercase tracking-widest ml-2">Package title</label>
               <input 
                 type="text" 
                 className="w-full bg-canvas border border-line rounded-xl px-6 py-4 text-sm font-bold outline-none focus:ring-4 focus:ring-brand-line/10" 
-                value={quote.packageTitle} 
+                id="quote-package-title" value={quote.packageTitle} 
                 onChange={e => setQuote({...quote, packageTitle: e.target.value})}
               />
             </div>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  <PriceInput label="Final Selling Price (₹)" value={quote.finalSellingPrice} onChange={v => setQuote({...quote, finalSellingPrice: v})} colorClass="text-success-ink" />
-                 <PriceInput label="Discount (% OFF)" value={quote.discountPercentage} onChange={v => setQuote({...quote, discountPercentage: v})} colorClass="text-danger-ink" icon="%" />
+                 <PriceInput label="Crossed-out price uplift (%)" value={quote.discountPercentage} onChange={v => setQuote({...quote, discountPercentage: v})} colorClass="text-danger-ink" icon="%" />
               </div>
               {(() => {
                 const finalP = quote.finalSellingPrice || 0;
@@ -666,16 +667,16 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                 return (
                   <div className="p-4 bg-danger-soft/70 border border-danger-line rounded-xl flex items-center justify-between text-sm">
                     <div>
-                      <span className="font-bold text-secondary block text-xs uppercase tracking-wider">Standard Price (MRP)</span>
+                      <span className="font-bold text-secondary block text-xs uppercase tracking-wider">Crossed-out price</span>
                       <span className="font-semibold text-content line-through">₹{mrp.toLocaleString('en-IN')}</span>
                     </div>
                     <div className="text-center">
                       <span className="px-2.5 py-1 bg-danger-strong text-white font-semibold text-xs rounded-lg uppercase tracking-wider">
-                        {disc}% OFF · Save ₹{savings.toLocaleString('en-IN')}
+                        Save ₹{savings.toLocaleString('en-IN')}
                       </span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-success-ink block text-xs uppercase tracking-wider">Payable Price</span>
+                      <span className="font-bold text-success-ink block text-xs uppercase tracking-wider">Actual package price</span>
                       <span className="font-semibold text-success-ink text-sm">₹{finalP.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
@@ -684,6 +685,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             </div>
           </section>
 
+          <p className="text-sm text-secondary">The uplift adds to the crossed-out price only. The actual package price stays the same for both hotel options.</p>
           {saveError && <p role="alert" className="rounded-xl bg-danger-soft p-4 font-semibold text-danger-ink">{saveError}</p>}
           {/* HOSPITALITY MAP */}
           <section>
@@ -691,7 +693,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
             <div className="space-y-6">
                {quote.hotels.map((hotel, idx) => (
                   <div key={idx} className="bg-canvas p-6 rounded-xl border border-line space-y-4 relative group">
-                    <button onClick={() => setQuote({...quote, hotels: quote.hotels.filter((_, i) => i !== idx)})} className="absolute -right-2 -top-2 w-8 h-8 bg-surface border border-line rounded-full text-danger-ink flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+                    <button onClick={() => setQuote({...quote, hotels: quote.hotels.filter((_, i) => i !== idx)})} className="absolute -right-2 -top-2 w-8 h-8 bg-surface border border-line rounded-full text-danger-ink flex items-center justify-center shadow-sm opacity-100 transition-opacity">✕</button>
                     
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="space-y-1.5">
@@ -1144,7 +1146,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           </section>
         </div>
 
-        <footer className="p-8 bg-canvas border-t border-line flex flex-wrap items-center justify-between gap-4 sticky bottom-0 z-20">
+        <footer className="px-4 py-3 md:px-8 bg-canvas border-t border-line flex flex-wrap items-center justify-between gap-3 shrink-0">
           <button onClick={onClose} className="px-6 py-3.5 text-muted font-semibold text-xs uppercase tracking-widest hover:text-content transition-colors">
             Discard Draft
           </button>
@@ -1188,7 +1190,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
               onClick={handleSaveQuote}
               className="px-10 py-4 bg-inverse text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-line hover:bg-inverse transition-all"
             >
-              Publish & Send Package
+              Save changes
             </button>
           </div>
         </footer>

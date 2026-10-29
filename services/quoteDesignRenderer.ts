@@ -989,14 +989,44 @@ export function renderHotelOptionTables(Q: QuoteDataModel, force = false): strin
   if (!Q.hotelAlternative) return '';
   if (!force && Q.hotelOptionsOnCover === false) return '<div style="font-weight:700;font-size:13px;padding:12px 0">Hotel options and their prices are compared on the following page.</div>';
   const options = [{ hotels: Q.hotels?.length ? Q.hotels : [Q.hotel], price: Q.price }, Q.hotelAlternative];
-  return `<div class="hotel-options-comparison" style="display:flex;flex-direction:column;gap:18px">${options.map((option,index) => `
-    <table class="hotel-option-table" style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px;line-height:1.4;border:1px solid #283047;background:#ffffff;color:#172033">
-      <colgroup><col style="width:19%"><col style="width:34%"><col style="width:22%"><col style="width:25%"></colgroup>
-      <thead><tr><th colspan="4" style="padding:8px;background:#9280bf;color:#111827;border:1px solid #283047;font-size:16px">Hotel Details - Option ${index+1}</th></tr>
-      <tr style="background:#ded7ec"><th style="width:19%;padding:6px;border:1px solid #283047">City / Nights</th><th style="width:34%;padding:6px;border:1px solid #283047">Hotel Name</th><th style="width:22%;padding:6px;border:1px solid #283047">Room Type</th><th style="width:25%;padding:6px;border:1px solid #283047">Meal Type</th></tr></thead>
-      <tbody>${option.hotels.map(h => `<tr><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.nights)}${h.city ? '<br>'+e(h.city) : ''}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere;font-weight:700">${e(h.name)}${h.notes ? '<div style="font-size:10px;font-weight:400">'+e(h.notes)+'</div>' : ''}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.room)}</td><td style="padding:7px;border:1px solid #283047;overflow-wrap:anywhere">${e(h.mealPlan || 'As per inclusions')}</td></tr>`).join('')}
-      <tr class="hotel-option-total"><td colspan="4" style="padding:8px;border:1px solid #283047;background:#fff500;color:#111827;text-align:center;font-size:15px;font-weight:800">Total Package Cost: ${e(option.price)}</td></tr></tbody>
-    </table>`).join('')}</div>`;
+  const amount = (price: string) => Number(price.replace(/[^0-9.]/g, '')) || 0;
+  const money = (value: number) => '₹' + value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  const nightCount = (hotel: HotelItemModel) => Math.max(1, parseInt(hotel.nights, 10) || 1);
+  return `<section class="hotel-options-comparison" style="color:#12213f">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px"><span style="color:#bd900e">${ico('bed', 18)}</span><span style="font-family:${rH};font-size:22px;font-weight:700">Hotel Details</span><span style="flex:1;border-top:1px solid #e5dbc5"></span></div>
+    <div class="hotel-options-grid" style="display:flex;flex-wrap:wrap;align-items:stretch;gap:16px">
+    ${options.map((option, index) => {
+      const nights = option.hotels.reduce((sum, hotel) => sum + nightCount(hotel), 0);
+      const price = amount(option.price);
+      const cut = Q.discountPercent && Q.discountPercent > 0 ? Math.round(price * (1 + Q.discountPercent / 100)) : 0;
+      return `<div class="hotel-option-card" style="display:flex;flex-direction:column;flex:1 1 280px;min-width:0;border:1px solid #e5dbc5;border-radius:12px;overflow:hidden;background:white;box-sizing:border-box">
+        <div class="hotel-option-heading" style="display:flex;justify-content:space-between;align-items:center;gap:8px;background:#172441;color:white;padding:15px 17px">
+          <span style="color:#f4ca59;font-size:11px;letter-spacing:1.5px;font-weight:800">OPTION ${index + 1}</span>
+          <span style="font-size:12px;color:#d4ddf2">${nights} Night${nights === 1 ? '' : 's'}</span>
+        </div>
+        <div style="flex:1;padding:0 17px">
+          ${option.hotels.map((h, hotelIndex) => {
+            const count = nightCount(h);
+            return `<div class="hotel-option-stay" style="padding:18px 0;${hotelIndex ? 'border-top:1px dashed #e5dbc5;' : ''}">
+              <div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.5px;color:#805700;overflow-wrap:anywhere">${ico('cal', 13)} ${count} NIGHT${count === 1 ? '' : 'S'}${h.city ? ' · ' + e(h.city.toUpperCase()) : ''}</div>
+              <div style="font-family:${rH};font-size:19px;font-weight:700;margin:8px 0;line-height:1.25;overflow-wrap:anywhere">${e(h.name)}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11px;line-height:1.5">
+                <span style="display:inline-flex;align-items:center;gap:5px;border-radius:18px;padding:5px 10px;background:#f4f0e5;color:#4a5872;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box">${ico('bed', 12)} ${e(h.room)}</span>
+                <span style="display:inline-flex;align-items:center;gap:5px;border-radius:18px;padding:5px 10px;background:#f6edcf;color:#805700;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box">${ico('food', 12)} ${e(h.mealPlan || 'As per inclusions')}</span>
+              </div>
+              ${h.notes ? `<div style="font-size:10px;color:#58647b;margin-top:7px;overflow-wrap:anywhere">${e(h.notes)}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="hotel-option-price" style="background:#f6edcf;border-top:2px solid #c59b25;padding:15px 17px">
+          <div style="font-size:10px;letter-spacing:1.3px;font-weight:700;color:#805700;margin-bottom:7px">TOTAL LAND PACKAGE COST</div>
+          ${cut > price ? `<div class="hotel-option-cut-price" style="font-size:13px;color:#7b735d;text-decoration:line-through;margin-bottom:3px">${e(money(cut))}</div>` : ''}
+          <div class="hotel-option-total" style="font-family:${rH};font-size:29px;font-weight:700;line-height:1.15;overflow-wrap:anywhere">${e(option.price)}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </section>`;
 }
 
 export function royalCoverSheet(Q: QuoteDataModel, showInclusions = true, incSlice?: string[], excSlice?: string[]): string {

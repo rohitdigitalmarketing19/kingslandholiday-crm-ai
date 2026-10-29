@@ -6,12 +6,12 @@ interface Props {
 }
 export default function HotelAlternativeEditor({ value, onChange, price, onPriceChange, city, mealPlan }: Props) {
   const newHotel = (): HotelEntry => ({ nights: 1, hotelName: '', city, category: '3 Star', roomType: 'Standard', mealPlan, comments: '', selectedNightIndices: [] });
-  const fieldClass = 'w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm text-content';
+  const fieldClass = 'w-full rounded-xl border border-line bg-surface px-3 py-3 text-sm text-content focus:outline-none focus:ring-2 focus:ring-brand-line';
   if (!value) return <button type="button" onClick={() => onChange({ price: 0, hotels: [newHotel()] })} className="w-full rounded-xl border-2 border-dashed border-brand-line px-4 py-4 font-bold text-brand-ink">+ Add Hotel Option 2</button>;
   const update = (index: number, field: keyof HotelEntry, fieldValue: string | number) => onChange({ ...value, hotels: value.hotels.map((hotel, i) => i === index ? { ...hotel, [field]: fieldValue } : hotel) });
   return <section className="space-y-4 rounded-xl border border-brand-line bg-brand-soft/40 p-5" aria-label="Hotel options comparison">
     <div className="flex items-center justify-between gap-3"><h3 className="font-bold text-content">Hotel Options &amp; Prices</h3><button type="button" onClick={() => onChange(null)} className="text-sm font-semibold text-danger-ink">Remove Hotel Option 2</button></div>
-    <p className="text-sm text-secondary">Option 1 uses the stay plan above. Each option’s total appears below its own hotel table in the quote.</p>
+    <p className="text-sm text-secondary">Option 1 uses the stay plan above. Each option appears in a navy price card with its hotels, room types and meals.</p>
     <label className="block text-sm font-semibold">Hotel Option 1 Price (₹)<input aria-label="Hotel Option 1 Price" type="number" min="0" step="0.01" className={fieldClass} value={price || ''} onChange={event => onPriceChange(Number(event.target.value))} /></label>
     <h4 className="font-bold text-content">Hotel Details – Option 2</h4>
     {value.hotels.map((hotel, index) => <fieldset key={index} className="space-y-3 rounded-xl border border-line bg-surface p-4">

@@ -7,7 +7,7 @@ type Box = { top: number; bottom: number };
 function protectContent(table: HTMLElement, capacity: number): Box[] {
   const origin = table.getBoundingClientRect().top;
   const boxes: Box[] = [];
-  const selectors = '.avoid-page-break,.day-card-header,.day-img-box,.hrow,.hstays,.box,.two-col,.quotebox,.meta-strip,.trust-strip,.partners,.signblock,.footer,.terms-title,.terms-card-heading,.terms-partners,.terms-advisor,.terms-flow tr,.hotel-option-table tr';
+  const selectors = '.avoid-page-break,.day-card-header,.day-img-box,.hrow,.hstays,.box,.two-col,.quotebox,.meta-strip,.trust-strip,.partners,.signblock,.footer,.terms-title,.terms-card-heading,.terms-partners,.terms-advisor,.terms-flow tr,.hotel-option-table tr,.hotel-option-stay,.hotel-option-heading,.hotel-option-price';
   for (const element of Array.from(table.querySelectorAll<HTMLElement>(selectors))) {
     const r = element.getBoundingClientRect();
     const wrapper = element.classList.contains('day-card-header') ? element.closest('.day-card-wrapper') : null;

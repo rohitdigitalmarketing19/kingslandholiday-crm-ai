@@ -3,8 +3,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Trash2, Palette, Sparkles, Check, Download, FileText, Users } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
-import { exportElementToPdf } from '../utils/pdfExport';
-import { QuoteDataModel, HotelItemModel, renderCompleteProposalHtml, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
+import { QuoteDataModel, HotelItemModel, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
 import { PartnerBrand, HOTEL_PARTNERS, TRAVEL_PARTNERS, renderPartnerBadgeHtml } from '../utils/partnerLogos';
 import { ClientDocumentsSection } from './ClientDocumentsSection';
 import { ClientDetailsSection } from './ClientDetailsSection';
@@ -678,87 +677,22 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
     }
   };
 
-  const handleDownloadB2BPDF = async () => {
-    if (!currentQuoteDataModel || !currentQuote || !lead) return;
-
+  const handleDownloadB2BWord = async () => {
+    if (!currentQuoteDataModel || !currentQuote || !lead || isDownloadingB2B) return;
     setIsDownloadingB2B(true);
     try {
-      const designId = (selectedDesign?.festival && selectedDesign.festival.toLowerCase().includes('diwali')) ||
-        (selectedDesign?.title && selectedDesign.title.toLowerCase().includes('diwali')) ||
-        selectedDesign?.id === 'diwali' ||
-        selectedDesign?.id === 'theme-f4b4ac06'
-          ? 'diwali'
-          : (selectedDesign?.id || 'royal');
-
-      const filename = `Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/\s+/g, '-')}.pdf`;
-
-      // Try server-side Puppeteer Chromium PDF rendering
-      try {
-        const res = await fetch('/api/pdf-designs/render-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            quoteData: currentQuoteDataModel,
-            designId,
-            partnerBrands: partnerBrandsList,
-            isB2B: true,
-          }),
-        });
-
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          return;
-        }
-      } catch (srvErr) {
-        console.warn('Server B2B PDF generation failed, falling back to client export:', srvErr);
-      }
-
-      // Fallback to client-side export
-      const b2bHtml = renderCompleteProposalHtml(
-        currentQuoteDataModel,
-        designId,
-        partnerBrandsList,
-        true
-      );
-
-      const tempContainer = document.createElement('div');
-      tempContainer.className = 'live-proposal-sheets-container flex flex-col gap-10';
-      tempContainer.style.width = '794px';
-      tempContainer.style.minWidth = '794px';
-      tempContainer.style.maxWidth = '794px';
-      tempContainer.style.position = 'fixed';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.background = '#ffffff';
-      tempContainer.style.backgroundColor = '#ffffff';
-      tempContainer.style.zIndex = '-999';
-      tempContainer.innerHTML = b2bHtml;
-      document.body.appendChild(tempContainer);
-
-      await new Promise(resolve => setTimeout(resolve, 250));
-
-      await exportElementToPdf(tempContainer, {
-        filename,
-        margin: 0,
-        width: 794,
-        scale: 2
-      });
-
-      document.body.removeChild(tempContainer);
+      const { generateB2BWord } = await import('../services/b2bWordExport');
+      const blob = await generateB2BWord(currentQuoteDataModel);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Proposal-${lead.tripId}-${(currentQuote.packageTitle || 'Package').replace(/[^a-zA-Z0-9_-]+/g, '-')}.docx`;
+      document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (err) {
-      console.error('B2B PDF Generation Error:', err);
-      alert('Failed to generate B2B PDF. Browser restrictions may apply.');
-    } finally {
-      setIsDownloadingB2B(false);
-    }
+      console.error('B2B Word Generation Error:', err);
+      alert('Failed to generate the B2B Word document. Please try again.');
+    } finally { setIsDownloadingB2B(false); }
   };
 
   const handleActionClick = (action: string) => {
@@ -1029,17 +963,17 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
 
           <button 
             type="button"
-            onClick={handleDownloadB2BPDF} 
+            onClick={handleDownloadB2BWord} 
             disabled={isDownloadingB2B || isDownloading || !currentQuote}
             className="px-5 py-3.5 bg-gradient-to-r from-warning-strong to-warning-strong hover:from-warning-strong hover:to-warning-strong text-white rounded-xl font-semibold text-sm uppercase tracking-wider transition-all shadow-sm flex items-center gap-2.5 disabled:opacity-50 cursor-pointer"
-            title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
+            title="Download editable Word document for B2B travel agents without company logo, name, phone, or email"
           >
             {isDownloadingB2B ? (
               <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             ) : (
               <Download className="w-4 h-4 stroke-[2.5]" />
             )}
-            <span>PDF FOR B2B AGENTS</span>
+            <span>WORD FOR B2B AGENTS</span>
           </button>
 
           <button 
@@ -1758,12 +1692,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                            <span className="text-xs font-semibold text-muted uppercase tracking-widest">PDF</span>
                         </button>
 
-                        {/* Button: B2B PDF */}
+                        {/* Button: B2B Word */}
                         <button 
-                          onClick={handleDownloadB2BPDF} 
+                          onClick={handleDownloadB2BWord} 
                           disabled={isDownloadingB2B || isDownloading} 
                           className="flex flex-col items-center gap-2 group disabled:opacity-50"
-                          title="Download unbranded B2B PDF without company branding or contacts"
+                          title="Download unbranded B2B Word without company branding or contacts"
                         >
                            <div className="w-13 h-13 p-3 bg-warning-soft rounded-xl flex items-center justify-center text-warning-ink group-hover:bg-warning-strong group-hover:text-white shadow-inner group-hover:scale-110 transition-all">
                               {isDownloadingB2B ? (
@@ -1772,7 +1706,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                                 <Download className="h-5 w-5" />
                               )}
                            </div>
-                           <span className="text-xs font-semibold text-warning-ink uppercase tracking-widest">B2B PDF</span>
+                           <span className="text-xs font-semibold text-warning-ink uppercase tracking-widest">B2B Word</span>
                         </button>
 
                         {/* Button 2: Edit Quote */}
@@ -1828,10 +1762,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                           <div className="flex items-center gap-3 shrink-0">
                             <button
                               type="button"
-                              onClick={handleDownloadB2BPDF}
+                              onClick={handleDownloadB2BWord}
                               disabled={isDownloadingB2B || isDownloading}
                               className="px-4 py-2.5 bg-gradient-to-r from-warning-strong to-warning-strong hover:from-warning-strong hover:to-warning-strong text-white rounded-xl text-sm font-semibold uppercase tracking-wider flex items-center gap-2 shadow-sm hover:shadow-sm cursor-pointer disabled:opacity-50 transition-all hover:scale-102"
-                              title="Download unbranded PDF for B2B travel agents without company logo, name, phone, or email"
+                              title="Download editable Word document for B2B travel agents without company logo, name, phone, or email"
                             >
                               {isDownloadingB2B ? (
                                 <>
@@ -1841,7 +1775,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                               ) : (
                                 <>
                                   <Download className="w-4 h-4 stroke-[2.5]" />
-                                  <span>PDF FOR B2B AGENTS</span>
+                                  <span>WORD FOR B2B AGENTS</span>
                                 </>
                               )}
                             </button>

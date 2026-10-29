@@ -90,6 +90,13 @@ export async function exportElementToPdf(
     scale = 2,
   } = options;
 
+  // html2canvas clones the owner document for every page. Exclude unrelated
+  // body branches (CRM, preview and other pages) before cloning their nodes,
+  // images and styles; retain ancestors and all styles needed by this capture.
+  const captureOnly = (target: HTMLElement) => (node: Element): boolean =>
+    node.parentElement === target.ownerDocument.body &&
+    node.tagName !== 'STYLE' && node !== target && !node.contains(target);
+
   // Pre-load and await all Google Fonts before capture
   await ensureAllQuoteFontsLoaded(element);
 
@@ -211,6 +218,7 @@ export async function exportElementToPdf(
 
       const canvas = await html2canvas(singleSheetClone, {
         onclone: normalizePdfColors,
+        ignoreElements: captureOnly(singleSheetClone),
         scale,
         useCORS: true,
         logging: false,
@@ -290,6 +298,7 @@ export async function exportElementToPdf(
         // split, or overlap a photo/continued description.
         const header = contClone.querySelector<HTMLElement>('thead.itin-thead');
         const headerCanvas = header ? await html2canvas(header, {
+        ignoreElements: captureOnly(header),
         onclone: normalizePdfColors,
           scale,
           useCORS: true,
@@ -302,6 +311,7 @@ export async function exportElementToPdf(
         }) : null;
         header?.remove();
         const canvas = await html2canvas(contContainer, {
+        ignoreElements: captureOnly(contContainer),
         onclone: normalizePdfColors,
           scale,
           useCORS: true,
@@ -552,6 +562,7 @@ export async function exportElementToPdf(
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 
       const canvas = await html2canvas(container, {
+        ignoreElements: captureOnly(container),
         onclone: normalizePdfColors,
         scale,
         useCORS: true,
@@ -649,4 +660,5 @@ export async function exportElementToPdf(
     if (container && container.parentNode) container.parentNode.removeChild(container);
   }
 }
+
 
