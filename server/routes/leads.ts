@@ -4,7 +4,7 @@ import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, upd
 const router = Router();
 
 router.get('/', (req: Request, res: Response) => {
-  try { res.json(getAllLeads({ status: req.query.status as string, assignedTo: req.query.assignedTo as string, search: req.query.search as string })); }
+  try { res.json(getAllLeads({ status: req.query.status as string, assignedTo: res.locals.allowedOwners || req.query.assignedTo as string, search: req.query.search as string })); }
   catch (err) { console.error(err); res.status(500).json({ error: 'Failed to fetch leads' }); }
 });
 
@@ -15,7 +15,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
 router.post('/', (req: Request, res: Response) => {
   try { res.status(201).json(createLead(req.body)); }
-  catch (err) { console.error(err); res.status(500).json({ error: 'Failed to create lead' }); }
+  catch (err) { console.error(err); res.status((err as any).status || 500).json({error:(err as Error).message}); }
 });
 
 router.patch('/:id/status', (req: Request, res: Response) => {
@@ -29,7 +29,7 @@ router.patch('/:id/status', (req: Request, res: Response) => {
     res.json(lead);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to update status' });
+    res.status((err as any).status || 500).json({ error: (err as any).status ? (err as Error).message : 'Failed to update status' });
   }
 });
 
@@ -86,7 +86,7 @@ router.patch('/:id/reassign', (req: Request, res: Response) => {
 
 router.delete('/:id', (req: Request, res: Response) => {
   try { if (!deleteLead(req.params.id as string)) return res.status(404).json({ error: 'Lead not found' }); res.json({ success: true }); }
-  catch (err) { console.error(err); res.status(500).json({ error: 'Failed to delete lead' }); }
+  catch (err) { console.error(err); res.status((err as any).status || 500).json({error:(err as Error).message}); }
 });
 
 export default router;

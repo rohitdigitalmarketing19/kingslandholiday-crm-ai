@@ -69,7 +69,7 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
     const installments = ensureCustomerInstallments(cust);
     const total = cust.totalAmount || 0;
     
-    let paidAmount = 0;
+    let paidAmount = cust.receivedAmount ?? installments.reduce((sum,inst)=>sum+Number(inst.paidAmount ?? (inst.status==='Paid'?inst.amount:0)),0);
     let overdueAmount = 0;
     let pendingAmount = 0;
     let overdueCount = 0;
@@ -78,13 +78,13 @@ export const CustomerModule: React.FC<CustomerModuleProps> = ({
 
     installments.forEach((inst) => {
       if (inst.status === 'Paid') {
-        paidAmount += inst.amount;
+        // Received total comes from verified receipts.
       } else if (inst.status === 'Overdue') {
-        overdueAmount += inst.amount;
+        overdueAmount += Math.max(0,inst.amount-Number(inst.paidAmount || 0));
         overdueCount += 1;
         if (!overdueInstallment) overdueInstallment = inst;
       } else {
-        pendingAmount += inst.amount;
+        pendingAmount += Math.max(0,inst.amount-Number(inst.paidAmount || 0));
         if (!nextDueInstallment) nextDueInstallment = inst;
       }
     });

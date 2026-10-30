@@ -1,3 +1,6 @@
+import { randomInt } from 'crypto';
+import { rateLimiterMiddleware } from '../middleware/security';
+import { createSession, endSession, hashPassword, verifyPassword } from '../middleware/auth';
 import { Router } from 'express';
 import { queryAll, runQuery } from '../db/connection';
 import { v4 as uuidv4 } from 'uuid';
@@ -5,6 +8,7 @@ import nodemailer from 'nodemailer';
 import { getAgencySettings } from '../controllers/settingsController';
 
 const router = Router();
+router.use(['/login','/send-admin-otp','/verify-admin-otp'],rateLimiterMiddleware(10,60000));
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || process.env.SMTP_USER || 'rohit.digitalmarketing19@gmail.com').trim().toLowerCase();
 const ADMIN_NAME = (process.env.ADMIN_NAME || 'Rohit (Admin)').trim();
@@ -101,7 +105,7 @@ const ACCOUNTS_PERMISSIONS = [
   'Operations'
 ];
 
-// Helper to format user row - includes real password so admin can view/manage accounts
+// Return public user metadata only; stored passwords never leave the server.
 function formatUserRow(row: any) {
   let permissions: string[] = [];
   try {
@@ -114,7 +118,6 @@ function formatUserRow(row: any) {
     name: row.name,
     email: row.email,
     phone: row.phone || '',
-    password: row.password || 'kingsland123',
     role: row.role || 'Sales',
     department: row.department || 'Sales',
     status: row.status || 'Active',
@@ -125,44 +128,14 @@ function formatUserRow(row: any) {
   };
 }
 
+router.get('/me', (_req,res) => res.json(formatUserRow(res.locals.user)));
+router.post('/logout', (req,res) => {endSession(req,res);res.json({success:true});});
+
 // GET /api/users - Fetch all users
 router.get('/', (req, res) => {
   try {
-    // Clean up legacy demo users if present
-    try {
-      runQuery("DELETE FROM users WHERE id IN ('usr-sales-1', 'usr-ops-1', 'usr-acc-1') OR LOWER(email) IN ('sarah.sales@kingslandholidays.com', 'vikram.ops@kingslandholidays.com', 'accounts.kingsland@gmail.com')");
-    } catch (_cleanErr) {}
-
     const rows = queryAll('SELECT * FROM users ORDER BY created_at DESC');
     
-    // Seed default admin user if database is empty
-    if (!rows || rows.length === 0) {
-      const now = new Date().toISOString();
-      
-      // Primary Admin user only
-      runQuery(
-        `INSERT OR IGNORE INTO users (id, name, email, phone, password, role, department, status, access_level, permissions, avatar, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          'usr-admin-1',
-          ADMIN_NAME,
-          ADMIN_EMAIL,
-          ADMIN_PHONE,
-          ADMIN_PASSWORD,
-          'Admin',
-          'Management',
-          'Active',
-          'Editor',
-          JSON.stringify(ALL_PERMISSIONS),
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-          now
-        ]
-      );
-
-      const refreshed = queryAll('SELECT * FROM users ORDER BY created_at DESC');
-      return res.json((refreshed || []).map(formatUserRow));
-    }
-
     res.json(rows.map(formatUserRow));
   } catch (err: any) {
     console.error('Error fetching users:', err);
@@ -192,11 +165,13 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ error: 'Account is deactivated. Contact Primary Admin.' });
     }
 
-    const storedPassword = userRow.password || 'kingsland123';
-    if (password.trim() !== storedPassword.trim()) {
+    const storedPassword = userRow.password || '';
+    if (!verifyPassword(password.trim(), storedPassword)) {
       return res.status(401).json({ error: 'Incorrect password. Please try again.' });
     }
 
+    if (!storedPassword.startsWith('scrypt$')) runQuery('UPDATE users SET password=? WHERE id=?',[hashPassword(password.trim()),userRow.id]);
+    createSession(userRow.id, res);
     res.json({
       success: true,
       message: `Welcome back, ${userRow.name}!`,
@@ -211,12 +186,12 @@ router.post('/login', async (req, res) => {
 // POST /api/users/send-admin-otp - Send 6-digit OTP to Admin Email for password resets
 router.post('/send-admin-otp', async (req, res) => {
   try {
-    const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    const generatedOtp = randomInt(100000,1000000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes valid
 
     otpStore[ADMIN_EMAIL] = { code: generatedOtp, expiresAt };
 
-    console.log(`🔐 OTP generated for Admin (${ADMIN_EMAIL}): ${generatedOtp}`);
+
 
     let emailDispatched = false;
     const smtpUser = (process.env.SMTP_USER || process.env.EMAIL_USER || '').trim();
@@ -256,6 +231,7 @@ router.post('/send-admin-otp', async (req, res) => {
       }
     }
 
+    if(!emailDispatched) {delete otpStore[ADMIN_EMAIL];return res.status(503).json({error:'Security email could not be sent. Configure SMTP or contact your administrator.'});}
     res.json({
       success: true,
       message: '✓ 6-Digit Security OTP sent. Please check your admin Gmail.',
@@ -311,8 +287,9 @@ router.put('/:id/change-password', (req, res) => {
     }
 
     // Update password in DB by ID or Email
-    runQuery('UPDATE users SET password = ? WHERE id = ? OR LOWER(email) = LOWER(?)', [newPassword.trim(), id, id]);
+    runQuery('UPDATE users SET password = ? WHERE id = ? OR LOWER(email) = LOWER(?)', [hashPassword(newPassword.trim()), id, id]);
 
+    runQuery('DELETE FROM auth_sessions WHERE user_id IN (SELECT id FROM users WHERE id=? OR LOWER(email)=LOWER(?))',[id,id]);
     // Clear OTP after successful use
     delete otpStore[ADMIN_EMAIL];
 
@@ -346,7 +323,8 @@ router.post('/', (req, res) => {
     const userRole = role || 'Sales';
     const userDept = department || (userRole === 'Operations' ? 'Operations' : userRole === 'Accounts' ? 'Accounts' : userRole === 'Admin' ? 'Management' : 'Sales');
     const userAccessLevel = accessLevel || (userRole === 'Accounts' ? 'ViewOnly' : 'Editor');
-    const userPassword = password ? password.trim() : 'kingsland123';
+    if (!password || password.trim().length < 8) return res.status(400).json({error:'Set a password of at least 8 characters.'});
+    const userPassword = password.trim();
 
     let assignedPermissions = permissions;
     if (!Array.isArray(assignedPermissions) || assignedPermissions.length === 0) {
@@ -372,7 +350,7 @@ router.post('/', (req, res) => {
         name.trim(),
         email.trim().toLowerCase(),
         phone ? phone.trim() : '',
-        userPassword,
+        hashPassword(userPassword),
         userRole,
         userDept,
         status || 'Active',
@@ -452,7 +430,8 @@ router.put('/:id', (req, res) => {
     const newName = name !== undefined ? name.trim() : curr.name;
     const newEmail = email !== undefined ? email.trim().toLowerCase() : curr.email;
     const newPhone = phone !== undefined ? phone.trim() : curr.phone;
-    const newPassword = password !== undefined ? password.trim() : curr.password;
+    const newPassword = password?.trim() ? hashPassword(password.trim()) : curr.password;
+    if(password?.trim())runQuery('DELETE FROM auth_sessions WHERE user_id=?',[id]);
     const newRole = role !== undefined ? role : curr.role;
     const newDept = department !== undefined ? department : curr.department;
     const newStatus = status !== undefined ? status : curr.status;

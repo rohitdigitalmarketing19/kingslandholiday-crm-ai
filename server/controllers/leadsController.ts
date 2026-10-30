@@ -73,10 +73,10 @@ function hydrateQuote(row: any): any {
   return quote;
 }
 
-export function getAllLeads(filters?: { status?: string; assignedTo?: string; search?: string }) {
+export function getAllLeads(filters?: { status?: string; assignedTo?: string | string[]; search?: string }) {
   let query = 'SELECT * FROM leads WHERE 1=1'; const params: any[] = [];
   if (filters?.status) { query += ' AND status = ?'; params.push(filters.status); }
-  if (filters?.assignedTo) { query += ' AND assigned_to = ?'; params.push(filters.assignedTo); }
+  if (Array.isArray(filters?.assignedTo)) {query += ` AND assigned_to IN (${filters.assignedTo.map(()=>'?').join(',')})`;params.push(...filters.assignedTo);} else if (filters?.assignedTo) { query += ' AND assigned_to = ?'; params.push(filters.assignedTo); }
   if (filters?.search) { query += ' AND (name LIKE ? OR destination LIKE ? OR trip_id LIKE ?)'; const s = `%${filters.search}%`; params.push(s, s, s); }
   query += ' ORDER BY created_at DESC';
   return queryAll(query, params).map((r: any) => hydrateLead(r));
@@ -90,6 +90,7 @@ export function getLeadById(id: string) {
 import { generateNextTripId } from './settingsController';
 
 export function createLead(data: any) {
+  if(['Closed Won','Won','Converted','CONVERTED'].includes(data.status))throw Object.assign(new Error('Create the lead and accept a saved quotation before conversion.'),{status:400});
   const id = data.id || `lead-${Date.now()}`;
   const tripId = data.tripId || generateNextTripId();
   const now = new Date().toISOString();
@@ -110,6 +111,7 @@ export function updateLeadStatus(id: string, status: string, extra?: {
   followUpNote?: string;
   followUpCompleted?: boolean;
 }) {
+  if (['Closed Won','Won','Converted','CONVERTED'].includes(status) && !queryOne('SELECT lead_id FROM booking_snapshots WHERE lead_id=?',[id])) throw Object.assign(new Error('Open the saved proposal and confirm the selected quotation is accepted before converting.'),{status:400});
   const now = new Date().toISOString();
   let result;
   if (status === 'Postponed' && extra?.postponedDate) {
@@ -176,6 +178,7 @@ export function updateLeadTravelers(
 }
 
 export function deleteLead(id: string) {
+  if(queryOne('SELECT lead_id FROM booking_snapshots WHERE lead_id=?',[id]) || queryOne('SELECT id FROM receipt_events WHERE lead_id=?',[id]))throw Object.assign(new Error('Booked or paid leads cannot be deleted. Use cancellation to preserve history.'),{status:409});
   const target = queryOne('SELECT id, trip_id FROM leads WHERE id = ? OR trip_id = ?', [id, id]);
   const leadId = target ? target.id : id;
   const tripId = target ? target.trip_id : id;

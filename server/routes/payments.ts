@@ -1,3 +1,4 @@
+import { queryOne } from '../db/connection';
 import { Router, Request, Response } from 'express';
 import {
   createPaymentLink,
@@ -21,7 +22,7 @@ const router = Router();
 // Settings (Razorpay API Credentials & Bank/UPI setup)
 router.get('/settings', (req: Request, res: Response) => {
   try {
-    res.json(getPaymentSettings());
+    const {key_secret,...safe}=getPaymentSettings();res.json({...safe,key_secret:'',has_key_secret:!!key_secret});
   } catch (err: any) {
     console.error('Error fetching settings:', err);
     res.status(500).json({ error: 'Failed to fetch settings' });
@@ -29,8 +30,9 @@ router.get('/settings', (req: Request, res: Response) => {
 });
 
 router.post('/settings', (req: Request, res: Response) => {
+  if(res.locals.user?.role!=='Admin')return res.status(403).json({error:'Administrator access required.'});
   try {
-    res.json(savePaymentSettings(req.body));
+    const {key_secret,...safe}=savePaymentSettings(req.body);res.json({...safe,key_secret:'',has_key_secret:!!key_secret});
   } catch (err: any) {
     console.error('Error saving settings:', err);
     res.status(500).json({ error: 'Failed to save settings' });
@@ -58,17 +60,17 @@ router.post('/installments', (req: Request, res: Response) => {
     res.json(saveInstallmentSchedule(leadId, installments));
   } catch (err: any) {
     console.error('Error saving installments:', err);
-    res.status(500).json({ error: 'Failed to save installments' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to save installments'});
   }
 });
 
 router.patch('/installments/:id/status', (req: Request, res: Response) => {
   try {
     const { status, paidAmount, paymentMode, transactionRef, comments, notes } = req.body;
-    res.json(updateInstallmentStatus(req.params.id as string, status, paidAmount, paymentMode, transactionRef, comments || notes));
+    res.json(updateInstallmentStatus(req.params.id as string, status, paidAmount, paymentMode, transactionRef, comments || notes, res.locals.user?.id));
   } catch (err: any) {
     console.error('Error updating installment status:', err);
-    res.status(500).json({ error: 'Failed to update installment status' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to update installment status'});
   }
 });
 
@@ -85,20 +87,20 @@ router.patch('/installments/:id/comment', (req: Request, res: Response) => {
 router.post('/confirm', (req: Request, res: Response) => {
   try {
     const { payKey, id, refNumber, paymentMode, amount, comments, notes } = req.body;
-    res.json(confirmPaymentLink(payKey || id, refNumber, paymentMode, amount, comments || notes));
+    res.json(confirmPaymentLink(payKey || id, refNumber, paymentMode, amount, comments || notes, res.locals.user?.id));
   } catch (err: any) {
     console.error('Error confirming payment:', err);
-    res.status(500).json({ error: 'Failed to confirm payment' });
+    res.status((err as any).status || 500).json({ error: (err as any).status ? (err as Error).message : 'Failed to confirm payment' });
   }
 });
 
 router.patch('/links/:key/status', (req: Request, res: Response) => {
   try {
     const { status, paidAmount, paymentMode, transactionRef } = req.body;
-    res.json(confirmPaymentLink(req.params.key as string, transactionRef, paymentMode, paidAmount));
+    res.json(confirmPaymentLink(req.params.key as string, transactionRef, paymentMode, paidAmount, undefined, res.locals.user?.id));
   } catch (err: any) {
     console.error('Error updating payment link status:', err);
-    res.status(500).json({ error: 'Failed to update link status' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to update link status'});
   }
 });
 
@@ -155,7 +157,11 @@ router.delete('/submissions', (req: Request, res: Response) => {
 
 router.post('/submissions', (req: Request, res: Response) => {
   try {
-    res.status(201).json(createPaymentSubmission(req.body));
+    const link=queryOne('SELECT * FROM payment_links WHERE pay_key=?',[req.body.payKey || '']);
+    const inst=queryOne('SELECT * FROM payment_installments WHERE pay_key=?',[req.body.payKey || '']);
+    if(!link && !inst)return res.status(400).json({error:'A valid payment request is required.'});
+    if(!Number.isFinite(Number(req.body.amountPaid)) || Number(req.body.amountPaid)<=0 || Number(req.body.amountPaid)>Number(inst?.amount ?? link.net_amount))return res.status(400).json({error:'Invalid submitted amount.'});
+    res.status(201).json(createPaymentSubmission({...req.body,leadId:inst?.lead_id || link.lead_id}));
   } catch (err: any) {
     console.error('Error creating payment submission:', err);
     res.status(500).json({ error: 'Failed to submit payment' });
@@ -166,12 +172,12 @@ router.patch('/submissions/:id/verify', (req: Request, res: Response) => {
   try {
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: 'Status is required' });
-    const sub = updatePaymentVerificationStatus(req.params.id as string, status);
+    const sub = updatePaymentVerificationStatus(req.params.id as string, status, res.locals.user?.id);
     if (!sub) return res.status(404).json({ error: 'Submission not found' });
     res.json(sub);
   } catch (err: any) {
     console.error('Error updating payment status:', err);
-    res.status(500).json({ error: 'Failed to update status' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to update status'});
   }
 });
 

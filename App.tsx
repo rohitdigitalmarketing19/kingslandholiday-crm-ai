@@ -20,6 +20,7 @@ import { HotelVouchersView } from './components/HotelVouchersView';
 import { UserManagementView } from './components/UserManagementView';
 import SalesDeskView from './components/SalesDeskView';
 import MastersView from './components/MastersView';
+import HotelRatesView from './components/HotelRatesView';
 import PdfDesignsView from './components/PdfDesignsView';
 import PdfThemesView from './components/PdfThemesView';
 import SettingsView from './components/SettingsView';
@@ -222,12 +223,21 @@ const App: React.FC = () => {
     return !localStorage.getItem('kingsland_active_user_id');
   });
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/users/logout',{method:'POST'}).catch(()=>{});
+    localStorage.removeItem('kingsland_cached_leads'); localStorage.removeItem('kingsland_cached_agents');
+    setLeads([]); setAgents([]);
     clearProposalPdfCache();
     localStorage.removeItem('kingsland_active_user_id');
     setIsLoginModalOpen(true);
   };
 
+  useEffect(() => {
+    fetch('/api/users/me').then(async response => {
+      if (!response.ok) throw new Error('Session expired');
+      const user=await response.json();setCurrentUser(user);localStorage.setItem('kingsland_active_user_id',user.id);setIsLoginModalOpen(false);
+    }).catch(() => {localStorage.removeItem('kingsland_active_user_id');localStorage.removeItem('kingsland_cached_leads');localStorage.removeItem('kingsland_cached_agents');setLeads([]);setAgents([]);setIsLoginModalOpen(true);});
+  }, []);
   const [theme, setTheme] = useState<Theme>(readTheme);
 
   useEffect(() => {
@@ -244,7 +254,7 @@ const App: React.FC = () => {
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
-    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details'
+    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates'
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
@@ -253,7 +263,7 @@ const App: React.FC = () => {
     return 'Dashboard';
   });
 
-  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details') => {
+  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates') => {
     setViewState(newView);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kingsland_active_view', newView);
@@ -434,16 +444,8 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSwitchUser = (user: UserAccount) => {
-    clearProposalPdfCache();
-    setCurrentUser(user);
-    localStorage.setItem('kingsland_active_user_id', user.id);
-    if (user.permissions && user.permissions.length > 0) {
-      if (!user.permissions.includes(view as any) && user.role !== 'Admin') {
-        const firstAllowed = user.permissions[0];
-        setView(firstAllowed as any);
-      }
-    }
+  const handleSwitchUser = (_user: UserAccount) => {
+    handleLogout();
   };
 
   useEffect(() => {
@@ -485,16 +487,16 @@ const App: React.FC = () => {
       installments.forEach((inst: any) => {
         createdCount++;
         createdAmount += (inst.amount || 0);
+        paidAmount += Number(inst.paidAmount ?? (inst.status==='Paid'?inst.amount:0));
         if (inst.status === 'Paid') {
           paidCount++;
-          paidAmount += (inst.amount || 0);
         } else if (inst.status === 'Overdue') {
           overdueCount++;
-          overdueAmount += (inst.amount || 0);
+          overdueAmount += Math.max(0,(inst.amount || 0)-(inst.paidAmount || 0));
           overdueItems.push({ ...inst, customerName: cust.name, bookingId: cust.bookingId });
         } else {
           dueCount++;
-          dueAmount += (inst.amount || 0);
+          dueAmount += Math.max(0,(inst.amount || 0)-(inst.paidAmount || 0));
           dueItems.push({ ...inst, customerName: cust.name, bookingId: cust.bookingId });
         }
       });
@@ -884,7 +886,6 @@ const App: React.FC = () => {
       alert('🚫 Access Restricted: You do not have permission to update lead status. Your account is set to View-Only Mode.');
       return;
     }
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status, ...(extraFields || {}) } as Lead : l));
     try {
       await api.updateLeadStatus(leadId, status, extraFields);
       await loadLeads(); // Refresh leads
@@ -895,6 +896,8 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.warn('Error updating status on server:', err);
+      alert((err as Error).message || 'The status was not saved.');
+      await loadLeads();
     }
   };
 
@@ -1387,6 +1390,7 @@ const App: React.FC = () => {
             <p className="text-xs font-semibold text-secondary uppercase tracking-wider px-3 mb-2 mt-4">Admin</p>
           )}
           <div className="space-y-0.5 mb-4">
+            {currentUser.role === 'Admin' && <NavItem id="Hotel Rates" icon={<Building2 size={18} />} active={view === 'Hotel Rates'} onClick={() => setView('Hotel Rates')} /> }
             {hasAccess('Saved Itinerary') && (
               <NavItem id="Templates" icon={<Map size={18} />} active={view === 'Saved Itinerary'} onClick={() => setView('Saved Itinerary')} />
             )}
@@ -2392,6 +2396,7 @@ const App: React.FC = () => {
               />
             </div>
           )}
+          {view === 'Hotel Rates' && currentUser.role === 'Admin' && <HotelRatesView readOnly={currentUser.accessLevel === 'ViewOnly'} />}
           {view === 'Masters' && (
             <div className="animate-in fade-in duration-200">
               <MastersView />
@@ -2774,6 +2779,7 @@ const App: React.FC = () => {
           setCurrentUser(user);
           localStorage.setItem('kingsland_active_user_id', user.id);
           setIsLoginModalOpen(false);
+          window.location.reload();
         }}
       />
     </div>

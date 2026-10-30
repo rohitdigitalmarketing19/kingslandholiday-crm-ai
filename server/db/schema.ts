@@ -1,8 +1,12 @@
+import { initializeWorkflowSecurity } from './workflowSecurity';
+import { migrateHotelRateSeasons } from './hotelRateSeasonsMigration';
 import { execSql } from './connection';
 
 export function initializeDatabase(): void {
   // sql.js doesn't support multiple statements in one exec, so we split them
   const statements = [
+    `CREATE TABLE IF NOT EXISTS hotel_rates (id TEXT PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, category TEXT NOT NULL, seasonal_paise INTEGER NOT NULL CHECK(seasonal_paise >= 0), blackout_paise INTEGER NOT NULL CHECK(blackout_paise >= 0), blackout_dates TEXT NOT NULL DEFAULT '[]', pdf_name TEXT NOT NULL DEFAULT '', pdf_data TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, updated_by TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS hotel_rate_history (id TEXT PRIMARY KEY, hotel_id TEXT NOT NULL REFERENCES hotel_rates(id), actor TEXT NOT NULL, created_at TEXT NOT NULL, before_data TEXT NOT NULL, after_data TEXT NOT NULL)`,
     `CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL DEFAULT '[]', avatar TEXT DEFAULT '', phone TEXT DEFAULT '', email TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS leads (id TEXT PRIMARY KEY, trip_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT DEFAULT '', email TEXT DEFAULT '', raw_inquiry TEXT DEFAULT '', summary TEXT DEFAULT '', score INTEGER DEFAULT 50, intent TEXT DEFAULT 'Information Seeking', destination TEXT DEFAULT '', budget_tier TEXT DEFAULT 'Mid', assigned_to TEXT DEFAULT '', source TEXT DEFAULT 'Website Form', status TEXT DEFAULT 'New', travel_date TEXT DEFAULT '', duration_days INTEGER DEFAULT 7, adults INTEGER DEFAULT 2, children INTEGER DEFAULT 0, child_ages TEXT DEFAULT '[]', other_info TEXT DEFAULT '', include_stay TEXT DEFAULT 'Yes', include_flight TEXT DEFAULT 'No', include_cab TEXT DEFAULT 'Yes', hotel_category TEXT DEFAULT '4/3 Star', english_driver INTEGER DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now')), last_follow_up TEXT NOT NULL DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS quotes (id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, package_title TEXT DEFAULT '', final_selling_price REAL DEFAULT 0, visa_cost REAL DEFAULT 0, flight_cost REAL DEFAULT 0, land_package_cost REAL DEFAULT 0, marketing_fees REAL DEFAULT 0, discount_percentage REAL DEFAULT 0, nights INTEGER DEFAULT 6, hotels_not_included INTEGER DEFAULT 0, flights_not_included INTEGER DEFAULT 0, cabs_not_included INTEGER DEFAULT 0, flight_details TEXT DEFAULT '', cab_details TEXT DEFAULT '', other_inclusions TEXT DEFAULT '', other_exclusions TEXT DEFAULT '', terms_and_conditions TEXT DEFAULT '', use_default_tc INTEGER DEFAULT 1, other_information TEXT DEFAULT '', working_agent_id TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE)`,
@@ -46,6 +50,8 @@ export function initializeDatabase(): void {
       // Ignore error if column already exists
     }
   }
+
+  migrateHotelRateSeasons();
 
   // Safe Column Migrations for ops_customers, payment_links, payment_installments
   const migrations = [
@@ -412,4 +418,6 @@ export function initializeDatabase(): void {
   } catch (_e) {}
 
   console.log('✅ Database schema & migrations initialized.');
+  initializeWorkflowSecurity();
+
 }

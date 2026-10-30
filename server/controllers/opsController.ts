@@ -1,3 +1,6 @@
+import { randomUUID } from 'crypto';
+import { moneyPaise } from '../services/receipts';
+import { collectedPaise, recordReceipt } from '../services/receipts';
 import { runQuery, queryAll, queryOne } from '../db/connection';
 import { INITIAL_CUSTOMERS, INITIAL_HOTEL_VOUCHERS, INITIAL_ITINERARIES } from '../../operations-team-portal/src/data/mockData';
 
@@ -73,6 +76,7 @@ function hydrateCustomer(row: any): any {
   ) || [];
 
   customer.installments = instRows.map((inst: any) => ({
+    paidAmount: queryOne('SELECT paid_amount FROM payment_installments WHERE id=?',[inst.id])?.paid_amount || 0,
     id: inst.id,
     installmentNumber: inst.installment_number,
     title: inst.title,
@@ -85,6 +89,8 @@ function hydrateCustomer(row: any): any {
     notes: inst.notes || undefined,
   }));
 
+  const linkedLead=queryOne('SELECT id FROM leads WHERE trip_id=? OR id=?',[customer.bookingId,customer.id.replace(/^cust-/, '')]);
+  (customer as any).receivedAmount=linkedLead ? collectedPaise(linkedLead.id)/100 : 0;
   return customer;
 }
 
@@ -198,25 +204,8 @@ export function syncConvertedLeadsToOps() {
 
   console.log(`[OPS SYNC] Found ${convertedLeads.length} converted leads to sync`);
 
-  const validCustIds = convertedLeads.map((l: any) => `cust-${l.id}`);
-  const validBookingIds = convertedLeads.map((l: any) => l.trip_id).filter(Boolean);
-
-  // 2. Remove ops_customers that do NOT correspond to any converted lead
-  const allOpsCusts = queryAll("SELECT id, booking_id FROM ops_customers") || [];
-  for (const c of allOpsCusts) {
-    if (!validCustIds.includes(c.id) && !validBookingIds.includes(c.booking_id)) {
-      try {
-        runQuery("DELETE FROM ops_daily_activities WHERE itinerary_id IN (SELECT id FROM ops_itineraries WHERE customer_id = ?)", [c.id]);
-        runQuery("DELETE FROM ops_itineraries WHERE customer_id = ?", [c.id]);
-        // Only delete auto-generated pending vouchers, preserve uploaded ones
-        runQuery("DELETE FROM ops_vouchers WHERE customer_id = ? AND status = 'Pending'", [c.id]);
-        runQuery("DELETE FROM ops_customer_installments WHERE customer_id = ?", [c.id]);
-        runQuery("DELETE FROM ops_customers WHERE id = ?", [c.id]);
-      } catch (cleanupErr) {
-        console.error(`[OPS SYNC] Cleanup error for ${c.id}:`, cleanupErr);
-      }
-    }
-  }
+  // Reading/synchronizing operations must never erase booking or payment history.
+  // Lead cancellation and archival require their own explicit lifecycle actions.
 
   if (convertedLeads.length === 0) return;
 
@@ -237,7 +226,7 @@ export function syncConvertedLeadsToOps() {
       try {
         if (lead.travel_date) {
           const d = new Date(lead.travel_date);
-          d.setDate(d.getDate() + (lead.duration_days || 7));
+          d.setDate(d.getDate() + Math.max(0, (lead.duration_days || 7) - 1));
           endDate = d.toISOString().split('T')[0];
         }
       } catch (_e) {
@@ -247,8 +236,11 @@ export function syncConvertedLeadsToOps() {
       const paxAdults = lead.adults || 2;
       const paxChildren = lead.children || 0;
 
-      const latestQuote = queryOne("SELECT * FROM quotes WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1", [lead.id]);
-      const totalAmount = latestQuote?.final_selling_price || 0;
+      const accepted=queryOne('SELECT quote_id FROM booking_snapshots WHERE lead_id=?',[lead.id]);
+      const latestQuote = accepted?.quote_id ? queryOne('SELECT * FROM quotes WHERE id=?',[accepted.quote_id]) : queryOne("SELECT * FROM quotes WHERE lead_id = ? ORDER BY created_at DESC LIMIT 1", [lead.id]);
+      const bookedCustomer = queryOne('SELECT total_amount FROM ops_customers WHERE id = ? OR booking_id = ?', [custId, bookingId]);
+      // Preserve the amount captured at conversion, including a legitimate zero.
+      const totalAmount = bookedCustomer ? bookedCustomer.total_amount : (latestQuote?.final_selling_price || 0);
       const currency = 'INR';
       const assignedOpsManager = lead.assigned_to || 'Ops Team';
       const notes = lead.summary || lead.raw_inquiry || 'Converted Lead Package';
@@ -361,8 +353,8 @@ export function syncConvertedLeadsToOps() {
           const existingOps = existingOpsMap.get(instId);
           
           // If EITHER desk or ops recorded payment, mark as Paid
-          const isPaid = inst.payment_status === 'Paid' || existingOps?.status === 'Paid';
-          const status = isPaid ? 'Paid' : (existingOps?.status || inst.payment_status || 'Pending');
+          const isPaid = inst.payment_status === 'Paid';
+          const status = isPaid ? 'Paid' : (inst.payment_status || 'Pending');
           const paidAt = isPaid ? (existingOps?.paid_at || inst.paid_at || now) : '';
           const paymentMode = existingOps?.payment_mode || inst.payment_mode || (isPaid ? 'UPI' : '');
           const transactionRef = existingOps?.transaction_ref || inst.transaction_ref || (isPaid ? 'TXN-CONFIRMED' : '');
@@ -406,6 +398,13 @@ export function syncConvertedLeadsToOps() {
         const targetCity = h.city || destination;
         const targetNights = h.nights || 1;
         const targetRoomType = h.room_type || 'Deluxe Room';
+        const nightIndices = JSON.parse(h.selected_night_indices || '[]');
+        const offset = nightIndices.length ? Math.min(...nightIndices) : quoteHotels.slice(0, hIdx).reduce((sum, hotel) => sum + (hotel.nights || 1), 0);
+        const stayEnd = nightIndices.length ? Math.max(...nightIndices) + 1 : offset + targetNights;
+        const shiftDate = (days: number) => { const date = new Date(`${startDate.slice(0, 10)}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
+        const hotelCheckIn = shiftDate(offset), hotelCheckOut = shiftDate(stayEnd);
+        const mealPlan = h.meal_plan || '';
+
 
         if (!existingVoucher) {
           try {
@@ -419,11 +418,11 @@ export function syncConvertedLeadsToOps() {
                 name,
                 targetHotelName,
                 targetCity,
-                startDate,
-                endDate,
+                hotelCheckIn,
+                hotelCheckOut,
                 targetNights,
                 targetRoomType,
-                'CPAI (Breakfast)',
+                mealPlan,
                 'Kingsland Holidays Partner',
                 '',
                 'Pending',
@@ -442,7 +441,7 @@ export function syncConvertedLeadsToOps() {
                SET hotel_name = ?, city = ?, check_in = ?, check_out = ?, nights = ?, room_type = ?,
                    confirmation_number = '', status = 'Pending', file_name = '', file_url = '', uploaded_at = '', uploaded_by = ''
                WHERE id = ?`,
-              [targetHotelName, targetCity, startDate, endDate, targetNights, targetRoomType, vId]
+              [targetHotelName, targetCity, hotelCheckIn, hotelCheckOut, targetNights, targetRoomType, vId]
             );
           } else {
             // Just update dates and city but preserve status and uploaded files
@@ -450,7 +449,7 @@ export function syncConvertedLeadsToOps() {
               `UPDATE ops_vouchers
                SET city = ?, check_in = ?, check_out = ?, nights = ?, room_type = ?
                WHERE id = ?`,
-              [targetCity, startDate, endDate, targetNights, targetRoomType, vId]
+              [targetCity, hotelCheckIn, hotelCheckOut, targetNights, targetRoomType, vId]
             );
           }
         }
@@ -534,7 +533,6 @@ export function syncConvertedLeadsToOps() {
 
 export function getAllOpsCustomers(filters?: { status?: string; search?: string }) {
   syncConvertedLeadsToOps();
-  seedOpsDefaultsIfEmpty();
   let sql = 'SELECT * FROM ops_customers WHERE 1=1';
   const params: any[] = [];
 
@@ -641,7 +639,19 @@ export function createOpsCustomer(data: any) {
   return getOpsCustomerById(id);
 }
 
-export function updateOpsCustomer(id: string, data: any) {
+export function updateOpsCustomer(id: string, data: any, actor='system') {
+  const previous=getOpsCustomerById(id);if(!previous)return null;
+  if(data.totalAmount!==undefined && Number(data.totalAmount)!==Number(previous.totalAmount))throw Object.assign(new Error('The accepted booking total cannot be edited in Operations.'),{status:409});
+  for(const [costKey,paidKey] of [['hotelTotalCost','hotelPaymentAmount'],['cabTotalCost','cabPaymentAmount']]) {
+    const cost=moneyPaise(data[costKey] ?? previous[costKey] ?? 0), paid=moneyPaise(data[paidKey] ?? previous[paidKey] ?? 0);
+    if(paid>cost)throw Object.assign(new Error('Supplier payments cannot exceed the recorded supplier cost.'),{status:400});
+    if(data[paidKey]!==undefined && paid<moneyPaise(previous[paidKey] || 0))throw Object.assign(new Error('Supplier payment reductions require an audited correction.'),{status:409});
+  }
+  if(data.hotelPayments)for(const hotel of data.hotelPayments){if(moneyPaise(hotel.paidAmount || 0)>moneyPaise(hotel.totalCost || hotel.amount || 0))throw Object.assign(new Error('Hotel payment exceeds the hotel cost.'),{status:400});}
+  const linked=queryOne('SELECT status FROM leads WHERE trip_id=?',[previous.bookingId]);
+  if(linked && /lost|cancel/i.test(linked.status) && data.status && data.status!==previous.status && !/cancel/i.test(data.status))throw Object.assign(new Error('Cancelled bookings cannot progress through operations.'),{status:409});
+  runQuery('INSERT INTO workflow_events(id,parent_id,event,before_json,after_json,actor,created_at) VALUES(?,?,?,?,?,?,?)',[randomUUID(),id,'Operations update',JSON.stringify(previous),JSON.stringify(data),actor,new Date().toISOString()]);
+
   const fields: string[] = [];
   const params: any[] = [];
 
@@ -709,113 +719,35 @@ export function updateOpsCustomer(id: string, data: any) {
 }
 
 export function deleteOpsCustomer(id: string) {
+  const customer=getOpsCustomerById(id);if(customer && (customer.receivedAmount>0 || queryOne('SELECT lead_id FROM booking_snapshots WHERE lead_id=?',[id.replace(/^cust-/, '')])))throw Object.assign(new Error('Booked or paid operations records cannot be deleted.'),{status:409});
   const result = runQuery('DELETE FROM ops_customers WHERE id = ?', [id]);
   return result.changes > 0;
 }
 
-export function recordOpsPayment(customerId: string, installmentId: string, details: any) {
-  const status = details.status || 'Paid';
-  const paidAt = details.paidAt || new Date().toISOString().split('T')[0];
-  const paymentMode = details.paymentMode || 'UPI';
-  const transactionRef = details.transactionRef || `TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-  const notesVal = details.notes || '';
-
-  const cust = getOpsCustomerById(customerId);
-  const actualCustId = cust ? cust.id : customerId;
-
-  // 1. Update ops_customer_installments
-  runQuery(
-    `UPDATE ops_customer_installments
-     SET status = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?, notes = ?
-     WHERE id = ? OR (customer_id = ? AND id = ?)`,
-    [status, status === 'Paid' ? paidAt : '', status === 'Paid' ? paymentMode : '', status === 'Paid' ? transactionRef : '', notesVal, installmentId, actualCustId, installmentId]
-  );
-
-  // Also update title, amount, dueDate if provided
-  if (details.title !== undefined || details.amount !== undefined || details.dueDate !== undefined) {
-    const extraFields: string[] = [];
-    const extraParams: any[] = [];
-    if (details.title !== undefined) { extraFields.push('title = ?'); extraParams.push(details.title); }
-    if (details.amount !== undefined) { extraFields.push('amount = ?'); extraParams.push(Number(details.amount)); }
-    if (details.dueDate !== undefined) { extraFields.push('due_date = ?'); extraParams.push(details.dueDate); }
-    if (extraFields.length > 0) {
-      extraParams.push(installmentId);
-      runQuery(`UPDATE ops_customer_installments SET ${extraFields.join(', ')} WHERE id = ?`, extraParams);
-    }
-  }
-
-  // 2. Sync status back to payment_installments & payment_links source tables
-  try {
-    const paidAmount = details.amount || 0;
-    runQuery(
-      `UPDATE payment_installments
-       SET payment_status = ?, paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?
-       WHERE id = ? OR pay_key = ?`,
-      [status, status === 'Paid' ? paidAmount : 0, status === 'Paid' ? paidAt : '', status === 'Paid' ? paymentMode : '', status === 'Paid' ? transactionRef : '', installmentId, installmentId]
-    );
-
-    runQuery(
-      `UPDATE payment_links
-       SET status = ?, transaction_ref = ?, payment_mode = ?
-       WHERE pay_key = ? OR id = ?`,
-      [status, status === 'Paid' ? transactionRef : '', status === 'Paid' ? paymentMode : '', installmentId, installmentId]
-    );
-  } catch (_e) { /* skip */ }
-
-  return getOpsCustomerById(actualCustId);
+export function recordOpsPayment(customerId: string,installmentId: string,details: any,actor='system') {
+  const cust=getOpsCustomerById(customerId);if(!cust)throw Object.assign(new Error('Customer not found.'),{status:404});
+  const row=queryOne('SELECT * FROM ops_customer_installments WHERE id=? AND customer_id=?',[installmentId,cust.id]);
+  if(!row)throw Object.assign(new Error('Installment does not belong to this customer.'),{status:403});
+  recordReceipt(installmentId,details.paidAmount ?? details.amount,details.transactionRef,details.paymentMode,details.notes,actor);
+  return getOpsCustomerById(cust.id);
 }
 
-export function updateOpsInstallment(customerId: string, installmentId: string, details: any) {
-  const cust = getOpsCustomerById(customerId);
-  const actualCustId = cust ? cust.id : customerId;
-
-  const fields: string[] = [];
-  const params: any[] = [];
-
-  if (details.title !== undefined) { fields.push('title = ?'); params.push(details.title); }
-  if (details.amount !== undefined) { fields.push('amount = ?'); params.push(Number(details.amount)); }
-  if (details.dueDate !== undefined) { fields.push('due_date = ?'); params.push(details.dueDate); }
-  if (details.status !== undefined) { fields.push('status = ?'); params.push(details.status); }
-  if (details.paidAt !== undefined) { fields.push('paid_at = ?'); params.push(details.paidAt); }
-  if (details.paymentMode !== undefined) { fields.push('payment_mode = ?'); params.push(details.paymentMode); }
-  if (details.transactionRef !== undefined) { fields.push('transaction_ref = ?'); params.push(details.transactionRef); }
-  if (details.notes !== undefined) { fields.push('notes = ?'); params.push(details.notes); }
-
-  if (fields.length > 0) {
-    params.push(installmentId, actualCustId);
-    runQuery(
-      `UPDATE ops_customer_installments SET ${fields.join(', ')} WHERE id = ? OR (customer_id = ? AND id = ?)`,
-      params
-    );
-  }
-
-  // Sync status back to payment_installments & payment_links source table
-  if (details.status !== undefined) {
-    try {
-      const paidAmount = details.amount || 0;
-      runQuery(
-        `UPDATE payment_installments
-         SET payment_status = ?, paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?
-         WHERE id = ? OR pay_key = ?`,
-        [details.status, details.status === 'Paid' ? paidAmount : 0, details.paidAt || '', details.paymentMode || '', details.transactionRef || '', installmentId, installmentId]
-      );
-      runQuery(
-        `UPDATE payment_links
-         SET status = ?, transaction_ref = ?, payment_mode = ?
-         WHERE pay_key = ? OR id = ?`,
-        [details.status, details.transactionRef || '', details.paymentMode || '', installmentId, installmentId]
-      );
-    } catch (_e) { /* skip */ }
-  }
-
-  return getOpsCustomerById(actualCustId);
+export function updateOpsInstallment(customerId: string,installmentId: string,details: any,actor='system') {
+  const cust=getOpsCustomerById(customerId);
+  const row=cust ? queryOne('SELECT * FROM ops_customer_installments WHERE id=? AND customer_id=?',[installmentId,cust.id]) : null;
+  if(!row)throw Object.assign(new Error('Installment does not belong to this customer.'),{status:403});
+  if(details.status==='Paid')return recordOpsPayment(customerId,installmentId,details,actor);
+  const source=queryOne('SELECT * FROM payment_installments WHERE id=?',[installmentId]);
+  if(source?.paid_amount>0 && (details.status==='Pending' || details.amount!==undefined && Number(details.amount)!==source.amount))throw Object.assign(new Error('Verified receipts cannot be overwritten.'),{status:409});
+  if(details.amount!==undefined && Number(details.amount)!==row.amount)throw Object.assign(new Error('Change expected amounts in the installment schedule.'),{status:400});
+  if(details.notes!==undefined)runQuery('UPDATE ops_customer_installments SET notes=? WHERE id=? AND customer_id=?',[String(details.notes),installmentId,cust.id]);
+  return getOpsCustomerById(cust.id);
 }
 
 // --- Voucher Controllers ---
 
 export function getAllOpsVouchers(filters?: { status?: string; search?: string }) {
   syncConvertedLeadsToOps();
-  seedOpsDefaultsIfEmpty();
   let sql = 'SELECT * FROM ops_vouchers WHERE 1=1';
   const params: any[] = [];
 
@@ -865,7 +797,13 @@ export function createOpsVoucher(data: any) {
   return hydrateVoucher(row);
 }
 
-export function updateOpsVoucher(id: string, data: any) {
+export function updateOpsVoucher(id: string, data: any, actor='system') {
+  const previous=queryOne('SELECT * FROM ops_vouchers WHERE id=?',[id]);if(!previous)return null;
+  const cost=moneyPaise(data.totalCost ?? previous.total_cost ?? 0),paid=moneyPaise(data.paidAmount ?? previous.paid_amount ?? 0);
+  if(paid>cost)throw Object.assign(new Error('Hotel payment cannot exceed the hotel cost.'),{status:400});
+  if(data.paidAmount!==undefined && paid<moneyPaise(previous.paid_amount || 0))throw Object.assign(new Error('Supplier payment reductions require an audited correction.'),{status:409});
+  runQuery('INSERT INTO workflow_events(id,parent_id,event,before_json,after_json,actor,created_at) VALUES(?,?,?,?,?,?,?)',[randomUUID(),id,'Hotel voucher update',JSON.stringify(previous),JSON.stringify(data),actor,new Date().toISOString()]);
+
   const fields: string[] = [];
   const params: any[] = [];
 
@@ -915,6 +853,11 @@ export function updateOpsVoucher(id: string, data: any) {
 }
 
 export function uploadOpsVoucherFile(id: string, confirmationNumber: string, fileName: string, fileUrl?: string) {
+  const existing = queryOne('SELECT file_url FROM ops_vouchers WHERE id = ?', [id]);
+  if (!existing) throw Object.assign(new Error('Voucher not found.'), { status: 404 });
+  const documentUrl = fileUrl || existing.file_url;
+  if (typeof documentUrl !== 'string' || !/^(data:(application\/pdf|image\/(png|jpeg|webp));base64,|https?:\/\/)/i.test(documentUrl)) throw Object.assign(new Error('Attach a PDF or image before marking this voucher uploaded.'), { status: 400 });
+
   const now = new Date().toISOString().replace('T', ' ').slice(0, 16);
   runQuery(
     `UPDATE ops_vouchers
@@ -935,7 +878,6 @@ export function deleteOpsVoucher(id: string) {
 
 export function getAllOpsItineraries() {
   syncConvertedLeadsToOps();
-  seedOpsDefaultsIfEmpty();
   const rows = queryAll('SELECT * FROM ops_itineraries ORDER BY created_at DESC');
   return rows.map((r) => hydrateItinerary(r));
 }
@@ -949,6 +891,8 @@ export function getOpsItineraryByBookingId(bookingId: string) {
 }
 
 export function updateOpsItinerary(id: string, data: any) {
+  if (data.feedbackScore !== undefined && (!Number.isInteger(data.feedbackScore) || data.feedbackScore < 0 || data.feedbackScore > 5)) throw Object.assign(new Error('Feedback rating must be between 0 and 5.'), { status: 400 });
+
   let existing = queryOne('SELECT * FROM ops_itineraries WHERE id = ? OR customer_id = ? OR booking_id = ?', [id, data.customerId || id, data.bookingId || id]);
 
   if (!existing) {
@@ -962,6 +906,10 @@ export function updateOpsItinerary(id: string, data: any) {
     existing = queryOne('SELECT * FROM ops_itineraries WHERE id = ?', [itinId]);
   }
 
+  if (data.readinessChecklist?.hotelVouchers === true && existing) {
+    const missing = queryOne("SELECT COUNT(*) AS count FROM ops_vouchers WHERE customer_id = ? AND (file_url = '' OR status = 'Pending')", [existing.customer_id]);
+    if (missing?.count > 0) throw Object.assign(new Error('Upload the required hotel vouchers before marking them ready.'), { status: 400 });
+  }
   const realId = existing ? existing.id : id;
   const fields: string[] = [];
   const params: any[] = [];
@@ -1209,11 +1157,11 @@ export function seedOpsDefaultsIfEmpty() {
 }
 
 export function resetOpsData() {
+  if(queryOne('SELECT lead_id FROM booking_snapshots LIMIT 1') || queryOne('SELECT id FROM receipt_events LIMIT 1'))throw Object.assign(new Error('Cannot reset operations with booking or receipt history.'),{status:409});
   runQuery('DELETE FROM ops_daily_activities');
   runQuery('DELETE FROM ops_itineraries');
   runQuery('DELETE FROM ops_vouchers');
   runQuery('DELETE FROM ops_customer_installments');
   runQuery('DELETE FROM ops_customers');
-  seedOpsDefaultsIfEmpty();
   return { success: true };
 }

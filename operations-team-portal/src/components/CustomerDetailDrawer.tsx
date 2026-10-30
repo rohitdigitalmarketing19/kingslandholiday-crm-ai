@@ -62,13 +62,11 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
     computedHotelTotalCost = customer.hotelTotalCost || 0;
   }
 
-  const totalPaid = installments
-    .filter((i) => i.status === 'Paid')
-    .reduce((sum, i) => sum + i.amount, 0);
+  const totalPaid = customer.receivedAmount ?? installments.reduce((sum,i)=>sum+Number(i.paidAmount ?? (i.status==='Paid'?i.amount:0)),0);
 
   const totalOverdue = installments
     .filter((i) => i.status === 'Overdue')
-    .reduce((sum, i) => sum + i.amount, 0);
+    .reduce((sum, i) => sum + Math.max(0,i.amount-Number(i.paidAmount || 0)), 0);
 
   const balanceDue = customer.totalAmount - totalPaid;
 

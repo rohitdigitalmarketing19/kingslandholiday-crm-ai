@@ -18,10 +18,7 @@ export async function fetchOpsCustomers(): Promise<Customer[]> {
     const data = await handleResponse<Customer[]>(res);
     saveCustomers(data);
     return data;
-  } catch (err) {
-    console.warn('Backend API fallback: Loading customers from local storage', err);
-    return getStoredCustomers();
-  }
+  } catch (err) { throw err; }
 }
 
 export async function createOpsCustomer(customerData: Partial<Customer>): Promise<Customer> {
@@ -32,33 +29,7 @@ export async function createOpsCustomer(customerData: Partial<Customer>): Promis
       body: JSON.stringify(customerData),
     });
     return await handleResponse<Customer>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Creating customer locally', err);
-    const existing = getStoredCustomers();
-    const newCust: Customer = {
-      id: customerData.id || `cust-${Date.now()}`,
-      bookingId: customerData.bookingId || `LIXKT-${Math.floor(8000 + Math.random() * 1999)}`,
-      name: customerData.name || 'New Guest',
-      email: customerData.email || '',
-      phone: customerData.phone || '',
-      destination: customerData.destination || '',
-      startDate: customerData.startDate || new Date().toISOString().split('T')[0],
-      endDate: customerData.endDate || new Date().toISOString().split('T')[0],
-      paxAdults: customerData.paxAdults || 2,
-      paxChildren: customerData.paxChildren || 0,
-      totalAmount: customerData.totalAmount || 1850,
-      currency: customerData.currency || 'INR',
-      assignedOpsManager: customerData.assignedOpsManager || 'Unassigned',
-      status: customerData.status || 'Upcoming',
-      installments: customerData.installments || [],
-      notes: customerData.notes || '',
-      specialRequests: customerData.specialRequests || '',
-      emergencyContact: customerData.emergencyContact || '',
-      createdAt: customerData.createdAt || new Date().toISOString().split('T')[0],
-    };
-    saveCustomers([newCust, ...existing]);
-    return newCust;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function updateOpsCustomer(id: string, customerData: Partial<Customer>): Promise<Customer> {
@@ -69,13 +40,7 @@ export async function updateOpsCustomer(id: string, customerData: Partial<Custom
       body: JSON.stringify(customerData),
     });
     return await handleResponse<Customer>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Updating customer locally', err);
-    const existing = getStoredCustomers();
-    const updated = existing.map((c) => (c.id === id ? { ...c, ...customerData } : c));
-    saveCustomers(updated);
-    return updated.find((c) => c.id === id)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function recordOpsPayment(
@@ -90,19 +55,7 @@ export async function recordOpsPayment(
       body: JSON.stringify({ installmentId, ...details }),
     });
     return await handleResponse<Customer>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Recording payment locally', err);
-    const existing = getStoredCustomers();
-    const updated = existing.map((c) => {
-      if (c.id !== customerId) return c;
-      const updatedInstallments = (c.installments || []).map((inst) =>
-        inst.id === installmentId ? { ...inst, ...details } : inst
-      );
-      return { ...c, installments: updatedInstallments };
-    });
-    saveCustomers(updated);
-    return updated.find((c) => c.id === customerId)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function updateOpsInstallment(
@@ -117,19 +70,7 @@ export async function updateOpsInstallment(
       body: JSON.stringify(details),
     });
     return await handleResponse<Customer>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Updating installment locally', err);
-    const existing = getStoredCustomers();
-    const updated = existing.map((c) => {
-      if (c.id !== customerId) return c;
-      const updatedInstallments = (c.installments || []).map((inst) =>
-        inst.id === installmentId ? { ...inst, ...details } : inst
-      );
-      return { ...c, installments: updatedInstallments };
-    });
-    saveCustomers(updated);
-    return updated.find((c) => c.id === customerId)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function fetchOpsVouchers(customers?: Customer[]): Promise<HotelVoucher[]> {
@@ -139,10 +80,7 @@ export async function fetchOpsVouchers(customers?: Customer[]): Promise<HotelVou
     const data = await handleResponse<HotelVoucher[]>(res);
     saveVouchers(data);
     return data;
-  } catch (err) {
-    console.warn('Backend API fallback: Loading vouchers from local storage', err);
-    return getStoredVouchers();
-  }
+  } catch (err) { throw err; }
 }
 
 export async function createOpsVoucher(voucherData: Partial<HotelVoucher>): Promise<HotelVoucher> {
@@ -153,17 +91,7 @@ export async function createOpsVoucher(voucherData: Partial<HotelVoucher>): Prom
       body: JSON.stringify(voucherData),
     });
     return await handleResponse<HotelVoucher>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Creating voucher locally', err);
-    const existing = getStoredVouchers();
-    const newVoucher = {
-      ...voucherData,
-      id: voucherData.id || `v-${Date.now()}`,
-      status: voucherData.status || 'Uploaded',
-    } as HotelVoucher;
-    saveVouchers([...existing.filter(v => v.id !== newVoucher.id), newVoucher]);
-    return newVoucher;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function uploadOpsVoucherFile(
@@ -179,25 +107,7 @@ export async function uploadOpsVoucherFile(
       body: JSON.stringify({ confirmationNumber, fileName, fileUrl }),
     });
     return await handleResponse<HotelVoucher>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Uploading voucher locally', err);
-    const existing = getStoredVouchers();
-    const updated = existing.map((v) =>
-      v.id === voucherId
-        ? {
-            ...v,
-            confirmationNumber,
-            fileName,
-            fileUrl: fileUrl || v.fileUrl,
-            status: 'Uploaded' as const,
-            uploadedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
-            uploadedBy: 'Ops Manager',
-          }
-        : v
-    );
-    saveVouchers(updated);
-    return updated.find((v) => v.id === voucherId)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function updateOpsVoucher(id: string, data: Partial<HotelVoucher>): Promise<HotelVoucher> {
@@ -208,13 +118,7 @@ export async function updateOpsVoucher(id: string, data: Partial<HotelVoucher>):
       body: JSON.stringify(data),
     });
     return await handleResponse<HotelVoucher>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Updating voucher locally', err);
-    const existing = getStoredVouchers();
-    const updated = existing.map((v) => (v.id === id ? { ...v, ...data } : v));
-    saveVouchers(updated);
-    return updated.find((v) => v.id === id)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function deleteOpsVoucher(id: string): Promise<boolean> {
@@ -224,13 +128,7 @@ export async function deleteOpsVoucher(id: string): Promise<boolean> {
     });
     const result = await handleResponse<{ success: boolean }>(res);
     return !!result?.success;
-  } catch (err) {
-    console.warn('Backend API fallback: Deleting voucher locally', err);
-    const existing = getStoredVouchers();
-    const updated = existing.filter((v) => v.id !== id);
-    saveVouchers(updated);
-    return true;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function fetchOpsItineraries(): Promise<TripItinerary[]> {
@@ -240,10 +138,7 @@ export async function fetchOpsItineraries(): Promise<TripItinerary[]> {
     const data = await handleResponse<TripItinerary[]>(res);
     saveItineraries(data);
     return data;
-  } catch (err) {
-    console.warn('Backend API fallback: Loading itineraries from local storage', err);
-    return getStoredItineraries();
-  }
+  } catch (err) { throw err; }
 }
 
 export async function updateOpsItinerary(id: string, data: Partial<TripItinerary>): Promise<TripItinerary> {
@@ -254,20 +149,11 @@ export async function updateOpsItinerary(id: string, data: Partial<TripItinerary
       body: JSON.stringify(data),
     });
     return await handleResponse<TripItinerary>(res);
-  } catch (err) {
-    console.warn('Backend API fallback: Updating itinerary locally', err);
-    const existing = getStoredItineraries();
-    const updated = existing.map((i) => (i.id === id ? { ...i, ...data } : i));
-    saveItineraries(updated);
-    return updated.find((i) => i.id === id)!;
-  }
+  } catch (err) { throw err; }
 }
 
 export async function resetOpsBackendData(): Promise<void> {
   try {
-    await fetch(`${API_BASE}/reset`, { method: 'POST' });
-  } catch (err) {
-    console.warn('Backend API fallback: Resetting local storage', err);
-    resetToDefaults();
-  }
+    await handleResponse(await fetch(`${API_BASE}/reset`, { method: 'POST' }));
+  } catch (err) { throw err; }
 }

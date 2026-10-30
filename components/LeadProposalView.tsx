@@ -503,27 +503,16 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const triggerRecordManualPayment = async (idx: number) => {
     const target = leadInstallments[idx];
     if (!target) return;
-    const updated = [...leadInstallments];
-    updated[idx].payment_status = 'Paid';
-    setLeadInstallments(updated);
-
-    await api.saveInstallmentSchedule(lead.id, updated);
-    await api.createPaymentSubmission({
-      payKey: target.pay_key || 'MANUAL',
-      leadId: lead.id,
-      customerName: lead.name,
-      mobile: lead.phone || '',
-      packageName: currentQuote?.packageTitle || lead.destination,
-      amountPaid: target.amount,
-      utrNumber: `MANUAL_REC_${Date.now().toString().slice(-6)}`,
-      paymentMode: 'Cash'
-    });
-    onAddNote(lead.id, `Recorded Manual Payment of ₹${target.amount.toLocaleString()} for "${target.title}"`, 'Action');
-    alert(`Payment of ₹${target.amount.toLocaleString()} recorded successfully for "${target.title}"!`);
+    try {
+      await api.confirmPayment({payKey:target.pay_key || target.id,amount:target.amount,paymentMode:'Cash',refNumber:`MANUAL-${Date.now()}`});
+      setLeadInstallments(await api.fetchLeadInstallments(lead.id));
+      alert('Manual payment recorded successfully.');
+    } catch(error) {alert((error as Error).message);}
   };
 
   const triggerRazorpayCheckout = (amount: number, title: string) => {
-    const keyId = paymentSettings?.key_id || 'rzp_test_51HKingslandDemoKey';
+    const keyId = paymentSettings?.key_id;
+    if (!keyId) {alert('Configure the payment gateway before opening checkout.');return;}
 
     const options = {
       key: keyId,
@@ -544,7 +533,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
           utrNumber: response.razorpay_payment_id || 'RAZORPAY_PAID',
           paymentMode: 'Razorpay'
         });
-        onUpdateStatus(lead.id, 'Closed Won');
+        alert('Payment reference submitted for verification. Accept the quotation separately to convert this lead.');
       },
       prefill: {
         name: lead.name,
@@ -584,8 +573,12 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const currentStatusLabel = currentOption?.label || lead?.status || 'NEW LEAD';
   const currentBadgeBg = currentOption?.badgeBg || 'bg-inverse';
 
-  const handleConfirmStatusUpdate = () => {
+  const handleConfirmStatusUpdate = async () => {
     if (pendingStatus && lead) {
+      if (pendingStatus.status === 'Closed Won') {
+        if (!currentQuote?.id) {alert('Save a quotation before converting this lead.');return;}
+        try {await api.acceptQuote(lead.id,currentQuote.id);} catch(error) {alert((error as Error).message);return;}
+      }
       if (pendingStatus.status === 'Postponed') {
         if (!postponeDate) {
           alert('Please enter or select the postponed travel / follow-up date.');
@@ -1084,7 +1077,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                    ? 'Please select the next follow-up or postponed travel date for this lead.' 
                    : pendingStatus.status === 'Follow-up'
                    ? 'Set scheduled customer touchpoint date, time & action note.'
-                   : <>Change status to <span className={`font-semibold ${pendingStatus.color}`}>{pendingStatus.label}</span>.</>}
+                   : pendingStatus.status === 'Closed Won' ? <>Confirm that the customer accepted <strong>{currentQuote?.packageTitle || 'this quotation'}</strong> at ₹{Number(currentQuote?.finalSellingPrice || 0).toLocaleString('en-IN')}. This locks the accepted quotation and creates the operations booking.</> : <>Change status to <span className={`font-semibold ${pendingStatus.color}`}>{pendingStatus.label}</span>.</>}
                </p>
 
                {pendingStatus.status === 'Postponed' && (

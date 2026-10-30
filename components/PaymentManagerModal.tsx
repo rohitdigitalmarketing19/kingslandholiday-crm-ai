@@ -46,7 +46,7 @@ interface Installment {
   amount: number;
   due_date: string;
   payment_condition: string;
-  payment_status: 'Pending' | 'Paid';
+  payment_status: 'Pending' | 'Partial' | 'Paid';
   pay_key?: string;
   comments?: string;
   notes?: string;
@@ -542,7 +542,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       alert('✅ Payment Received & EMI Installment Confirmed!');
     } catch (e) {
       console.error('Error confirming EMI payment:', e);
-      alert('Failed to confirm EMI payment.');
+      throw e;
     }
   };
 
@@ -558,8 +558,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   };
 
   const openRazorpayModal = (amount: number, title: string) => {
+    if(!settings.key_id){alert('Configure the payment gateway before opening checkout.');return;}
     const options = {
-      key: settings.key_id || 'rzp_test_51HKingslandDemoKey',
+      key: settings.key_id,
       amount: amount * 100, // Amount in paise
       currency: 'INR',
       name: 'Kingsland Holidays Services',
@@ -1868,7 +1869,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     setConfirmRef('');
                     setConfirmMode('UPI');
                     setConfirmComment('');
-                  } finally {
+                  } catch(error) {alert((error as Error).message || 'Payment was not confirmed.');} finally {
                     setIsConfirmingPayment(false);
                   }
                 }}

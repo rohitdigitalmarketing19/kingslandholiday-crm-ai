@@ -4,6 +4,17 @@
  */
 
 const API_BASE = '/api';
+export const acceptQuote = (leadId: string,quoteId: string) => request<any>(`/leads/${encodeURIComponent(leadId)}/quotes/${encodeURIComponent(quoteId)}/accept`,{method:'POST'});
+
+export const deleteHotelRate = (id: string) => request<{ success: boolean; id: string }>(`/hotel-rates/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const fetchHotelRates = () => request<import('../utils/hotelRates').HotelRate[]>('/hotel-rates');
+export const saveHotelRate = (data: any, id?: string) => request<import('../utils/hotelRates').HotelRate>(`/hotel-rates${id ? `/${encodeURIComponent(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(data) });
+export async function fetchHotelRatePdf(id: string): Promise<Blob> {
+  const res = await fetch(`/api/hotel-rates/${encodeURIComponent(id)}/pdf`, { headers: { 'x-user-id': localStorage.getItem('kingsland_active_user_id') || '' } });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Unable to load rate sheet.');
+  return res.blob();
+}
+
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const customKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') : null;

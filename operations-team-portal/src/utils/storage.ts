@@ -19,7 +19,7 @@ export function ensureCustomerInstallments(c: Customer): PaymentInstallment[] {
       const isPast = inst.dueDate ? inst.dueDate < todayStr : false;
       return {
         ...inst,
-        status: isPast ? 'Overdue' : 'Pending',
+        status: isPast ? 'Overdue' : inst.paidAmount && inst.paidAmount > 0 ? 'Partial' : 'Pending',
       };
     });
   }

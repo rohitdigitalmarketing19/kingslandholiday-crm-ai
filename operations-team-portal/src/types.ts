@@ -12,13 +12,14 @@ export type TripStatus = 'Upcoming' | 'In-Transit' | 'Completed' | 'Cancelled';
 
 export type VoucherStatus = 'Pending' | 'Uploaded' | 'Sent to Customer';
 
-export type PaymentStatus = 'Paid' | 'Pending' | 'Overdue';
+export type PaymentStatus = 'Paid' | 'Partial' | 'Pending' | 'Overdue';
 
 export interface PaymentInstallment {
   id: string;
   installmentNumber: number;
   title: string;
   amount: number;
+  paidAmount?: number;
   dueDate: string;
   status: PaymentStatus;
   paidAt?: string;
@@ -39,6 +40,7 @@ export interface Customer {
   paxAdults: number;
   paxChildren: number;
   totalAmount: number;
+  receivedAmount?: number;
   currency: string;
   assignedOpsManager: string;
   status: TripStatus;

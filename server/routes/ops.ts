@@ -33,7 +33,7 @@ router.get('/customers', (req: Request, res: Response) => {
     res.json(customers);
   } catch (err) {
     console.error('Error fetching ops customers:', err);
-    res.status(500).json({ error: 'Failed to fetch operations customers' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to fetch operations customers'});
   }
 });
 
@@ -45,7 +45,7 @@ router.get('/customers/:id', (req: Request, res: Response) => {
     res.json(customer);
   } catch (err) {
     console.error('Error fetching customer:', err);
-    res.status(500).json({ error: 'Failed to fetch customer' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to fetch customer'});
   }
 });
 
@@ -55,19 +55,19 @@ router.post('/customers', (req: Request, res: Response) => {
     res.status(201).json(newCustomer);
   } catch (err) {
     console.error('Error creating ops customer:', err);
-    res.status(500).json({ error: 'Failed to create operations customer' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to create operations customer'});
   }
 });
 
 router.put('/customers/:id', (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const updated = updateOpsCustomer(id, req.body);
+    const updated = updateOpsCustomer(id, req.body, res.locals.user?.id);
     if (!updated) return res.status(404).json({ error: 'Customer not found' });
     res.json(updated);
   } catch (err) {
     console.error('Error updating ops customer:', err);
-    res.status(500).json({ error: 'Failed to update operations customer' });
+    res.status((err as any).status || 500).json({error:(err as Error).message});
   }
 });
 
@@ -79,7 +79,7 @@ router.delete('/customers/:id', (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting ops customer:', err);
-    res.status(500).json({ error: 'Failed to delete operations customer' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to delete operations customer'});
   }
 });
 
@@ -88,22 +88,22 @@ router.post('/customers/:id/payments', (req: Request, res: Response) => {
     const id = req.params.id as string;
     const { installmentId, ...details } = req.body;
     if (!installmentId) return res.status(400).json({ error: 'installmentId is required' });
-    const updatedCustomer = recordOpsPayment(id, installmentId, details);
+    const updatedCustomer = recordOpsPayment(id, installmentId, details, res.locals.user?.id);
     res.json(updatedCustomer);
   } catch (err) {
     console.error('Error recording ops payment:', err);
-    res.status(500).json({ error: 'Failed to record payment' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to record payment'});
   }
 });
 
 router.patch('/customers/:id/installments/:installmentId', (req: Request, res: Response) => {
   try {
     const { id, installmentId } = req.params;
-    const updatedCustomer = updateOpsInstallment(id as string, installmentId as string, req.body);
+    const updatedCustomer = updateOpsInstallment(id as string, installmentId as string, req.body, res.locals.user?.id);
     res.json(updatedCustomer);
   } catch (err) {
     console.error('Error updating ops installment:', err);
-    res.status(500).json({ error: 'Failed to update installment' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to update installment'});
   }
 });
 
@@ -118,7 +118,7 @@ router.get('/vouchers', (req: Request, res: Response) => {
     res.json(vouchers);
   } catch (err) {
     console.error('Error fetching vouchers:', err);
-    res.status(500).json({ error: 'Failed to fetch vouchers' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to fetch vouchers'});
   }
 });
 
@@ -128,19 +128,19 @@ router.post('/vouchers', (req: Request, res: Response) => {
     res.status(201).json(voucher);
   } catch (err) {
     console.error('Error creating voucher:', err);
-    res.status(500).json({ error: 'Failed to create voucher' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to create voucher'});
   }
 });
 
 router.put('/vouchers/:id', (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const voucher = updateOpsVoucher(id, req.body);
+    const voucher = updateOpsVoucher(id, req.body, res.locals.user?.id);
     if (!voucher) return res.status(404).json({ error: 'Voucher not found' });
     res.json(voucher);
   } catch (err) {
     console.error('Error updating voucher:', err);
-    res.status(500).json({ error: 'Failed to update voucher' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to update voucher'});
   }
 });
 
@@ -155,7 +155,7 @@ router.post('/vouchers/:id/upload', (req: Request, res: Response) => {
     res.json(voucher);
   } catch (err) {
     console.error('Error uploading voucher file:', err);
-    res.status(500).json({ error: 'Failed to upload voucher' });
+    res.status((err as any).status || 500).json({ error: (err as any).status ? (err as Error).message : 'Failed to upload voucher' });
   }
 });
 
@@ -167,7 +167,7 @@ router.delete('/vouchers/:id', (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting voucher:', err);
-    res.status(500).json({ error: 'Failed to delete voucher' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to delete voucher'});
   }
 });
 
@@ -179,7 +179,7 @@ router.get('/itineraries', (req: Request, res: Response) => {
     res.json(itineraries);
   } catch (err) {
     console.error('Error fetching itineraries:', err);
-    res.status(500).json({ error: 'Failed to fetch itineraries' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to fetch itineraries'});
   }
 });
 
@@ -191,7 +191,7 @@ router.get('/itineraries/:bookingId', (req: Request, res: Response) => {
     res.json(itinerary);
   } catch (err) {
     console.error('Error fetching itinerary:', err);
-    res.status(500).json({ error: 'Failed to fetch itinerary' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to fetch itinerary'});
   }
 });
 
@@ -202,7 +202,7 @@ router.put('/itineraries/:id', (req: Request, res: Response) => {
     res.json(updated);
   } catch (err) {
     console.error('Error updating itinerary:', err);
-    res.status(500).json({ error: 'Failed to update itinerary' });
+    res.status((err as any).status || 500).json({ error: (err as any).status ? (err as Error).message : 'Failed to update itinerary' });
   }
 });
 
@@ -214,7 +214,7 @@ router.post('/itineraries/:id/activities', (req: Request, res: Response) => {
     res.json(updated);
   } catch (err) {
     console.error('Error adding activity:', err);
-    res.status(500).json({ error: 'Failed to add/update activity' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to add/update activity'});
   }
 });
 
@@ -226,7 +226,7 @@ router.delete('/activities/:id', (req: Request, res: Response) => {
     res.json({ success: true });
   } catch (err) {
     console.error('Error deleting activity:', err);
-    res.status(500).json({ error: 'Failed to delete activity' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to delete activity'});
   }
 });
 
@@ -238,7 +238,7 @@ router.post('/reset', (req: Request, res: Response) => {
     res.json(result);
   } catch (err) {
     console.error('Error resetting ops data:', err);
-    res.status(500).json({ error: 'Failed to reset operations data' });
+    res.status((err as any).status || 500).json({error:(err as any).status ? (err as Error).message : 'Failed to reset operations data'});
   }
 });
 

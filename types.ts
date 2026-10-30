@@ -168,7 +168,7 @@ export interface PaymentLink {
   duration: string;
   hotels: string;
   travelers: string;
-  status: 'Pending' | 'Paid' | 'Failed';
+  status: 'Pending' | 'Partial' | 'Paid' | 'Failed';
   createdAt: string;
 }
 

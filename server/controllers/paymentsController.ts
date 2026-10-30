@@ -1,3 +1,5 @@
+import { recordReceipt, moneyPaise } from '../services/receipts';
+import { randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { runQuery, queryAll, queryOne } from '../db/connection';
 
@@ -20,7 +22,7 @@ export function createPaymentLink(data: {
   travelers?: string;
 }) {
   const id = `pay-link-${uuidv4()}`;
-  const payKey = `pay_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+  const payKey = `pay_${randomBytes(24).toString('hex')}`;
   const gst = data.gst || 0;
   const fee = data.fee || 0;
   const discount = data.discount || 0;
@@ -196,48 +198,24 @@ export function getAllPaymentSubmissions(leadId?: string) {
 }
 
 export function clearAllPaymentSubmissions() {
+  if(queryOne("SELECT id FROM payment_submissions WHERE verification_status='Approved' LIMIT 1"))throw Object.assign(new Error('Verified receipts cannot be deleted.'),{status:409});
   runQuery(`DELETE FROM payment_submissions`);
   return { success: true, message: 'All payment submissions cleared.' };
 }
 
-export function updatePaymentVerificationStatus(id: string, status: 'Approved' | 'Rejected' | 'Pending Review') {
-  runQuery(`UPDATE payment_submissions SET verification_status = ? WHERE id = ?`, [status, id]);
-  const sub = queryOne(`SELECT * FROM payment_submissions WHERE id = ?`, [id]);
-
-  if (sub && sub.lead_id) {
-    const now = new Date().toISOString();
-    const noteId = `note-${uuidv4()}`;
-    const noteText = `Payment Verification Status Updated to: ${status} (₹${sub.amount_paid} - UTR: ${sub.utr_number})`;
-    runQuery(
-      `INSERT INTO lead_notes (id, lead_id, text, type, timestamp) VALUES (?, ?, ?, 'StatusChange', ?)`,
-      [noteId, sub.lead_id, noteText, now]
-    );
-
-    if (status === 'Approved') {
-      runQuery(`UPDATE leads SET status = 'Closed Won' WHERE id = ?`, [sub.lead_id]);
-    }
-  }
-
-  return sub;
+export function updatePaymentVerificationStatus(id: string,status: 'Approved' | 'Rejected' | 'Pending Review',actor='system') {
+  if(!['Approved','Rejected','Pending Review'].includes(status))throw Object.assign(new Error('Invalid verification status.'),{status:400});
+  const sub=queryOne('SELECT * FROM payment_submissions WHERE id=?',[id]);if(!sub)return null;
+  if(sub.verification_status==='Approved' && status!=='Approved')throw Object.assign(new Error('Verified money requires an audited correction.'),{status:409});
+  if(status==='Approved')recordReceipt(sub.pay_key,sub.amount_paid,sub.utr_number,sub.payment_mode,'Receipt verified by staff',actor);
+  runQuery('UPDATE payment_submissions SET verification_status=? WHERE id=?',[status,id]);return queryOne('SELECT * FROM payment_submissions WHERE id=?',[id]);
 }
 
 // Settings (Razorpay API Keys, UPI & Bank credentials)
 export function getPaymentSettings() {
   let settings = queryOne(`SELECT * FROM payment_settings ORDER BY id ASC LIMIT 1`);
   if (!settings) {
-    return {
-      key_id: 'rzp_test_51HKingslandDemoKey',
-      key_secret: '',
-      upi_id: 'kingslandholiday@okicici',
-      upi_payee: 'Kingsland Holidays Services Pvt Ltd',
-      bank_name: 'HDFC Bank',
-      bank_acc_num: '50200087628332',
-      bank_ifsc: 'HDFC0001234',
-      bank_branch: 'Connaught Place, New Delhi',
-      bank_acc_name: 'Kingsland Holidays Services',
-      support_phone: '+91 6376983416',
-      card_fee_percentage: 2.5
-    };
+    return { key_id:'', key_secret:'', upi_id:'', upi_payee:'', bank_name:'', bank_acc_num:'', bank_ifsc:'', bank_branch:'', bank_acc_name:'', support_phone:'', card_fee_percentage:0 };
   }
   if (settings.card_fee_percentage === undefined || settings.card_fee_percentage === null) {
     settings.card_fee_percentage = 2.5;
@@ -246,7 +224,7 @@ export function getPaymentSettings() {
 }
 
 export function savePaymentSettings(data: any) {
-  const existing = queryOne(`SELECT id FROM payment_settings LIMIT 1`);
+  const existing = queryOne(`SELECT * FROM payment_settings LIMIT 1`);
   const cardFee = data.card_fee_percentage !== undefined ? Number(data.card_fee_percentage) : 2.5;
   
   try {
@@ -258,7 +236,7 @@ export function savePaymentSettings(data: any) {
       `UPDATE payment_settings SET key_id = ?, key_secret = ?, upi_id = ?, upi_payee = ?, bank_name = ?, bank_acc_num = ?, bank_ifsc = ?, bank_branch = ?, bank_acc_name = ?, support_phone = ?, card_fee_percentage = ? WHERE id = ?`,
       [
         data.key_id || '',
-        data.key_secret || '',
+        data.key_secret || existing?.key_secret || '',
         data.upi_id || '',
         data.upi_payee || '',
         data.bank_name || '',
@@ -276,7 +254,7 @@ export function savePaymentSettings(data: any) {
       `INSERT INTO payment_settings (key_id, key_secret, upi_id, upi_payee, bank_name, bank_acc_num, bank_ifsc, bank_branch, bank_acc_name, support_phone, card_fee_percentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.key_id || '',
-        data.key_secret || '',
+        data.key_secret || existing?.key_secret || '',
         data.upi_id || '',
         data.upi_payee || '',
         data.bank_name || '',
@@ -330,8 +308,23 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
   const lead = queryOne(`SELECT * FROM leads WHERE id = ? OR trip_id = ?`, [leadId, leadId]);
   const targetLeadId = lead?.id || leadId;
 
+  if(!lead) throw Object.assign(new Error('Lead not found.'),{status:404});
+  const snapshot=queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?',[targetLeadId]);
+  const quote=queryOne('SELECT final_selling_price FROM quotes WHERE lead_id=? ORDER BY created_at DESC LIMIT 1',[targetLeadId]);
+  const cap=snapshot?.total_paise ?? (quote ? moneyPaise(quote.final_selling_price) : 0);
+  const seen=new Set();let scheduleTotal=0;
+  for(const row of installments) {
+    const amount=moneyPaise(row.amount);if(amount<=0)throw Object.assign(new Error('Installment amounts must be positive.'),{status:400});scheduleTotal+=amount;
+    if(row.id && seen.has(row.id))throw Object.assign(new Error('Duplicate installment.'),{status:400});seen.add(row.id);
+    const prior=row.id ? queryOne('SELECT * FROM payment_installments WHERE id=?',[row.id]) : null;
+    if(prior && prior.lead_id!==targetLeadId)throw Object.assign(new Error('Installment belongs to another booking.'),{status:403});
+    if(prior?.paid_amount>0 && moneyPaise(prior.amount)!==amount)throw Object.assign(new Error('A received installment cannot be repriced.'),{status:409});
+    if(!prior?.paid_amount && (row.payment_status==='Paid' || Number(row.paid_amount)>0))throw Object.assign(new Error('Use Record Payment to verify money received.'),{status:400});
+  }
+  for(const prior of queryAll('SELECT * FROM payment_installments WHERE lead_id=? AND paid_amount>0',[targetLeadId])) if(!seen.has(prior.id))scheduleTotal+=moneyPaise(prior.amount);
+  if(scheduleTotal>cap)throw Object.assign(new Error('Installment schedule exceeds the quoted booking amount.'),{status:400});
   // Delete existing non-paid installments for this lead
-  runQuery(`DELETE FROM payment_installments WHERE (lead_id = ? OR lead_id = ?) AND payment_status != 'Paid'`, [targetLeadId, leadId]);
+  runQuery(`DELETE FROM payment_installments WHERE (lead_id = ? OR lead_id = ?) AND COALESCE(paid_amount,0) = 0`, [targetLeadId, leadId]);
 
   const savedInstallments = [];
   const now = new Date().toISOString();
@@ -339,7 +332,9 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
   for (let idx = 0; idx < installments.length; idx++) {
     const inst = installments[idx];
     const id = inst.id || `inst-${uuidv4()}`;
-    const payKey = inst.pay_key || '';
+    const prior=queryOne('SELECT * FROM payment_installments WHERE id=?',[id]);
+    if(prior?.paid_amount>0) {savedInstallments.push(prior);continue;}
+    const payKey = inst.pay_key || `pay_${randomBytes(24).toString('hex')}`;
     const instComment = inst.comments || inst.notes || '';
 
     try {
@@ -453,6 +448,8 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
     savedInstallments.push(queryOne(`SELECT * FROM payment_installments WHERE id = ?`, [id]));
   }
 
+  for(const prior of queryAll('SELECT * FROM payment_installments WHERE lead_id=? AND paid_amount>0',[targetLeadId])) if(!savedInstallments.some(row=>row.id===prior.id))savedInstallments.push(prior);
+
   // Also sync directly to ops_customer_installments if customer exists in operations
   try {
     const custId = `cust-${targetLeadId}`;
@@ -473,7 +470,7 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
             sInst.title,
             sInst.amount,
             sInst.due_date || '',
-            sInst.payment_status === 'Paid' ? 'Paid' : 'Pending',
+            sInst.payment_status || 'Pending',
             sInst.payment_status === 'Paid' ? now.split('T')[0] : '',
             sInst.payment_mode || '',
             sInst.transaction_ref || '',
@@ -513,324 +510,17 @@ export function updateInstallmentComment(id: string, comment: string) {
   return queryOne(`SELECT * FROM payment_installments WHERE id = ? OR pay_key = ?`, [id, id]) || { id, comments: commentText, notes: commentText };
 }
 
-export function updateInstallmentStatus(
-  id: string,
-  status: 'Pending' | 'Paid',
-  paidAmount?: number,
-  paymentMode?: string,
-  transactionRef?: string,
-  comments?: string
-) {
-  const now = new Date().toISOString().split('T')[0];
-  const nowIso = new Date().toISOString();
-  const mode = paymentMode || 'UPI';
-  const ref = transactionRef || `TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-  const commentText = (comments || '').trim();
-
-  // 1. Update in payment_installments (by id or by pay_key)
-  try {
-    if (commentText) {
-      runQuery(
-        `UPDATE payment_installments
-         SET payment_status = ?, paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?, comments = ?, notes = ?
-         WHERE id = ? OR pay_key = ?`,
-        [status, status === 'Paid' ? (paidAmount || 0) : 0, status === 'Paid' ? now : '', status === 'Paid' ? mode : '', status === 'Paid' ? ref : '', commentText, commentText, id, id]
-      );
-    } else {
-      runQuery(
-        `UPDATE payment_installments
-         SET payment_status = ?, paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?
-         WHERE id = ? OR pay_key = ?`,
-        [status, status === 'Paid' ? (paidAmount || 0) : 0, status === 'Paid' ? now : '', status === 'Paid' ? mode : '', status === 'Paid' ? ref : '', id, id]
-      );
-    }
-  } catch (_instErr) {
-    runQuery(
-      `UPDATE payment_installments
-       SET payment_status = ?, paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?
-       WHERE id = ? OR pay_key = ?`,
-      [status, status === 'Paid' ? (paidAmount || 0) : 0, status === 'Paid' ? now : '', status === 'Paid' ? mode : '', status === 'Paid' ? ref : '', id, id]
-    );
+export function updateInstallmentStatus(id: string,status: 'Pending' | 'Paid',paidAmount?: number,paymentMode?: string,transactionRef?: string,comments?: string,actor='system') {
+  if(status!=='Paid') {
+    const row=queryOne('SELECT * FROM payment_installments WHERE id=? OR pay_key=?',[id,id]);
+    if(!row) throw Object.assign(new Error('Installment not found.'),{status:404});
+    if(row.paid_amount>0) throw Object.assign(new Error('Verified receipts cannot be reset. An audited correction is required.'),{status:409});
+    return row;
   }
-
-  let inst = queryOne(`SELECT * FROM payment_installments WHERE id = ? OR pay_key = ?`, [id, id]);
-
-  // 2. Update payment_links
-  const paidAmt = status === 'Paid' ? (paidAmount || inst?.amount || 0) : 0;
-  try {
-    if (commentText) {
-      runQuery(
-        `UPDATE payment_links
-         SET status = ?, paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ?, comments = ?, notes = ?
-         WHERE pay_key = ? OR id = ?`,
-        [status, paidAmt, status === 'Paid' ? now : '', status === 'Paid' ? ref : '', status === 'Paid' ? mode : '', commentText, commentText, id, id]
-      );
-    } else {
-      runQuery(
-        `UPDATE payment_links
-         SET status = ?, paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ?
-         WHERE pay_key = ? OR id = ?`,
-        [status, paidAmt, status === 'Paid' ? now : '', status === 'Paid' ? ref : '', status === 'Paid' ? mode : '', id, id]
-      );
-    }
-  } catch (_linkErr) {}
-
-  if (inst && inst.pay_key) {
-    try {
-      if (commentText) {
-        runQuery(
-          `UPDATE payment_links
-           SET status = ?, paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ?, comments = ?, notes = ?
-           WHERE pay_key = ?`,
-          [status, paidAmt, status === 'Paid' ? now : '', status === 'Paid' ? ref : '', status === 'Paid' ? mode : '', commentText, commentText, inst.pay_key]
-        );
-      } else {
-        runQuery(
-          `UPDATE payment_links
-           SET status = ?, paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ?
-           WHERE pay_key = ?`,
-          [status, paidAmt, status === 'Paid' ? now : '', status === 'Paid' ? ref : '', status === 'Paid' ? mode : '', inst.pay_key]
-        );
-      }
-    } catch (_linkKeyErr) {}
-  }
-
-  // 3. Sync with ops_customer_installments
-  try {
-    const finalNote = commentText || inst?.comments || inst?.notes || '';
-    if (inst) {
-      const custId = `cust-${inst.lead_id}`;
-      runQuery(
-        `UPDATE ops_customer_installments
-         SET status = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?, notes = ?
-         WHERE id = ? OR (customer_id = ? AND title = ?)`,
-        [status, status === 'Paid' ? now : '', status === 'Paid' ? mode : '', status === 'Paid' ? ref : '', finalNote, inst.id, custId, inst.title]
-      );
-    } else {
-      runQuery(
-        `UPDATE ops_customer_installments
-         SET status = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?, notes = ?
-         WHERE id = ?`,
-        [status, status === 'Paid' ? now : '', status === 'Paid' ? mode : '', status === 'Paid' ? ref : '', finalNote, id]
-      );
-    }
-  } catch (_e) {}
-
-  // 4. If marked as Paid, sync/update payment_submissions audit trail
-  if (status === 'Paid' && inst) {
-    try {
-      const lead = queryOne(`SELECT * FROM leads WHERE id = ?`, [inst.lead_id]);
-      const finalNote = commentText || inst?.comments || inst?.notes || '';
-      const keyToMatch = inst.pay_key || id;
-      const titleToMatch = inst.title || 'EMI Installment';
-
-      const existingSub = queryOne(
-        `SELECT id FROM payment_submissions WHERE pay_key = ? OR (lead_id = ? AND package_name = ?)`,
-        [keyToMatch, inst.lead_id, titleToMatch]
-      );
-
-      if (existingSub) {
-        try {
-          runQuery(
-            `UPDATE payment_submissions
-             SET verification_status = 'Approved', utr_number = ?, payment_mode = ?, amount_paid = ?, comments = ?, notes = ?
-             WHERE id = ?`,
-            [ref, mode, paidAmt, finalNote, finalNote, existingSub.id]
-          );
-        } catch (_e) {
-          runQuery(
-            `UPDATE payment_submissions
-             SET verification_status = 'Approved', utr_number = ?, payment_mode = ?, amount_paid = ?
-             WHERE id = ?`,
-            [ref, mode, paidAmt, existingSub.id]
-          );
-        }
-      } else {
-        const subId = `sub-${uuidv4()}`;
-        try {
-          runQuery(
-            `INSERT INTO payment_submissions (id, pay_key, lead_id, customer_name, mobile, package_name, amount_paid, utr_number, payment_mode, comments, notes, verification_status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', ?)`,
-            [
-              subId,
-              keyToMatch,
-              inst.lead_id,
-              lead?.name || 'Customer',
-              lead?.phone || '',
-              titleToMatch,
-              paidAmt,
-              ref,
-              mode,
-              finalNote,
-              finalNote,
-              nowIso
-            ]
-          );
-        } catch (_subInsErr) {
-          runQuery(
-            `INSERT INTO payment_submissions (id, pay_key, lead_id, customer_name, mobile, package_name, amount_paid, utr_number, payment_mode, verification_status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', ?)`,
-            [
-              subId,
-              keyToMatch,
-              inst.lead_id,
-              lead?.name || 'Customer',
-              lead?.phone || '',
-              titleToMatch,
-              paidAmt,
-              ref,
-              mode,
-              nowIso
-            ]
-          );
-        }
-      }
-    } catch (_subErr) {}
-  }
-
-  return inst || { id, status, paidAmount: paidAmt };
+  recordReceipt(id,paidAmount,transactionRef,paymentMode,comments,actor);
+  return queryOne('SELECT * FROM payment_installments WHERE id=? OR pay_key=?',[id,id]);
 }
 
-export function confirmPaymentLink(
-  payKeyOrId: string,
-  refNumber?: string,
-  paymentMode?: string,
-  amount?: number,
-  comments?: string
-) {
-  const now = new Date().toISOString().split('T')[0];
-  const nowIso = new Date().toISOString();
-  const mode = paymentMode || 'UPI';
-  const ref = refNumber || `CONFIRMED-${Date.now()}`;
-  const commentText = (comments || '').trim();
-
-  // 1. Update link
-  const link = queryOne(`SELECT * FROM payment_links WHERE pay_key = ? OR id = ?`, [payKeyOrId, payKeyOrId]);
-  const inst = queryOne(`SELECT * FROM payment_installments WHERE pay_key = ? OR id = ?`, [payKeyOrId, payKeyOrId]);
-  const paidAmt = amount || link?.net_amount || link?.amount || inst?.amount || 0;
-  const leadId = link?.lead_id || inst?.lead_id || '';
-
-  try {
-    if (commentText) {
-      runQuery(
-        `UPDATE payment_links SET status = 'Paid', paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ?, comments = ?, notes = ? WHERE pay_key = ? OR id = ?`,
-        [paidAmt, now, ref, mode, commentText, commentText, payKeyOrId, payKeyOrId]
-      );
-    } else {
-      runQuery(
-        `UPDATE payment_links SET status = 'Paid', paid_amount = ?, paid_at = ?, transaction_ref = ?, payment_mode = ? WHERE pay_key = ? OR id = ?`,
-        [paidAmt, now, ref, mode, payKeyOrId, payKeyOrId]
-      );
-    }
-  } catch (_e) {}
-
-  // 2. Update installment
-  try {
-    if (commentText) {
-      runQuery(
-        `UPDATE payment_installments
-         SET payment_status = 'Paid', paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?, comments = ?, notes = ?
-         WHERE pay_key = ? OR id = ?`,
-        [paidAmt, now, mode, ref, commentText, commentText, payKeyOrId, payKeyOrId]
-      );
-    } else {
-      runQuery(
-        `UPDATE payment_installments
-         SET payment_status = 'Paid', paid_amount = ?, paid_at = ?, payment_mode = ?, transaction_ref = ?
-         WHERE pay_key = ? OR id = ?`,
-        [paidAmt, now, mode, ref, payKeyOrId, payKeyOrId]
-      );
-    }
-  } catch (_e) {}
-
-  // 3. Update ops customer installments
-  if (leadId) {
-    const custId = `cust-${leadId}`;
-    const opsCust = queryOne("SELECT id FROM ops_customers WHERE id = ? OR id = ? OR booking_id = ?", [custId, leadId, leadId]);
-    const targetCustId = opsCust ? opsCust.id : custId;
-    const finalNote = commentText || inst?.comments || inst?.notes || '';
-
-    // Check if there is an ops installment with this id or pay_key
-    const matchedInst = queryOne("SELECT id FROM ops_customer_installments WHERE id = ? OR id = ?", [payKeyOrId, link?.id || inst?.id]);
-    if (matchedInst) {
-      runQuery(
-        `UPDATE ops_customer_installments
-         SET status = 'Paid', paid_at = ?, payment_mode = ?, transaction_ref = ?, notes = ?
-         WHERE id = ?`,
-        [now, mode, ref, finalNote, matchedInst.id]
-      );
-    } else {
-      // Find the first pending/overdue installment for this customer
-      const firstPending = queryOne(
-        "SELECT id FROM ops_customer_installments WHERE customer_id = ? AND status != 'Paid' ORDER BY installment_number ASC LIMIT 1",
-        [targetCustId]
-      );
-      if (firstPending) {
-        runQuery(
-          `UPDATE ops_customer_installments
-           SET status = 'Paid', paid_at = ?, payment_mode = ?, transaction_ref = ?, notes = ?
-           WHERE id = ?`,
-          [now, mode, ref, finalNote, firstPending.id]
-        );
-      }
-    }
-  }
-
-  // 4. Sync payment_submissions (Deduplicated single record)
-  try {
-    const lead = leadId ? queryOne(`SELECT * FROM leads WHERE id = ?`, [leadId]) : null;
-    const custName = link?.customer_name || lead?.name || 'Customer';
-    const custPhone = link?.customer_phone || lead?.phone || '';
-    const pkgName = link?.package_name || inst?.title || 'Tour Payment';
-    const keyToMatch = payKeyOrId || link?.pay_key || inst?.pay_key || '';
-    const finalNote = commentText || link?.comments || inst?.comments || inst?.notes || '';
-
-    const existingSub = keyToMatch ? queryOne(`SELECT id FROM payment_submissions WHERE pay_key = ? OR (lead_id = ? AND package_name = ?)`, [keyToMatch, leadId, pkgName]) : null;
-
-    if (existingSub) {
-      try {
-        runQuery(
-          `UPDATE payment_submissions
-           SET verification_status = 'Approved', utr_number = ?, payment_mode = ?, amount_paid = ?, comments = ?, notes = ?
-           WHERE id = ?`,
-          [ref, mode, paidAmt, finalNote, finalNote, existingSub.id]
-        );
-      } catch (_e) {
-        runQuery(
-          `UPDATE payment_submissions
-           SET verification_status = 'Approved', utr_number = ?, payment_mode = ?, amount_paid = ?
-           WHERE id = ?`,
-          [ref, mode, paidAmt, existingSub.id]
-        );
-      }
-    } else {
-      const subId = `sub-${uuidv4()}`;
-      try {
-        runQuery(
-          `INSERT INTO payment_submissions (id, pay_key, lead_id, customer_name, mobile, package_name, amount_paid, utr_number, payment_mode, comments, notes, verification_status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', ?)`,
-          [subId, keyToMatch, leadId, custName, custPhone, pkgName, paidAmt, ref, mode, finalNote, finalNote, nowIso]
-        );
-      } catch (_subInsErr) {
-        runQuery(
-          `INSERT INTO payment_submissions (id, pay_key, lead_id, customer_name, mobile, package_name, amount_paid, utr_number, payment_mode, verification_status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Approved', ?)`,
-          [subId, keyToMatch, leadId, custName, custPhone, pkgName, paidAmt, ref, mode, nowIso]
-        );
-      }
-    }
-  } catch (_subErr) {}
-
-  // 5. Add note to lead
-  if (leadId) {
-    try {
-      const noteText = `Payment Confirmed: ₹${paidAmt.toLocaleString()} via ${mode} (Ref: ${ref}) for ${link?.package_name || inst?.title || 'Package'}`;
-      runQuery(
-        `INSERT INTO lead_notes (id, lead_id, text, type, timestamp) VALUES (?, ?, ?, 'Action', ?)`,
-        [`note-${uuidv4()}`, leadId, noteText, nowIso]
-      );
-    } catch (_noteErr) {}
-  }
-
-  return { success: true, payKeyOrId, status: 'Paid', amount: paidAmt, refNumber: ref };
+export function confirmPaymentLink(payKeyOrId: string,refNumber?: string,paymentMode?: string,amount?: number,comments?: string,actor='system') {
+  return recordReceipt(payKeyOrId,amount,refNumber,paymentMode,comments,actor);
 }

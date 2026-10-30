@@ -16,7 +16,7 @@ const router = express.Router();
 router.get('/', (_req, res) => {
   try {
     const settings = getAgencySettings();
-    res.json(settings);
+    const {smtp_pass,...safe}=settings;res.json({...safe,smtp_pass:'',has_smtp_password:!!smtp_pass});
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to fetch settings' });
   }
@@ -24,8 +24,8 @@ router.get('/', (_req, res) => {
 
 router.post('/', (req, res) => {
   try {
-    const updated = updateAgencySettings(req.body);
-    res.json(updated);
+    const updated = updateAgencySettings({...req.body,smtp_pass:req.body.smtp_pass || undefined});
+    const {smtp_pass,...safe}=updated;res.json({...safe,smtp_pass:'',has_smtp_password:!!smtp_pass});
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to update settings' });
   }
@@ -33,8 +33,8 @@ router.post('/', (req, res) => {
 
 router.put('/', (req, res) => {
   try {
-    const updated = updateAgencySettings(req.body);
-    res.json(updated);
+    const updated = updateAgencySettings({...req.body,smtp_pass:req.body.smtp_pass || undefined});
+    const {smtp_pass,...safe}=updated;res.json({...safe,smtp_pass:'',has_smtp_password:!!smtp_pass});
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Failed to update settings' });
   }

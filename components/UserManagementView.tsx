@@ -137,7 +137,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
       name: u.name,
       email: u.email,
       phone: u.phone || '',
-      password: u.password || '',
+      password: '',
       role: u.role,
       department: u.department || 'Sales',
       status: u.status,
@@ -333,7 +333,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
             <h2 className="text-xl font-semibold text-content">User & Permission Management</h2>
           </div>
           <p className="text-sm text-secondary mt-1">
-            Manage team accounts, view real passwords, grant permissions, and authorize password resets.
+            Manage team accounts, grant permissions, and authorize password resets.
           </p>
         </div>
 
@@ -468,7 +468,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
                       <td className="py-3.5 px-4">
                         <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-canvas rounded border border-line font-mono text-xs text-content">
                           <Lock size={11} className="text-muted" />
-                          <span>{u.password || '••••••••'}</span>
+                          <span>Password hidden</span>
                         </div>
                       </td>
 

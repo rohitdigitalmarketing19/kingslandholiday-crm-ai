@@ -53,17 +53,15 @@ export function createQuote(leadId: string, data: any) {
   const now = new Date().toISOString();
 
   // Check if quote ID already exists in DB, if so perform update
-  const existingQuote = queryOne('SELECT id FROM quotes WHERE id = ?', [quoteId]);
+  const existingQuote = queryOne('SELECT id,lead_id FROM quotes WHERE id = ?', [quoteId]);
+  if(existingQuote && existingQuote.lead_id!==leadId)throw Object.assign(new Error('Quotation belongs to another lead.'),{status:403});
   if (existingQuote) {
     return updateQuote(leadId, quoteId, data);
   }
 
   // Ensure lead exists in DB to prevent FK constraint error
   const existingLead = queryOne('SELECT id FROM leads WHERE id = ?', [leadId]);
-  if (!existingLead) {
-    const tripId = generateNextTripId();
-    runQuery('INSERT INTO leads (id, trip_id, name, created_at, last_follow_up) VALUES (?,?,?,?,?)', [leadId, tripId, 'Client', now, now]);
-  }
+  if (!existingLead) throw Object.assign(new Error('Lead not found.'), {status:404});
 
   runQuery('INSERT INTO quotes (id, lead_id, package_title, final_selling_price, visa_cost, flight_cost, land_package_cost, marketing_fees, discount_percentage, nights, hotels_not_included, flights_not_included, cabs_not_included, flight_details, cab_details, other_inclusions, other_exclusions, terms_and_conditions, use_default_tc, other_information, working_agent_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [quoteId, leadId, data.packageTitle || '', data.finalSellingPrice || 0, data.visaCost || 0, data.flightCost || 0, data.landPackageCost || 0, data.marketingFees || 0, data.discountPercentage || 0, data.nights || 6, data.hotelsNotIncluded ? 1 : 0, data.flightsNotIncluded ? 1 : 0, data.cabsNotIncluded ? 1 : 0, data.flightDetails || '', data.cabDetails || '', data.otherInclusions || '', data.otherExclusions || '', data.termsAndConditions || '', data.useDefaultTC ? 1 : 0, data.otherInformation || '', data.workingAgentId || '', data.createdAt || now]);
@@ -88,6 +86,7 @@ export function updateQuote(leadId: string, quoteId: string, data: any) {
   const now = new Date().toISOString();
 
   // Check if quote ID exists, if not perform create
+  if (queryOne('SELECT lead_id FROM booking_snapshots WHERE quote_id=?',[quoteId])) throw Object.assign(new Error('Accepted quotations are read-only. Create a new quotation for changes.'),{status:409});
   const existingQuote = queryOne('SELECT id FROM quotes WHERE id = ? AND lead_id = ?', [quoteId, leadId]);
   if (!existingQuote) {
     return createQuote(leadId, { ...data, id: quoteId });
@@ -106,5 +105,6 @@ export function updateQuote(leadId: string, quoteId: string, data: any) {
 }
 
 export function deleteQuote(leadId: string, quoteId: string) {
+  if (queryOne('SELECT lead_id FROM booking_snapshots WHERE quote_id=?',[quoteId])) throw Object.assign(new Error('Accepted quotations cannot be deleted.'),{status:409});
   return runQuery('DELETE FROM quotes WHERE id = ? AND lead_id = ?', [quoteId, leadId]).changes > 0;
 }

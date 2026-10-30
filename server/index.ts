@@ -1,4 +1,5 @@
 import express from 'express';
+import { apiAuthorization } from './middleware/auth';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -20,6 +21,7 @@ import paymentsRouter from './routes/payments';
 import opsRouter from './routes/ops';
 import usersRouter from './routes/users';
 import mastersRouter from './routes/masters';
+import hotelRatesRouter from './routes/hotelRates';
 import pdfDesignsRouter from './routes/pdfDesigns';
 import pdfThemesRouter from './routes/pdfThemes';
 import settingsRouter from './routes/settings';
@@ -35,7 +37,7 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 
 // Global Security Middleware
 app.use(securityHeadersMiddleware);
-app.use(cors());
+app.use(cors({ origin: false }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodySanitizerMiddleware);
@@ -51,6 +53,7 @@ app.use(async (req, res, next) => {
   }
 });
 
+app.use('/api', apiAuthorization);
 app.use('/api/leads', leadsRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/leads', quotesRouter);
@@ -61,6 +64,7 @@ app.use('/api/payments', paymentsRouter);
 app.use('/api/ops', opsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/masters', mastersRouter);
+app.use('/api/hotel-rates', hotelRatesRouter);
 app.use('/api/pdf-designs', pdfDesignsRouter);
 app.use('/api/pdf-themes', pdfThemesRouter);
 app.use('/api/pdf-themes/media', express.static(path.join(process.cwd(), 'storage', 'uploads')));

@@ -76,6 +76,7 @@ interface CompletedTripItem {
   
   // Financials - Customer Inflow
   totalAmount: number;
+  receivedAmount: number;
   customerPaymentStatus: string;
   installments: Array<{
     id: string;
@@ -227,7 +228,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
       const records: CompletedTripItem[] = completedOps.map((c) => {
         const custVouchers: any[] = allVouchers.filter((v) => v.customerId === c.id || v.bookingId === c.bookingId);
         
-        const totalPkg = Number(c.totalAmount || 0) > 0 ? Number(c.totalAmount) : 55000;
+        const totalPkg = Number(c.totalAmount || 0);
         let custHotelTotal = Number(c.hotelTotalCost || 0);
         let custHotelPaid = Number(c.hotelPaymentAmount || 0);
 
@@ -258,7 +259,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
             const paidTimestamp = isPaidOrPartial ? (v.paidAt || c.hotelPaymentDate || 'Settled') : '—';
             const paidMode = isPaidOrPartial ? (v.paymentMode || c.hotelPaymentMode || 'Bank Transfer (NEFT)') : '—';
             const paidRef = isPaidOrPartial ? (v.paymentRef || c.hotelPaymentRef || 'UTR-Confirmed') : '—';
-            const effectivePaid = itemPaid > 0 ? itemPaid : (pStatus === 'Paid to Hotel' ? itemTotal : 0);
+            const effectivePaid = itemPaid;
 
             let logs: PaymentPartRecord[] = [];
             if (Array.isArray(v.paymentLogs) && v.paymentLogs.length > 0) {
@@ -341,7 +342,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           const isPaid = c.hotelPaymentStatus === 'Paid to Hotel';
           const isPartial = c.hotelPaymentStatus === 'Partially Paid';
           const pStatus: 'Paid to Hotel' | 'Partially Paid' | 'Pending' = isPaid ? 'Paid to Hotel' : isPartial ? 'Partially Paid' : 'Pending';
-          const paidAmt = custHotelPaid > 0 ? custHotelPaid : (isPaid ? custHotelTotal : 0);
+          const paidAmt = custHotelPaid;
           const pDate = isPaid || isPartial ? (c.hotelPaymentDate || 'Settled') : '—';
           const pMode = isPaid || isPartial ? (c.hotelPaymentMode || 'Bank Transfer / NEFT') : '—';
           const pRef = isPaid || isPartial ? (c.hotelPaymentRef || 'UTR-Confirmed') : '—';
@@ -386,7 +387,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
 
         // Cab Logistics
         const cabTotal = Number(c.cabTotalCost || 0);
-        const cabPaid = Number(c.cabPaymentAmount || 0) > 0 ? Number(c.cabPaymentAmount) : (c.cabPaymentStatus === 'Paid to Driver' ? cabTotal : 0);
+        const cabPaid = Number(c.cabPaymentAmount || 0);
         let aggCabStatus: 'Paid to Driver' | 'Partially Paid' | 'Pending' = 'Pending';
         if (cabPaid >= cabTotal && cabTotal > 0) {
           aggCabStatus = 'Paid to Driver';
@@ -423,41 +424,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           } catch (_e) {}
         }
 
-        // Installments
-        const installments = Array.isArray(c.installments) && c.installments.length > 0 
-          ? c.installments 
-          : [
-              {
-                id: 'inst-1',
-                title: 'Advance Booking Token (30%)',
-                amount: Math.round(totalPkg * 0.3),
-                dueDate: c.startDate || '2026-08-01',
-                status: 'Paid',
-                paidAt: c.startDate || '2026-08-01',
-                paymentMode: 'UPI (PhonePe)',
-                transactionRef: 'UPI-TXN98421',
-              },
-              {
-                id: 'inst-2',
-                title: '2nd Installment - Prior to Travel (40%)',
-                amount: Math.round(totalPkg * 0.4),
-                dueDate: c.startDate || '2026-08-10',
-                status: 'Paid',
-                paidAt: c.startDate || '2026-08-10',
-                paymentMode: 'Bank Transfer (NEFT)',
-                transactionRef: 'NEFT-5489201',
-              },
-              {
-                id: 'inst-3',
-                title: 'Final Settlement Balance (30%)',
-                amount: Math.round(totalPkg * 0.3),
-                dueDate: c.endDate || '2026-08-15',
-                status: 'Paid',
-                paidAt: c.endDate || '2026-08-15',
-                paymentMode: 'UPI (GPay)',
-                transactionRef: 'UPI-7749102',
-              }
-            ];
+        // Expected installments are not receipts; only explicitly paid rows count.
+        const installments = Array.isArray(c.installments) ? c.installments : [];
+        const receivedAmount = typeof c.receivedAmount === 'number' ? c.receivedAmount : installments.filter((inst: any) => inst.status === 'Paid').reduce((sum: number, inst: any) => sum + Number(inst.paidAmount ?? inst.amount ?? 0), 0);
 
         return {
           id: c.id,
@@ -474,7 +443,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           assignedOpsManager: c.assignedOpsManager || 'Ops Team',
           
           totalAmount: totalPkg,
-          customerPaymentStatus: '100% Cleared',
+          receivedAmount,
+          customerPaymentStatus: receivedAmount <= 0 ? 'Unpaid' : receivedAmount >= totalPkg ? '100% Cleared' : 'Partially collected',
           installments,
 
           hotelTotalCost: custHotelTotal,
@@ -504,108 +474,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
         };
       });
 
-      // Check if CRM lead has lead.status === 'Completed' and not already in records
-      if (Array.isArray(leads)) {
-        leads.forEach((l) => {
-          const leadStatus = (l.status || '').toLowerCase();
-          if (leadStatus === 'completed') {
-            const alreadyAdded = records.some((r) => r.bookingId === l.tripId || r.name === l.name);
-            if (!alreadyAdded) {
-              const quote = l.quotes && l.quotes.length > 0 ? l.quotes[0] : null;
-              const pkgPrice = quote?.finalSellingPrice || (l.budgetTier === 'Luxury' ? 85000 : l.budgetTier === 'Mid' ? 55000 : 35000);
-              const landCost = quote?.landPackageCost || Math.round(pkgPrice * 0.55);
-              const hCost = Math.round(landCost * 0.65);
-              const cCost = Math.round(landCost * 0.35);
-
-              records.push({
-                id: l.id,
-                bookingId: l.tripId || `KL-${l.id.slice(0, 6)}`,
-                name: l.name,
-                phone: l.phone || '',
-                email: l.email || '',
-                destination: l.destination || 'Package Tour',
-                startDate: l.travelDate || 'Confirmed Date',
-                endDate: '',
-                durationDays: l.durationDays || 6,
-                paxAdults: l.travelers?.adults || 2,
-                paxChildren: l.travelers?.children || 0,
-                assignedOpsManager: 'Sales Desk',
-                totalAmount: pkgPrice,
-                customerPaymentStatus: '100% Cleared',
-                installments: [
-                  {
-                    id: 'inst-1',
-                    title: 'Full Package Payment (100%)',
-                    amount: pkgPrice,
-                    dueDate: l.travelDate || 'Confirmed Date',
-                    status: 'Paid',
-                    paidAt: l.travelDate || 'Confirmed Date',
-                    paymentMode: 'Bank Transfer (NEFT)',
-                    transactionRef: 'NEFT-CLEARED',
-                  }
-                ],
-                hotelTotalCost: hCost,
-                hotelPaidAmount: hCost,
-                hotelPaymentStatus: 'Paid to Hotel',
-                hotelPaymentDate: l.travelDate || 'Confirmed Date',
-                hotelPaymentMode: 'Bank Transfer (NEFT)',
-                hotelPaymentRef: 'NEFT-VENDOR',
-                hotelPaymentRemarks: 'Settled.',
-                hotelsList: [
-                  {
-                    id: 'h-1',
-                    hotelName: `${l.destination || 'Destination'} Grand Resort`,
-                    city: l.destination || 'City',
-                    roomType: 'Deluxe Room',
-                    nights: Math.max(1, (l.durationDays || 6) - 1),
-                    totalCost: hCost,
-                    paidAmount: hCost,
-                    paymentStatus: 'Paid to Hotel',
-                    paidAt: l.travelDate || 'Confirmed Date',
-                    paymentMode: 'Bank Transfer (NEFT)',
-                    paymentRef: 'NEFT-VENDOR',
-                    paymentRemarks: '100% Cleared',
-                    paymentLogs: [
-                      {
-                        id: `h-log-crm-${l.id}`,
-                        amount: hCost,
-                        paidAt: l.travelDate || 'Confirmed Date',
-                        paymentMode: 'Bank Transfer (NEFT)',
-                        paymentRef: 'NEFT-VENDOR',
-                        remarks: '100% Cleared',
-                      }
-                    ]
-                  }
-                ],
-                cabTotalCost: cCost,
-                cabPaidAmount: cCost,
-                cabPaymentStatus: 'Paid to Driver',
-                cabPaymentDate: l.travelDate || 'Confirmed Date',
-                cabPaymentMode: 'UPI',
-                cabPaymentRef: 'UPI-DRIVER',
-                cabPaymentRemarks: 'Settled.',
-                cabPaymentLogs: [
-                  {
-                    id: `cab-log-crm-${l.id}`,
-                    amount: cCost,
-                    paidAt: l.travelDate || 'Confirmed Date',
-                    paymentMode: 'UPI',
-                    paymentRef: 'UPI-DRIVER',
-                    remarks: 'Settled.'
-                  }
-                ],
-                driverName: 'Assigned Driver',
-                driverPhone: '+91 98290 12345',
-                cabModel: 'Toyota Innova Crysta',
-                cabNumber: 'RJ 14 TA 9988',
-                opsRemarks: typeof l.notes === 'string' ? l.notes : (Array.isArray(l.notes) ? l.notes.map(n => n.text).join('; ') : ''),
-                status: 'Completed',
-              });
-            }
-          }
-        });
-      }
-
+      // Accounts uses real completed operations bookings, never fabricated lead estimates.
       setOpsCompletedList(records);
     } catch (e) {
       console.error('Error fetching completed accounts:', e);
@@ -699,7 +568,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
     let totalCabPaid = 0;
 
     filteredTrips.forEach((t) => {
-      totalCustomerPaid += t.totalAmount;
+      totalCustomerPaid += t.receivedAmount;
       totalHotelPaid += t.hotelPaidAmount;
       totalCabPaid += t.cabPaidAmount;
     });
@@ -737,14 +606,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
       'Driver Paid Amount (INR)',
       'Driver Payment Status',
       'Total Realized Outflow (INR)',
-      'Net Realized Profit (INR)',
+      'Collected less supplier payments (INR)',
       'Gross Margin (%)',
     ];
 
     const rows = filteredTrips.map((t) => {
       const totalOutflow = t.hotelPaidAmount + t.cabPaidAmount;
-      const netProfit = t.totalAmount - totalOutflow;
-      const margin = t.totalAmount > 0 ? Math.round((netProfit / t.totalAmount) * 100) : 0;
+      const netProfit = t.receivedAmount - totalOutflow;
+      const margin = t.receivedAmount > 0 ? Math.round((netProfit / t.receivedAmount) * 100) : 0;
 
       return [
         `"${t.bookingId}"`,
@@ -754,8 +623,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
         `"${t.destination.replace(/"/g, '""')}"`,
         `"${t.startDate}"`,
         t.durationDays,
-        t.totalAmount,
-        '"100% Cleared"',
+        t.receivedAmount,
+        JSON.stringify(t.customerPaymentStatus),
         t.hotelPaidAmount,
         t.hotelTotalCost,
         `"${t.hotelPaymentStatus}"`,
@@ -877,10 +746,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           </div>
         </div>
 
-        {/* Card 4: Net Realized Profit */}
+        {/* Card 4: Collected less supplier payments */}
         <div className="p-5 rounded-xl bg-inverse text-white shadow-sm space-y-2">
           <div className="flex items-center justify-between text-brand-ink">
-            <span className="text-xs font-bold uppercase tracking-wider">Net Realized Profit</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Collected less supplier payments</span>
             <div className="p-2 rounded-xl bg-white/10 text-warning-ink">
               <TrendingUp className="w-5 h-5" />
             </div>
@@ -985,8 +854,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               ) : (
                 filteredTrips.map((trip, index) => {
                   const totalOutflow = trip.hotelPaidAmount + trip.cabPaidAmount;
-                  const netProfit = trip.totalAmount - totalOutflow;
-                  const marginPct = trip.totalAmount > 0 ? Math.round((netProfit / trip.totalAmount) * 100) : 0;
+                  const netProfit = trip.receivedAmount - totalOutflow;
+                  const marginPct = trip.receivedAmount > 0 ? Math.round((netProfit / trip.receivedAmount) * 100) : 0;
 
                   // Hotel summary stats
                   const paidHotelsCount = trip.hotelsList.filter(h => h.paymentStatus === 'Paid to Hotel').length;
@@ -1033,10 +902,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                       {/* 3. Customer Inflow */}
                       <td className="py-3.5 px-4 align-middle whitespace-nowrap">
                         <div className="font-mono font-semibold text-content text-sm">
-                          ₹{trip.totalAmount.toLocaleString('en-IN')}
+                          ₹{trip.receivedAmount.toLocaleString('en-IN')}
                         </div>
                         <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-success-soft text-success-ink border border-success-line inline-block mt-0.5">
-                          ✓ 100% Cleared
+                          {trip.customerPaymentStatus}
                         </span>
                       </td>
 
@@ -1203,10 +1072,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                   Gross Revenue (Customer Inflow)
                 </span>
                 <div className="text-2xl font-semibold text-success-ink font-mono">
-                  ₹{selectedAuditTrip.totalAmount.toLocaleString('en-IN')}
+                  ₹{selectedAuditTrip.receivedAmount.toLocaleString('en-IN')}
                 </div>
                 <div className="text-xs text-success-ink font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 100% Cleared
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {selectedAuditTrip.customerPaymentStatus}
                 </div>
               </div>
 
@@ -1227,11 +1096,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                   Realized Gross Margin
                 </span>
                 <div className="text-2xl font-semibold text-white font-mono">
-                  ₹{(selectedAuditTrip.totalAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)).toLocaleString('en-IN')}
+                  ₹{(selectedAuditTrip.receivedAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)).toLocaleString('en-IN')}
                 </div>
                 <div className="text-xs text-warning-ink font-bold">
-                  {selectedAuditTrip.totalAmount > 0 
-                    ? Math.round(((selectedAuditTrip.totalAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)) / selectedAuditTrip.totalAmount) * 100)
+                  {selectedAuditTrip.receivedAmount > 0 
+                    ? Math.round(((selectedAuditTrip.receivedAmount - (selectedAuditTrip.hotelPaidAmount + selectedAuditTrip.cabPaidAmount)) / selectedAuditTrip.receivedAmount) * 100)
                     : 0}% Gross Margin
                 </div>
               </div>
@@ -1245,7 +1114,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
                   <span>Customer Payments & Installments Inflow</span>
                 </h4>
                 <span className="text-xs font-mono font-bold text-success-ink bg-success-soft px-2 py-0.5 rounded">
-                  Total: ₹{selectedAuditTrip.totalAmount.toLocaleString('en-IN')}
+                  Total: ₹{selectedAuditTrip.receivedAmount.toLocaleString('en-IN')}
                 </span>
               </div>
 
