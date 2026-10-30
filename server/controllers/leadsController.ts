@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { normalizeHotelAlternative } from '../../utils/hotelOptions';
 import { runQuery, queryAll, queryOne } from '../db/connection';
 
@@ -91,8 +92,9 @@ import { generateNextTripId } from './settingsController';
 
 export function createLead(data: any) {
   if(['Closed Won','Won','Converted','CONVERTED'].includes(data.status))throw Object.assign(new Error('Create the lead and accept a saved quotation before conversion.'),{status:400});
-  const id = data.id || `lead-${Date.now()}`;
-  const tripId = data.tripId || generateNextTripId();
+  const id = data.id || `lead-${crypto.randomUUID()}`;
+  const tripId = typeof data.tripId==='string' && data.tripId.trim() ? data.tripId.trim() : generateNextTripId();
+  if(queryOne('SELECT id FROM leads WHERE trip_id=?',[tripId]))throw Object.assign(new Error(`Trip ID ${tripId} already exists. Use a different Trip ID or leave it blank to generate one.`),{status:409});
   const now = new Date().toISOString();
   runQuery('INSERT INTO leads (id, trip_id, name, phone, email, raw_inquiry, summary, score, intent, destination, budget_tier, assigned_to, source, status, travel_date, duration_days, adults, children, child_ages, other_info, include_stay, include_flight, include_cab, hotel_category, english_driver, created_at, last_follow_up) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
     [id, tripId, data.name || '', data.phone || '', data.email || '', data.rawInquiry || '', data.summary || '', data.score || 50, data.intent || 'Information Seeking', data.destination || '', data.budgetTier || 'Mid', data.assignedTo || '', data.source || 'Website Form', data.status || 'New', data.travelDate || '', data.durationDays || 7, data.travelers?.adults || 2, data.travelers?.children || 0, JSON.stringify(data.travelers?.childAges || []), data.otherInfo || '', data.includeStay || 'Yes', data.includeFlight || 'No', data.includeCab || 'Yes', data.hotelCategory || '4/3 Star', data.englishDriver ? 1 : 0, now, now]

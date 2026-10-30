@@ -27,17 +27,20 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     customHeaders['x-user-id'] = activeUserId;
   }
 
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { ...customHeaders, ...(options?.headers as Record<string, string>) },
-    ...options,
-  });
-
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${url}`, {
+      ...options,
+      credentials: 'same-origin',
+      headers: { ...customHeaders, ...(options?.headers as Record<string, string>) },
+    });
+  } catch {
+    throw new Error('Cannot reach the CRM server. Check your connection and try again.');
+  }
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    if (res.status === 500 && !errorData.error && !errorData.message) {
-      throw new Error(`Backend API server is offline or unreachable on port 5000. Please start the backend server with 'npm run dev' or 'npm run server'.`);
-    }
-    throw new Error(errorData.error || errorData.message || `Request failed: ${res.status}`);
+    const message = res.status === 401 ? 'Your login session has expired. Sign in again, then retry saving.' : typeof errorData.error === 'string' ? errorData.error : typeof errorData.message === 'string' ? errorData.message : `The CRM server rejected this request (HTTP ${res.status}).`;
+    throw Object.assign(new Error(message), {status:res.status,code:errorData.code});
   }
 
   return res.json();

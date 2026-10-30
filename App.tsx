@@ -865,7 +865,7 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error('Error creating lead:', err);
-      alert('Failed to save lead. Please check network connection.');
+      alert(`Lead was not saved: ${(err as Error).message || 'An unexpected server error occurred. Please try again.'}`);
     }
   };
 

@@ -33,7 +33,8 @@ import { securityHeadersMiddleware, bodySanitizerMiddleware, rateLimiterMiddlewa
 dotenv.config();
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = Number(process.env.PORT || (process.env.NODE_ENV === 'production' ? '3000' : '5000'));
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) throw new Error('PORT must be an integer between 1 and 65535.');
 
 // Global Security Middleware
 app.use(securityHeadersMiddleware);
@@ -43,14 +44,12 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(bodySanitizerMiddleware);
 app.use('/api', rateLimiterMiddleware(200, 60 * 1000)); // Max 200 requests/min per IP
 
-// Middleware to ensure DB is initialized before handling API requests
-app.use(async (req, res, next) => {
-  try {
-    await initDb();
-    next();
-  } catch (err) {
-    next(err);
-  }
+let startupState: 'initializing' | 'ready' | 'failed' = 'initializing';
+let databaseReady: Promise<void>;
+app.get('/api/health', (_req,res)=>res.status(startupState==='ready'?200:503).json({status:startupState==='ready'?'ok':startupState,timestamp:new Date().toISOString()}));
+app.use('/api', async (_req,res,next)=>{
+  try {await databaseReady;next();}
+  catch {res.status(503).json({error:'Database initialization failed. Check the application runtime log.',code:'DATABASE_INITIALIZATION_FAILED'});}
 });
 
 app.use('/api', apiAuthorization);
@@ -73,7 +72,7 @@ app.use('/api/leads', clientDocumentsRouter);
 app.use('/api/leads', clientDetailsRouter);
 app.use('/api/public/client-details', publicClientDetailsRouter);
 
-app.get('/api/health', (req, res) => { res.json({ status: 'ok', timestamp: new Date().toISOString() }); });
+
 
 // Serve frontend static build files when available
 const rootDir = process.cwd();
@@ -98,18 +97,10 @@ if (fs.existsSync(distPath)) {
 
 app.use(errorHandler);
 
-// Initialize DB and start listening
-async function startServer() {
-  await initDb();
-  initializeDatabase();
-  
-  app.listen(PORT, () => {
-    console.log(`\n  🏰 Kingsland Holidays CRM — Backend\n  📡 Server running on port ${PORT}\n  📂 API: http://localhost:${PORT}/api\n`);
-  });
-}
-
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-});
+// Bind before cloud restore/migrations so managed hosting sees listen() promptly.
+// API readiness remains gated until the complete migration transaction succeeds.
+app.listen(PORT,'0.0.0.0',()=>console.log(`CRM listening on port ${PORT}; database status: ${startupState}`));
+databaseReady=initDb().then(()=>{initializeDatabase();startupState='ready';console.log('CRM database ready.');});
+databaseReady.catch(error=>{startupState='failed';console.error('Failed to initialize CRM database:',error);});
 
 export default app;

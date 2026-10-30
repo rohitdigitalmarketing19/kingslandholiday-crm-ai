@@ -1,8 +1,15 @@
 import { initializeWorkflowSecurity } from './workflowSecurity';
 import { migrateHotelRateSeasons } from './hotelRateSeasonsMigration';
-import { execSql } from './connection';
+import { execSql, getDb, withDbPersistenceBatch } from './connection';
 
 export function initializeDatabase(): void {
+  withDbPersistenceBatch(()=>{
+    const db=getDb();db.run('BEGIN');
+    try {initializeDatabaseSchema();db.run('COMMIT');}
+    catch(error){db.run('ROLLBACK');throw error;}
+  });
+}
+function initializeDatabaseSchema(): void {
   // sql.js doesn't support multiple statements in one exec, so we split them
   const statements = [
     `CREATE TABLE IF NOT EXISTS hotel_rates (id TEXT PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, category TEXT NOT NULL, seasonal_paise INTEGER NOT NULL CHECK(seasonal_paise >= 0), blackout_paise INTEGER NOT NULL CHECK(blackout_paise >= 0), blackout_dates TEXT NOT NULL DEFAULT '[]', pdf_name TEXT NOT NULL DEFAULT '', pdf_data TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, updated_by TEXT NOT NULL)`,

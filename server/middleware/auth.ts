@@ -38,7 +38,11 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
   if(!user) return res.status(401).json({error:'Please sign in to the CRM.'});
   if(!['GET','HEAD'].includes(req.method)) {
     const origin=req.header('origin');
-    try { if(origin && new URL(origin).hostname!==req.hostname) return res.status(403).json({error:'Cross-site request rejected.'}); } catch {return res.status(403).json({error:'Invalid request origin.'});}
+    try {
+      // Managed hosting can forward an internal Host. Pin the public origin explicitly.
+      const configured=(process.env.APP_ORIGIN || process.env.PUBLIC_APP_URL || '').split(',').map(value=>value.trim()).filter(Boolean).map(value=>new URL(value).origin);
+      if(origin && new URL(origin).hostname!==req.hostname && !configured.includes(new URL(origin).origin)) return res.status(403).json({error:'This website address is not allowed to save data. Configure APP_ORIGIN to match the public CRM address.',code:'ORIGIN_NOT_ALLOWED'});
+    } catch {return res.status(403).json({error:'The request origin or APP_ORIGIN configuration is invalid.',code:'ORIGIN_NOT_ALLOWED'});}
     if(user.access_level==='ViewOnly' && route!=='/users/logout' && !['/pdf-themes/generate-pdf','/pdf-themes/preview-html','/pdf-designs/render-pdf'].includes(route)) return res.status(403).json({error:'Your account has view-only access.'});
   }
   if(route==='/users/me' || route==='/users/logout') return next();

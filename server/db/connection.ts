@@ -384,7 +384,20 @@ export async function initDb(): Promise<SqlJsDatabase> {
 /**
  * Save the in-memory database to disk and automatically sync to Supabase Cloud.
  */
+let persistenceBatchDepth=0;
+let persistencePending=false;
+export function withDbPersistenceBatch<T>(work: ()=>T): T {
+  persistenceBatchDepth++;
+  let result: T;
+  try { result=work(); }
+  catch(error){persistenceBatchDepth--;if(persistenceBatchDepth===0)persistencePending=false;throw error;}
+  persistenceBatchDepth--;
+  if(persistenceBatchDepth===0 && persistencePending){persistencePending=false;saveDb();}
+  return result;
+}
 export function saveDb(): void {
+  if(persistenceBatchDepth>0){persistencePending=true;return;}
+
   if (!db) return;
   try {
     const data = db.export();
