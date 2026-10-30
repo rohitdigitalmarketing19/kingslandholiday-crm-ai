@@ -597,7 +597,8 @@ const App: React.FC = () => {
       const list = Array.isArray(data) ? data : [];
       setLeads(list);
       if (list.length > 0 && typeof window !== 'undefined') {
-        localStorage.setItem('kingsland_cached_leads', JSON.stringify(list));
+        try { localStorage.setItem('kingsland_cached_leads', JSON.stringify(list)); }
+        catch { /* Browser cache is optional; retain the successful server response. */ }
       }
     } catch (err) {
       console.warn('⚠️ Server offline or API failed:', err);
@@ -623,7 +624,8 @@ const App: React.FC = () => {
       const list = Array.isArray(data) ? data : [];
       setAgents(list);
       if (list.length > 0 && typeof window !== 'undefined') {
-        localStorage.setItem('kingsland_cached_agents', JSON.stringify(list));
+        try { localStorage.setItem('kingsland_cached_agents', JSON.stringify(list)); }
+        catch { /* Browser cache is optional; retain the successful server response. */ }
       }
     } catch (err) {
       console.warn('⚠️ Server offline or API failed:', err);
