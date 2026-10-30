@@ -1,3 +1,4 @@
+import { migrateDataEntry } from './dataEntryMigration';
 import { initializeWorkflowSecurity } from './workflowSecurity';
 import { migrateHotelRateSeasons } from './hotelRateSeasonsMigration';
 import { execSql, getDb, withDbPersistenceBatch } from './connection';
@@ -59,6 +60,7 @@ function initializeDatabaseSchema(): void {
   }
 
   migrateHotelRateSeasons();
+  migrateDataEntry();
 
   // Safe Column Migrations for ops_customers, payment_links, payment_installments
   const migrations = [

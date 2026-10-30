@@ -43,9 +43,9 @@ router.delete('/:id', (req, res, next) => {
     next(error);
   }
 });
-router.post('/', save);
-router.put('/:id', save);
-async function save(req: any, res: any, next: any) {
+router.post('/', saveHotelRate);
+router.put('/:id', saveHotelRate);
+export async function saveHotelRate(req: any, res: any, next: any) {
   try {
     const data = req.body;
     const text = (key: string) => {
@@ -73,6 +73,11 @@ async function save(req: any, res: any, next: any) {
     const contact = validateHotelContact(data.contactNumber === undefined ? previous?.contact_number : data.contactNumber);
     const enabledCategories = queryAll("SELECT name FROM masters_data WHERE category = 'Hotel Categories' AND is_enabled = 1");
     if (category !== previous?.category && !enabledCategories.some(item => item.name === category)) throw new Error('Choose an active hotel category from Masters.');
+    // PDF decoding awaits above; recheck after it so concurrent retries create one hotel.
+    if (res.locals.publicEntry) {
+      const submitted = queryOne('SELECT record_id FROM public_entry_submissions WHERE request_id=? AND kind=?', [req.body.requestId, 'hotel-rates']);
+      if (submitted) return res.json({ success: true, reference: submitted.record_id });
+    }
     const id = previous?.id || randomUUID();
     const now = new Date().toISOString();
     const db = getDb();
@@ -87,9 +92,10 @@ async function save(req: any, res: any, next: any) {
       if (pdf || data.removePdf === true) db.run('UPDATE hotel_rates SET pdf_name=?, pdf_data=? WHERE id=?', [pdf?.name || '', pdf?.data || '', id]);
       const current = queryOne(`SELECT ${columns} FROM hotel_rates WHERE id=?`, [id]);
       db.run('INSERT INTO hotel_rate_history (id,hotel_id,actor,created_at,before_data,after_data) VALUES (?,?,?,?,?,?)', [randomUUID(),id,res.locals.actor,now,JSON.stringify(previous && present(previous)),JSON.stringify(present(current))]);
+      if (res.locals.publicEntry) db.run('INSERT INTO public_entry_submissions VALUES (?,?,?,?)', [req.body.requestId,'hotel-rates',id,now]);
       db.run('COMMIT');
       saveDb();
-      res.status(previous ? 200 : 201).json(present(current));
+      res.status(previous ? 200 : 201).json(res.locals.publicEntry ? { success: true, reference: id } : present(current));
     } catch (error) { db.run('ROLLBACK'); throw error; }
   } catch (error) {
     if (error instanceof Error && !/SQL|database|table|column/i.test(error.message)) return res.status(400).json({ error: error.message });

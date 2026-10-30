@@ -4,6 +4,9 @@
  */
 
 const API_BASE = '/api';
+export const fetchB2BContacts = () => request<import('../utils/b2bData').B2BContact[]>('/b2b-data');
+export const saveB2BContact = (data: import('../utils/b2bData').B2BDraft, id?: string) => request<import('../utils/b2bData').B2BContact>(`/b2b-data${id ? `/${encodeURIComponent(id)}` : ''}`, { method: id ? 'PUT' : 'POST', body: JSON.stringify(data) });
+export const deleteB2BContact = (id: string) => request<{ success: boolean }>(`/b2b-data/${encodeURIComponent(id)}`, { method: 'DELETE' });
 export const acceptQuote = (leadId: string,quoteId: string) => request<any>(`/leads/${encodeURIComponent(leadId)}/quotes/${encodeURIComponent(quoteId)}/accept`,{method:'POST'});
 
 export const deleteHotelRate = (id: string) => request<{ success: boolean; id: string }>(`/hotel-rates/${encodeURIComponent(id)}`, { method: 'DELETE' });

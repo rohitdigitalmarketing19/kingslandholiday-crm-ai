@@ -1,3 +1,4 @@
+import DataEntryPage from './components/DataEntryPage';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -62,7 +63,7 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      {/^\/forms\/(hotel-rates|b2b-data)\/?$/.test(window.location.pathname) ? <DataEntryPage kind={window.location.pathname.includes('hotel-rates') ? 'hotel-rates' : 'b2b-data'} /> : <App />}
     </ErrorBoundary>
   </React.StrictMode>
 );

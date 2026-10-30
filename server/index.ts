@@ -1,3 +1,5 @@
+import b2bDataRouter from './routes/b2bData';
+import publicDataEntryRouter from './routes/publicDataEntry';
 import express from 'express';
 import { apiAuthorization } from './middleware/auth';
 import cors from 'cors';
@@ -64,6 +66,8 @@ app.use('/api/ops', opsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/masters', mastersRouter);
 app.use('/api/hotel-rates', hotelRatesRouter);
+app.use('/api/b2b-data', b2bDataRouter);
+app.use('/api/public/data-entry', publicDataEntryRouter);
 app.use('/api/pdf-designs', pdfDesignsRouter);
 app.use('/api/pdf-themes', pdfThemesRouter);
 app.use('/api/pdf-themes/media', express.static(path.join(process.cwd(), 'storage', 'uploads')));

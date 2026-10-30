@@ -28,7 +28,9 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
   const user=token ? queryOne('SELECT u.* FROM auth_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.status=\'Active\'', [createHash('sha256').update(token).digest('hex'),new Date().toISOString()]) : null;
   delete req.headers['x-user-id']; delete req.headers['x-user-role']; delete req.headers['x-role'];
   if(user) {res.locals.user=user;req.headers['x-user-id']=user.id;req.headers['x-user-role']=user.role;}
-  const publicRoute = route==='/health' || route.startsWith('/public/client-details/') ||
+  const publicRoute = route==='/health' ||
+    (req.method==='GET' && route==='/public/data-entry/hotel-categories') ||
+    (req.method==='POST' && /^\/public\/data-entry\/(hotel-rates|b2b-data)$/.test(route)) || route.startsWith('/public/client-details/') ||
     (req.method==='POST' && ['/users/login','/users/send-admin-otp','/users/verify-admin-otp'].includes(route)) ||
     (req.method==='PUT' && /^\/users\/[^/]+\/change-password$/.test(route)) ||
     (req.method==='GET' && /^\/payments\/links\/[^/]+$/.test(route)) ||
@@ -49,7 +51,7 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
   const admin=user.role==='Admin';
   if((route==='/ops/reset' || req.method==='DELETE' && route==='/payments/submissions') && !admin)return res.status(403).json({error:'Administrator access required.'});
   const templateUse=req.method==='GET' && /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) || req.method==='POST' && ['/pdf-themes/generate-pdf','/pdf-themes/preview-html','/pdf-designs/render-pdf'].includes(route);
-  if((/^\/(users|hotel-rates)(\/|$)/.test(route) || /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) && !templateUse || route.startsWith('/settings') && (route!=='/settings' || req.method!=='GET')) && !admin) return res.status(403).json({error:'Administrator access required.'});
+  if((/^\/(users|hotel-rates|b2b-data)(\/|$)/.test(route) || /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) && !templateUse || route.startsWith('/settings') && (route!=='/settings' || req.method!=='GET')) && !admin) return res.status(403).json({error:'Administrator access required.'});
   let permissions: string[]=[];try {permissions=JSON.parse(user.permissions || '[]');}catch{}
   const section=route.startsWith('/leads')?['Leads','New Inquiry','Follow-ups','Sales Desk','Operations','Accounts']:route.startsWith('/ops')?['Operations','Accounts','HotelVouchers']:route.startsWith('/payments')?['Payments','Operations','Accounts']:route.startsWith('/agents')?['Sales Team','Leads','New Inquiry']:route.startsWith('/templates')?['Saved Itinerary']:['Leads','New Inquiry','Saved Itinerary','Operations','Accounts'];
   if(!admin && !section.some(name=>permissions.includes(name))) return res.status(403).json({error:'This account cannot access this desk.'});

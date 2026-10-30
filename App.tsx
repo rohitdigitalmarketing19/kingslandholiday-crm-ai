@@ -1,3 +1,4 @@
+import B2BDataView from './components/B2BDataView';
 import { clearProposalPdfCache } from './services/proposalPdfService';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -254,7 +255,7 @@ const App: React.FC = () => {
 
   // Sidebar State - Persisted across reloads
   const [view, setViewState] = useState<
-    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates'
+    'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates' | 'B2B Data'
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
@@ -263,7 +264,7 @@ const App: React.FC = () => {
     return 'Dashboard';
   });
 
-  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates') => {
+  const setView = (newView: 'Dashboard' | 'Payments' | 'New Inquiry' | 'Leads' | 'Follow-ups' | 'Sales Desk' | 'Saved Itinerary' | 'Analytics' | 'Sales Team' | 'Operations' | 'HotelVouchers' | 'Accounts' | 'User Management' | 'Masters' | 'PDF designs' | 'PDF Themes' | 'Settings' | 'Client Documents' | 'Client Details' | 'Hotel Rates' | 'B2B Data') => {
     setViewState(newView);
     if (typeof window !== 'undefined') {
       localStorage.setItem('kingsland_active_view', newView);
@@ -1392,6 +1393,7 @@ const App: React.FC = () => {
             <p className="text-xs font-semibold text-secondary uppercase tracking-wider px-3 mb-2 mt-4">Admin</p>
           )}
           <div className="space-y-0.5 mb-4">
+            {currentUser.role === 'Admin' && <NavItem id="B2B Data" icon={<Users size={18} />} active={view === 'B2B Data'} onClick={() => setView('B2B Data')} />}
             {currentUser.role === 'Admin' && <NavItem id="Hotel Rates" icon={<Building2 size={18} />} active={view === 'Hotel Rates'} onClick={() => setView('Hotel Rates')} /> }
             {hasAccess('Saved Itinerary') && (
               <NavItem id="Templates" icon={<Map size={18} />} active={view === 'Saved Itinerary'} onClick={() => setView('Saved Itinerary')} />
@@ -2398,6 +2400,7 @@ const App: React.FC = () => {
               />
             </div>
           )}
+          {view === 'B2B Data' && currentUser.role === 'Admin' && <B2BDataView readOnly={currentUser.accessLevel === 'ViewOnly'} />}
           {view === 'Hotel Rates' && currentUser.role === 'Admin' && <HotelRatesView readOnly={currentUser.accessLevel === 'ViewOnly'} />}
           {view === 'Masters' && (
             <div className="animate-in fade-in duration-200">
