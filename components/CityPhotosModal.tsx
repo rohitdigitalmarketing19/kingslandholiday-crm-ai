@@ -1,3 +1,4 @@
+import {photoMatchesSearch} from '../utils/photoLibrary';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Upload, Image as ImageIcon, Check, X, Trash2, MapPin, Plus } from 'lucide-react';
 import {
@@ -38,6 +39,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
   // New photo form state
   const [newCity, setNewCity] = useState(destinationCity || '');
   const [newTitle, setNewTitle] = useState('');
+  const [newFilename,setNewFilename]=useState('');
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newTags, setNewTags] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -68,11 +70,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
   const displayedPhotos = useMemo(() => {
     if (!searchQuery.trim()) return photos;
     const q = searchQuery.toLowerCase().trim();
-    return photos.filter(p =>
-      (p.city && p.city.toLowerCase().includes(q)) ||
-      (p.title && p.title.toLowerCase().includes(q)) ||
-      (p.tags && p.tags.toLowerCase().includes(q))
-    );
+    return photos.filter(photo=>photoMatchesSearch(photo,searchQuery));
   }, [photos, searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -94,6 +92,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
     }
 
     try {
+      setNewFilename(file.name);
       const compressed = await compressImageFile(file, { maxWidth: 1200, maxHeight: 900, quality: 0.85 });
       setNewImageUrl(compressed);
       if (!newTitle.trim()) {
@@ -131,13 +130,13 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
       const created = await createDestinationPhoto({
         city: cityVal,
         title: titleVal,
-        image_url: newImageUrl.trim(),
+        image_url: newImageUrl.trim(),file_name:newFilename,
         tags: newTags.trim() || cityVal
       });
 
       setPhotos(prev => [created, ...prev]);
       setShowUploadForm(false);
-      setNewImageUrl('');
+      setNewImageUrl('');setNewFilename('');
       setNewTitle('');
       setNewTags('');
 
@@ -191,7 +190,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
   const isPickMode = mode === 'pick';
 
   return (
-    <div className="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
+    <div role="dialog" aria-modal="true" aria-label="Photo library" className="fixed inset-0 z-[220] bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
       <div className="w-full max-w-4xl max-h-[92vh] rounded-xl bg-surface border border-line shadow-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         
         {/* Modal Header */}
@@ -209,7 +208,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
               </h3>
               <p className="text-sm text-secondary ">
                 {isPickMode
-                  ? 'Search by city name or title and click to attach this photo to Day ' + (targetDay || 1)
+                  ? 'Search by image filename, city or title and click to attach this photo to Day ' + (targetDay || 1)
                   : 'Add and organize destination photos used in day-wise proposal PDFs'}
               </p>
             </div>
@@ -368,7 +367,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
                     type="text"
                     placeholder="https://... or click browse"
                     value={newImageUrl.startsWith('data:') ? '[Local Image Loaded]' : newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    onChange={(e) => {setNewImageUrl(e.target.value);setNewFilename('');}}
                     className="flex-1 px-3 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none truncate"
                   />
                   <label className="px-3.5 py-2 rounded-xl bg-hover hover:bg-hover text-content dark:text-zinc-200 text-sm font-bold cursor-pointer flex items-center gap-1.5 shrink-0">
@@ -446,7 +445,7 @@ export const CityPhotosModal: React.FC<CityPhotosModalProps> = ({
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
-                placeholder="Search via city name or title (e.g. Manali, Kashmir, Goa, Kerala, Jaipur)..."
+                aria-label="Search itinerary photos" placeholder="Search filename, title, city or tags…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 rounded-xl bg-surface border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none"

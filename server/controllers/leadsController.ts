@@ -1,9 +1,12 @@
+import { assertTripEditable } from '../services/tripEditing';
 import crypto from 'crypto';
 import { normalizeHotelAlternative } from '../../utils/hotelOptions';
-import { runQuery, queryAll, queryOne } from '../db/connection';
+import { getDb, withDbPersistenceBatch, runQuery, queryAll, queryOne } from '../db/connection';
 
 function hydrateLead(row: any): any {
   const lead: any = {
+    bookingTotal: (()=>{const b=queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?',[row.id]);return b ? b.total_paise/100 : null;})(),
+    tripCompleted: !!queryOne("SELECT id FROM ops_customers WHERE (id=? OR booking_id=?) AND lower(status)='completed'", ['cust-'+row.id,row.trip_id]),
     id: row.id, tripId: row.trip_id, name: row.name, phone: row.phone || '', email: row.email || '',
     rawInquiry: row.raw_inquiry || '', summary: row.summary || '', score: row.score,
     intent: row.intent, destination: row.destination, budgetTier: row.budget_tier,
@@ -90,7 +93,28 @@ export function getLeadById(id: string) {
 
 import { generateNextTripId } from './settingsController';
 
-export function createLead(data: any) {
+export function createLead(data: any, actor='system') {
+  const requestId = data.requestId;
+  if(requestId !== undefined && (typeof requestId !== 'string' || !/^[a-zA-Z0-9-]{16,100}$/.test(requestId))) throw Object.assign(new Error('Invalid inquiry request ID.'),{status:400});
+  const requestKey = requestId ? 'lead-create:'+actor+':'+requestId : '';
+  const {requestId: _requestId, ...payload} = data;
+  const fingerprint = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  const previous = requestKey ? queryOne("SELECT after_json FROM workflow_events WHERE parent_id=? AND event='Lead created' AND actor=?",[requestKey,actor]) : null;
+  if(previous) {
+    const saved=JSON.parse(previous.after_json);
+    if(saved.fingerprint!==fingerprint) throw Object.assign(new Error('This save request was already used for different inquiry details.'),{status:409});
+    return getLeadById(saved.leadId);
+  }
+  return withDbPersistenceBatch(() => {
+    const db=getDb();db.run('BEGIN');
+    try {
+      const lead=createLeadRecord(data);
+      if(requestKey) runQuery('INSERT INTO workflow_events(id,parent_id,event,before_json,after_json,actor,created_at) VALUES(?,?,?,?,?,?,?)',[crypto.randomUUID(),requestKey,'Lead created','{}',JSON.stringify({leadId:lead.id,fingerprint}),actor,new Date().toISOString()]);
+      db.run('COMMIT');return lead;
+    }catch(error){db.run('ROLLBACK');throw error;}
+  });
+}
+function createLeadRecord(data: any) {
   if(['Closed Won','Won','Converted','CONVERTED'].includes(data.status))throw Object.assign(new Error('Create the lead and accept a saved quotation before conversion.'),{status:400});
   const id = data.id || `lead-${crypto.randomUUID()}`;
   const tripId = typeof data.tripId==='string' && data.tripId.trim() ? data.tripId.trim() : generateNextTripId();
@@ -114,6 +138,7 @@ export function updateLeadStatus(id: string, status: string, extra?: {
   followUpCompleted?: boolean;
 }) {
   if (['Closed Won','Won','Converted','CONVERTED'].includes(status) && !queryOne('SELECT lead_id FROM booking_snapshots WHERE lead_id=?',[id])) throw Object.assign(new Error('Open the saved proposal and confirm the selected quotation is accepted before converting.'),{status:400});
+  assertTripEditable(id);
   const now = new Date().toISOString();
   let result;
   if (status === 'Postponed' && extra?.postponedDate) {
@@ -164,6 +189,7 @@ export function updateLeadTravelers(
   hotelCategory?: string,
   otherInfo?: string
 ) {
+  assertTripEditable(id);
   const fields = ['adults = ?', 'children = ?', 'child_ages = ?'];
   const params: any[] = [adults, children, JSON.stringify(childAges)];
 

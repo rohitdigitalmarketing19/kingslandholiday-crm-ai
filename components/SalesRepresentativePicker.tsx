@@ -1,0 +1,7 @@
+import React from 'react';
+import {CheckCircle2} from 'lucide-react';
+import {Agent} from '../types';
+export default function SalesRepresentativePicker({agents,value,onChange}:{agents:Agent[];value:string;onChange:(id:string)=>void}){
+ const selected=agents.find(agent=>agent.id===value);
+ return <><p role="status" className="col-span-full text-sm text-secondary">Selected: <strong className="text-brand-ink">{selected?.name || 'Choose a salesperson'}</strong></p>{agents.map(agent=><button key={agent.id} type="button" aria-label={`Assign to ${agent.name}`} aria-pressed={agent.id===value} onClick={()=>onChange(agent.id)} style={agent.id===value?{background:'var(--brand, #1d4ed8)',color:'#fff',borderColor:'var(--brand, #1d4ed8)',boxShadow:'0 0 0 2px var(--brand-line, #93c5fd)'}:undefined} className="p-3 rounded-lg border border-line bg-canvas text-content flex items-center gap-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{agent.avatar ? <img src={agent.avatar} alt="" className="w-7 h-7 rounded-full object-cover shrink-0"/> : <span className="w-7 h-7 rounded-full bg-brand-soft text-brand-ink flex items-center justify-center shrink-0 text-sm font-semibold">{agent.name.charAt(0).toUpperCase()}</span>}<span className="min-w-0 flex-1"><span className="block text-sm font-medium truncate">{agent.name}</span>{agent.id===value && <span className="block text-xs mt-0.5">Selected</span>}</span>{agent.id===value && <CheckCircle2 size={18} className="shrink-0" aria-hidden="true"/>}</button>)}</>;
+}

@@ -1,0 +1,5 @@
+User-approved policy (2026-10-31): lead and quotation updates are allowed until trip completion. Accepted quotation revisions retain prior snapshots in workflow_events and update the booking total. Receipts are unchanged; totals cannot fall below collected payments. Existing authorization and deletion protections remain.
+
+Inquiry save reliability: both save actions share an immediate in-flight guard and visible saving state. Successful creation updates the local lead list directly. A per-inquiry request ID is retained across failed attempts; the server records it per actor atomically with lead creation and returns the existing lead on replay. Trip ID allocation and lead insert persist in one batch.
+
+Existing-database compatibility: protect_booking_snapshots_update now requires a matching Booking amended workflow event, unchanged booking identity/acceptance metadata, matching current snapshot/amount aliases, and an incomplete trip. Snapshot deletion and verified-receipt protections remain. Verified affected saved quotation using an isolated copy of the current database.

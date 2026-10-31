@@ -163,7 +163,8 @@ const getCleanDayTitle = (day: any, dIdx: number, totalDays: number, destination
   return `Day ${dIdx + 1} Excursion & Highlights`;
 };
 
-const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, onClose, onUpdateStatus, onAddNote, onEditQuote, onNewQuote, onDeleteQuote, onDeleteLead, isReadOnly = false, onUpdateLead }) => {
+const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, onClose, onUpdateStatus, onAddNote, onEditQuote, onNewQuote, onDeleteQuote, onDeleteLead, isReadOnly: accessReadOnly = false, onUpdateLead }) => {
+  const isReadOnly = accessReadOnly || !!lead.tripCompleted;
   const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<{ label: string; status: Lead['status']; color: string; bg: string } | null>(null);
 

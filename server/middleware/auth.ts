@@ -35,7 +35,8 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
     (req.method==='PUT' && /^\/users\/[^/]+\/change-password$/.test(route)) ||
     (req.method==='GET' && /^\/payments\/links\/[^/]+$/.test(route)) ||
     (req.method==='GET' && route==='/payments/settings') ||
-    (req.method==='POST' && route==='/payments/submissions');
+    (req.method==='POST' && route==='/payments/submissions') ||
+    (req.method==='POST' && ['/payments/razorpay/orders','/payments/razorpay/verify','/payments/razorpay/reconcile'].includes(route));
   if(publicRoute) return next();
   if(!user) return res.status(401).json({error:'Please sign in to the CRM.'});
   if(!['GET','HEAD'].includes(req.method)) {
@@ -67,10 +68,10 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
     let lead=leadMatch ? queryOne('SELECT * FROM leads WHERE id=?',[decodeURIComponent(leadMatch[1])]) : null;
     if(route.startsWith('/payments')) {
       const key=route.split('/')[3] || req.body?.payKey || req.body?.id;
-      const request=key ? queryOne('SELECT lead_id FROM payment_installments WHERE id=? OR pay_key=? UNION SELECT lead_id FROM payment_links WHERE id=? OR pay_key=?',[key,key,key,key]) : null;
-      const leadId=req.query.leadId || req.body?.leadId || request?.lead_id;
+      const request=key ? queryOne('SELECT lead_id FROM payment_installments WHERE id=? OR pay_key=? UNION SELECT lead_id FROM payment_links WHERE id=? OR pay_key=? UNION SELECT lead_id FROM payment_submissions WHERE id=?',[key,key,key,key,key]) : null;
+      const leadId=request?.lead_id || req.query.leadId || req.body?.leadId;
       lead=leadId ? queryOne('SELECT * FROM leads WHERE id=? OR trip_id=?',[leadId,leadId]) : null;
-      if(!lead) return res.status(403).json({error:'Select one of your assigned leads.'});
+      if(!lead && !(req.method==='GET' && route==='/payments/overview' && !req.query.leadId)) return res.status(403).json({error:'Select one of your assigned leads.'});
     }
     if(lead && !owners.includes(lead.assigned_to)) return res.status(403).json({error:'This lead belongs to another sales representative.'});
     if(route.startsWith('/ops')) return res.status(403).json({error:'Use the dedicated Operations account for this desk.'});

@@ -79,20 +79,11 @@ router.delete('/partners/:id', (req: Request, res: Response) => {
 // DESTINATION PHOTOS (BY CITY NAME, TITLE & TAGS)
 router.get('/photos/all', (req: Request, res: Response) => {
   try {
-    const q = req.query.city ? String(req.query.city).trim().toLowerCase() : '';
-    let photos;
-    if (q) {
-      photos = queryAll(
-        `SELECT * FROM destination_photos WHERE LOWER(city) LIKE ? OR LOWER(title) LIKE ? OR LOWER(tags) LIKE ? ORDER BY is_default DESC, created_at DESC`,
-        [`%${q}%`, `%${q}%`, `%${q}%`]
-      );
-      // If none found for specific query, return top photos
-      if (!photos || photos.length === 0) {
-        photos = queryAll('SELECT * FROM destination_photos ORDER BY is_default DESC, created_at DESC LIMIT 30');
-      }
-    } else {
-      photos = queryAll('SELECT * FROM destination_photos ORDER BY is_default DESC, created_at DESC');
-    }
+    const terms=String(req.query.search || req.query.city || '').toLowerCase().replace(/[-_]+/g,' ').trim().split(/\s+/).filter(Boolean);
+    const expression="REPLACE(REPLACE(LOWER(COALESCE(city,'') || ' ' || COALESCE(title,'') || ' ' || COALESCE(tags,'') || ' ' || COALESCE(file_name,'')),'-',' '),'_',' ')";
+    const where=terms.length?' WHERE '+terms.map(()=>expression+' LIKE ? ESCAPE CHAR(92)').join(' AND '):'';
+    const params=terms.map(word=>'%'+word.replace(/[\\%_]/g,char=>String.fromCharCode(92)+char)+'%');
+    const photos=queryAll('SELECT * FROM destination_photos'+where+' ORDER BY is_default DESC,created_at DESC',params);
     res.json(photos);
   } catch (err: any) {
     console.error('Error fetching destination photos:', err);
@@ -102,7 +93,7 @@ router.get('/photos/all', (req: Request, res: Response) => {
 
 router.post('/photos', (req: Request, res: Response) => {
   try {
-    let { city = '', title = '', image_url, tags = '' } = req.body;
+    let { city = '', title = '', image_url, tags = '', file_name = '', upload_id } = req.body;
     if (!image_url) {
       return res.status(400).json({ error: 'Image is required' });
     }
@@ -112,11 +103,15 @@ router.post('/photos', (req: Request, res: Response) => {
     const finalTitle = cleanTitle || cleanCity || 'Destination Photo';
     const finalTags = (tags || '').trim() || `${finalCity} ${finalTitle}`;
 
-    const id = `photo-${uuidv4().slice(0, 8)}`;
+    const filename=String(file_name).split(String.fromCharCode(92)).pop()!.split('/').pop()!.slice(0,255);
+    if(upload_id!==undefined && !/^[a-f0-9-]{36}$/i.test(String(upload_id)))return res.status(400).json({error:'Invalid upload reference.'});
+    const id=upload_id?'photo-'+upload_id:`photo-${uuidv4()}`;
+    const existing=queryOne('SELECT * FROM destination_photos WHERE id=?',[id]);
+    if(existing)return res.json(existing);
     runQuery(
-      `INSERT INTO destination_photos (id, city, title, image_url, tags, is_default)
-       VALUES (?, ?, ?, ?, ?, 0)`,
-      [id, finalCity, finalTitle, image_url, finalTags]
+      `INSERT INTO destination_photos (id, city, title, image_url, tags, file_name, is_default)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+      [id, finalCity, finalTitle, image_url, finalTags, filename]
     );
     const created = queryOne('SELECT * FROM destination_photos WHERE id = ?', [id]);
     res.status(201).json(created);

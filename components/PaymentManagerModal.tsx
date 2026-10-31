@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { PaymentWorkspace, PaymentLinksTable, PaymentReviewTable, money } from './PaymentWorkspace';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lead } from '../types';
 import * as api from '../services/apiService';
 import PaymentPageView from './PaymentPageView';
@@ -29,7 +30,7 @@ import {
   Share2
 } from 'lucide-react';
 
-export type PaymentTab = 'Links' | 'Submissions' | 'Installments' | 'CreateLink' | 'Settings' | 'Portal' | 'Confirmation';
+export type PaymentTab = 'Dashboard' | 'Completed' | 'Links' | 'Submissions' | 'Installments' | 'CreateLink' | 'Settings' | 'Portal' | 'Confirmation';
 
 interface PaymentManagerModalProps {
   lead?: Lead | null;
@@ -53,6 +54,7 @@ interface Installment {
   paid_at?: string;
   payment_mode?: string;
   transaction_ref?: string;
+  paid_amount?: number;
 }
 
 const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({ 
@@ -63,7 +65,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   onTabChange,
   isFullPage = true
 }) => {
-  const [internalActiveTab, setInternalActiveTab] = useState<PaymentTab>('Links');
+  const [internalActiveTab, setInternalActiveTab] = useState<PaymentTab>('Dashboard');
   const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
 
   const setActiveTab = (tab: PaymentTab) => {
@@ -71,23 +73,31 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
     if (onTabChange) onTabChange(tab);
   };
 
+  const [overview,setOverview]=useState<any>(null);
+  const [dataLoading,setDataLoading]=useState(true);
+  const [dataError,setDataError]=useState('');
+  const [isCreatingLink,setIsCreatingLink]=useState(false);
+  const actionLock=useRef(false),loadSequence=useRef(0);
+  const [confirmAmount,setConfirmAmount]=useState('');
+  const [confirmationError,setConfirmationError]=useState('');
   const [paymentLinks, setPaymentLinks] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [settings, setSettings] = useState<any>({
-    key_id: 'rzp_test_51HKingslandDemoKey',
+    key_id: '',
     key_secret: '',
-    upi_id: 'kingslandholiday@okicici',
-    upi_payee: 'Kingsland Holidays Services Pvt Ltd',
-    bank_name: 'HDFC Bank',
-    bank_acc_num: '50200087628332',
-    bank_ifsc: 'HDFC0001234',
-    bank_branch: 'Connaught Place, New Delhi',
-    bank_acc_name: 'Kingsland Holidays Services',
-    support_phone: '+91 6376983416'
+    upi_id: '',
+    upi_payee: '',
+    bank_name: '',
+    bank_acc_num: '',
+    bank_ifsc: '',
+    bank_branch: '',
+    bank_acc_name: '',
+    support_phone: ''
   });
 
   const getLeadPackagePrice = (l?: Lead | null): number => {
     if (!l) return 0;
+    if ((l as any).bookingTotal !== undefined && (l as any).bookingTotal !== null) return (l as any).bookingTotal;
     if (l.quotes && l.quotes.length > 0) {
       const lastQuote = l.quotes[l.quotes.length - 1];
       if (lastQuote.finalSellingPrice && lastQuote.finalSellingPrice > 0) {
@@ -130,59 +140,18 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   }>({ open: false, instIdx: -1, comment: '' });
 
   useEffect(() => {
-    api.fetchLeads().then(data => setAllLeads(data)).catch(() => {});
+    api.fetchLeads().then(data => setAllLeads(data)).catch(error => setDataError((error as Error).message));
   }, []);
 
   const handleSelectTripId = async (tripId: string) => {
-    setSelectedTripId(tripId);
-    const found = allLeads.find(l => l.tripId === tripId || l.id === tripId);
-    if (found) {
-      setTargetLead(found);
-      setCustName(found.name);
-      setCustPhone(found.phone || '');
-      setCustEmail(found.email || '');
-      const price = getLeadPackagePrice(found);
-      setTotalPackagePrice(price);
-      setBaseAmount(price);
-      if (found.destination) {
-        setDestination(found.destination);
-        setPackageName(`${found.destination} Tour Package`);
-      }
-      if (found.travelDate) setTravelDate(found.travelDate);
-      if (found.durationDays) setDurationText(`${found.durationDays} Days / ${Math.max(1, found.durationDays - 1)} Nights`);
-      if (found.travelers) {
-        setAdultsCount(found.travelers.adults || 2);
-        setChildrenCount(found.travelers.children || 0);
-      }
-
-      // Fetch installments and payment links for this selected lead
-      try {
-        const [insts, links] = await Promise.all([
-          api.fetchLeadInstallments(found.id || found.tripId),
-          api.fetchPaymentLinks(found.id || found.tripId),
-        ]);
-        if (insts && insts.length > 0) {
-          setInstallments(insts);
-          setHasExistingEMI(true);
-          const sum = insts.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-          if (sum > 0) setTotalPackagePrice(sum);
-        } else {
-          setInstallments([]);
-          setHasExistingEMI(false);
-        }
-        if (links && links.length > 0) {
-          setPaymentLinks(links);
-        }
-      } catch (err) {
-        console.error('Error fetching data for selected trip:', err);
-      }
-    }
+    const found=allLeads.find(l=>l.tripId===tripId || l.id===tripId);
+    setSelectedTripId(tripId);setTargetLead(found || null);
+    setInstallments([]);setPaymentLinks([]);setHasExistingEMI(false);
   };
 
-  // Link Form State (Tailored for Individual Travel Packages)
   const [packageName, setPackageName] = useState(lead?.destination ? `${lead.destination} Tour Package` : 'Tour Package Confirmation');
-  const [destination, setDestination] = useState(lead?.destination || 'Bali / Maldives / Kashmir');
-  const [travelDate, setTravelDate] = useState(lead?.travelDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]);
+  const [destination, setDestination] = useState(lead?.destination || '');
+  const [travelDate, setTravelDate] = useState(lead?.travelDate || '');
   const [baseAmount, setBaseAmount] = useState<number>(() => getLeadPackagePrice(lead));
   const [gstAmount, setGstAmount] = useState<number>(0);
   const [feeAmount, setFeeAmount] = useState<number>(0);
@@ -193,7 +162,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   const [custPhone, setCustPhone] = useState(lead?.phone || '');
   const [custEmail, setCustEmail] = useState(lead?.email || '');
   const [durationText, setDurationText] = useState(lead?.durationDays ? `${lead.durationDays} Days / ${lead.durationDays - 1} Nights` : '6 Days / 5 Nights');
-  const [hotelsText, setHotelsText] = useState('4 Star Deluxe Resort');
+  const [hotelsText, setHotelsText] = useState('');
   const [travelersText, setTravelersText] = useState(lead?.travelers ? `${lead.travelers.adults || 2} Adults, ${lead.travelers.children || 0} Children` : '2 Adults, 0 Children');
 
   // Customer Gateway State
@@ -211,10 +180,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
     setTimeout(() => setLocalToast(null), 3000);
   };
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleCopy = async (id:string,text:string) => {
+    try {await navigator.clipboard.writeText(text);setCopiedId(id);showLocalToast('Payment link copied.');setTimeout(()=>setCopiedId(null),2000);}
+    catch {showLocalToast('Could not copy the link. Open the customer page and copy its address.','error');}
   };
 
   const handleClearSubmissions = async () => {
@@ -268,8 +236,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
     const activeLead = targetLead || lead;
     if (activeLead) {
       setPackageName(activeLead.destination ? `${activeLead.destination} Tour Package` : 'Tour Package Confirmation');
-      setDestination(activeLead.destination || 'Bali / Maldives / Kashmir');
-      setTravelDate(activeLead.travelDate || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]);
+      setDestination(activeLead.destination || '');
+      setTravelDate(activeLead.travelDate || '');
       setBaseAmount(getLeadPackagePrice(activeLead));
       setCustName(activeLead.name || '');
       setCustPhone(activeLead.phone || '');
@@ -310,98 +278,20 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   }, [paymentLinks]);
 
   const loadData = async () => {
+    const sequence=++loadSequence.current;
+    setDataLoading(true);setDataError('');
     try {
-      const targetId = targetLead?.id || lead?.id;
-      const [links, subs, sets] = await Promise.all([
-        api.fetchPaymentLinks(targetId),
-        api.fetchPaymentSubmissions(targetId),
-        api.fetchPaymentSettings(),
-      ]);
-
-      setPaymentLinks(links || []);
-      setSubmissions(subs || []);
-      if (sets) setSettings(sets);
-
-      const activeLead = targetLead || lead;
-      const pkgPrice = getLeadPackagePrice(activeLead);
-
-      if (targetId) {
-        const insts = await api.fetchLeadInstallments(targetId);
-        if (insts && insts.length > 0) {
-          const sum = insts.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-          if (sum === 0 && pkgPrice > 0) {
-            // All existing installments are 0, recalculate based on split count
-            const count = insts.length || 3;
-            const inst1 = Math.round(pkgPrice * 0.3);
-            const inst2 = Math.round(pkgPrice * 0.4);
-            const inst3 = pkgPrice - inst1 - inst2;
-            const defaultAmounts = count === 2 ? [Math.round(pkgPrice * 0.5), pkgPrice - Math.round(pkgPrice * 0.5)] : [inst1, inst2, inst3];
-            const adjustedInsts = insts.map((inst: any, idx: number) => ({
-              ...inst,
-              amount: defaultAmounts[idx] !== undefined ? defaultAmounts[idx] : Math.round(pkgPrice / count)
-            }));
-            setInstallments(adjustedInsts);
-            try {
-              const saved = await api.saveInstallmentSchedule(targetId, adjustedInsts);
-              if (saved && saved.length > 0) setInstallments(saved);
-            } catch (saveErr) {
-              console.error('Failed to auto-save adjusted zero installments:', saveErr);
-            }
-          } else if (sum !== pkgPrice && pkgPrice > 0 && sum > 0) {
-             const linkedSum = insts.filter((i: any) => !!i.pay_key).reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-             const remainingPrice = Math.max(0, pkgPrice - linkedSum);
-             const unlinkedInsts = insts.filter((i: any) => !i.pay_key);
-             const unlinkedOriginalSum = unlinkedInsts.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
-
-             if (unlinkedInsts.length > 0 && unlinkedOriginalSum > 0) {
-               const ratio = remainingPrice / unlinkedOriginalSum;
-               let runningUnlinkedTotal = 0;
-               let unlinkedProcessedCount = 0;
-               
-               const adjustedInsts = insts.map((inst: any) => {
-                 if (inst.pay_key) {
-                   return inst;
-                 }
-                 unlinkedProcessedCount++;
-                 if (unlinkedProcessedCount === unlinkedInsts.length) {
-                   return { ...inst, amount: remainingPrice - runningUnlinkedTotal };
-                 }
-                 const newAmt = Math.round((inst.amount || 0) * ratio);
-                 runningUnlinkedTotal += newAmt;
-                 return { ...inst, amount: newAmt };
-               });
-               setInstallments(adjustedInsts);
-
-               // CRITICAL: Save adjusted amounts back to DB so payment links show correct amount
-               try {
-                 const saved = await api.saveInstallmentSchedule(targetId, adjustedInsts);
-                 if (saved && saved.length > 0) {
-                   setInstallments(saved);
-                 }
-               } catch (saveErr) {
-                 console.error('Failed to auto-save adjusted installments:', saveErr);
-               }
-             } else {
-               setInstallments(insts);
-             }
-          } else {
-             setInstallments(insts);
-          }
-          setHasExistingEMI(true);
-          setTotalPackagePrice(pkgPrice);
-        } else {
-          setInstallments([]);
-          setHasExistingEMI(false);
-          setTotalPackagePrice(pkgPrice);
-        }
-      } else {
-        setInstallments([]);
-        setHasExistingEMI(false);
-        setTotalPackagePrice(pkgPrice);
-      }
-    } catch (e) {
-      console.error('Failed loading payment desk data:', e);
-    }
+      const targetId=targetLead?.id || lead?.id;
+      const [data,sets]=await Promise.all([api.fetchPaymentOverview(targetId),api.fetchPaymentSettings()]);
+      if(sequence!==loadSequence.current)return;
+      setOverview(data);setPaymentLinks(data.links || []);setSubmissions(data.submissions || []);setSettings(sets);
+      const rows=targetId ? data.requests.filter((r:any)=>r.kind==='Installment') : [];
+      setInstallments(rows);setHasExistingEMI(rows.length>0);
+      const booking=data.bookings.find((b:any)=>b.id===targetId);
+      if(booking?.total_paise!==null && booking?.total_paise!==undefined)setBaseAmount(Math.max(0,booking.total_paise-booking.collected_paise)/100);
+      setTotalPackagePrice(booking?.total_paise!==null && booking?.total_paise!==undefined ? booking.total_paise/100 : getLeadPackagePrice(targetLead || lead));
+    } catch(error) {if(sequence===loadSequence.current)setDataError((error as Error).message || 'Payment data could not be loaded.');}
+    finally {if(sequence===loadSequence.current)setDataLoading(false);}
   };
 
   const handleCreateInstallmentLink = async (indexToSave?: number) => {
@@ -410,12 +300,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       alert('Please select a Lead / Trip ID first to create installment links.');
       return;
     }
+    if(actionLock.current)return;actionLock.current=true;
     setIsSavingInstallments(true);
     try {
       const updatedInstallments = [...installments];
-      if (indexToSave !== undefined && !updatedInstallments[indexToSave].pay_key) {
-        updatedInstallments[indexToSave].pay_key = `pay_inst_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
-      }
       const saved = await api.saveInstallmentSchedule(targetId, updatedInstallments);
       setInstallments(saved);
       setHasExistingEMI(saved.length > 0);
@@ -430,12 +318,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       console.error('Error creating installment link:', e);
       alert('Failed to create installment link.');
     } finally {
-      setIsSavingInstallments(false);
+      actionLock.current=false;setIsSavingInstallments(false);
     }
   };
 
   const handleCreateLink = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(actionLock.current)return;actionLock.current=true;setIsCreatingLink(true);
     try {
       const created = await api.createPaymentLink({
         leadId: targetLead?.id || lead?.id || '',
@@ -464,8 +353,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       loadData();
     } catch (err) {
       console.error('Error creating payment link:', err);
-      alert('Failed to generate payment link');
-    }
+      showLocalToast((err as Error).message || 'Failed to generate payment link','error');
+    } finally {actionLock.current=false;setIsCreatingLink(false);}
   };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -485,32 +374,58 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       alert('Please select a Lead / Trip ID first to attach the installment schedule.');
       return;
     }
+    if(actionLock.current)return;actionLock.current=true;
     setIsSavingInstallments(true);
     try {
       const saved = await api.saveInstallmentSchedule(targetId, installments);
       setInstallments(saved);
       setHasExistingEMI(saved.length > 0);
-      alert('EMI Installment Schedule saved successfully to Lead Database!');
+      showLocalToast('Installment schedule saved.');
       if (onPaymentUpdated) onPaymentUpdated();
     } catch (e) {
       console.error('Error saving installment schedule:', e);
-      alert('Failed to save installment schedule.');
+      showLocalToast((e as Error).message || 'Failed to save installment schedule.','error');
     } finally {
-      setIsSavingInstallments(false);
+      actionLock.current=false;setIsSavingInstallments(false);
     }
   };
 
   const handleVerifySubmission = async (subId: string, status: 'Approved' | 'Rejected') => {
     try {
       await api.verifyPaymentSubmission(subId, status);
-      alert(`Payment Submission mark as ${status}!`);
+      showLocalToast(status==='Rejected'?'Payment proof rejected.':'Payment verified.');
       loadData();
       if (onPaymentUpdated) onPaymentUpdated();
     } catch (e) {
-      console.error('Error updating verification status:', e);
+      console.error('Error updating verification status:', e);showLocalToast((e as Error).message || 'Could not update payment proof.','error');
     }
   };
 
+  const openRecordPayment = (link:any) => {
+    setConfirmRef('');setConfirmMode('UPI');setConfirmComment('');setConfirmationError('');
+    setConfirmPaymentModal({open:true,link});
+  };
+  useEffect(()=>{
+    if(confirmPaymentModal.open){
+      const link=confirmPaymentModal.link;
+      const prior=Number(link?.paid_amount || 0);
+      setConfirmAmount(String(Math.max(0,Number(link?.net_amount || 0)-prior)));
+      setConfirmationError('');
+    }
+  },[confirmPaymentModal]);
+
+  useEffect(()=>{
+    if(!confirmPaymentModal.open)return;
+    const previous=document.activeElement as HTMLElement;
+    const dialog=document.querySelector('[role="dialog"][aria-label="Record verified payment"]') as HTMLElement;
+    const controls=()=>Array.from(dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),textarea,select') || []);
+    controls()[0]?.focus();
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.key==='Escape' && !actionLock.current){event.preventDefault();setConfirmPaymentModal({open:false,link:null});}
+      if(event.key==='Tab'){const items=controls(),first=items[0],last=items[items.length-1];if(event.shiftKey && document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first?.focus();}}
+    };
+    document.addEventListener('keydown',keydown);return()=>{document.removeEventListener('keydown',keydown);previous?.focus();};
+  },[confirmPaymentModal.open]);
   const handleConfirmEmiReceived = async (
     targetLeadId: string,
     instId: string | undefined,
@@ -539,72 +454,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       await loadData();
       if (onPaymentUpdated) onPaymentUpdated();
 
-      alert('✅ Payment Received & EMI Installment Confirmed!');
+      showLocalToast('Payment recorded successfully.');
     } catch (e) {
       console.error('Error confirming EMI payment:', e);
       throw e;
-    }
-  };
-
-  const triggerRazorpayCheckout = (amount: number, title: string) => {
-    if (typeof (window as any).Razorpay === 'undefined') {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => openRazorpayModal(amount, title);
-      document.body.appendChild(script);
-    } else {
-      openRazorpayModal(amount, title);
-    }
-  };
-
-  const openRazorpayModal = (amount: number, title: string) => {
-    if(!settings.key_id){alert('Configure the payment gateway before opening checkout.');return;}
-    const options = {
-      key: settings.key_id,
-      amount: amount * 100, // Amount in paise
-      currency: 'INR',
-      name: 'Kingsland Holidays Services',
-      description: title,
-      image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=120&auto=format&fit=crop&q=80',
-      handler: function (response: any) {
-        alert(`Payment Successful!\nRazorpay Payment ID: ${response.razorpay_payment_id}`);
-        handleCustomerSubmitUTRWithRef(response.razorpay_payment_id, 'Razorpay');
-      },
-      prefill: {
-        name: selectedLink ? selectedLink.customer_name : custName,
-        contact: selectedLink ? selectedLink.customer_phone : custPhone,
-      },
-      theme: {
-        color: '#7B1D2A',
-      },
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
-  };
-
-  const handleCustomerSubmitUTRWithRef = async (refNum: string, mode: 'Razorpay' | 'UPI' | 'Bank Transfer' | 'Cash') => {
-    try {
-      const netTotal = selectedLink ? selectedLink.net_amount : (baseAmount + gstAmount + feeAmount - discountAmount);
-      const pkg = selectedLink ? selectedLink.package_name : packageName;
-
-      await api.createPaymentSubmission({
-        payKey: selectedLink ? selectedLink.pay_key : 'DIRECT',
-        leadId: lead?.id || selectedLink?.lead_id || '',
-        customerName: custName || lead?.name || 'Customer',
-        mobile: custPhone || lead?.phone || '',
-        packageName: pkg,
-        amountPaid: netTotal,
-        utrNumber: refNum,
-        paymentMode: mode
-      });
-
-      alert('Payment receipt & reference submitted! Verification pending by finance desk.');
-      setUtrNumber('');
-      setActiveTab('Submissions');
-      loadData();
-    } catch (err) {
-      console.error('Payment submission failed:', err);
     }
   };
 
@@ -614,13 +467,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       {/* Header Bar in Modal Mode */}
       {!isFullPage && (
         <div className="p-6 bg-inverse text-white flex justify-between items-center rounded-xl shadow-sm border border-line">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
              <div className="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-white shadow-xs">
                 <CreditCard size={20} />
              </div>
              <div>
-                <h2 className="text-base font-semibold text-white">Payment & Collections Desk</h2>
-                <p className="text-sm text-muted font-medium">Razorpay Gateway, UPI Transfers & Partial EMI Schedules</p>
+                <h2 className="text-base font-semibold text-white">Payments</h2>
+                <p className="text-sm text-muted font-medium">Razorpay Gateway, UPI Transfers & Partial Installments</p>
              </div>
           </div>
           {onClose && (
@@ -635,18 +488,19 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
       {isFullPage && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <CreditCard className="w-5 h-5 text-brand-ink" />
               <h2 className="text-xl font-semibold text-content">
-                Payment & Collections Desk
+                Payments
               </h2>
             </div>
             <p className="text-sm text-secondary mt-0.5">
-              Manage payment links, partial EMI schedules, customer submissions, and gateway settings.
+              Track collections, plan installments, and verify customer payments.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={loadData} disabled={dataLoading} aria-label="Refresh payment data" className="px-3 py-2 rounded-lg border border-line text-secondary flex items-center gap-2 text-sm disabled:opacity-50"><RefreshCw size={14} className={dataLoading?'animate-spin':''}/>Refresh</button>
             {activeTab !== 'CreateLink' && (
               <button 
                 onClick={() => setShowCreateChoiceModal(true)} 
@@ -667,20 +521,21 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         </div>
       )}
 
+      {targetLead && !lead && <div className="p-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-line bg-brand-soft text-sm text-brand-ink"><span>Viewing {targetLead.tripId} · {targetLead.name}</span><button onClick={()=>{setSelectedTripId('');setTargetLead(null);}} className="font-medium underline">View all trips</button></div>}
       {/* Payment Desk Sub-Navigation Tabs */}
       {isFullPage && (
         <div className="flex flex-wrap items-center gap-1.5 bg-surface p-1.5 rounded-xl border border-line shadow-2xs">
           {[
-            { id: 'Links', label: 'Payment Links' },
-            { id: 'Installments', label: 'EMI Schedules' },
-            { id: 'Confirmation', label: 'Confirmation Desk' },
-            { id: 'Submissions', label: 'Payment Proofs' },
+            { id: 'Dashboard', label: 'Dashboard' },
+            { id: 'Links', label: 'Payment links' },
+            { id: 'Installments', label: 'Installments' },
+            { id: 'Completed', label: 'Completed payments' },
+            { id: 'Confirmation', label: 'Review payments' },
             { id: 'CreateLink', label: 'Generate Link' },
-            { id: 'Portal', label: 'Portal Preview' },
             { id: 'Settings', label: 'Gateway Settings' }
           ].map((t) => (
             <button
-              key={t.id}
+              key={t.id} style={{color:activeTab===t.id ? '#ffffff' : 'var(--text-secondary)'}} aria-label={t.label} aria-current={activeTab===t.id ? 'page' : undefined}
               onClick={() => setActiveTab(t.id as PaymentTab)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
                 activeTab === t.id
@@ -743,7 +598,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   <Calendar size={16} />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-content text-sm">EMI Installments</h4>
+                  <h4 className="font-semibold text-content text-sm">installments</h4>
                   <p className="text-xs text-secondary mt-0.5 leading-snug">Split booking into partial milestone payments.</p>
                 </div>
                 <span className="text-xs font-semibold text-success-ink flex items-center gap-1">
@@ -811,179 +666,31 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         </div>
       )}
 
-      <div>
+      {dataLoading && <div role="status" className="p-4 flex gap-2 items-center text-sm text-secondary"><RefreshCw size={16} className="animate-spin"/>Loading payment data…</div>}
+      {dataError && <div role="alert" className="p-4 border border-danger-line bg-danger-soft rounded-xl text-danger-ink flex flex-wrap justify-between gap-3"><span>{dataError}</span><button onClick={loadData} className="underline font-medium">Retry</button></div>}
+      {!dataError && !dataLoading && <div>
          {/* TAB 1: PAYMENT LINKS LIST */}
-         {activeTab === 'Links' && (() => {
-           const pendingLinks = paymentLinks.filter(l => l.status !== 'Paid');
-           const visibleLinks = showPaidLinks ? paymentLinks : pendingLinks;
-
-           return (
-             <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-canvas p-4 rounded-xl border border-line">
-                   <div>
-                      <h3 className="text-base font-semibold text-content uppercase tracking-tight">
-                        {showPaidLinks ? 'All Payment Links' : 'Active Pending Payment Links'}
-                      </h3>
-                      <p className="text-sm text-secondary">
-                        {pendingLinks.length} pending payment link(s) waiting for client clearance.
-                      </p>
-                   </div>
-                   <div className="flex items-center gap-3">
-                      <button 
-                        onClick={() => setShowPaidLinks(!showPaidLinks)}
-                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                          showPaidLinks 
-                            ? 'bg-inverse text-white' 
-                            : 'bg-surface text-content border border-line hover:bg-subtle'
-                        }`}
-                      >
-                        {showPaidLinks ? '✓ Showing Paid Links' : '👁️ Show Paid Links'}
-                      </button>
-                      {!isFullPage && (
-                        <button 
-                          onClick={() => setShowCreateChoiceModal(true)} 
-                          className="px-5 py-2 bg-brand text-white rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-brand"
-                        >
-                          + New Link
-                        </button>
-                      )}
-                   </div>
-                </div>
-
-                <div className="space-y-4">
-                   {visibleLinks.length === 0 ? (
-                     <div className="p-12 text-center bg-surface rounded-xl border border-line space-y-3">
-                        <div className="w-12 h-12 bg-subtle text-muted rounded-full mx-auto flex items-center justify-center text-xl">
-                          💳
-                        </div>
-                        <p className="text-sm font-bold text-secondary">
-                          {showPaidLinks ? 'No payment links created yet.' : 'All payment links are cleared! No pending payment links.'}
-                        </p>
-                        <button 
-                          onClick={() => setShowCreateChoiceModal(true)} 
-                          className="px-6 py-2.5 bg-brand text-white rounded-xl font-bold text-sm uppercase shadow-sm hover:bg-brand"
-                        >
-                          + Create Payment Link
-                        </button>
-                     </div>
-                   ) : (
-                     visibleLinks.map((link) => {
-                       const portalUrl = `${window.location.origin}/#payment?pay_id=${link.pay_key}`;
-                       const matchingLead = allLeads.find(l => l.id === link.lead_id || l.tripId === link.lead_id);
-                       const displayTripId = matchingLead?.tripId || link.lead_id || 'N/A';
-
-                       return (
-                         <div key={link.id} className="p-6 bg-surface rounded-xl border border-line flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 hover:shadow-sm transition-all">
-                            <div className="space-y-2 flex-1">
-                               <div className="flex flex-wrap items-center gap-2">
-                                 <span className="px-3 py-1 bg-brand-soft text-brand-ink rounded-lg text-xs font-semibold uppercase tracking-wider border border-brand-line">
-                                   Trip ID: {displayTripId}
-                                 </span>
-                                 <span className="text-sm font-mono font-bold text-secondary">Key: {link.pay_key}</span>
-                                 <span className={`px-3 py-0.5 rounded-full text-xs font-semibold uppercase ${link.status === 'Paid' ? 'bg-success-soft text-success-ink' : 'bg-warning-soft text-warning-ink'}`}>
-                                   {link.status}
-                                 </span>
-                               </div>
-
-                               <h4 className="text-lg font-semibold text-content tracking-tight">{link.package_name}</h4>
-
-                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-secondary font-medium">
-                                 <span>👤 Customer: <strong className="text-content font-bold">{link.customer_name}</strong></span>
-                                 {link.customer_phone && <span>📞 Phone: <strong className="text-content font-bold">{link.customer_phone}</strong></span>}
-                                 {link.customer_email && <span>✉️ Email: <strong className="text-content font-bold">{link.customer_email}</strong></span>}
-                               </div>
-
-                               {(link.destination || link.travel_date || link.duration) && (
-                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-secondary pt-1 border-t border-line">
-                                   {link.destination && <span>📍 Destination: <strong>{link.destination}</strong></span>}
-                                   {link.travel_date && <span>📅 Date of Travel: <strong>{link.travel_date}</strong></span>}
-                                   {link.duration && <span>⏱️ Duration: <strong>{link.duration}</strong></span>}
-                                 </div>
-                               )}
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-line">
-                               <div className="text-left lg:text-right">
-                                  <span className="text-xs font-semibold text-muted uppercase block">Net Amount</span>
-                                  <span className="text-2xl font-semibold text-success-ink">₹{(link.net_amount || 0).toLocaleString('en-IN')}</span>
-                               </div>
-
-                               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                                  <button 
-                                    onClick={() => handleCopy(link.id, portalUrl)}
-                                    className={`px-3.5 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-colors ${
-                                      copiedId === link.id ? 'bg-success-soft text-success-ink border border-success-line' : 'bg-brand-soft text-brand-ink hover:bg-brand-soft'
-                                    }`}
-                                  >
-                                    {copiedId === link.id ? '✓ Copied!' : '📋 Copy'}
-                                  </button>
-                                  <button 
-                                    onClick={() => shareOnWhatsApp(link.package_name, link.net_amount, portalUrl, link.customer_phone)}
-                                    className="px-3.5 py-2 bg-success-soft text-success-ink rounded-xl font-bold text-sm hover:bg-success-soft flex items-center gap-1.5"
-                                  >
-                                    💬 WhatsApp
-                                  </button>
-                                  <button 
-                                    onClick={() => shareViaEmail(link.package_name, link.net_amount, portalUrl, link.customer_email)}
-                                    className="px-3.5 py-2 bg-subtle text-content rounded-xl font-bold text-sm hover:bg-hover flex items-center gap-1.5"
-                                  >
-                                    ✉️ Email
-                                  </button>
-                                  <button 
-                                    onClick={() => {
-                                      setSelectedLink(link);
-                                      setActiveTab('Portal');
-                                    }}
-                                    className="px-4 py-2 bg-inverse text-white rounded-xl font-bold text-sm hover:bg-inverse flex items-center gap-1.5"
-                                  >
-                                    💳 Pay Now
-                                  </button>
-                                  {link.status === 'Paid' ? (
-                                    <span className="px-3.5 py-2 bg-success-soft text-success-ink rounded-xl font-semibold text-sm flex items-center gap-1.5 border border-success-line">
-                                      ✓ Paid Confirmed
-                                    </span>
-                                  ) : (
-                                    <button 
-                                      onClick={() => {
-                                        setConfirmRef(`PAYLINK-${link.pay_key || 'UPI'}`);
-                                        setConfirmMode('UPI');
-                                        setConfirmComment('');
-                                        setConfirmPaymentModal({ open: true, link });
-                                      }}
-                                      className="px-3.5 py-2 bg-success-strong hover:bg-success-strong text-white rounded-xl font-bold text-sm flex items-center gap-1.5 shadow-xs"
-                                    >
-                                      ✓ Confirm EMI Received
-                                    </button>
-                                  )}
-                               </div>
-                            </div>
-                         </div>
-                       );
-                     })
-                   )}
-                 </div>
-              </div>
-            );
-          })()}
+         {(activeTab==='Dashboard' || activeTab==='Completed') && <PaymentWorkspace data={overview} mode={activeTab} onNavigate={setActiveTab} onRecord={openRecordPayment} onSelectTrip={id=>{handleSelectTripId(id);setActiveTab('Installments');}}/>}
+         {activeTab==='Links' && <PaymentLinksTable links={paymentLinks} leads={allLeads} onRecord={openRecordPayment} onPreview={link=>{setSelectedLink(link);setActiveTab('Portal');}} onCopy={handleCopy} onCreate={()=>setShowCreateChoiceModal(true)}/>}
 
          {/* TAB 2: EMI & INSTALLMENTS SCHEDULER */}
          {activeTab === 'Installments' && (
            <div className="space-y-6">
               {/* Customer & Trip Search Toolbar */}
-              <div className="p-6 bg-inverse text-white rounded-xl space-y-4">
+              <div className="p-5 bg-surface text-content rounded-xl border border-line space-y-4">
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                        <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">SEARCH CUSTOMER & TRIP ID</span>
-                       <h4 className="text-base font-bold text-white">Find Existing EMI or Create New Schedule</h4>
+                       <h4 className="text-base font-semibold text-content">Choose a trip to manage installments</h4>
                     </div>
                     <div className="w-full md:w-80">
                        <select 
-                         value={selectedTripId} 
+                         aria-label="Select customer or trip" value={selectedTripId} 
                          onChange={e => handleSelectTripId(e.target.value)}
-                         className="w-full bg-inverse text-white border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none"
+                         className="w-full bg-canvas text-content border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none"
                        >
                           <option value="">-- Select Trip ID / Customer --</option>
-                          {allLeads.map(l => (
+                          {allLeads.filter(l=>!emiSearchQuery || `${l.name} ${l.tripId}`.toLowerCase().includes(emiSearchQuery.toLowerCase())).map(l => (
                             <option key={l.id} value={l.tripId}>{l.tripId} — {l.name} ({l.destination})</option>
                           ))}
                        </select>
@@ -998,15 +705,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                       onChange={(e) => {
                         const query = e.target.value;
                         setEmiSearchQuery(query);
-                        if (query.trim()) {
-                          const found = allLeads.find(l => 
-                            l.name.toLowerCase().includes(query.toLowerCase()) || 
-                            l.tripId.toLowerCase().includes(query.toLowerCase())
-                          );
-                          if (found) handleSelectTripId(found.tripId);
-                        }
+
                       }}
-                      className="w-full bg-inverse/80 text-white border border-line rounded-xl px-4 py-2.5 text-sm font-bold placeholder-muted outline-none focus:border-brand-line"
+                      className="w-full bg-canvas text-content border border-line rounded-xl px-4 py-2.5 text-sm font-bold placeholder-muted outline-none focus:border-brand-line"
                     />
                  </div>
               </div>
@@ -1021,9 +722,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         Destination: <strong>{targetLead.destination || 'N/A'}</strong> | Mobile: <strong>{targetLead.phone || 'N/A'}</strong> | Email: <strong>{targetLead.email || 'N/A'}</strong>
                       </p>
                    </div>
-                   <div className="flex items-center gap-2">
+                   <div className="flex flex-wrap items-center gap-2">
                        <span className={`px-3 py-1 text-sm font-bold rounded-lg border ${installments.length > 0 ? 'bg-success-soft text-success-ink border-success-line' : 'bg-warning-soft text-warning-ink border-warning-line'}`}>
-                         {installments.length > 0 ? `${installments.length} EMI Installments` : 'No EMI Schedule Yet'}
+                         {installments.length > 0 ? `${installments.length} installments` : 'No EMI Schedule Yet'}
                        </span>
                     </div>
                 </div>
@@ -1035,7 +736,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-line pb-4">
                  <div>
-                    <h3 className="text-xl font-semibold text-content tracking-tight">Installment Planner Schedule</h3>
+                    <h3 className="text-xl font-semibold text-content tracking-tight">Installment schedule</h3>
                     <p className="text-sm text-secondary font-medium mt-1">Configure installment milestones for {targetLead?.name || lead?.name || 'Selected Customer'}.</p>
                  </div>
 
@@ -1044,7 +745,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                    const totalAllocated = installments.reduce((acc, curr) => acc + (curr.amount || 0), 0);
                    const isBalanced = totalAllocated === totalPackagePrice;
                    return (
-                     <div className="flex items-center gap-3">
+                     <div className="flex flex-wrap items-center gap-3">
                         <div className={`px-4 py-2 rounded-xl text-sm font-semibold uppercase tracking-wider ${isBalanced ? 'bg-success-soft text-success-ink border border-success-line' : 'bg-warning-soft text-warning-ink border border-warning-line'}`}>
                            Allocated: ₹{totalAllocated.toLocaleString()} / ₹{totalPackagePrice.toLocaleString()} {isBalanced ? '✓ Balanced' : `(Diff: ₹${Math.abs(totalPackagePrice - totalAllocated)})`}
                         </div>
@@ -1053,7 +754,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                           disabled={isSavingInstallments}
                           className="px-6 py-2.5 bg-success-strong text-white rounded-xl text-sm font-semibold uppercase tracking-widest hover:bg-success-strong shadow-sm transition-all disabled:opacity-50"
                         >
-                           {isSavingInstallments ? 'Saving...' : '💾 Save Schedule'}
+                           {isSavingInstallments ? 'Saving...' : 'Save schedule'}
                         </button>
                      </div>
                    );
@@ -1063,17 +764,17 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
               {/* Total Package Price Input & Auto-split */}
               <div className="p-6 bg-canvas border border-line rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
                  <div>
-                    <label className="block text-sm font-semibold text-muted uppercase tracking-widest mb-1">Total Package Price (INR)</label>
+                    <label className="block text-sm font-semibold text-muted uppercase tracking-widest mb-1">Booking total (INR)</label>
                     <input 
                       type="number" 
-                      value={totalPackagePrice} 
+                      aria-label="Booking total" readOnly value={totalPackagePrice} 
                       onChange={e => setTotalPackagePrice(Number(e.target.value))}
                       className="bg-surface border border-line rounded-xl px-4 py-2 text-lg font-semibold text-content outline-none w-48"
                     />
                  </div>
-                 <div className="flex items-center gap-2">
+                 <div className="flex flex-wrap items-center gap-2">
                     <select
-                      value={autoSplitCount}
+                      aria-label="Number of installments" value={autoSplitCount}
                       onChange={e => setAutoSplitCount(Number(e.target.value))}
                       className="bg-surface border border-line rounded-xl px-3 py-2 text-sm font-bold text-content outline-none"
                     >
@@ -1084,12 +785,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     <button 
                       type="button"
                       onClick={() => {
+                        if(installments.some(i=>Number(i.paid_amount)>0)){showLocalToast('Keep received installments. Add or adjust unpaid installments individually.','error');return;}
                         const count = autoSplitCount;
-                        const perInst = Math.round(totalPackagePrice / count);
+                        const totalPaise=Math.round(totalPackagePrice*100);
+                        const perInst = Math.floor(totalPaise / count);
                         const newInstallments = [];
                         for (let i = 0; i < count; i++) {
                           const isLast = i === count - 1;
-                          const amount = isLast ? totalPackagePrice - perInst * (count - 1) : perInst;
+                          const amount = (isLast ? totalPaise - perInst * (count - 1) : perInst)/100;
                           const dueDate = new Date(Date.now() + i * 7 * 86400000).toISOString().split('T')[0];
                           newInstallments.push({
                             title: `${i + 1}. Installment ${i + 1}`,
@@ -1103,7 +806,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                       }}
                       className="px-4 py-2 bg-brand-soft text-brand-ink rounded-xl text-sm font-bold hover:bg-brand-soft"
                     >
-                       ⚡ Auto-Split Equal Installments
+                       Split evenly
                     </button>
                     <button
                       type="button"
@@ -1118,7 +821,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
               {/* Milestone Rows with Copy, WhatsApp, and Email Share Links */}
               <div className="space-y-4">
                  {installments.map((inst, idx) => {
-                   const instPayKey = inst.pay_key || `pay_inst_${idx + 1}`;
+                   const instPayKey = inst.pay_key || ''; 
                    const instPortalUrl = `${window.location.origin}/#payment?pay_id=${instPayKey}`;
 
                    return (
@@ -1127,13 +830,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                            <div className="flex-1 space-y-1 w-full">
                               <input 
                                 type="text" 
-                                value={inst.title}
+                                aria-label={`Installment ${idx+1} title`} value={inst.title}
                                 onChange={e => {
                                   const updated = [...installments];
                                   updated[idx].title = e.target.value;
                                   setInstallments(updated);
                                 }}
-                                disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                disabled={Number(inst.paid_amount || 0)>0}
                                 className="font-bold text-content text-sm bg-transparent border-b border-transparent hover:border-line focus:border-brand-line outline-none w-full disabled:opacity-75"
                               />
                               <input 
@@ -1145,7 +848,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   updated[idx].payment_condition = e.target.value;
                                   setInstallments(updated);
                                 }}
-                                disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                disabled={Number(inst.paid_amount || 0)>0}
                                 className="text-sm text-secondary bg-transparent border-b border-transparent hover:border-line focus:border-brand-line outline-none w-full disabled:opacity-75"
                               />
                            </div>
@@ -1155,13 +858,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                  <span className="text-xs font-semibold text-muted uppercase block">Amount (₹)</span>
                                  <input 
                                    type="number" 
-                                   value={inst.amount}
+                                   aria-label={`Installment ${idx+1} amount`} min="0.01" step="0.01" value={inst.amount}
                                    onChange={e => {
                                      const updated = [...installments];
                                      updated[idx].amount = Number(e.target.value);
                                      setInstallments(updated);
                                    }}
-                                   disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                   disabled={Number(inst.paid_amount || 0)>0}
                                    className="w-28 bg-canvas border border-line rounded-xl px-3 py-1.5 text-sm font-semibold text-content outline-none disabled:opacity-75"
                                  />
                               </div>
@@ -1169,13 +872,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                  <span className="text-xs font-semibold text-muted uppercase block">Due Date</span>
                                  <input 
                                    type="date" 
-                                   value={inst.due_date}
+                                   aria-label={`Installment ${idx+1} due date`} value={inst.due_date}
                                    onChange={e => {
                                      const updated = [...installments];
                                      updated[idx].due_date = e.target.value;
                                      setInstallments(updated);
                                    }}
-                                   disabled={!!inst.pay_key || inst.payment_status === 'Paid'}
+                                   disabled={Number(inst.paid_amount || 0)>0}
                                    className="bg-canvas border border-line rounded-xl px-3 py-1.5 text-sm font-bold text-content outline-none disabled:opacity-75"
                                  />
                               </div>
@@ -1211,7 +914,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         {/* EMI Milestone Action Toolbar */}
                         <div className="pt-3 border-t border-line flex flex-wrap items-center justify-between gap-3">
                            <div className="text-xs font-mono text-secondary truncate max-w-xs">
-                             {inst.pay_key ? <>Pay Key: <strong className="text-content">{inst.pay_key}</strong></> : <span className="text-warning-ink font-bold">⚠️ Unsaved Link — Click 'Create Link' to generate</span>}
+                             {inst.pay_key ? <span className="text-secondary">Payment link ready to share</span> : <span className="text-warning-ink font-bold">⚠️ Unsaved Link — Click 'Create Link' to generate</span>}
                            </div>
 
                             <div className="flex flex-wrap items-center gap-2">
@@ -1262,7 +965,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      window.location.hash = `payment?pay_id=${inst.pay_key}`;
+
                                       window.open(`${window.location.origin}/#payment?pay_id=${inst.pay_key}`, '_blank');
                                     }}
                                     className="px-3 py-1.5 bg-inverse text-white rounded-lg text-sm font-bold hover:bg-inverse flex items-center gap-1 cursor-pointer"
@@ -1270,10 +973,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                     💳 Pay Now
                                   </button>
                                   {inst.payment_status === 'Paid' ? (
-                                    <button
+                                    <button disabled
                                       type="button"
                                       onClick={() => {
-                                        setConfirmRef(inst.transaction_ref || `EMI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
+                                        setConfirmRef('');
                                         setConfirmMode(inst.payment_mode || 'UPI');
                                         setConfirmComment(inst.comments || inst.notes || '');
                                         setConfirmPaymentModal({
@@ -1282,7 +985,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                             id: inst.id,
                                             pay_key: inst.pay_key,
                                             lead_id: targetLead?.id || lead?.id,
-                                            net_amount: inst.amount,
+                                            net_amount: inst.amount, paid_amount: inst.paid_amount || 0, customer_name: targetLead?.name || custName,
                                             package_name: `${inst.title} - ${targetLead?.name || custName || 'Customer'}`,
                                             instIdx: idx
                                           }
@@ -1290,13 +993,13 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       }}
                                       className="px-3.5 py-1.5 bg-success-soft hover:bg-success-soft text-success-ink border border-success-line rounded-lg text-sm font-semibold uppercase flex items-center gap-1 shadow-2xs cursor-pointer"
                                     >
-                                      ✓ Paid / Update
+                                      Paid in full
                                     </button>
                                   ) : (
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        setConfirmRef(`EMI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
+                                        setConfirmRef('');
                                         setConfirmMode('UPI');
                                         setConfirmComment(inst.comments || inst.notes || '');
                                         setConfirmPaymentModal({
@@ -1313,7 +1016,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                                       }}
                                       className="px-3.5 py-1.5 bg-success-strong hover:bg-success-strong text-white rounded-lg text-sm font-semibold uppercase flex items-center gap-1 shadow-sm cursor-pointer"
                                     >
-                                      ✓ Confirm EMI Received
+                                      Record payment
                                     </button>
                                   )}
                                 </>
@@ -1344,7 +1047,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     }}
                     className="px-5 py-2.5 bg-brand text-white rounded-xl text-sm font-semibold uppercase tracking-wider hover:bg-brand shadow-sm flex items-center gap-2"
                   >
-                    + Add Installment Row
+                    Add installment
                   </button>
                   {installments.length > 0 && (
                     <button
@@ -1366,318 +1069,16 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                  <div className="p-10 text-center bg-surface rounded-xl border border-dashed border-line space-y-3">
                     <div className="w-14 h-14 bg-subtle text-muted rounded-full mx-auto flex items-center justify-center text-2xl">🗓️</div>
                     <h4 className="text-base font-semibold text-content">No EMI Schedule Created</h4>
-                    <p className="text-sm text-secondary font-medium max-w-sm mx-auto">This lead does not have any installment milestones yet. Use the Auto-Split above or click "+ Add Installment Row" to create a new payment schedule.</p>
+                    <p className="text-sm text-secondary font-medium max-w-sm mx-auto">This lead does not have any installment milestones yet. Use the Auto-Split above or click "Add installment" to create a new payment schedule.</p>
                  </div>
                )}
             </div>
           )}
 
           {/* TAB: PAYMENT CONFIRMATION DESK ("PAYMENT CONFERENCE") */}
-          {activeTab === 'Confirmation' && (() => {
-            const pendingSubmissions = submissions.filter(s => s.verification_status === 'Pending Review');
-            const approvedSubmissions = submissions.filter(s => s.verification_status === 'Approved');
+          {(activeTab==='Confirmation' || activeTab==='Submissions') && <PaymentReviewTable submissions={submissions} onReject={id=>handleVerifySubmission(id,'Rejected')} onReview={sub=>{setConfirmRef(sub.utr_number || '');setConfirmMode(sub.payment_mode || 'UPI');setConfirmComment('');setConfirmPaymentModal({open:true,link:{id:sub.id,pay_key:sub.pay_key,lead_id:sub.lead_id,customer_name:sub.customer_name,net_amount:sub.amount_paid,package_name:sub.package_name,submissionId:sub.id}});}}/>}
 
-            return (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="p-6 bg-inverse text-white rounded-xl space-y-4 shadow-sm border border-brand-line/40">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="p-1.5 rounded-lg bg-success-strong/20 text-success-ink font-semibold text-sm">✅ CONFIRMATION DESK</span>
-                        <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Payment Conference & EMI Reconciliation</span>
-                      </div>
-                      <h3 className="text-2xl font-semibold text-white uppercase tracking-tight">Payment Confirmation Desk</h3>
-                      <p className="text-sm text-slate-300">Reconcile client payment proofs, confirm EMI installments received from links, and auto-update lead balances.</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="p-3.5 bg-white/10 rounded-xl text-center min-w-[100px] backdrop-blur-md">
-                        <span className="text-xs font-semibold text-warning-ink uppercase block">Pending</span>
-                        <span className="text-2xl font-semibold text-warning-ink">{pendingSubmissions.length}</span>
-                      </div>
-                      <div className="p-3.5 bg-white/10 rounded-xl text-center min-w-[100px] backdrop-blur-md">
-                        <span className="text-xs font-semibold text-success-ink uppercase block">Confirmed</span>
-                        <span className="text-2xl font-semibold text-success-ink">{approvedSubmissions.length}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submissions & Payment Link Reconciliations */}
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-sm font-semibold text-content uppercase tracking-wider">Incoming Payment Receipts & Proofs</h4>
-                    {submissions.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearSubmissions}
-                        className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-sm ${
-                          confirmClearActive 
-                            ? 'bg-warning-strong hover:bg-warning-strong text-white border-warning-line shadow-sm' 
-                            : 'bg-danger-soft hover:bg-danger-soft text-danger-ink border-danger-line'
-                        }`}
-                      >
-                        {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
-                      </button>
-                    )}
-                  </div>
-                  {submissions.length === 0 ? (
-                    <div className="p-12 text-center bg-surface rounded-xl border border-line space-y-2">
-                      <div className="w-12 h-12 bg-success-soft text-success-ink rounded-full mx-auto flex items-center justify-center text-xl font-semibold">✓</div>
-                      <p className="text-sm font-bold text-content">All Received Payments Reconciled</p>
-                      <p className="text-sm text-secondary">No unconfirmed payment receipts pending verification.</p>
-                    </div>
-                  ) : (
-                    submissions.map((sub) => (
-                      <div key={sub.id} className="p-6 bg-surface rounded-xl border border-line shadow-xs space-y-4 hover:border-brand-line transition-all">
-                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2.5 py-0.5 rounded-lg text-sm font-mono font-bold bg-brand-soft text-brand-ink border border-brand-line">
-                                UTR: {sub.utr_number || 'NO-UTR'}
-                              </span>
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${
-                                sub.verification_status === 'Approved' ? 'bg-success-soft text-success-ink' :
-                                sub.verification_status === 'Rejected' ? 'bg-danger-soft text-danger-ink' : 'bg-warning-soft text-warning-ink'
-                              }`}>
-                                {sub.verification_status === 'Approved' ? '✓ EMI Confirmed' : sub.verification_status}
-                              </span>
-                              <span className="text-sm text-muted font-bold">• Mode: {sub.payment_mode || 'UPI'}</span>
-                            </div>
-                            <h4 className="text-lg font-semibold text-content">{sub.package_name}</h4>
-                            <p className="text-sm text-secondary">
-                              Customer: <strong className="text-content">{sub.customer_name}</strong> ({sub.mobile})
-                            </p>
-
-                            {/* Payment Comment Box in Confirmation Desk */}
-                            {(sub.comments || sub.notes) && (
-                              <div className="mt-2 px-3 py-2 bg-brand-soft/80 border border-brand-line rounded-xl flex items-start gap-2 text-sm">
-                                <MessageSquare className="w-3.5 h-3.5 text-brand-ink mt-0.5 shrink-0" />
-                                <div>
-                                  <span className="text-xs font-semibold text-brand-ink uppercase block tracking-wider">Payment Confirmation Comment / Note</span>
-                                  <p className="font-semibold text-content text-sm mt-0.5 whitespace-pre-wrap">{sub.comments || sub.notes}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto border-t lg:border-t-0 pt-3 lg:pt-0 border-line">
-                            <div className="text-left lg:text-right">
-                              <span className="text-xs font-semibold text-muted uppercase block">Amount Paid</span>
-                              <span className="text-2xl font-semibold text-success-ink">₹{(sub.amount_paid || 0).toLocaleString('en-IN')}</span>
-                            </div>
-
-                            <div className="flex flex-wrap gap-2">
-                              {sub.verification_status !== 'Approved' && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setConfirmRef(sub.utr_number || `UPI-REF-${Math.floor(100000 + Math.random() * 900000)}`);
-                                    setConfirmMode(sub.payment_mode || 'UPI');
-                                    setConfirmComment(sub.comments || sub.notes || '');
-                                    setConfirmPaymentModal({
-                                      open: true,
-                                      link: {
-                                        id: sub.id,
-                                        pay_key: sub.pay_key,
-                                        lead_id: sub.lead_id || targetLead?.id || '',
-                                        net_amount: sub.amount_paid,
-                                        package_name: sub.package_name,
-                                        submissionId: sub.id
-                                      }
-                                    });
-                                  }}
-                                  className="px-4 py-2.5 bg-success-strong hover:bg-success-strong text-white font-semibold text-sm rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-                                >
-                                  ✓ Confirm EMI Received
-                                </button>
-                              )}
-                              {sub.verification_status === 'Pending Review' && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleVerifySubmission(sub.id, 'Rejected')}
-                                  className="px-3.5 py-2.5 bg-danger-soft text-danger-ink hover:bg-danger-soft font-bold text-sm rounded-xl cursor-pointer"
-                                >
-                                  Reject
-                                </button>
-                              )}
-                              {sub.verification_status === 'Approved' && (
-                                <span className="px-4 py-2 bg-success-soft text-success-ink font-bold text-sm rounded-xl border border-success-line flex items-center gap-1">
-                                  ✓ EMI Payment Confirmed & Verified
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-         {/* TAB 3: PAYMENT SUBMISSIONS */}
-         {activeTab === 'Submissions' && (
-           <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold text-content uppercase tracking-tight">Payment Verification Submissions</h3>
-                {submissions.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearSubmissions}
-                    className={`px-3.5 py-1.5 rounded-xl border transition-all flex items-center gap-1.5 font-bold text-sm ${
-                      confirmClearActive 
-                        ? 'bg-warning-strong hover:bg-warning-strong text-white border-warning-line shadow-sm' 
-                        : 'bg-danger-soft hover:bg-danger-soft text-danger-ink border-danger-line'
-                    }`}
-                  >
-                    {confirmClearActive ? '⚠️ Confirm Clear' : '🗑️ Clear All Submissions'}
-                  </button>
-                )}
-              </div>
-              <div className="space-y-4">
-                 {submissions.length === 0 ? (
-                   <div className="p-12 text-center bg-surface rounded-xl border border-line">
-                     <p className="text-sm font-bold text-muted">No payment submissions received yet.</p>
-                   </div>
-                 ) : (
-                   submissions.map((sub) => (
-                     <div key={sub.id} className="p-6 bg-surface rounded-xl border border-line flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                           <div className="flex items-center gap-3 mb-1">
-                              <span className="text-sm font-bold text-secondary">UTR: <strong className="font-mono text-brand-ink">{sub.utr_number}</strong></span>
-                              <span className={`px-3 py-0.5 rounded-full text-xs font-semibold uppercase ${sub.verification_status === 'Approved' ? 'bg-success-soft text-success-ink' : sub.verification_status === 'Rejected' ? 'bg-danger-soft text-danger-ink' : 'bg-warning-soft text-warning-ink'}`}>
-                                {sub.verification_status}
-                              </span>
-                           </div>
-                           <h4 className="text-base font-bold text-content">{sub.package_name}</h4>
-                           <p className="text-sm text-secondary font-medium mt-1">Paid by: <strong>{sub.customer_name}</strong> ({sub.mobile}) via {sub.payment_mode}</p>
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                           <div className="text-right">
-                              <span className="text-xs font-semibold text-muted uppercase block">Amount Paid</span>
-                              <span className="text-xl font-semibold text-success-ink">₹{(sub.amount_paid || 0).toLocaleString()}</span>
-                           </div>
-                           {sub.verification_status === 'Pending Review' && (
-                             <div className="flex gap-2">
-                                <button onClick={() => handleVerifySubmission(sub.id, 'Approved')} className="px-4 py-2 bg-success-strong text-white rounded-xl font-bold text-sm hover:bg-success-strong">Approve</button>
-                                <button onClick={() => handleVerifySubmission(sub.id, 'Rejected')} className="px-4 py-2 bg-danger-soft text-danger-ink rounded-xl font-bold text-sm hover:bg-danger-soft">Reject</button>
-                             </div>
-                           )}
-                        </div>
-                     </div>
-                   ))
-                 )}
-              </div>
-           </div>
-         )}
-
-         {/* TAB 4: CREATE PAYMENT LINK FORM (Individual Package) */}
-         {activeTab === 'CreateLink' && (
-           <form onSubmit={handleCreateLink} className="space-y-6 max-w-3xl bg-surface p-8 rounded-xl border border-line shadow-sm">
-              <div>
-                <h3 className="text-xl font-semibold text-content uppercase tracking-tight">Create Individual Package Payment Link</h3>
-                <p className="text-sm text-secondary font-medium mt-1">Fill in travel details to generate a payment link for complete deposit or custom package amount.</p>
-              </div>
-              
-              <div className="space-y-4">
-                 {/* Lead Selector */}
-                 <div>
-                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Link to Lead / Trip ID (Optional)</label>
-                    <select 
-                      value={selectedTripId} 
-                      onChange={e => handleSelectTripId(e.target.value)}
-                      className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line"
-                    >
-                       <option value="">-- Direct Individual Payment (No Trip Link) --</option>
-                       {allLeads.map(l => (
-                         <option key={l.id} value={l.tripId}>{l.tripId} — {l.name} ({l.destination})</option>
-                       ))}
-                    </select>
-                 </div>
-
-                 {/* Package Title */}
-                 <div>
-                    <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Package / Tour Title *</label>
-                    <input type="text" required value={packageName} onChange={e => setPackageName(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. Bali Luxury Beach Villa & Island Tour" />
-                 </div>
-
-                 {/* Customer Name & Destination */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Customer Name *</label>
-                       <input type="text" required value={custName} onChange={e => setCustName(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="Full name of customer" />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Destination *</label>
-                       <input type="text" required value={destination} onChange={e => setDestination(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. Bali / Maldives / Kashmir" />
-                    </div>
-                 </div>
-
-                 {/* Date of Travel & Duration */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Date of Travel *</label>
-                       <input type="date" required value={travelDate} onChange={e => setTravelDate(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Duration *</label>
-                       <input type="text" required value={durationText} onChange={e => setDurationText(e.target.value)} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" placeholder="e.g. 5 Days / 4 Nights" />
-                    </div>
-                 </div>
-
-                 {/* Adults & Children Pax Counts */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Adults Count *</label>
-                       <input type="number" min="1" required value={adultsCount} onChange={e => setAdultsCount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Children Count *</label>
-                       <input type="number" min="0" required value={childrenCount} onChange={e => setChildrenCount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
-                    </div>
-                 </div>
-
-                 {/* Optional Contact Fields: Mobile & Gmail */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-canvas rounded-xl border border-line">
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">
-                         Customer Mobile <span className="text-xs text-muted font-normal lowercase">(optional)</span>
-                       </label>
-                       <input type="text" value={custPhone} onChange={e => setCustPhone(e.target.value)} className="w-full bg-surface border border-line rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-line" placeholder="+91 98765 43210" />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">
-                         Customer Gmail / Email <span className="text-xs text-muted font-normal lowercase">(optional)</span>
-                       </label>
-                       <input type="email" value={custEmail} onChange={e => setCustEmail(e.target.value)} className="w-full bg-surface border border-line rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-line" placeholder="customer@gmail.com" />
-                    </div>
-                 </div>
-
-                 {/* Base Price & Tax breakdown */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">Package Price / Base Amount (₹) *</label>
-                       <input type="number" required value={baseAmount} onChange={e => setBaseAmount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
-                    </div>
-                    <div>
-                       <label className="block text-sm font-bold text-secondary uppercase tracking-wider mb-1">GST Tax Amount (₹)</label>
-                       <input type="number" value={gstAmount} onChange={e => setGstAmount(Number(e.target.value))} className="w-full bg-canvas border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none focus:border-brand-line" />
-                    </div>
-                 </div>
-
-                 <div className="p-4 bg-brand-soft rounded-xl border border-brand-line flex justify-between items-center">
-                    <span className="text-sm font-bold text-brand-ink">Total Net Amount Payable:</span>
-                    <span className="text-2xl font-semibold text-brand-ink">₹{(baseAmount + gstAmount + feeAmount - discountAmount).toLocaleString('en-IN')}</span>
-                 </div>
-              </div>
-
-              <button type="submit" className="w-full py-4 bg-brand hover:bg-brand text-white rounded-xl font-semibold text-sm uppercase tracking-widest shadow-sm transition-all">
-                🚀 Generate Link & Open Share Options
-              </button>
-           </form>
-         )}
+         {activeTab==='CreateLink' && <form onSubmit={handleCreateLink} className="max-w-4xl mx-auto bg-surface border border-line rounded-xl overflow-hidden"><header className="p-5 border-b border-line"><h3 className="text-lg font-semibold text-content">Create a payment request</h3><p className="text-sm text-secondary mt-2">Select a trip, check the amount, then share the customer payment link.</p></header><div className="p-5 space-y-5"><label className="block text-sm text-secondary">Booking / trip<select aria-label="Payment request booking" value={selectedTripId} onChange={e=>handleSelectTripId(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"><option value="">Choose a trip or enter customer details</option>{allLeads.map(l=><option key={l.id} value={l.tripId}>{l.tripId} · {l.name}</option>)}</select></label><div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><label className="block text-sm text-secondary">Customer name<input required value={custName} onChange={e=>setCustName(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label><label className="block text-sm text-secondary">Package title<input required value={packageName} onChange={e=>setPackageName(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label><label className="block text-sm text-secondary">Mobile number<input type="tel" value={custPhone} onChange={e=>setCustPhone(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label><label className="block text-sm text-secondary">Email address<input type="email" value={custEmail} onChange={e=>setCustEmail(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label><label className="block text-sm text-secondary">Destination<input required value={destination} onChange={e=>setDestination(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label><label className="block text-sm text-secondary">Travel date<input type="date" value={travelDate} onChange={e=>setTravelDate(e.target.value)} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label></div><fieldset className="border-t border-line pt-5"><legend className="font-medium text-content">Request amount</legend><div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">{[{label:'Base amount (INR)',value:baseAmount,set:setBaseAmount,min:0.01},{label:'GST amount (INR)',value:gstAmount,set:setGstAmount,min:0},{label:'Processing fee (INR)',value:feeAmount,set:setFeeAmount,min:0},{label:'Discount (INR)',value:discountAmount,set:setDiscountAmount,min:0}].map(f=><label key={f.label} className="block text-sm text-secondary">{f.label}<input required type="number" min={f.min} step="0.01" value={f.value} onChange={e=>f.set(Number(e.target.value))} className="block w-full mt-2 p-3 rounded-lg border border-line bg-canvas text-content"/></label>)}</div></fieldset><div className="bg-brand-soft border border-brand-line rounded-lg p-4 flex flex-wrap items-center justify-between gap-3"><span className="text-sm text-brand-ink">Customer will be asked to pay</span><strong className="text-2xl text-brand-ink tabular-nums">{money(baseAmount+gstAmount+feeAmount-discountAmount)}</strong></div><p className="text-xs text-secondary">For a linked booking, the requested total cannot exceed its remaining balance. Add only applicable, agreed charges.</p></div><footer className="p-5 border-t border-line flex flex-wrap justify-end gap-3"><button type="button" onClick={()=>setActiveTab('Links')} className="px-5 py-3 border border-line rounded-lg text-sm text-secondary">Back to links</button><button type="submit" disabled={isCreatingLink} aria-busy={isCreatingLink} className="px-5 py-3 rounded-lg bg-brand text-white text-sm font-medium disabled:opacity-50">{isCreatingLink?'Creating payment link…':'Create payment link'}</button></footer></form>}
 
          {/* TAB 5: GATEWAY & BANK SETTINGS */}
          {activeTab === 'Settings' && (
@@ -1755,26 +1156,26 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
              />
            </div>
          )}
-      </div>
+      </div>}
       {localToast && (
-        <div className="fixed bottom-6 right-6 z-[250] bg-inverse text-white px-5 py-3 rounded-xl shadow-sm flex items-center gap-2 border border-line animate-in slide-in-from-bottom duration-300">
-          <span className="text-success-ink font-semibold">✓</span>
+        <div role="status" aria-live="polite" className="fixed bottom-6 right-6 z-[350] bg-inverse text-white px-5 py-3 rounded-xl shadow-sm flex items-center gap-2 border border-line animate-in slide-in-from-bottom duration-300">
+          <span className="font-semibold">{localToast.type==='error' ? '!' : '✓'}</span>
           <span className="text-xs font-bold">{localToast.message}</span>
         </div>
       )}
       {/* Payment Confirmation Modal */}
       {confirmPaymentModal.open && confirmPaymentModal.link && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-surface rounded-xl shadow-sm w-full max-w-lg mx-4 overflow-hidden animate-in zoom-in-95 duration-300">
+          <div role="dialog" aria-modal="true" aria-label="Record verified payment" className="bg-surface rounded-xl shadow-sm w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-300">
             {/* Header */}
             <div className="bg-gradient-to-r from-success-strong to-success-strong px-6 py-5 text-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-success-ink">Confirm Payment Received</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-white">Record verified payment</p>
                   <h3 className="text-lg font-semibold mt-0.5">{confirmPaymentModal.link.customer_name}</h3>
-                  <p className="text-sm text-success-ink mt-0.5">{confirmPaymentModal.link.package_name} · ₹{(confirmPaymentModal.link.net_amount || 0).toLocaleString()}</p>
+                  <p className="text-sm text-white/85 mt-0.5">{confirmPaymentModal.link.package_name} · ₹{(confirmPaymentModal.link.net_amount || 0).toLocaleString()}</p>
                 </div>
-                <button onClick={() => setConfirmPaymentModal({ open: false, link: null })} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
+                <button aria-label="Close payment dialog" disabled={isConfirmingPayment} onClick={() => setConfirmPaymentModal({ open: false, link: null })} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -1782,11 +1183,14 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
 
             {/* Body */}
             <div className="p-6 space-y-5">
+              <div className="text-sm text-secondary bg-canvas rounded-lg p-3">Only record funds you have verified in your bank or payment provider.</div>
+              {!confirmPaymentModal.link.submissionId && <label className="block text-sm text-secondary">Amount received now (INR)<input type="number" min="0.01" step="0.01" aria-label="Amount received now" value={confirmAmount} onChange={e=>setConfirmAmount(e.target.value)} className="mt-2 w-full border border-line bg-canvas text-content rounded-lg p-3"/><span className="block text-xs mt-2">Already received: {money(confirmPaymentModal.link.paid_amount || 0)}. Enter only this new receipt.</span></label>}
+              {confirmationError && <p role="alert" className="text-sm text-danger-ink">{confirmationError}</p>}
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold text-secondary uppercase tracking-widest">Transaction Ref / UTR Number *</label>
+                <label htmlFor="payment-reference" className="block text-xs font-semibold text-secondary">Transaction reference / UTR *</label>
                 <input
                   type="text"
-                  value={confirmRef}
+                  readOnly={!!confirmPaymentModal.link.submissionId} id="payment-reference" value={confirmRef}
                   onChange={e => setConfirmRef(e.target.value)}
                   className="w-full border border-line rounded-xl px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-success-line focus:border-success-line"
                   placeholder="e.g. UTR-123456789012 or TXN-REF"
@@ -1799,7 +1203,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                   {['UPI', 'Cash', 'Bank Transfer', 'Card'].map(mode => (
                     <button
                       key={mode}
-                      onClick={() => setConfirmMode(mode)}
+                      disabled={!!confirmPaymentModal.link.submissionId} onClick={() => setConfirmMode(mode)}
                       className={`px-3 py-2.5 rounded-xl text-sm font-bold border transition-all ${
                         confirmMode === mode
                           ? 'bg-success-strong text-white border-success-line shadow-sm shadow-success-line'
@@ -1840,36 +1244,27 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                 disabled={!confirmRef.trim() || isConfirmingPayment}
                 onClick={async () => {
                   const link = confirmPaymentModal.link;
-                  setIsConfirmingPayment(true);
+                  if(actionLock.current)return;actionLock.current=true;
+                  setIsConfirmingPayment(true);setConfirmationError('');
                   try {
                     const commentVal = confirmComment.trim();
                     const cleanRef = confirmRef.trim();
 
-                    await handleConfirmEmiReceived(
-                      link.lead_id || '',
-                      link.id,
-                      cleanRef,
-                      confirmMode,
-                      link.net_amount || 0,
-                      link.pay_key,
-                      commentVal
-                    );
-
-                    if (link.instIdx !== undefined && installments[link.instIdx]) {
-                      const updated = [...installments];
-                      updated[link.instIdx].payment_status = 'Paid';
-                      updated[link.instIdx].comments = commentVal;
-                      updated[link.instIdx].notes = commentVal;
-                      updated[link.instIdx].transaction_ref = confirmRef.trim();
-                      updated[link.instIdx].payment_mode = confirmMode;
-                      setInstallments(updated);
+                    if(link.submissionId) {
+                      await api.verifyPaymentSubmission(link.submissionId,'Approved');
+                      await loadData();onPaymentUpdated?.();
+                    } else {
+                      const amount=Number(confirmAmount);
+                      if(!Number.isFinite(amount) || amount<=0)throw new Error('Enter a positive received amount.');
+                      const cumulative=Math.round((Number(link.paid_amount || 0)+amount)*100)/100;
+                      await handleConfirmEmiReceived(link.lead_id || '',link.id,cleanRef,confirmMode,cumulative,link.pay_key,commentVal);
                     }
-
                     setConfirmPaymentModal({ open: false, link: null });
                     setConfirmRef('');
                     setConfirmMode('UPI');
                     setConfirmComment('');
-                  } catch(error) {alert((error as Error).message || 'Payment was not confirmed.');} finally {
+                  } catch(error) {setConfirmationError((error as Error).message || 'Payment was not confirmed.');} finally {
+                    actionLock.current=false;
                     setIsConfirmingPayment(false);
                   }
                 }}
@@ -1891,7 +1286,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         <div className="fixed inset-0 z-[9999] bg-inverse/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-surface rounded-xl max-w-md w-full shadow-sm border border-line overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 bg-gradient-to-r from-brand to-brand text-white flex justify-between items-center">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <MessageSquare className="w-5 h-5" />
                 <h3 className="font-bold text-base">Installment Payment Comment</h3>
               </div>

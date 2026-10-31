@@ -1,7 +1,8 @@
-import { recordReceipt, moneyPaise } from '../services/receipts';
+import { paymentExpiry, assertPaymentLinkActive } from '../services/paymentExpiry';
+import { recordReceipt, moneyPaise, collectedPaise } from '../services/receipts';
 import { randomBytes } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { runQuery, queryAll, queryOne } from '../db/connection';
+import { saveDb, getDb, withDbPersistenceBatch, runQuery, queryAll, queryOne } from '../db/connection';
 
 export function createPaymentLink(data: {
   leadId?: string;
@@ -21,12 +22,26 @@ export function createPaymentLink(data: {
   hotels?: string;
   travelers?: string;
 }) {
+  const amount=moneyPaise(data.amount),tax=moneyPaise(data.gst ?? 0),feePaise=moneyPaise(data.fee ?? 0),discountPaise=moneyPaise(data.discount ?? 0);
+  const netPaise=amount+tax+feePaise-discountPaise;
+  if(amount<=0 || netPaise<=0 || !Number.isSafeInteger(netPaise))throw Object.assign(new Error('Enter a positive payment request amount.'),{status:400});
+  if(!data.customerName?.trim())throw Object.assign(new Error('Customer name is required.'),{status:400});
+  if(data.leadId){
+    const lead=queryOne('SELECT id,status FROM leads WHERE id=? OR trip_id=?',[data.leadId,data.leadId]);
+    if(!lead)throw Object.assign(new Error('Lead not found.'),{status:404});
+    if(/cancel|lost/i.test(lead.status))throw Object.assign(new Error('Cannot request payment for a cancelled lead.'),{status:409});
+    const booking=queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?',[lead.id]);
+    const quote=queryOne('SELECT final_selling_price FROM quotes WHERE lead_id=? ORDER BY created_at DESC LIMIT 1',[lead.id]);
+    const cap=booking?.total_paise ?? (quote ? moneyPaise(quote.final_selling_price) : 0);
+    if(netPaise>cap-collectedPaise(lead.id))throw Object.assign(new Error('Payment request exceeds the remaining booking balance.'),{status:400});
+    data.leadId=lead.id;
+  }
   const id = `pay-link-${uuidv4()}`;
   const payKey = `pay_${randomBytes(24).toString('hex')}`;
   const gst = data.gst || 0;
   const fee = data.fee || 0;
   const discount = data.discount || 0;
-  const netAmount = Math.max(0, data.amount + gst + fee - discount);
+  const netAmount = netPaise/100;
   const now = new Date().toISOString();
 
   // Try to insert with extended columns
@@ -82,7 +97,8 @@ export function createPaymentLink(data: {
     );
   }
 
-  return queryOne(`SELECT * FROM payment_links WHERE id = ?`, [id]);
+  const saved=queryOne(`SELECT * FROM payment_links WHERE id = ?`, [id]);
+  return {...saved,...paymentExpiry(saved)};
 }
 
 export function getPaymentLinkByKey(payKey: string) {
@@ -92,19 +108,12 @@ export function getPaymentLinkByKey(payKey: string) {
   const inst = queryOne(`SELECT * FROM payment_installments WHERE pay_key = ?`, [payKey]);
   
   if (link && inst) {
-    // Installment exists — if amount differs, sync the link to match the installment
-    if (Number(inst.amount) !== Number(link.amount)) {
-      runQuery(
-        `UPDATE payment_links SET amount = ?, net_amount = ? WHERE pay_key = ?`,
-        [inst.amount, inst.amount, payKey]
-      );
-      link.amount = inst.amount;
-      link.net_amount = inst.amount;
-    }
-    return link;
+    // Reflect the saved installment without making a GET request mutate storage.
+    link={...link,amount:inst.amount,net_amount:inst.amount,status:inst.payment_status,paid_amount:inst.paid_amount};
+    return {...link,...paymentExpiry(link)};
   }
   
-  if (link) return link;
+  if (link) return {...link,...paymentExpiry(link)};
 
   // Fallback: Build a virtual link object from the installment record
   if (inst) {
@@ -152,6 +161,16 @@ export function createPaymentSubmission(data: {
   paymentMode: 'Razorpay' | 'UPI' | 'Bank Transfer' | 'Cash';
   receiptUrl?: string;
 }) {
+  assertPaymentLinkActive(data.payKey || '');
+  const reference=(data.utrNumber || '').trim();
+  if(!reference || reference.length>160)throw Object.assign(new Error('Enter the actual transaction reference / UTR.'),{status:400});
+  const amount=moneyPaise(data.amountPaid);
+  const request=queryOne('SELECT net_amount AS amount,paid_amount,status FROM payment_links WHERE pay_key=?',[data.payKey || '']) || queryOne('SELECT amount,paid_amount,payment_status AS status FROM payment_installments WHERE pay_key=?',[data.payKey || '']);
+  if(!request || request.status==='Cancelled')throw Object.assign(new Error('This payment request is unavailable.'),{status:400});
+  const previous=queryOne('SELECT * FROM payment_submissions WHERE pay_key=? AND utr_number=?',[data.payKey || '',reference]);
+  if(previous){if(moneyPaise(previous.amount_paid)!==amount)throw Object.assign(new Error('This reference was already submitted with a different amount.'),{status:409});return previous;}
+  if(amount<=0 || amount>moneyPaise(request.amount)-moneyPaise(request.paid_amount || 0))throw Object.assign(new Error('Submitted amount exceeds the remaining request balance.'),{status:400});
+  data.utrNumber=reference;
   const id = `sub-${uuidv4()}`;
   const now = new Date().toISOString();
 
@@ -203,12 +222,28 @@ export function clearAllPaymentSubmissions() {
   return { success: true, message: 'All payment submissions cleared.' };
 }
 
-export function updatePaymentVerificationStatus(id: string,status: 'Approved' | 'Rejected' | 'Pending Review',actor='system') {
+export function updatePaymentVerificationStatus(id:string,status:'Approved'|'Rejected'|'Pending Review',actor='system') {
   if(!['Approved','Rejected','Pending Review'].includes(status))throw Object.assign(new Error('Invalid verification status.'),{status:400});
   const sub=queryOne('SELECT * FROM payment_submissions WHERE id=?',[id]);if(!sub)return null;
-  if(sub.verification_status==='Approved' && status!=='Approved')throw Object.assign(new Error('Verified money requires an audited correction.'),{status:409});
-  if(status==='Approved')recordReceipt(sub.pay_key,sub.amount_paid,sub.utr_number,sub.payment_mode,'Receipt verified by staff',actor);
-  runQuery('UPDATE payment_submissions SET verification_status=? WHERE id=?',[status,id]);return queryOne('SELECT * FROM payment_submissions WHERE id=?',[id]);
+  if(sub.verification_status==='Approved'){
+    if(status!=='Approved')throw Object.assign(new Error('Verified money requires an audited correction.'),{status:409});
+    return sub;
+  }
+  const db=getDb();db.run('BEGIN');
+  try {
+    if(status==='Approved'){
+      const request=queryOne('SELECT id,paid_amount FROM payment_installments WHERE pay_key=?',[sub.pay_key]) || queryOne('SELECT id,paid_amount FROM payment_links WHERE pay_key=?',[sub.pay_key]);
+      const existing=request ? queryOne('SELECT amount_paise,received_paise FROM receipt_events WHERE request_key=? AND reference=?',[request.id,sub.utr_number]) : null;
+      if(existing){
+        if(![existing.amount_paise,existing.received_paise].includes(moneyPaise(sub.amount_paid)))throw Object.assign(new Error('The recorded reference has a different received amount. Review the receipt before approval.'),{status:409});
+      } else {
+        const cumulative=(moneyPaise(request?.paid_amount || 0)+moneyPaise(sub.amount_paid))/100;
+        recordReceipt(sub.pay_key,cumulative,sub.utr_number,sub.payment_mode,'Receipt verified by staff',actor,true);
+      }
+    }
+    db.run('UPDATE payment_submissions SET verification_status=? WHERE id=?',[status,id]);db.run('COMMIT');
+  }catch(error){db.run('ROLLBACK');throw error;}
+  saveDb();return queryOne('SELECT * FROM payment_submissions WHERE id=?',[id]);
 }
 
 // Settings (Razorpay API Keys, UPI & Bank credentials)
@@ -305,6 +340,13 @@ export function getLeadInstallments(leadId: string) {
 }
 
 export function saveInstallmentSchedule(leadId: string, installments: any[]) {
+  return withDbPersistenceBatch(()=>{
+    const db=getDb();db.run('BEGIN');
+    try {const result=saveInstallmentScheduleRows(leadId,installments);db.run('COMMIT');return result;}
+    catch(error){db.run('ROLLBACK');throw error;}
+  });
+}
+function saveInstallmentScheduleRows(leadId: string, installments: any[]) {
   const lead = queryOne(`SELECT * FROM leads WHERE id = ? OR trip_id = ?`, [leadId, leadId]);
   const targetLeadId = lead?.id || leadId;
 
@@ -312,10 +354,17 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
   const snapshot=queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?',[targetLeadId]);
   const quote=queryOne('SELECT final_selling_price FROM quotes WHERE lead_id=? ORDER BY created_at DESC LIMIT 1',[targetLeadId]);
   const cap=snapshot?.total_paise ?? (quote ? moneyPaise(quote.final_selling_price) : 0);
-  const seen=new Set();let scheduleTotal=0;
+  const seen=new Set(),seenKeys=new Set();let scheduleTotal=0;
   for(const row of installments) {
+    if(!row.due_date || !/^\d{4}-\d{2}-\d{2}$/.test(row.due_date) || Number.isNaN(Date.parse(row.due_date)))throw Object.assign(new Error('Enter a valid due date for every installment.'),{status:400});
     const amount=moneyPaise(row.amount);if(amount<=0)throw Object.assign(new Error('Installment amounts must be positive.'),{status:400});scheduleTotal+=amount;
     if(row.id && seen.has(row.id))throw Object.assign(new Error('Duplicate installment.'),{status:400});seen.add(row.id);
+    if(row.pay_key){
+      if(seenKeys.has(row.pay_key))throw Object.assign(new Error('Duplicate installment payment link.'),{status:400});seenKeys.add(row.pay_key);
+      const linked=queryOne('SELECT lead_id FROM payment_links WHERE pay_key=?',[row.pay_key]);
+      const keyed=queryOne('SELECT id,lead_id FROM payment_installments WHERE pay_key=?',[row.pay_key]);
+      if((linked && linked.lead_id!==targetLeadId) || (keyed && (keyed.lead_id!==targetLeadId || keyed.id!==row.id)))throw Object.assign(new Error('Payment link belongs to another installment or booking.'),{status:403});
+    }
     const prior=row.id ? queryOne('SELECT * FROM payment_installments WHERE id=?',[row.id]) : null;
     if(prior && prior.lead_id!==targetLeadId)throw Object.assign(new Error('Installment belongs to another booking.'),{status:403});
     if(prior?.paid_amount>0 && moneyPaise(prior.amount)!==amount)throw Object.assign(new Error('A received installment cannot be repriced.'),{status:409});
@@ -323,6 +372,10 @@ export function saveInstallmentSchedule(leadId: string, installments: any[]) {
   }
   for(const prior of queryAll('SELECT * FROM payment_installments WHERE lead_id=? AND paid_amount>0',[targetLeadId])) if(!seen.has(prior.id))scheduleTotal+=moneyPaise(prior.amount);
   if(scheduleTotal>cap)throw Object.assign(new Error('Installment schedule exceeds the quoted booking amount.'),{status:400});
+  // Deactivate links removed from the schedule so old URLs cannot collect money.
+  for(const prior of queryAll('SELECT id,pay_key FROM payment_installments WHERE lead_id=? AND COALESCE(paid_amount,0)=0',[targetLeadId])) {
+    if(!installments.some(row=>row.id===prior.id || row.pay_key && row.pay_key===prior.pay_key))runQuery("UPDATE payment_links SET status='Cancelled' WHERE pay_key=? AND COALESCE(paid_amount,0)=0",[prior.pay_key]);
+  }
   // Delete existing non-paid installments for this lead
   runQuery(`DELETE FROM payment_installments WHERE (lead_id = ? OR lead_id = ?) AND COALESCE(paid_amount,0) = 0`, [targetLeadId, leadId]);
 

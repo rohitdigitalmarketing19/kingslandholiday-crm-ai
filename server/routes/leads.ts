@@ -14,7 +14,7 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 router.post('/', (req: Request, res: Response) => {
-  try { res.status(201).json(createLead(req.body)); }
+  try { res.status(201).json(createLead(req.body, res.locals.user.id)); }
   catch (err) { console.error(err); res.status((err as any).status || 500).json({error:(err as Error).message}); }
 });
 

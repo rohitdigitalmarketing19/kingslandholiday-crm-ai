@@ -310,13 +310,7 @@ export async function fetchPaymentLinks(leadId?: string) {
 }
 
 export async function fetchPaymentLinkByKey(payKey: string) {
-  try {
-    return await request<any>(`/payments/links/${encodeURIComponent(payKey)}`);
-  } catch (err) {
-    const local = typeof window !== 'undefined' ? localStorage.getItem(LINKS_KEY) : null;
-    const list = local ? JSON.parse(local) : [];
-    return list.find((l: any) => l.pay_key === payKey || l.payKey === payKey) || null;
-  }
+  return request<any>(`/payments/links/${encodeURIComponent(payKey)}`);
 }
 
 export async function createPaymentSubmission(data: {
@@ -663,6 +657,7 @@ export async function deletePartnerBrand(id: string): Promise<{ success: boolean
 }
 
 export interface DestinationPhotoItem {
+  file_name?: string;
   id: string;
   city: string;
   title?: string;
@@ -676,7 +671,7 @@ export async function fetchDestinationPhotos(city?: string): Promise<Destination
   return request<DestinationPhotoItem[]>(`/pdf-designs/photos/all${query}`);
 }
 
-export async function createDestinationPhoto(data: { city: string; title?: string; image_url: string; tags?: string }): Promise<DestinationPhotoItem> {
+export async function createDestinationPhoto(data: { city: string; title?: string; image_url: string; tags?: string; file_name?: string; upload_id?: string }): Promise<DestinationPhotoItem> {
   return request<DestinationPhotoItem>('/pdf-designs/photos', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -1078,4 +1073,17 @@ export async function submitPublicClientDetails(
   return res.json();
 }
 
+
+
+export const fetchPaymentOverview=(leadId?:string)=>request<any>('/payments/overview'+(leadId?'?leadId='+encodeURIComponent(leadId):''));
+
+async function gatewayRequest(path:string,payload:any){
+  const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);
+  try{return await request<any>(path,{method:'POST',body:JSON.stringify(payload),signal:controller.signal});}
+  catch(error){if(controller.signal.aborted)throw new Error('The payment request timed out. Check payment status before trying again if your bank was debited.');throw error;}
+  finally{clearTimeout(timeout);}
+}
+export const createRazorpayOrder=(payKey:string,expectedPrincipalPaise:number)=>gatewayRequest('/payments/razorpay/orders',{payKey,expectedPrincipalPaise});
+export const verifyRazorpayPayment=(data:{payKey:string;razorpay_order_id:string;razorpay_payment_id:string;razorpay_signature:string})=>gatewayRequest('/payments/razorpay/verify',data);
+export const reconcileRazorpayOrder=(payKey:string,orderId?:string)=>gatewayRequest('/payments/razorpay/reconcile',{payKey,orderId});
 

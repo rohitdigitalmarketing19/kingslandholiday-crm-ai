@@ -1,3 +1,4 @@
+import {migratePhotoLibrary} from './photoLibraryMigration';
 import { migrateDataEntry } from './dataEntryMigration';
 import { initializeWorkflowSecurity } from './workflowSecurity';
 import { migrateHotelRateSeasons } from './hotelRateSeasonsMigration';
@@ -428,5 +429,6 @@ function initializeDatabaseSchema(): void {
 
   console.log('✅ Database schema & migrations initialized.');
   initializeWorkflowSecurity();
+  migratePhotoLibrary();
 
 }

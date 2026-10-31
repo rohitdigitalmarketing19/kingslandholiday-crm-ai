@@ -18,6 +18,7 @@ export interface LeadNote {
 }
 
 export interface Lead {
+  tripCompleted?: boolean;
   id: string;
   tripId: string; 
   name: string;

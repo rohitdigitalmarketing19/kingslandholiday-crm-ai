@@ -1,3 +1,5 @@
+import { createRazorpayOrder, verifyRazorpayPayment, reconcileRazorpayOrder } from '../services/razorpay';
+import { paymentOverview } from '../services/paymentOverview';
 import { queryOne } from '../db/connection';
 import { Router, Request, Response } from 'express';
 import {
@@ -18,6 +20,10 @@ import {
 } from '../controllers/paymentsController';
 
 const router = Router();
+router.post('/razorpay/orders',async(req,res)=>{try{if(!Number.isSafeInteger(req.body.expectedPrincipalPaise) || req.body.expectedPrincipalPaise<=0)return res.status(400).json({error:'Invalid expected payment amount.'});res.status(201).json(await createRazorpayOrder(req.body.payKey,req.body.expectedPrincipalPaise));}catch(error){res.status((error as any).status || 500).json({error:(error as any).status ? (error as Error).message : 'Could not start Razorpay checkout.'});}});
+router.post('/razorpay/verify',async(req,res)=>{try{res.json(await verifyRazorpayPayment(req.body));}catch(error){res.status((error as any).status || 500).json({error:(error as any).status ? (error as Error).message : 'Could not verify Razorpay payment. Contact your travel expert if you were debited.'});}});
+router.post('/razorpay/reconcile',async(req,res)=>{try{res.json(await reconcileRazorpayOrder(req.body.payKey,req.body.orderId));}catch(error){res.status((error as any).status || 500).json({error:(error as any).status ? (error as Error).message : 'Could not check payment status.'});}});
+router.get('/overview',(req,res)=>{try{res.json(paymentOverview(req.query.leadId as string | undefined,res.locals.allowedOwners));}catch(error){console.error(error);res.status(500).json({error:'Could not load payment overview.'});}});
 
 // Settings (Razorpay API Credentials & Bank/UPI setup)
 router.get('/settings', (req: Request, res: Response) => {
@@ -131,7 +137,7 @@ router.post('/links', (req: Request, res: Response) => {
     res.status(201).json(createPaymentLink(req.body));
   } catch (err: any) {
     console.error('Error creating payment link:', err);
-    res.status(500).json({ error: 'Failed to create payment link' });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to create payment link' });
   }
 });
 
@@ -164,7 +170,7 @@ router.post('/submissions', (req: Request, res: Response) => {
     res.status(201).json(createPaymentSubmission({...req.body,leadId:inst?.lead_id || link.lead_id}));
   } catch (err: any) {
     console.error('Error creating payment submission:', err);
-    res.status(500).json({ error: 'Failed to submit payment' });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to submit payment' });
   }
 });
 

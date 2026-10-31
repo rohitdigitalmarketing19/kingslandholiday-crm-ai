@@ -1,7 +1,8 @@
+import SalesRepresentativePicker from './components/SalesRepresentativePicker';
 import B2BDataView from './components/B2BDataView';
 import { clearProposalPdfCache } from './services/proposalPdfService';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { applyTheme, readTheme, Theme } from './utils/theme';
 import { Lead, Agent, LeadIntent, QuoteData, LeadNote } from './types';
 import { analyzeLeadInquiry } from './services/geminiService';
@@ -187,6 +188,9 @@ const App: React.FC = () => {
   const [isAddingAgent, setIsAddingAgent] = useState(false);
   const [deletingAgentId, setDeletingAgentId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSavingInquiry, setIsSavingInquiry] = useState(false);
+  const inquirySavingRef = useRef(false);
+  const inquiryRequestRef = useRef<{fingerprint:string; id:string} | null>(null);
   const [globalSearch, setGlobalSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   
@@ -259,7 +263,7 @@ const App: React.FC = () => {
   >(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_active_view');
-      if (saved) return saved as any;
+      if(saved) return saved as any;
     }
     return 'Dashboard';
   });
@@ -295,9 +299,10 @@ const App: React.FC = () => {
   const [paymentTab, setPaymentTabState] = useState<PaymentTab>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('kingsland_payment_tab');
-      if (saved) return saved as any;
+      if(saved==='Submissions')return 'Confirmation';
+      if(saved && ['Dashboard','Completed','Links','Installments','Confirmation','CreateLink','Settings','Portal'].includes(saved))return saved as PaymentTab;
     }
-    return 'Links';
+    return 'Dashboard';
   });
 
   const setPaymentTab = (tab: PaymentTab) => {
@@ -804,6 +809,7 @@ const App: React.FC = () => {
   };
 
   const handleFinalizeInquiry = async (immediateQuote = false) => {
+    if (inquirySavingRef.current) return;
     if (currentUser.accessLevel === 'ViewOnly') {
       alert('🚫 Access Restricted: You do not have permission to create inquiries. Your account is set to View-Only Mode.');
       return;
@@ -820,6 +826,8 @@ const App: React.FC = () => {
       budgetTier: 'Mid'
     };
 
+    inquirySavingRef.current = true;
+    setIsSavingInquiry(true);
     try {
       const newLeadData = {
         tripId: formData.tripId.trim() ? formData.tripId.trim() : undefined,
@@ -846,8 +854,13 @@ const App: React.FC = () => {
         englishDriver: formData.englishDriver,
       };
 
-      const newLead = await api.createLead(newLeadData);
-      await loadLeads(); // Refresh leads list
+      const fingerprint = JSON.stringify(newLeadData);
+      if (inquiryRequestRef.current?.fingerprint !== fingerprint) {
+        inquiryRequestRef.current = {fingerprint, id: crypto.randomUUID()};
+      }
+      const newLead = await api.createLead({...newLeadData, requestId: inquiryRequestRef.current.id});
+      setLeads(previous => [newLead, ...previous.filter(lead => lead.id !== newLead.id)]);
+      inquiryRequestRef.current = null;
 
       setFormData({ 
         tripId: '',
@@ -869,6 +882,9 @@ const App: React.FC = () => {
     } catch (err) {
       console.error('Error creating lead:', err);
       alert(`Lead was not saved: ${(err as Error).message || 'An unexpected server error occurred. Please try again.'}`);
+    } finally {
+      inquirySavingRef.current = false;
+      setIsSavingInquiry(false);
     }
   };
 
@@ -1248,7 +1264,10 @@ const App: React.FC = () => {
                 {isPaymentsOpen && (
                   <div className="mt-0.5 space-y-0.5">
                     <NavItem 
-                      id="Payment Links" 
+                      id="Payment dashboard" active={view==='Payments' && paymentTab==='Dashboard'} onClick={()=>{setView('Payments');setPaymentTab('Dashboard');}} isSubItem />
+                    <NavItem id="Completed payments" active={view==='Payments' && paymentTab==='Completed'} onClick={()=>{setView('Payments');setPaymentTab('Completed');}} isSubItem />
+                    <NavItem id="Review payments" active={view==='Payments' && paymentTab==='Confirmation'} onClick={()=>{setView('Payments');setPaymentTab('Confirmation');}} isSubItem />
+                    <NavItem id="Payment Links" 
                       active={view === 'Payments' && paymentTab === 'Links'} 
                       onClick={() => { setView('Payments'); setPaymentTab('Links'); }} 
                       isSubItem
@@ -1260,7 +1279,7 @@ const App: React.FC = () => {
                       isSubItem
                     />
                     <NavItem 
-                      id="Submissions & UTR" 
+                      id="Customer payment proofs" 
                       active={view === 'Payments' && paymentTab === 'Submissions'} 
                       onClick={() => { setView('Payments'); setPaymentTab('Submissions'); }} 
                       isSubItem
@@ -1954,34 +1973,7 @@ const App: React.FC = () => {
                       )}
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                       {agents.map(a => (
-                         <button
-                           key={a.id}
-                           type="button"
-                           onClick={() => setFormData({...formData, salesPersonId: a.id})}
-                           className={`p-2.5 rounded-lg border transition-all flex items-center gap-2.5 text-left cursor-pointer ${
-                             formData.salesPersonId === a.id
-                               ? 'bg-inverse text-white border-line shadow-xs'
-                               : 'bg-canvas border-line hover:bg-subtle text-content dark:text-zinc-300'
-                           }`}
-                         >
-                           {a.avatar ? (
-                             <img 
-                               src={a.avatar} 
-                               className="w-7 h-7 rounded-full object-cover shrink-0 border border-line" 
-                               alt={a.name}
-                               onError={(e) => {
-                                 (e.target as HTMLElement).style.display = 'none';
-                               }}
-                             />
-                           ) : (
-                             <div className="w-7 h-7 rounded-full bg-brand-soft text-brand-ink font-bold text-sm flex items-center justify-center shrink-0">
-                               {a.name.charAt(0).toUpperCase()}
-                             </div>
-                           )}
-                           <span className="text-xs font-medium truncate">{a.name}</span>
-                         </button>
-                       ))}
+                       <SalesRepresentativePicker agents={agents} value={formData.salesPersonId} onChange={id=>setFormData(previous=>({...previous,salesPersonId:id}))}/>
                        {currentUser.role === 'Admin' && currentUser.accessLevel !== 'ViewOnly' && (
                          <button
                            type="button"
@@ -1998,11 +1990,13 @@ const App: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-2.5 pt-3 border-t border-line ">
                     <button
                       type="button"
+                      disabled={isSavingInquiry}
+                      aria-busy={isSavingInquiry}
                       onClick={() => handleFinalizeInquiry(false)}
                       className="flex-1 py-2.5 bg-surface border border-line text-content dark:text-zinc-300 rounded-lg font-medium text-sm hover:bg-canvas transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                     >
                       <Save size={14} className="text-secondary " />
-                      <span>Save Lead</span>
+                      <span>{isSavingInquiry ? 'Saving…' : 'Save Lead'}</span>
                     </button>
 
                     <button
@@ -2026,11 +2020,13 @@ const App: React.FC = () => {
 
                     <button
                       type="button"
+                      disabled={isSavingInquiry}
+                      aria-busy={isSavingInquiry}
                       onClick={() => handleFinalizeInquiry(true)}
                       className="flex-1 py-2.5 bg-brand hover:bg-brand text-white rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                     >
                       <FileText size={14} />
-                      <span>Save & Give Quote</span>
+                      <span>{isSavingInquiry ? 'Saving…' : 'Save & Give Quote'}</span>
                     </button>
                   </div>
 

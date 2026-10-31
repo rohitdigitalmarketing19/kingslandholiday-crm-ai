@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import {loadRazorpayCheckout} from '../services/razorpayCheckout';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Smartphone,
   QrCode,
@@ -45,13 +46,13 @@ const METHODS = [
   { key: 'upi', label: 'UPI', icon: Smartphone },
   { key: 'qr', label: 'QR Code', icon: QrCode },
   { key: 'bank', label: 'Bank', icon: Landmark },
-  { key: 'card', label: 'Card', icon: CreditCard },
+  { key: 'card', label: 'Credit Card', icon: CreditCard },
 ];
 
 const WHY_PAY = [
-  [Lock, '256-bit SSL encrypted transactions.'],
-  [CheckCircle2, 'Instant confirmation via email & SMS.'],
-  [RefreshCw, 'Easy cancellation & refund within 48 hours.'],
+  [Lock, 'Customer payment details in one place.'],
+  [CheckCircle2, 'Transfer references reviewed by your travel team.'],
+  [RefreshCw, 'Contact your expert for booking and payment assistance.'],
   [Phone, 'Support: +91 6376983416 / +91 7976336759 (24x7)'],
 ];
 
@@ -199,20 +200,29 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
 
   // Payment Link Data & Backend Settings State
   const [paymentLink, setPaymentLink] = useState<any>(null);
+  const [transferAmount,setTransferAmount]=useState('');
+  const submissionLock=useRef(false);
+  const [gatewayPhase,setGatewayPhase]=useState<'idle'|'loading'|'creating'|'opening'|'open'|'verifying'>('idle');
+  const checkoutStartup=useRef<ReturnType<typeof setTimeout> | null>(null);
+  const checkoutObserver=useRef<MutationObserver | null>(null);
+  const stopCheckoutStartup=()=>{if(checkoutStartup.current)clearTimeout(checkoutStartup.current);checkoutStartup.current=null;checkoutObserver.current?.disconnect();checkoutObserver.current=null;};
+  useEffect(()=>()=>stopCheckoutStartup(),[]);
+  const [loadError,setLoadError]=useState('');
+  const [gatewayNotice,setGatewayNotice]=useState('');
   const [loading, setLoading] = useState<boolean>(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<any>({
-    key_id: 'rzp_test_51HKingslandDemoKey',
+    key_id: '',
     key_secret: '',
-    upi_id: 'kingslandholiday@okicici',
-    upi_payee: 'Kingsland Holidays Services Pvt Ltd',
-    bank_name: 'HDFC Bank',
-    bank_acc_num: '50200087628332',
-    bank_ifsc: 'HDFC0001234',
-    bank_branch: 'Connaught Place, New Delhi',
-    bank_acc_name: 'Kingsland Holidays Services',
-    support_phone: '+91 6376983416',
+    upi_id: '',
+    upi_payee: '',
+    bank_name: '',
+    bank_acc_num: '',
+    bank_ifsc: '',
+    bank_branch: '',
+    bank_acc_name: '',
+    support_phone: '',
     card_fee_percentage: 2.5,
   });
 
@@ -226,6 +236,15 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
   const [billingMobile, setBillingMobile] = useState<string>('');
   const [billingEmail, setBillingEmail] = useState<string>('');
   const [showCardFeePopup, setShowCardFeePopup] = useState<boolean>(false);
+  useEffect(()=>{if(method==='card')loadRazorpayCheckout().catch(error=>setGatewayNotice((error as Error).message));},[method]);
+  useEffect(()=>{
+    if(!showCardFeePopup)return;
+    const previous=document.activeElement as HTMLElement;
+    const dialog=document.querySelector('[role="dialog"][aria-label="Credit card charges"]');
+    const button=dialog?.querySelector('button');button?.focus();
+    const keydown=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setShowCardFeePopup(false);}if(e.key==='Tab'){e.preventDefault();button?.focus();}};
+    document.addEventListener('keydown',keydown);return()=>{document.removeEventListener('keydown',keydown);previous?.focus();};
+  },[showCardFeePopup]);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [confirmedDetails, setConfirmedDetails] = useState<any>(null);
@@ -233,7 +252,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
   // Load Link & Lead Data
   useEffect(() => {
     const loadPaymentData = async () => {
-      setLoading(true);
+      setLoading(true);setLoadError('');setPaymentLink(null);setIsSuccess(false);
       try {
         // 1. Fetch Backend Payment Settings
         const sets = await api.fetchPaymentSettings();
@@ -253,38 +272,15 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
         if (payKey) {
           const fetchedLink = await api.fetchPaymentLinkByKey(payKey);
           if (fetchedLink) {
-            setPaymentLink(fetchedLink);
+            setPaymentLink(fetchedLink);setTransferAmount(String(Math.max(0,Number(fetchedLink.net_amount)-Number(fetchedLink.paid_amount || 0))));
             setBillingName(fetchedLink.customer_name || '');
             setBillingMobile(fetchedLink.customer_phone || '');
             setCustomerUpiPhone(fetchedLink.customer_phone || '');
             setBillingEmail(fetchedLink.customer_email || '');
           }
-        } else if (targetLead) {
-          // Generate virtual link from Lead
-          setPaymentLink({
-            id: targetLead.id,
-            pay_key: targetLead.tripId || `lead_${targetLead.id}`,
-            lead_id: targetLead.id,
-            package_name: targetLead.destination ? `${targetLead.destination} Tour Package` : 'Tour Package Booking',
-            customer_name: targetLead.name || 'Valued Guest',
-            customer_phone: targetLead.phone || '',
-            customer_email: targetLead.email || '',
-            destination: targetLead.destination || 'Rajasthan',
-            travel_date: targetLead.travelDate || '',
-            amount: 21000,
-            gst: 0,
-            fee: 0,
-            discount: 0,
-            net_amount: 21000,
-            status: 'Pending',
-          });
-          setBillingName(targetLead.name || '');
-          setBillingMobile(targetLead.phone || '');
-          setCustomerUpiPhone(targetLead.phone || '');
-          setBillingEmail(targetLead.email || '');
-        }
+        } else {throw new Error('Choose a saved payment link to preview the customer page.');}
       } catch (err) {
-        console.error('Failed to load payment link data:', err);
+        console.error('Failed to load payment link data:', err);setLoadError((err as Error).message);
       } finally {
         setLoading(false);
       }
@@ -293,18 +289,24 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
     loadPaymentData();
   }, [initialLinkKey, targetLead]);
 
+  useEffect(()=>{
+    if(!paymentLink?.expires_at || paymentLink.expired)return;
+    const delay=Date.parse(paymentLink.expires_at)-Date.now();
+    const timer=window.setTimeout(()=>setPaymentLink((row:any)=>row?{...row,expired:true}:row),Math.max(0,delay));
+    return ()=>window.clearTimeout(timer);
+  },[paymentLink?.expires_at,paymentLink?.expired]);
   // Derived financial numbers
   const customerName = paymentLink?.customer_name || targetLead?.name || 'Valued Guest';
   const packageName = paymentLink?.package_name || (targetLead?.destination ? `${targetLead.destination} Tour Package` : 'Rajasthan Tour Package');
-  const baseAmount = Number(paymentLink?.amount ?? 21000);
+  const baseAmount = Number(paymentLink?.amount ?? 0);
   const gstAmount = Number(paymentLink?.gst ?? 0);
   const feeAmount = Number(paymentLink?.fee ?? 0);
   const discountAmount = Number(paymentLink?.discount ?? 0);
 
-  const cardFeePercent = settings.card_fee_percentage !== undefined ? Number(settings.card_fee_percentage) : 2.5;
-  const standardNet = Math.max(0, baseAmount + gstAmount + feeAmount - discountAmount);
-  const cardSurcharge = method === 'card' ? Math.round((standardNet * cardFeePercent) / 100) : 0;
-  const totalPayable = standardNet + cardSurcharge;
+  const cardFeePercent = 2.5;
+  const standardNet = Math.max(0,Math.round((Number(paymentLink?.net_amount ?? (baseAmount+gstAmount+feeAmount-discountAmount))-Number(paymentLink?.paid_amount || 0))*100)/100);
+  const cardSurcharge = method === 'card' ? Math.round(Math.round(standardNet*100)*cardFeePercent/100)/100 : 0;
+  const totalPayable = Math.round((standardNet+cardSurcharge)*100)/100;
 
   // Copy helper
   const handleCopy = (key: string, text: string) => {
@@ -317,7 +319,13 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
 
   // Submission handler
   const handleSubmitPayment = async (payMode: string, customRef?: string) => {
-    const finalRef = customRef || utrNumber.trim() || `TXN-${Date.now().toString(36).toUpperCase()}`;
+    if(submissionLock.current)return;
+    const finalRef=(customRef || utrNumber).trim();
+    if(!finalRef){alert('Enter the reference from your completed bank or UPI transfer.');return;}
+    if(!paymentLink?.pay_key || standardNet<=0){alert('This payment request is unavailable.');return;}
+    const received=Number(transferAmount);
+    if(!Number.isFinite(received)||received<=0||received>standardNet){alert('Enter a valid transferred amount within the remaining balance.');return;}
+    submissionLock.current=true;
     setSubmitting(true);
     try {
       const subPayload = {
@@ -326,26 +334,16 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
         customerName: billingName || customerName,
         mobile: billingMobile || customerUpiPhone || paymentLink?.customer_phone || '',
         packageName: packageName,
-        amountPaid: totalPayable,
+        amountPaid: received,
         utrNumber: finalRef,
-        paymentMode: (payMode as any) || 'UPI',
+        paymentMode: payMode.includes('UPI') ? 'UPI' as const : 'Bank Transfer' as const,
       };
 
       await api.createPaymentSubmission(subPayload);
 
-      // Confirm payment link status if matching key
-      if (paymentLink?.pay_key) {
-        await api.confirmPayment({
-          payKey: paymentLink.pay_key,
-          refNumber: finalRef,
-          paymentMode: payMode,
-          amount: totalPayable,
-        });
-      }
-
       setConfirmedDetails({
         txnId: finalRef,
-        amount: totalPayable,
+        amount: received,
         mode: payMode,
         date: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
         name: customerName,
@@ -358,50 +356,79 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
       console.error('Error submitting payment:', e);
       alert('Payment submission could not be verified. Please verify your reference number.');
     } finally {
-      setSubmitting(false);
+      submissionLock.current=false;setSubmitting(false);
     }
   };
 
-  // Razorpay Checkout Trigger
-  const triggerRazorpayCheckout = (amount: number, title: string) => {
-    const key = settings.key_id || 'rzp_test_51HKingslandDemoKey';
-    if (typeof (window as any).Razorpay !== 'undefined') {
-      const options = {
-        key: key,
-        amount: Math.round(amount * 100),
-        currency: 'INR',
-        name: 'Kingsland Holidays',
-        description: `Payment for ${title}`,
-        image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=100',
-        handler: function (response: any) {
-          handleSubmitPayment('Razorpay', response.razorpay_payment_id);
+  const showVerifiedCardPayment = (payment:any) => {
+    setConfirmedDetails({txnId:payment.paymentId,amount:payment.totalPaise/100,principal:payment.principalPaise/100,cardFee:payment.feePaise/100,mode:'Credit Card · Razorpay',date:new Date().toLocaleString('en-IN'),name:customerName,package:packageName,verified:true});
+    setGatewayNotice('');setIsSuccess(true);
+    setPaymentLink((previous:any)=>({...previous,status:'Paid',paid_amount:previous.net_amount}));
+    onPaymentSuccess?.();
+  };
+  const checkGatewayPayment = async () => {
+    if(!paymentLink?.pay_key)return;
+    try{const payment=await api.reconcileRazorpayOrder(paymentLink.pay_key);if(payment.status==='paid')showVerifiedCardPayment(payment);else if(payment.status==='reconciliation_required')setGatewayNotice('Your card payment was captured and needs reconciliation. Contact your travel expert; do not pay again. Reference: '+payment.paymentId);else if(payment.status==='pending')setGatewayNotice('No captured payment is confirmed yet. If your bank was debited, use Check payment status before trying again.');}
+    catch(error){setGatewayNotice((error as Error).message);}
+  };
+  useEffect(()=>{
+    if(paymentLink?.pay_key)checkGatewayPayment();
+  },[paymentLink?.pay_key]);
+  const proceedToCardPayment = async (_amount:number,_title:string) => {
+    if(submissionLock.current || !paymentLink?.pay_key)return;
+    submissionLock.current=true;setSubmitting(true);setGatewayPhase('loading');setGatewayNotice('');
+    try {
+      const Razorpay=await loadRazorpayCheckout();
+      setGatewayPhase('creating');
+      const order=await api.createRazorpayOrder(paymentLink.pay_key,Math.round(standardNet*100));
+      if(order.status==='paid'){setGatewayPhase('idle');showVerifiedCardPayment(order);submissionLock.current=false;setSubmitting(false);return;}
+      let startupFailed=false;
+      const checkout=new Razorpay({key:order.keyId,order_id:order.orderId,amount:order.totalPaise,currency:order.currency,name:'Kingsland Holidays',description:packageName+' · includes 2.5% card charge',
+        prefill:{name:billingName || customerName,email:billingEmail || paymentLink.customer_email || '',contact:billingMobile || customerUpiPhone || paymentLink.customer_phone || ''},
+        method:{card:true,upi:false,netbanking:false,wallet:false,emi:false,paylater:false},
+        config:{display:{blocks:{cards:{name:'Pay with a card',instruments:[{method:'card'}]}},sequence:['block.cards'],preferences:{show_default_blocks:false}}},
+        theme:{color:'#7A1F2B'},
+        handler:async(response:any)=>{
+          stopCheckoutStartup();setGatewayPhase('verifying');
+          try{const verified=await api.verifyRazorpayPayment({payKey:paymentLink.pay_key,razorpay_order_id:response.razorpay_order_id,razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature});if(verified.status==='paid')showVerifiedCardPayment(verified);else setGatewayNotice('Your payment is still processing. Use Check payment status before paying again.');}
+          catch(error){setGatewayNotice((error as Error).message);}
+          finally{submissionLock.current=false;setSubmitting(false);setGatewayPhase('idle');}
         },
-        prefill: {
-          name: billingName || customerName,
-          email: billingEmail || 'guest@kingslandholidays.com',
-          contact: billingMobile || customerUpiPhone || '9876543210',
-        },
-        theme: {
-          color: t.accent || '#C9922A',
-        },
+        modal:{ondismiss:()=>{stopCheckoutStartup();submissionLock.current=false;setSubmitting(false);setGatewayPhase('idle');if(!startupFailed)checkGatewayPayment();}}
+      });
+      checkout.on('payment.failed',()=>{setGatewayNotice('Payment was not completed. You can retry in Razorpay. If your bank was debited, check payment status before paying again.');});
+      stopCheckoutStartup();setGatewayPhase('opening');
+      const detectCheckout=()=>{
+        const frame=document.querySelector<HTMLIFrameElement>('.razorpay-container iframe,iframe[src^="https://api.razorpay.com/"]');
+        if(!frame)return false;
+        const container=frame.closest<HTMLElement>('.razorpay-container');
+        if(container && container.style.getPropertyValue('z-index')!=='2147483647')container.style.setProperty('z-index','2147483647','important');
+        const box=frame.getBoundingClientRect();
+        if(box.width>0 && box.height>0 && getComputedStyle(frame).visibility!=='hidden'){
+          stopCheckoutStartup();setGatewayPhase('open');return true;
+        }return false;
       };
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
-    } else {
-      // Fallback if Razorpay script not loaded
-      const mockRef = `RZP-${Date.now().toString(36).toUpperCase()}`;
-      handleSubmitPayment('Card / Online Gateway', mockRef);
-    }
+      checkoutObserver.current=new MutationObserver(detectCheckout);
+      checkoutObserver.current.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
+      checkoutStartup.current=setTimeout(()=>{
+        if(detectCheckout())return;
+        stopCheckoutStartup();startupFailed=true;try{checkout.close();}catch{}
+        submissionLock.current=false;setSubmitting(false);setGatewayPhase('idle');
+        setGatewayNotice('Razorpay checkout did not become visible. Allow Razorpay in your browser or extension settings, then retry. If your bank was debited, check payment status before paying again.');
+      },10000);
+      checkout.open();detectCheckout();
+    } catch(error){stopCheckoutStartup();submissionLock.current=false;setSubmitting(false);setGatewayPhase('idle');setGatewayNotice((error as Error).message || 'Razorpay checkout could not start.');}
   };
 
   // Reusable Summary Component
   const renderSummaryBlock = (compact = false) => {
     const rows = [
-      ['Amount', `₹${baseAmount.toLocaleString('en-IN')}.00`],
-      ['GST Tax', `₹${gstAmount.toLocaleString('en-IN')}.00`],
-      ['Processing Fee', `₹${feeAmount.toLocaleString('en-IN')}.00`],
-      ...(discountAmount > 0 ? [['Discount', `-₹${discountAmount.toLocaleString('en-IN')}.00`]] : []),
-      ...(method === 'card' ? [[`Card Fee (${cardFeePercent}%)`, `+₹${cardSurcharge.toLocaleString('en-IN')}.00`]] : []),
+      ['Amount', `₹${baseAmount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`],
+      ['GST Tax', `₹${gstAmount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`],
+      ...(Number(paymentLink?.paid_amount)>0 ? [['Verified received', '-₹'+Number(paymentLink.paid_amount).toLocaleString('en-IN')]] : []),
+      ['Processing Fee', `₹${feeAmount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`],
+      ...(discountAmount > 0 ? [['Discount', `-₹${discountAmount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`]] : []),
+      ...(method === 'card' ? [[`Card Fee (${cardFeePercent}%)`, `+₹${cardSurcharge.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}`]] : []),
     ];
 
     return (
@@ -430,7 +457,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 14, fontWeight: 800, color: t.text }}>
           <span style={{ fontFamily: t.display, fontSize: 15 }}>Total Payable</span>
           <span style={{ color: t.accent, fontSize: 18, fontFamily: t.display }}>
-            ₹{totalPayable.toLocaleString('en-IN')}.00
+            ₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
           </span>
         </div>
       </div>
@@ -453,7 +480,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
           const on = method === m.key;
           return (
             <button
-              key={m.key}
+              key={m.key} aria-label={m.label} aria-pressed={method===m.key}
               onClick={() => {
                 setMethod(m.key);
                 if (m.key === 'card') setShowCardFeePopup(true);
@@ -492,6 +519,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
   const renderMethodContent = (dense = false) => {
     return (
       <div>
+        {method!=='card' && <label style={{display:'block',fontSize:13,color:t.text,marginBottom:18}}>Amount transferred (INR)<input aria-label="Amount transferred" type="number" min="0.01" max={standardNet} step="0.01" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} style={{display:'block',width:'100%',padding:12,marginTop:8,border:'1px solid '+t.border,borderRadius:t.radius,background:t.panel,color:t.text,boxSizing:'border-box'}}/></label>}
         {/* UPI METHOD */}
         {method === 'upi' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: dense ? 12 : 16 }}>
@@ -592,7 +620,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
               </label>
               <input
                 type="text"
-                value={utrNumber}
+                aria-label="Transaction reference / UTR" maxLength={160} value={utrNumber}
                 onChange={(e) => setUtrNumber(e.target.value)}
                 placeholder="12-digit UTR or Reference Number"
                 style={{
@@ -641,7 +669,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
                 transition: 'all .2s ease',
               }}
             >
-              <Rocket size={16} /> {submitting ? 'PROCESSING...' : `CONFIRM & PAY ₹${totalPayable.toLocaleString('en-IN')}`}
+              <Rocket size={16} /> {submitting ? 'PROCESSING...' : 'SUBMIT TRANSFER DETAILS'}
             </button>
           </div>
         )}
@@ -779,7 +807,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
                 gap: 8,
               }}
             >
-              <CheckCircle2 size={16} /> {submitting ? 'VERIFYING...' : 'CONFIRM PAYMENT'}
+              <CheckCircle2 size={16} /> {submitting ? 'VERIFYING...' : 'SUBMIT TRANSFER DETAILS'}
             </button>
           </div>
         )}
@@ -903,6 +931,10 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
         {/* CARD METHOD */}
         {method === 'card' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {gatewayPhase==='open' && <p role="status" style={{fontSize:13,color:t.text}}>Razorpay checkout is open. Complete your payment there, or close checkout to return.</p>}
+            {gatewayNotice && <p role="alert" style={{background:t.accentSoft,color:t.text,padding:14,borderRadius:10,fontSize:13}}>{gatewayNotice}</p>}
+            <p style={{fontSize:13,color:t.textMuted,margin:0}}>Credit card payments include a <strong>2.5% processing charge</strong>. Amount: ₹{standardNet.toLocaleString('en-IN')} · Charge: ₹{cardSurcharge.toLocaleString('en-IN',{minimumFractionDigits:2})} · Total: ₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2})}</p>
+            <button type="button" onClick={checkGatewayPayment} style={{border:'1px solid '+t.border,borderRadius:8,padding:10,background:t.panel,color:t.text,fontSize:13}}>Check payment status</button>
             {/* Visual Card Mockup */}
             <div
               style={{
@@ -1017,7 +1049,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
             <button
               type="button"
               disabled={submitting}
-              onClick={() => triggerRazorpayCheckout(totalPayable, packageName)}
+              onClick={() => proceedToCardPayment(totalPayable, packageName)}
               style={{
                 width: '100%',
                 padding: '15px',
@@ -1036,7 +1068,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
                 gap: 8,
               }}
             >
-              <Lock size={16} /> PAY ₹{totalPayable.toLocaleString('en-IN')} SECURELY
+              <Lock size={16} /> {gatewayPhase==='loading'?'Loading Razorpay…':gatewayPhase==='creating'?'Preparing payment…':gatewayPhase==='opening'?'Opening Razorpay…':gatewayPhase==='open'?'Complete payment in Razorpay':gatewayPhase==='verifying'?'Verifying payment…':'Proceed to payment'}
             </button>
           </div>
         )}
@@ -1077,7 +1109,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
             fontSize: 18,
           }}
         >
-          ₹{totalPayable.toLocaleString('en-IN')}.00 <span style={{ fontWeight: 400, fontSize: 11, opacity: 0.85 }}>AMOUNT DUE</span>
+          ₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} <span style={{ fontWeight: 400, fontSize: 11, opacity: 0.85 }}>AMOUNT DUE</span>
         </div>
       </div>
 
@@ -1091,7 +1123,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
           margin: '0 auto',
           padding: '24px 16px 0',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: 24,
         }}
       >
@@ -1102,7 +1134,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
               {METHODS.find((m) => m.key === method)?.label} Payment
             </h3>
             <p style={{ color: t.textMuted, fontSize: 12.5, margin: '0 0 18px' }}>
-              Instant & verified transaction via Kingsland Holiday desk.
+              Transfer details are verified by your travel team before receipt is confirmed.
             </p>
             {renderMethodContent()}
           </div>
@@ -1275,7 +1307,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
                 disabled={submitting}
                 onClick={() => {
                   if (method === 'card') {
-                    triggerRazorpayCheckout(totalPayable, packageName);
+                    proceedToCardPayment(totalPayable, packageName);
                   } else {
                     handleSubmitPayment(method.toUpperCase());
                   }
@@ -1304,7 +1336,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
             <Panel t={t} style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 13, color: t.textMuted, fontWeight: 600 }}>Total Payable Summary</span>
               <span style={{ fontWeight: 800, color: t.accent, display: 'flex', alignItems: 'center', gap: 4 }}>
-                ₹{totalPayable.toLocaleString('en-IN')}.00 <ChevronDown size={14} />
+                ₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})} <ChevronDown size={14} />
               </span>
             </Panel>
           </div>
@@ -1437,7 +1469,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
             {packageName} · {customerName}
           </span>
         </div>
-        <div style={{ fontWeight: 800, fontSize: 18 }}>₹{totalPayable.toLocaleString('en-IN')}.00</div>
+        <div style={{ fontWeight: 800, fontSize: 18 }}>₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
       </div>
 
       <div
@@ -1586,7 +1618,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
         <div style={{ width: '100%', maxWidth: 440, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 10, color: t.textMuted, fontWeight: 600 }}>Total Payable</div>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>₹{totalPayable.toLocaleString('en-IN')}.00</div>
+            <div style={{ fontWeight: 800, fontSize: 16 }}>₹{totalPayable.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: t.accent, fontSize: 12, fontWeight: 700 }}>
             <ShieldCheck size={16} /> 256-Bit Secured
@@ -1669,13 +1701,19 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
     </div>
   );
 
+  if(loading)return <div role="status" style={{background:t.bg,color:t.text,padding:48,textAlign:'center'}}>Loading payment request…</div>;
+  if(!paymentLink)return <div role="alert" style={{background:t.bg,color:t.text,padding:40,textAlign:'center'}}><h2>Payment link unavailable</h2><p>{loadError || 'Contact your travel expert for a current link.'}</p></div>;
+  if(paymentLink.expired && !isSuccess && standardNet>0)return <div role="alert" style={{background:t.bg,color:t.text,padding:48,textAlign:'center'}}><h2>Payment link expired</h2><p>This link was valid for 24 hours. Contact your travel expert for a new payment link.</p><p>If you already paid, contact your expert with the transaction reference. Your payment can still be verified.</p><button onClick={checkGatewayStatus} disabled={submitting} style={{padding:12,marginTop:16}}>Check payment status</button>{gatewayNotice && <p role="status">{gatewayNotice}</p>}</div>;
+  if((paymentLink.status==='Cancelled' || standardNet===0) && !isSuccess)return <div style={{background:t.bg,color:t.text,padding:40,textAlign:'center'}}><h2>{paymentLink.status==='Cancelled'?'This payment request was cancelled':'This request is paid in full'}</h2><p>Contact your travel expert if you need assistance.</p></div>;
+
   return (
-    <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div className="customer-payment-heritage" style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', position: 'relative',background:t.bg,color:t.text,colorScheme:'light' }}>
+      <style>{`.customer-payment-heritage { --surface:#ffffff; --surface-muted:#F7F0E3; --text-primary:#3A1E16; --text-secondary:#8A7358; --control-border:#E4D4B0; } .razorpay-container {z-index:2147483647 !important;} .customer-payment-heritage button:focus-visible,.customer-payment-heritage input:focus-visible {outline:2px solid #7A1F2B;outline-offset:3px;}`}</style>
 
 
       {/* Credit Card Processing Fee Popup */}
       {showCardFeePopup && (
-        <div
+        <div role="dialog" aria-modal="true" aria-label="Credit card charges"
           style={{
             position: 'fixed',
             inset: 0,
@@ -1716,10 +1754,10 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
               <CreditCard size={28} />
             </div>
             <h3 style={{ fontFamily: t.display, fontSize: 20, margin: '0 0 8px', color: '#1C2B3A' }}>
-              Credit Card Surcharge Notice
+              Credit card charges
             </h3>
             <p style={{ fontSize: 13, color: '#5C7089', lineHeight: 1.5, margin: '0 0 20px' }}>
-              Payment via Credit Card incurs a nominal gateway processing fee of <strong style={{ color: t.accent }}>{cardFeePercent}%</strong>. (UPI and Bank Transfers have ₹0 extra surcharge).
+              You will be charged an additional <strong style={{ color: t.accent }}>{cardFeePercent}%</strong> processing fee when paying by credit card. UPI and bank transfers have no extra card charge.
             </p>
             <button
               onClick={() => setShowCardFeePopup(false)}
@@ -1735,7 +1773,7 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
                 cursor: 'pointer',
               }}
             >
-              I Understand & Proceed
+              I understand — continue
             </button>
           </div>
         </div>
@@ -1784,18 +1822,18 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
               <CheckCircle2 size={36} />
             </div>
             <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#059669' }}>
-              PAYMENT SUBMITTED
+              {confirmedDetails.verified ? 'PAYMENT SUCCESSFUL' : 'PAYMENT SUBMITTED'}
             </span>
             <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111827', margin: '6px 0 16px' }}>
-              ₹{confirmedDetails.amount.toLocaleString('en-IN')}.00
+              ₹{confirmedDetails.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
             </h2>
             <p style={{ fontSize: 14, color: '#4B5563', margin: '0 0 20px', fontWeight: 600 }}>
-              Please wait for confirmation or connect with our expert.
+              {confirmedDetails.verified ? 'Your Razorpay payment has been verified and recorded against your booking.' : 'Your transfer details are awaiting staff verification. This is not a confirmation that funds have been received.'}
             </p>
 
             <div style={{ background: '#F9FAFB', border: '1px dashed #D1D5DB', borderRadius: 14, padding: 16, textAlign: 'left', fontSize: 12.5, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E5E7EB', paddingBottom: 8, marginBottom: 4 }}>
-                <span style={{ color: '#6B7280', fontWeight: 600 }}>Payment Receipt</span>
+                <span style={{ color: '#6B7280', fontWeight: 600 }}>Submission reference</span>
                 <strong style={{ color: '#111827' }}>#{confirmedDetails.txnId.substring(0, 8)}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1821,8 +1859,8 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
               
               <div style={{ borderTop: '1px dashed #D1D5DB', paddingTop: 8, marginTop: 4 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#6B7280', fontWeight: 600 }}>Amount Paid (Current Installment):</span>
-                  <strong style={{ color: '#059669', fontSize: 14 }}>₹{confirmedDetails.amount.toLocaleString('en-IN')}.00</strong>
+                  <span style={{ color: '#6B7280', fontWeight: 600 }}>Amount submitted:</span>
+                  <strong style={{ color: '#059669', fontSize: 14 }}>₹{confirmedDetails.amount.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}</strong>
                 </div>
               </div>
             </div>
@@ -1861,3 +1899,4 @@ export const PaymentPageView: React.FC<PaymentPageViewProps> = ({
 };
 
 export default PaymentPageView;
+

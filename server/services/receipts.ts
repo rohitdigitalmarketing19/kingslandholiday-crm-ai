@@ -13,12 +13,13 @@ export function collectedPaise(leadId: string): number {
   return [...rows,...links].reduce((sum,row)=>sum+Math.round(Number(row.paid || 0)*100),0);
 }
 // API amount means cumulative amount verified for this request. Repeated confirmation is idempotent.
-export function recordReceipt(key: string, amount: unknown, reference: string | undefined, mode: string | undefined, notes: string | undefined, actor: string) {
+export function recordReceipt(key: string, amount: unknown, reference: string | undefined, mode: string | undefined, notes: string | undefined, actor: string, externalTransaction=false) {
   let inst=queryOne(`SELECT * FROM payment_installments WHERE id=? OR (pay_key != '' AND pay_key=?)`,[key,key]);
   let link=queryOne('SELECT * FROM payment_links WHERE id=? OR pay_key=?',[key,key]);
   if(!inst && link) inst=queryOne('SELECT * FROM payment_installments WHERE pay_key=?',[link.pay_key]);
   if(!link && inst?.pay_key) link=queryOne('SELECT * FROM payment_links WHERE pay_key=?',[inst.pay_key]);
   if(!inst && !link) throw fail('Payment request not found.',404);
+  if(link?.status==='Cancelled')throw fail('This payment request has been cancelled.',409);
   const requestKey=inst?.id || link.id;
   const requested=moneyPaise(inst ? inst.amount : (link.net_amount ?? link.amount));
   const received=amount===undefined ? requested : moneyPaise(amount);
@@ -39,7 +40,7 @@ export function recordReceipt(key: string, amount: unknown, reference: string | 
   if(lead && limit===null) throw fail('Save a priced quotation before collecting payment.');
   if(lead && collectedPaise(lead.id)+delta>limit) throw fail('This payment would exceed the booking balance.',409);
   const status=received===requested?'Paid':'Partial';const now=new Date().toISOString();const paymentMode=mode || 'Bank Transfer';
-  const db=getDb();db.run('BEGIN');
+  const db=getDb();if(!externalTransaction)db.run('BEGIN');
   try {
     if(old>0 && !queryOne('SELECT id FROM receipt_events WHERE request_key=?',[requestKey])) db.run('INSERT INTO receipt_events(id,request_key,lead_id,amount_paise,received_paise,reference,actor,created_at) VALUES(?,?,?,?,?,?,?,?)',[randomUUID(),requestKey,lead?.id || '',old,old,'legacy-opening','legacy-migration',now]);
     if(delta>0)db.run('INSERT INTO receipt_events(id,request_key,lead_id,amount_paise,received_paise,reference,actor,created_at) VALUES(?,?,?,?,?,?,?,?)',[randomUUID(),requestKey,lead?.id || '',delta,received,ref,actor,now]);
@@ -48,7 +49,7 @@ export function recordReceipt(key: string, amount: unknown, reference: string | 
     if(link)db.run('UPDATE payment_links SET status=?,paid_amount=?,paid_at=?,payment_mode=?,transaction_ref=?,comments=?,notes=? WHERE id=?',[status,paid,now,paymentMode,ref,notes || link.comments || '',notes || link.notes || '',link.id]);
     if(inst) db.run('UPDATE ops_customer_installments SET status=?,paid_at=?,payment_mode=?,transaction_ref=? WHERE id=?',[status,now,paymentMode,ref,inst.id]);
     if(delta>0 && lead) db.run('INSERT INTO lead_notes(id,lead_id,text,type,timestamp) VALUES(?,?,?,?,?)',[randomUUID(),lead.id,`Verified receipt: INR ${(delta/100).toFixed(2)} via ${paymentMode}; reference ${ref}`,'Action',now]);
-    db.run('COMMIT');saveDb();
-  } catch(error){db.run('ROLLBACK');throw error;}
+    if(!externalTransaction){db.run('COMMIT');saveDb();}
+  } catch(error){if(!externalTransaction)db.run('ROLLBACK');throw error;}
   return {success:true,payKeyOrId:key,status,amount:received/100,refNumber:ref};
 }

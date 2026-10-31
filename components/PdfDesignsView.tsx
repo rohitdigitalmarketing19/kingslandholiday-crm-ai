@@ -1,3 +1,5 @@
+import BulkPhotoUpload from './BulkPhotoUpload';
+import {photoMatchesSearch} from '../utils/photoLibrary';
 import React, { useState, useEffect } from "react";
 import {
   FileText,
@@ -236,11 +238,13 @@ export const PdfDesignsView: React.FC = () => {
   const [isPartnersModalOpen, setIsPartnersModalOpen] = useState(false);
   const [isAddPhotoOpen, setIsAddPhotoOpen] = useState(false);
   const [newPhotoTitle, setNewPhotoTitle] = useState('');
+  const [newPhotoFilename,setNewPhotoFilename]=useState('');
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
   const [isSavingPhoto, setIsSavingPhoto] = useState(false);
   const [savedPhotos, setSavedPhotos] = useState<DestinationPhotoItem[]>([]);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photoSearchFilter, setPhotoSearchFilter] = useState('');
+  const filteredPhotos=savedPhotos.filter(photo=>photoMatchesSearch(photo,photoSearchFilter));
   const [sampleCoverImage, setSampleCoverImage] = useState<string>('');
   const [sampleDayImages, setSampleDayImages] = useState<Record<number, string>>({});
   const [partnerBrandsList, setPartnerBrandsList] = useState<PartnerBrand[]>([]);
@@ -379,6 +383,7 @@ export const PdfDesignsView: React.FC = () => {
       return;
     }
     try {
+      setNewPhotoFilename(file.name);
       // Auto-compress high-res camera photos to web-ready ~100KB images
       const compressed = await compressImageFile(file, { maxWidth: 1280, maxHeight: 960, quality: 0.85 });
       setNewPhotoUrl(compressed);
@@ -420,13 +425,14 @@ export const PdfDesignsView: React.FC = () => {
         title,
         city: title,
         image_url: newPhotoUrl.trim(),
+        file_name:newPhotoFilename,
         tags: title
       });
       setSavedPhotos(prev => [created, ...prev]);
       showMsg(`✓ Photo "${title}" saved to library! It is now searchable in Day-wise itinerary.`);
       setIsAddPhotoOpen(false);
       setNewPhotoTitle('');
-      setNewPhotoUrl('');
+      setNewPhotoUrl('');setNewPhotoFilename('');
     } catch (err) {
       console.error('Failed to save photo:', err);
       alert('Failed to save photo. Please try again.');
@@ -574,11 +580,11 @@ export const PdfDesignsView: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setIsAddPhotoOpen(true)}
+            onClick={()=>{document.querySelector('[aria-label="Bulk photo upload"]')?.scrollIntoView({behavior:'smooth',block:'center'});document.querySelector<HTMLInputElement>('[aria-label="Choose images for bulk upload"]')?.click();}}
             className="px-4 py-2.5 rounded-xl bg-brand hover:bg-brand text-white text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-sm"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Add Image</span>
+            <span>Upload images</span>
           </button>
 
           <button
@@ -788,6 +794,7 @@ export const PdfDesignsView: React.FC = () => {
           </button>
         </div>
 
+        <BulkPhotoUpload onSaved={photo=>setSavedPhotos(previous=>[photo,...previous.filter(p=>p.id!==photo.id)])}/>
         {/* Inline Fast Add Photo Card */}
         <div className="p-6 rounded-xl bg-surface border border-line shadow-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-line ">
@@ -824,7 +831,7 @@ export const PdfDesignsView: React.FC = () => {
                   type="text"
                   placeholder="Paste URL or click Browse button"
                   value={newPhotoUrl.startsWith('data:') ? '[Local Image Selected]' : newPhotoUrl}
-                  onChange={(e) => setNewPhotoUrl(e.target.value)}
+                  onChange={(e) => {setNewPhotoUrl(e.target.value);setNewPhotoFilename('');}}
                   className="flex-1 px-4 py-2.5 rounded-xl bg-canvas border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none truncate"
                 />
                 <label className="px-4 py-2.5 rounded-xl bg-inverse hover:bg-inverse text-white text-sm font-semibold cursor-pointer flex items-center gap-1.5 shrink-0 transition-colors shadow-xs">
@@ -902,7 +909,7 @@ export const PdfDesignsView: React.FC = () => {
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
               <input
                 type="text"
-                placeholder="Search saved photos by title..."
+                aria-label="Search saved photos" placeholder="Search filename, title, city or tags…"
                 value={photoSearchFilter}
                 onChange={(e) => setPhotoSearchFilter(e.target.value)}
                 className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-canvas border border-line text-sm font-medium focus:ring-2 focus:ring-brand-line outline-none"
@@ -915,21 +922,17 @@ export const PdfDesignsView: React.FC = () => {
               <div className="w-6 h-6 border-2 border-brand-line border-t-transparent rounded-full animate-spin" />
               <span className="text-xs font-semibold">Loading photo library...</span>
             </div>
-          ) : savedPhotos.length === 0 ? (
+          ) : filteredPhotos.length === 0 ? (
             <div className="py-12 text-center text-muted space-y-2">
               <ImageIcon className="w-8 h-8 mx-auto text-slate-300 " />
-              <p className="text-xs font-semibold">No photos saved yet. Upload your first photo above.</p>
+              <p className="text-xs font-semibold">{savedPhotos.length ? 'No matching images. Search by filename, title or city.' : 'No photos saved yet. Upload your first photo above.'}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {savedPhotos
-                .filter(p => !photoSearchFilter.trim() ||
-                  (p.title && p.title.toLowerCase().includes(photoSearchFilter.toLowerCase())) ||
-                  (p.city && p.city.toLowerCase().includes(photoSearchFilter.toLowerCase()))
-                )
+              {filteredPhotos
                 .map((photo) => (
                   <div
-                    key={photo.id}
+                    key={photo.id} data-photo-id={photo.id} data-file-name={photo.file_name || ''}
                     className="group relative rounded-xl overflow-hidden border border-line bg-canvas shadow-2xs hover:shadow-sm transition-all flex flex-col"
                   >
                     <div className="aspect-video relative overflow-hidden bg-subtle ">
@@ -953,7 +956,7 @@ export const PdfDesignsView: React.FC = () => {
                       <div className="absolute bottom-1.5 left-1.5 right-1.5 text-white">
                         <span className="text-xs font-bold truncate block drop-shadow-sm">
                           {photo.title || photo.city}
-                        </span>
+                        </span>{photo.file_name && <span className="block truncate text-xs" title={photo.file_name}>{photo.file_name}</span>}
                       </div>
                     </div>
                   </div>
