@@ -56,7 +56,7 @@ export function apiAuthorization(req: Request,res: Response,next: NextFunction) 
   let permissions: string[]=[];try {permissions=JSON.parse(user.permissions || '[]');}catch{}
   const section=route.startsWith('/leads')?['Leads','New Inquiry','Follow-ups','Sales Desk','Operations','Accounts']:route.startsWith('/ops')?['Operations','Accounts','HotelVouchers']:route.startsWith('/payments')?['Payments','Operations','Accounts']:route.startsWith('/agents')?['Sales Team','Leads','New Inquiry']:route.startsWith('/templates')?['Saved Itinerary']:['Leads','New Inquiry','Saved Itinerary','Operations','Accounts'];
   if(!admin && !section.some(name=>permissions.includes(name))) return res.status(403).json({error:'This account cannot access this desk.'});
-  if(!admin && user.role==='Accounts' && req.method!=='GET' && !route.includes('/accounts') && !route.startsWith('/payments')) return res.status(403).json({error:'Accounts cannot change sales or operations records.'});
+  if(!admin && user.role==='Accounts' && req.method!=='GET' && !route.includes('/accounts') && !route.startsWith('/payments') && route!=='/ops/invoices') return res.status(403).json({error:'Accounts cannot change sales or operations records.'});
   if(!admin && /\/leads\/[^/]+\/reassign$/.test(route))return res.status(403).json({error:'Only an administrator can reassign leads.'});
   if(!admin && user.role==='Sales') {
     const agent=queryOne('SELECT id FROM agents WHERE LOWER(email)=LOWER(?)',[user.email]);
