@@ -1,4 +1,3 @@
-import {invoiceData,listInvoices,getInvoice,issueInvoice} from '../services/invoices';
 import { Router, Request, Response } from 'express';
 import {
   getAllOpsCustomers,
@@ -22,11 +21,6 @@ import {
 } from '../controllers/opsController';
 
 const router = Router();
-const invoiceFailure=(res:Response,error:any)=>res.status(error.status || 500).json({error:error.status?error.message:'Could not process invoice. Please retry.'});
-router.get('/invoice-data/:id',(req,res)=>{try{res.json(invoiceData(req.params.id as string));}catch(error){invoiceFailure(res,error);}});
-router.get('/invoices',(req,res)=>{try{res.json(listInvoices(String(req.query.customerId || '')));}catch(error){invoiceFailure(res,error);}});
-router.get('/invoices/:id',(req,res)=>{try{res.json(getInvoice(req.params.id as string));}catch(error){invoiceFailure(res,error);}});
-router.post('/invoices',(req,res)=>{try{res.status(201).json(issueInvoice(req.body,res.locals.user.id));}catch(error){invoiceFailure(res,error);}});
 
 // --- Customers ---
 

@@ -1,4 +1,3 @@
-import { migrateInvoices } from './invoiceMigration';
 import {migratePhotoLibrary} from './photoLibraryMigration';
 import { migrateDataEntry } from './dataEntryMigration';
 import { initializeWorkflowSecurity } from './workflowSecurity';
@@ -431,6 +430,5 @@ function initializeDatabaseSchema(): void {
   console.log('✅ Database schema & migrations initialized.');
   initializeWorkflowSecurity();
   migratePhotoLibrary();
-  migrateInvoices();
 
 }

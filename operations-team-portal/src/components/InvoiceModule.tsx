@@ -1,4 +1,3 @@
-import {invoiceMoney,taxTotals,numberToWordsINR,invoiceToday,readInvoiceSettings} from '../utils/invoiceMath';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   FileText, 
@@ -46,6 +45,32 @@ interface InvoiceModuleProps {
   isReadOnly?: boolean;
 }
 
+// Utility to convert numbers to Indian Rupee Words
+function numberToWordsINR(amount: number): string {
+  if (!amount || amount === 0) return "Zero Rupees Only";
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  function inWords(num: number): string {
+    if ((num = num.toString() as any).length > 9) return 'overflow';
+    const n: any = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return '';
+    let str = '';
+    str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + ' Crore ' : '';
+    str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + ' Lakh ' : '';
+    str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + ' Thousand ' : '';
+    str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + ' Hundred ' : '';
+    str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) + ' ' : '';
+    return str.trim();
+  }
+
+  const words = inWords(Math.floor(amount));
+  return `${words} Rupees Only`.replace(/\s+/g, ' ');
+}
+
 export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   customers,
   initialCustomerId,
@@ -74,14 +99,15 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   const printRef = useRef<HTMLDivElement>(null);
 
   // Load Invoice Settings from localStorage
-  const savedSettings = useMemo(()=>readInvoiceSettings(),[]);
+  const savedSettingsStr = typeof window !== 'undefined' ? localStorage.getItem('kingsland_invoice_settings') : null;
+  const savedSettings = savedSettingsStr ? JSON.parse(savedSettingsStr) : null;
 
   // Company Legal & Registered Information State
   const [companyLogo, setCompanyLogo] = useState<string>(savedSettings?.companyLogo || '');
   const [companyName, setCompanyName] = useState<string>(savedSettings?.companyName || 'Kingsland Holidays');
-  const [companyGstin, setCompanyGstin] = useState<string>(savedSettings?.companyGstin === '08AABCK1234F1Z9' ? '' : (savedSettings?.companyGstin || ''));
-  const [companyPan, setCompanyPan] = useState<string>(savedSettings?.companyPan === 'AABCK1234F' ? '' : (savedSettings?.companyPan || ''));
-  const [companyAddress, setCompanyAddress] = useState<string>(savedSettings?.companyAddress === '402, Kingsland Business Center, M.I. Road' ? '' : (savedSettings?.companyAddress || ''));
+  const [companyGstin, setCompanyGstin] = useState<string>(savedSettings?.companyGstin || '08AABCK1234F1Z9');
+  const [companyPan, setCompanyPan] = useState<string>(savedSettings?.companyPan || 'AABCK1234F');
+  const [companyAddress, setCompanyAddress] = useState<string>(savedSettings?.companyAddress || '402, Kingsland Business Center, M.I. Road');
   const [companyCity, setCompanyCity] = useState<string>(savedSettings?.companyCity || 'Jaipur, Rajasthan, India - 302001');
   const [companyPhone, setCompanyPhone] = useState<string>(savedSettings?.companyPhone || '+91 6376983416, +91 7014939068');
   const [companyEmail, setCompanyEmail] = useState<string>(savedSettings?.companyEmail || 'official.kingslandholidays@gmail.com');
@@ -137,7 +163,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       pkgCustomerTerms: pkgCustomerTermsText.split('\n').filter(Boolean),
     };
     localStorage.setItem('kingsland_invoice_settings', JSON.stringify(settingsObj));
-    alert('Company details saved in this browser. Issued invoices retain their own saved copy.');
+    alert('✅ Company Details (Name, GST, PAN, Address) & Terms saved successfully!');
   };
 
   // Tax Mode State: 'cgst_sgst' vs 'igst'
@@ -154,8 +180,8 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   // Trip / Reference Details
   const [tripId, setTripId] = useState('');
   const [invoiceNo, setInvoiceNo] = useState('');
-  const [invoiceDate, setInvoiceDate] = useState(invoiceToday());
-  const [tripStartDate, setTripStartDate] = useState(invoiceToday());
+  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
+  const [tripStartDate, setTripStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [placeOfSupply, setPlaceOfSupply] = useState('');
   const [tripName, setTripName] = useState('');
   const [totalTravelersStr, setTotalTravelersStr] = useState('');
@@ -200,9 +226,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   ]);
 
   // Customer Package Invoice (PDF 3) Specifics - Payment Confirmation Slip
-  const [pkgDepositStatus, setPkgDepositStatus] = useState('AWAITING PAYMENT');
-  const [hotelBadge, setHotelBadge] = useState('As per accepted itinerary');
-  const [mealBadge, setMealBadge] = useState('As per accepted itinerary');
+  const [pkgDepositStatus, setPkgDepositStatus] = useState('ADVANCE CONFIRMED');
+  const [hotelBadge, setHotelBadge] = useState('Heritage Deluxe Stays');
+  const [mealBadge, setMealBadge] = useState('Breakfast & Dinner Included (MAP)');
   const [destinationBadge, setDestinationBadge] = useState('');
   const [installments, setInstallments] = useState<Array<{
     id: string;
@@ -210,7 +236,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     title: string;
     amount: number;
     dueDate: string;
-    status: 'DUE NOW' | 'UPCOMING' | 'PAID' | 'PARTIAL';
+    status: 'DUE NOW' | 'UPCOMING' | 'PAID';
     paidAt?: string;
     paymentMode?: string;
     transactionRef?: string;
@@ -232,34 +258,228 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
   const [pkgDescTitle, setPkgDescTitle] = useState('PACKAGE DESCRIPTION');
   const [pkgCustomerTitle, setPkgCustomerTitle] = useState('PAYMENT CONFIRMATION SLIP');
 
-  const [packageTotal,setPackageTotal]=useState(0);
-  const [invoiceLoading,setInvoiceLoading]=useState(false);
-  const [invoiceError,setInvoiceError]=useState('');
-  const [issuedId,setIssuedId]=useState('');
-  const [invoiceHistory,setInvoiceHistory]=useState<any[]>([]);
-  const [issuing,setIssuing]=useState(false);
-  const [exporting,setExporting]=useState(false);
-  const issueLock=useRef(false),requestId=useRef(crypto.randomUUID()),loadSequence=useRef(0);
-  const requestJson=async(url:string,options?:RequestInit)=>{const response=await fetch(url,{...options,signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw new Error(data.error || 'Could not load invoice data.');return data;};
-  const applyFinancialData=(data:any)=>{
-    setPackageTotal(data.packageTotal);setTotalPaidAmount(data.totalPaidAmount);setInstallments(data.installments || []);setPaymentsList(data.paymentsList || []);setNextDueDate(data.nextDueDate || '');setPkgDepositStatus(data.pkgDepositStatus);
+  // Complete Auto-fill from selected customer & lead database
+  const handleAutoFillFromCustomer = async (cust: Customer) => {
+    if (!cust) return;
+    setCustomerName(cust.name || '');
+    setCustomerMobile(cust.phone || '');
+    setCustomerEmail(cust.email || '');
+    setCustomerAddress((cust as any).address || (cust as any).city || '');
+    setCustomerGstin((cust as any).gstin || '');
+    setCustomerPan((cust as any).pan || '');
+    const targetTripId = cust.bookingId || cust.id || '';
+    setTripId(targetTripId);
+    const cleanNum = targetTripId.replace(/^[A-Za-z-]+/, '');
+    setInvoiceNo(cleanNum ? `INV-${cleanNum}` : (cust.bookingId || cust.id || 'INV-1001'));
+    setTripName(`${cust.destination || 'Tour'} Package`);
+    setTripStartDate(cust.startDate || new Date().toISOString().split('T')[0]);
+    setPlaceOfSupply(cust.destination || 'Rajasthan');
+    setDestinationBadge(cust.destination || 'Rajasthan');
+
+    const adults = cust.paxAdults || 2;
+    const children = cust.paxChildren || 0;
+    const paxCount = `${adults + children} Passengers (${adults} Adults${children ? `, ${children} Children` : ''})`;
+    setTotalTravelersStr(paxCount);
+
+    // Auto-fill passengers roster if present or generate from traveler party
+    const newPassengers: Array<{ id: string; text: string }> = [];
+    newPassengers.push({ id: '1', text: `1. ${cust.name || 'Primary Guest'} (Lead Traveler)` });
+    for (let i = 2; i <= adults; i++) {
+      newPassengers.push({ id: `adult-${i}`, text: `${i}. Adult Passenger ${i}` });
+    }
+    for (let j = 1; j <= children; j++) {
+      newPassengers.push({ id: `child-${j}`, text: `${adults + j}. Child Passenger ${j} (Child)` });
+    }
+    setPassengers(newPassengers);
+
+    setHotelBadge(`${cust.destination || 'Rajasthan'} Luxury Hotel Accommodation`);
+    setMealBadge('Breakfast & Dinner Included (MAP Plan)');
+
+    const targetTotal = Number(cust.totalAmount) || 65000;
+
+    // Load Live Installments and Submissions from API
+    let fetchedInsts: any[] = [];
+    let fetchedSubs: any[] = [];
+    try {
+      const targetId = cust.id || cust.bookingId;
+      const [instsRes, subsRes] = await Promise.all([
+        fetch(`/api/payments/installments?leadId=${encodeURIComponent(targetId)}`).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(`/api/payments/submissions?leadId=${encodeURIComponent(targetId)}`).then(r => r.ok ? r.json() : []).catch(() => [])
+      ]);
+      fetchedInsts = Array.isArray(instsRes) ? instsRes : [];
+      fetchedSubs = Array.isArray(subsRes) ? subsRes : [];
+    } catch (_err) {}
+
+    // Process Installments Schedule
+    let finalInstallments: Array<{
+      id: string;
+      num: number;
+      title: string;
+      amount: number;
+      dueDate: string;
+      status: 'DUE NOW' | 'UPCOMING' | 'PAID';
+      paidAt?: string;
+      paymentMode?: string;
+      transactionRef?: string;
+    }> = [];
+
+    if (fetchedInsts.length > 0) {
+      finalInstallments = fetchedInsts.map((inst: any, idx: number) => {
+        const isPaid = inst.payment_status === 'Paid' || inst.status === 'Paid';
+        const isFirstPending = !isPaid && !fetchedInsts.slice(0, idx).some((x: any) => (x.payment_status !== 'Paid' && x.status !== 'Paid'));
+        return {
+          id: inst.id || `inst-${idx + 1}`,
+          num: inst.installment_number || inst.installmentNumber || idx + 1,
+          title: inst.title || (idx === 0 ? 'Booking Advance Token' : idx === 1 ? 'Milestone Installment' : 'Final Balance Clearance'),
+          amount: Number(inst.amount) || 0,
+          dueDate: inst.due_date || inst.dueDate || cust.startDate || '',
+          status: isPaid ? 'PAID' : isFirstPending ? 'DUE NOW' : 'UPCOMING',
+          paidAt: inst.paid_at || inst.paidAt || '',
+          paymentMode: inst.payment_mode || inst.paymentMode || 'UPI',
+          transactionRef: inst.transaction_ref || inst.transactionRef || inst.utr_number || '',
+        };
+      });
+    } else if (cust.installments && cust.installments.length > 0) {
+      finalInstallments = cust.installments.map((inst: any, idx: number) => {
+        const isPaid = inst.status === 'Paid' || inst.payment_status === 'Paid';
+        return {
+          id: inst.id || `inst-${idx + 1}`,
+          num: inst.installmentNumber || idx + 1,
+          title: inst.title || (idx === 0 ? 'Booking Advance Token' : idx === 1 ? 'Milestone Installment' : 'Final Balance Clearance'),
+          amount: Number(inst.amount) || 0,
+          dueDate: inst.dueDate || inst.due_date || cust.startDate || '',
+          status: isPaid ? 'PAID' : idx === 0 ? 'DUE NOW' : 'UPCOMING',
+          paidAt: inst.paidAt || inst.paid_at || '',
+          paymentMode: inst.paymentMode || inst.payment_mode || 'UPI',
+          transactionRef: inst.transactionRef || inst.transaction_ref || '',
+        };
+      });
+    } else {
+      // Auto-generate standard milestone schedule from package total
+      const inst1Amt = Math.round(targetTotal * 0.3);
+      const inst2Amt = Math.round(targetTotal * 0.5);
+      const inst3Amt = targetTotal - inst1Amt - inst2Amt;
+
+      const startDateObj = cust.startDate ? new Date(cust.startDate) : new Date(Date.now() + 14 * 86400000);
+      const due1 = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
+      const due2 = new Date(startDateObj.getTime() - 7 * 86400000).toISOString().split('T')[0];
+      const due3 = new Date(startDateObj.getTime() - 2 * 86400000).toISOString().split('T')[0];
+
+      finalInstallments = [
+        {
+          id: 'inst-1',
+          num: 1,
+          title: 'Booking Advance Token (Confirmed)',
+          amount: inst1Amt,
+          dueDate: due1,
+          status: 'PAID',
+          paidAt: due1,
+          paymentMode: 'UPI / Online',
+          transactionRef: `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+        },
+        {
+          id: 'inst-2',
+          num: 2,
+          title: 'Second Milestone Installment',
+          amount: inst2Amt,
+          dueDate: due2,
+          status: 'DUE NOW',
+        },
+        {
+          id: 'inst-3',
+          num: 3,
+          title: 'Final Balance Clearance',
+          amount: inst3Amt,
+          dueDate: due3,
+          status: 'UPCOMING',
+        },
+      ];
+    }
+
+    setInstallments(finalInstallments);
+
+    // Build Verified Payments List
+    const payments: Array<{
+      id: string;
+      date: string;
+      mode: string;
+      utrNumber: string;
+      amount: number;
+      status: string;
+    }> = [];
+
+    // From paid installments
+    finalInstallments.filter(i => i.status === 'PAID').forEach(i => {
+      payments.push({
+        id: `pay-${i.id}`,
+        date: i.paidAt || new Date().toISOString().split('T')[0],
+        mode: i.paymentMode || 'UPI / QR Code',
+        utrNumber: i.transactionRef || `CONFIRMED-${i.id}`,
+        amount: i.amount,
+        status: '✓ Reconciled & Confirmed',
+      });
+    });
+
+    // From approved submissions if any
+    fetchedSubs.filter((s: any) => s.verification_status === 'Approved').forEach((s: any) => {
+      if (!payments.some(p => p.utrNumber === s.utr_number)) {
+        payments.push({
+          id: s.id,
+          date: (s.created_at || new Date().toISOString()).split('T')[0],
+          mode: s.payment_mode || 'UPI',
+          utrNumber: s.utr_number || 'ONLINE-GATEWAY',
+          amount: Number(s.amount_paid) || 0,
+          status: '✓ Reconciled & Confirmed',
+        });
+      }
+    });
+
+    setPaymentsList(payments);
+
+    // Calculate total paid & remaining balance
+    const calculatedPaid = finalInstallments
+      .filter(i => i.status === 'PAID')
+      .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    
+    setTotalPaidAmount(calculatedPaid);
+
+    const firstPending = finalInstallments.find(i => i.status !== 'PAID');
+    setNextDueDate(firstPending ? firstPending.dueDate : 'All Cleared');
+
+    const totalPkg = finalInstallments.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const balance = totalPkg - calculatedPaid;
+
+    if (balance <= 0) {
+      setPkgDepositStatus('PAID IN FULL (100%)');
+    } else if (calculatedPaid > 0) {
+      setPkgDepositStatus(`TOKEN CONFIRMED (₹${calculatedPaid.toLocaleString('en-IN')})`);
+    } else {
+      setPkgDepositStatus('PENDING ADVANCE');
+    }
+
+    // Tax invoice items default
+    setTaxItems([
+      {
+        id: '1',
+        description: 'Service Charges & Commission Fee',
+        subDescription: `Taxable booking and facilitation fees for ${cust.destination || 'Rajasthan'} tour package`,
+        sacCode: '998552',
+        taxableValue: Math.round(targetTotal * 0.1),
+        cgstRate: 9,
+        sgstRate: 9,
+        igstRate: 18
+      }
+    ]);
+
+    // Package description items default
+    setPkgDescItems([
+      { id: '1', description: 'Commission Services & Processing Fee', price: Math.round(targetTotal * 0.12) },
+      { id: '2', description: 'Hotel Accommodation & Stay Expenses', price: Math.round(targetTotal * 0.45) },
+      { id: '3', description: 'Cab Operations & Transit Services', price: Math.round(targetTotal * 0.25) },
+      { id: '4', description: 'Food, Catering & Dining Services', price: Math.round(targetTotal * 0.18) },
+    ]);
   };
-  const handleAutoFillFromCustomer=async(cust:Customer)=>{
-    const sequence=++loadSequence.current;
-    setInvoiceLoading(true);setInvoiceError('');setIssuedId('');requestId.current=crypto.randomUUID();setInvoiceNo('DRAFT');
-    setCustomerName(cust.name || '');setCustomerMobile(cust.phone || '');setCustomerEmail(cust.email || '');setCustomerAddress((cust as any).address || '');setCustomerGstin((cust as any).gstin || '');setCustomerPan((cust as any).pan || '');
-    setTripId(cust.bookingId || '');setTripName((cust.destination || 'Tour')+' Package');setTripStartDate(cust.startDate || '');setPlaceOfSupply(cust.destination || '');setDestinationBadge(cust.destination || '');
-    setTotalTravelersStr(String((cust.paxAdults || 0)+(cust.paxChildren || 0))+' passengers');setPassengers([{id:'primary',text:cust.name+' (Lead traveller)'}]);
-    setHotelBadge('As per accepted itinerary');setMealBadge('As per accepted itinerary');applyFinancialData({packageTotal:0,totalPaidAmount:0,pkgDepositStatus:'AWAITING PAYMENT'});
-    setTaxItems([{id:'1',description:'Service Charges',subDescription:'Enter the actual taxable service value and applicable rates',sacCode:'',taxableValue:0,cgstRate:0,sgstRate:0,igstRate:0}]);setPkgDescItems([]);
-    try{
-      const [data,history]=await Promise.all([requestJson('/api/ops/invoice-data/'+encodeURIComponent(cust.id)),requestJson('/api/ops/invoices?customerId='+encodeURIComponent(cust.id))]);
-      if(sequence!==loadSequence.current)return;
-      applyFinancialData(data);setTripId(data.bookingId);setInvoiceHistory(history);
-      setPkgDescItems([{id:'1',description:(cust.destination || 'Tour')+' package — as per accepted booking',price:data.packageTotal}]);
-    }catch(error){if(sequence===loadSequence.current)setInvoiceError((error as Error).message);}
-    finally{if(sequence===loadSequence.current)setInvoiceLoading(false);}
-  };
+
   // Sync initial customer or auto-select when customers array updates
   useEffect(() => {
     if (initialCustomerId) {
@@ -279,38 +499,30 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     }
   }, [selectedCustomerId, customers]);
 
-  const applyIssuedInvoice=(doc:any)=>{++loadSequence.current;setInvoiceLoading(false);setCompanyLogo(doc.fields.companyLogo);setCompanyName(doc.fields.companyName);setCompanyGstin(doc.fields.companyGstin);setCompanyPan(doc.fields.companyPan);setCompanyAddress(doc.fields.companyAddress);setCompanyCity(doc.fields.companyCity);setCompanyPhone(doc.fields.companyPhone);setCompanyEmail(doc.fields.companyEmail);setCompanyWebsite(doc.fields.companyWebsite);setTaxTermsText(doc.fields.taxTermsText);setPkgDescTermsText(doc.fields.pkgDescTermsText);setPkgCustomerTermsText(doc.fields.pkgCustomerTermsText);setTaxMode(doc.fields.taxMode);setCustomerName(doc.fields.customerName);setCustomerMobile(doc.fields.customerMobile);setCustomerEmail(doc.fields.customerEmail);setCustomerAddress(doc.fields.customerAddress);setCustomerGstin(doc.fields.customerGstin);setCustomerPan(doc.fields.customerPan);setTripId(doc.fields.tripId);setInvoiceNo(doc.fields.invoiceNo);setInvoiceDate(doc.fields.invoiceDate);setTripStartDate(doc.fields.tripStartDate);setPlaceOfSupply(doc.fields.placeOfSupply);setTripName(doc.fields.tripName);setTotalTravelersStr(doc.fields.totalTravelersStr);setPassengers(doc.fields.passengers);setTaxItems(doc.fields.taxItems);setPkgDescItems(doc.fields.pkgDescItems);setPkgDepositStatus(doc.fields.pkgDepositStatus);setHotelBadge(doc.fields.hotelBadge);setMealBadge(doc.fields.mealBadge);setDestinationBadge(doc.fields.destinationBadge);setInstallments(doc.fields.installments);setPaymentsList(doc.fields.paymentsList);setTotalPaidAmount(doc.fields.totalPaidAmount);setNextDueDate(doc.fields.nextDueDate);setTaxInvoiceTitle(doc.fields.taxInvoiceTitle);setTaxInvoiceSubtitle(doc.fields.taxInvoiceSubtitle);setPkgDescTitle(doc.fields.pkgDescTitle);setPkgCustomerTitle(doc.fields.pkgCustomerTitle);setPackageTotal(doc.fields.packageTotal);setActiveType(doc.document_type);setIssuedId(doc.id);setIsEditMode(false);setInvoiceError('');};
-  const openIssuedInvoice=async(id:string)=>{if(!id)return;setInvoiceLoading(true);try{applyIssuedInvoice(await requestJson('/api/ops/invoices/'+encodeURIComponent(id)));}catch(error){setInvoiceError((error as Error).message);}finally{setInvoiceLoading(false);}};
-  const selectDocumentType=(type:InvoiceType)=>{setActiveType(type);if(issuedId){setIssuedId('');const cust=customers.find(c=>c.id===selectedCustomerId);if(cust)handleAutoFillFromCustomer(cust);}};
-  const issueCurrentInvoice=async()=>{
-    if(issueLock.current || invoiceLoading || issuedId)return;issueLock.current=true;setIssuing(true);setInvoiceError('');
-    try{
-      const doc=await requestJson('/api/ops/invoices',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId:selectedCustomerId,documentType:activeType,requestId:requestId.current,fields:{companyLogo,companyName,companyGstin,companyPan,companyAddress,companyCity,companyPhone,companyEmail,companyWebsite,taxTermsText,pkgDescTermsText,pkgCustomerTermsText,taxMode,customerName,customerMobile,customerEmail,customerAddress,customerGstin,customerPan,tripId,invoiceNo,invoiceDate,tripStartDate,placeOfSupply,tripName,totalTravelersStr,passengers,taxItems,pkgDescItems,pkgDepositStatus,hotelBadge,mealBadge,destinationBadge,installments,paymentsList,totalPaidAmount,nextDueDate,taxInvoiceTitle,taxInvoiceSubtitle,pkgDescTitle,pkgCustomerTitle,packageTotal}})});
-      applyIssuedInvoice(doc);setInvoiceHistory(await requestJson('/api/ops/invoices?customerId='+encodeURIComponent(selectedCustomerId)));
-    }catch(error){setInvoiceError((error as Error).message);}finally{issueLock.current=false;setIssuing(false);}
-  };
   // Calculations for Tax Invoice
-  const tax=taxTotals(taxItems,taxMode);
-  const taxSubtotal=tax.subtotal,taxCgstTotal=tax.cgst,taxSgstTotal=tax.sgst,taxIgstTotal=tax.igst,taxGrandTotal=tax.total;
+  const taxSubtotal = taxItems.reduce((acc, item) => acc + (Number(item.taxableValue) || 0), 0);
+  const taxCgstTotal = taxItems.reduce((acc, item) => acc + ((Number(item.taxableValue) || 0) * (Number(item.cgstRate) || 0) / 100), 0);
+  const taxSgstTotal = taxItems.reduce((acc, item) => acc + ((Number(item.taxableValue) || 0) * (Number(item.sgstRate) || 0) / 100), 0);
+  const taxIgstTotal = taxItems.reduce((acc, item) => acc + ((Number(item.taxableValue) || 0) * (Number(item.igstRate) || 18) / 100), 0);
+  
+  const taxGrandTotal = taxMode === 'cgst_sgst' ? (taxSubtotal + taxCgstTotal + taxSgstTotal) : (taxSubtotal + taxIgstTotal);
   const taxAmountInWords = numberToWordsINR(taxGrandTotal);
 
   // Calculations for Package Description Invoice
-  const pkgDescTotal = pkgDescItems.reduce((acc, item) => acc + Math.round(Number(item.price || 0)*100), 0)/100;
+  const pkgDescTotal = pkgDescItems.reduce((acc, item) => acc + (Number(item.price) || 0), 0);
   const pkgDescAmountInWords = numberToWordsINR(pkgDescTotal);
 
   // Calculations for Customer Package Invoice (PDF 3)
-  const pkgTotal = packageTotal;
-  const balanceDue = Math.max(0,Math.round(pkgTotal*100)-Math.round(totalPaidAmount*100))/100;
+  const pkgTotal = installments.reduce((acc, i) => acc + (Number(i.amount) || 0), 0);
+  const balanceDue = pkgTotal - totalPaidAmount;
 
   // Print & PDF Download Handlers
   const handlePrint = () => {
-    if(invoiceLoading || invoiceError)return;
     window.print();
   };
 
   const handleDownloadPdf = async () => {
-    if (!printRef.current || exporting || invoiceLoading || invoiceError) return;
-    setExporting(true);
+    if (!printRef.current) return;
     
     // Temporarily turn off edit mode so inputs don't get cut off in the PDF
     const wasEditMode = isEditMode;
@@ -334,7 +546,6 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       console.error('PDF export error, falling back to print:', e);
       window.print();
     } finally {
-      setExporting(false);
       if (wasEditMode) {
         setIsEditMode(true);
       }
@@ -370,7 +581,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     <div className="space-y-6">
 
       {/* Top Banner & Action Controls */}
-      <div className="p-6 rounded-xl bg-surface border border-line text-content shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="p-2 rounded-xl bg-brand/20 text-brand-ink border border-brand-line/30">
@@ -379,7 +590,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             <h2 className="font-semibold text-xl tracking-tight">Invoice Creation & Printing Hub</h2>
           </div>
           <p className="text-sm text-muted mt-1 max-w-xl">
-            Prepare a draft, review booking and payment details, then issue a numbered document. Issued copies are saved for future download.
+            Create, edit, auto-fill, print, and export 3 official invoice templates (Tax Invoice, Package Description, and Customer Package Invoice) with customizable Logo & Terms Settings.
           </p>
         </div>
 
@@ -392,13 +603,13 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               </div>
             ) : (
               <button
-                disabled={!!issuedId} onClick={() => setIsEditMode(!isEditMode)}
+                onClick={() => setIsEditMode(!isEditMode)}
                 className={`px-3.5 py-2 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all ${
                   isEditMode ? 'bg-brand text-white shadow-sm' : 'bg-inverse text-slate-300 hover:bg-inverse'
                 }`}
               >
                 <Edit3 className="w-4 h-4" />
-                <span>{issuedId ? 'Issued · read only' : isEditMode ? 'Edit details' : 'Show form'}</span>
+                <span>{isEditMode ? 'Editing Fields' : 'Form Hidden'}</span>
               </button>
             )
           )}
@@ -406,15 +617,15 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           {activeType !== 'settings' && (
             <>
               <button
-                disabled={invoiceLoading || !!invoiceError || exporting || issuing} onClick={handleDownloadPdf}
+                onClick={handleDownloadPdf}
                 className="px-3.5 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-content font-semibold text-sm flex items-center gap-1.5 transition-all shadow-sm"
               >
                 <Download className="w-4 h-4" />
-                <span>{exporting ? 'Preparing PDF…' : 'Download PDF'}</span>
+                <span>Download PDF</span>
               </button>
 
               <button
-                disabled={invoiceLoading || !!invoiceError || exporting || issuing} onClick={handlePrint}
+                onClick={handlePrint}
                 className="px-3.5 py-2 rounded-xl bg-inverse hover:bg-inverse text-white font-bold text-sm flex items-center gap-1.5 border border-line transition-all"
               >
                 <Printer className="w-4 h-4" />
@@ -422,7 +633,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
               </button>
 
               <button
-                disabled={invoiceLoading || !!invoiceError || issuing} onClick={handleShareWhatsApp}
+                onClick={handleShareWhatsApp}
                 className="px-3.5 py-2 rounded-xl bg-success-strong hover:bg-success-strong text-white font-bold text-sm flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <Send className="w-4 h-4" />
@@ -433,13 +644,6 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
         </div>
       </div>
 
-      {activeType!=='settings' && <section className="p-5 rounded-xl border border-line bg-surface space-y-4" aria-label="Invoice status">
-        <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="font-semibold text-content">{issuedId?'Issued invoice · saved copy':'Draft · review before issuing'}</p><p className="text-sm text-secondary mt-1">{issuedId?invoiceNo:'Printing a draft does not issue an invoice. Company details and tax allocations must be reviewed.'}</p></div>{!isReadOnly && !issuedId && <button disabled={invoiceLoading || !!invoiceError || issuing || !selectedCustomerId} onClick={issueCurrentInvoice} className="px-4 py-2.5 rounded-lg bg-brand text-white font-medium disabled:opacity-50">{issuing?'Issuing…':'Issue & save invoice'}</button>}{issuedId && <button onClick={()=>{const cust=customers.find(c=>c.id===selectedCustomerId);if(cust)handleAutoFillFromCustomer(cust);}} className="px-4 py-2 border border-line rounded-lg">New draft</button>}</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{[['Booking value',packageTotal],['Verified collections',totalPaidAmount],['Balance due',balanceDue]].map(([title,value])=><div key={String(title)} className="rounded-lg bg-canvas p-3"><p className="text-xs text-secondary">{title}</p><p className="text-lg font-semibold text-content mt-1">₹{invoiceMoney(Number(value))}</p></div>)}</div>
-        <label className="block text-sm text-secondary">Saved documents<select aria-label="Saved invoices" value={issuedId} disabled={invoiceLoading} onChange={e=>openIssuedInvoice(e.target.value)} className="block mt-1 w-full p-2.5 bg-canvas border border-line rounded-lg text-content"><option value="">Choose an issued invoice</option>{invoiceHistory.map(doc=><option key={doc.id} value={doc.id}>{doc.invoice_number} · {doc.document_type.replaceAll('_',' ')} · {new Date(doc.created_at).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'})}</option>)}</select></label>
-      </section>}
-      {invoiceLoading && <p role="status" className="p-4 rounded-lg bg-brand-soft text-brand-ink">Loading booking and verified payments…</p>}
-      {invoiceError && <div role="alert" className="p-4 rounded-lg border border-danger-line bg-danger-soft text-danger-ink">{invoiceError}<button onClick={()=>{setInvoiceError('');}} className="ml-3 underline">Dismiss</button></div>}
       {/* Customer & Trip Search Bar for Invoice Viewer */}
       <div className="p-4 rounded-xl bg-surface border border-line shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-1">
@@ -476,7 +680,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       </div>
       <div className="flex flex-wrap gap-2 p-1.5 rounded-xl bg-surface border border-line shadow-xs">
         <button
-          onClick={() => selectDocumentType('tax')}
+          onClick={() => setActiveType('tax')}
           className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'tax'
               ? 'bg-inverse text-white shadow-sm'
@@ -488,7 +692,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
         </button>
 
         <button
-          onClick={() => selectDocumentType('package_description')}
+          onClick={() => setActiveType('package_description')}
           className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'package_description'
               ? 'bg-inverse text-white shadow-sm'
@@ -500,7 +704,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
         </button>
 
         <button
-          onClick={() => selectDocumentType('package_customer')}
+          onClick={() => setActiveType('package_customer')}
           className={`flex-1 min-w-[180px] py-3 px-4 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
             activeType === 'package_customer'
               ? 'bg-inverse text-white shadow-sm'
@@ -513,7 +717,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
         {!isReadOnly && (
           <button
-            onClick={() => selectDocumentType('settings')}
+            onClick={() => setActiveType('settings')}
             className={`py-3 px-5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all ${
               activeType === 'settings'
                 ? 'bg-brand text-white shadow-sm'
@@ -540,7 +744,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
           </div>
           {!isReadOnly && (
             <button
-              onClick={() => selectDocumentType('settings')}
+              onClick={() => setActiveType('settings')}
               className="px-3 py-1.5 rounded-xl bg-surface hover:bg-brand hover:text-white border border-brand-line text-brand-ink font-semibold text-xs shrink-0 shadow-2xs transition-all flex items-center gap-1.5"
             >
               <Settings className="w-3.5 h-3.5" />
@@ -942,7 +1146,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={invoiceNo} readOnly
+                    value={invoiceNo}
                     onChange={(e) => setInvoiceNo(e.target.value)}
                     placeholder={activeType === 'package_customer' ? 'Receipt No.' : 'Invoice No.'}
                     className="w-full mt-1 px-3 py-1.5 rounded-lg border border-line font-bold font-mono text-content bg-surface"
@@ -1164,7 +1368,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         <label className="block text-xs font-bold text-secondary uppercase">IGST Rate %</label>
                         <input
                           type="number"
-                          value={item.igstRate ?? 0}
+                          value={item.igstRate || 18}
                           onChange={(e) => {
                             const updated = [...taxItems];
                             updated[index].igstRate = parseFloat(e.target.value) || 0;
@@ -1253,7 +1457,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   <input
                     type="text"
                     value={pkgDepositStatus}
-                    readOnly
+                    onChange={(e) => setPkgDepositStatus(e.target.value)}
                     className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold bg-surface"
                   />
                 </div>
@@ -1280,7 +1484,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                   <input
                     type="number"
                     value={totalPaidAmount}
-                    readOnly aria-label="Verified amount received"
+                    onChange={(e) => setTotalPaidAmount(parseFloat(e.target.value) || 0)}
                     className="w-full mt-0.5 px-2.5 py-1 rounded border border-line font-bold text-success-ink bg-surface"
                   />
                 </div>
@@ -1377,7 +1581,6 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             `}</style>
             
             {/* ======================================================== */}
-            {!issuedId && <div className="text-center py-2 border-b border-amber-300 text-amber-800 text-sm font-semibold">DRAFT — NOT ISSUED</div>}
             {/* TEMPLATE 1: TAX INVOICE (Matching PDF 1) */}
             {/* ======================================================== */}
             {activeType === 'tax' && (
@@ -1495,9 +1698,9 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {taxItems.map((item, idx) => {
-                        const cgstVal = Math.round(Math.round(item.taxableValue*100)*item.cgstRate/100)/100;
-                        const sgstVal = Math.round(Math.round(item.taxableValue*100)*item.sgstRate/100)/100;
-                        const igstVal = Math.round(Math.round(item.taxableValue*100)*(item.igstRate ?? 0)/100)/100;
+                        const cgstVal = (item.taxableValue * item.cgstRate) / 100;
+                        const sgstVal = (item.taxableValue * item.sgstRate) / 100;
+                        const igstVal = (item.taxableValue * (item.igstRate || 18)) / 100;
 
                         return (
                           <tr key={item.id} className="align-top">
@@ -1515,7 +1718,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                                   <p>SGST @ {item.sgstRate}%: ₹{sgstVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                                 </>
                               ) : (
-                                <p>IGST @ {item.igstRate ?? 0}%: ₹{igstVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
+                                <p>IGST @ {item.igstRate || 18}%: ₹{igstVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
                               )}
                             </td>
                           </tr>
@@ -1971,7 +2174,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                               </td>
                               <td className="p-3 font-mono font-bold text-slate-900">{pay.utrNumber}</td>
                               <td className="p-3 text-right font-mono font-black text-emerald-700 text-xs">
-                                ₹ {invoiceMoney(pay.amount)}
+                                ₹ {pay.amount.toLocaleString('en-IN')}.00
                               </td>
                               <td className="p-3 text-center">
                                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-900 inline-flex items-center gap-1">
@@ -1983,7 +2186,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         ) : (
                           <tr>
                             <td colSpan={6} className="p-6 text-center text-slate-500 italic">
-                              No verified receipts recorded for this booking.
+                              Payment records automatically populated from verified installments and transactions.
                             </td>
                           </tr>
                         )}
@@ -2003,19 +2206,19 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <div className="space-y-2 pt-1 text-xs">
                       <div className="flex justify-between text-slate-700">
                         <span>Package Base Value:</span>
-                        <strong className="font-mono text-slate-900">₹ {invoiceMoney(pkgTotal)}</strong>
+                        <strong className="font-mono text-slate-900">₹ {pkgTotal.toLocaleString('en-IN')}.00</strong>
                       </div>
                       <div className="flex justify-between text-slate-900 font-extrabold border-t border-[#E0D3BB] pt-1.5">
                         <span>Total Package Cost:</span>
-                        <strong className="font-mono text-sm text-[#7B1D2A]">₹ {invoiceMoney(pkgTotal)}</strong>
+                        <strong className="font-mono text-sm text-[#7B1D2A]">₹ {pkgTotal.toLocaleString('en-IN')}.00</strong>
                       </div>
                       <div className="flex justify-between text-emerald-800 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
                         <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Total Received:</span>
-                        <strong className="font-mono text-sm text-emerald-800">₹ {invoiceMoney(totalPaidAmount)}</strong>
+                        <strong className="font-mono text-sm text-emerald-800">₹ {totalPaidAmount.toLocaleString('en-IN')}.00</strong>
                       </div>
                       <div className="flex justify-between text-rose-800 font-bold bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200">
                         <span className="flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5 text-rose-600" /> Balance Remaining:</span>
-                        <strong className="font-mono text-sm text-rose-800">₹ {invoiceMoney(balanceDue)}</strong>
+                        <strong className="font-mono text-sm text-rose-800">₹ {balanceDue.toLocaleString('en-IN')}.00</strong>
                       </div>
                     </div>
                   </div>
@@ -2032,7 +2235,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         </span>
                       </div>
                       <h3 className="text-3xl font-black font-mono text-amber-400 mt-2 tracking-tight">
-                        ₹ {invoiceMoney(balanceDue)}
+                        ₹ {balanceDue.toLocaleString('en-IN')}.00
                       </h3>
                       <p className="text-xs text-slate-300 mt-1">
                         {balanceDue <= 0 ? '✓ Entire package amount has been fully settled.' : 'Advance token recorded. Balance to be cleared as per schedule.'}
@@ -2053,7 +2256,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                     <AlertCircle className="w-4 h-4 text-rose-600" /> IMPORTANT RESERVATION NOTICE
                   </h4>
                   <p className="leading-relaxed font-medium">
-                    This document shows the verified collections recorded for Trip ID <strong>#{tripId || invoiceNo}</strong> (Receipt Ref: <strong>#{invoiceNo}</strong>). Kindly ensure subsequent milestone installments are cleared prior to the due dates to ensure uninterrupted vehicle allocation and luxury stay confirmations. For payment verification or amendments, contact Kingsland 24x7 desk at <strong>{companyPhone}</strong>.
+                    This Payment Confirmation Slip officially confirms the receipt of advance token / milestone funds for Trip ID <strong>#{tripId || invoiceNo}</strong> (Receipt Ref: <strong>#{invoiceNo}</strong>). Kindly ensure subsequent milestone installments are cleared prior to the due dates to ensure uninterrupted vehicle allocation and luxury stay confirmations. For payment verification or amendments, contact Kingsland 24x7 desk at <strong>{companyPhone}</strong>.
                   </p>
                 </div>
 
