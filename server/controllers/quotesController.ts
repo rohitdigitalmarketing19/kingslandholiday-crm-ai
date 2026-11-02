@@ -1,3 +1,4 @@
+import {reconcileQuoteStays} from '../../utils/quoteStayPlan';
 import {asyncForEach} from '../utils/asyncCollections';
 import { randomUUID } from 'crypto';
 import { assertTripEditable } from '../services/tripEditing';
@@ -42,7 +43,7 @@ async function saveHotels(quoteId: string, hotels: any[]) {
     if (!Array.isArray(hotels))
         return;
     await runQuery('DELETE FROM quote_hotels WHERE quote_id = ?', [quoteId]);
-    await asyncForEach(hotels, async (h, i) => await runQuery('INSERT INTO quote_hotels (quote_id, hotel_name, city, category, room_type, comments, nights, selected_night_indices, sort_order, meal_plan) VALUES (?,?,?,?,?,?,?,?,?,?)', [quoteId, h.hotelName || '', h.city || '', h.category || '4 Star', h.roomType || 'Standard Room', h.comments || '', h.nights || 1, JSON.stringify(h.selectedNightIndices || []), i, h.mealPlan || '']));
+    await asyncForEach(hotels, async (h, i) => await runQuery('INSERT INTO quote_hotels (quote_id, hotel_name, city, category, room_type, comments, nights, selected_night_indices, sort_order, meal_plan) VALUES (?,?,?,?,?,?,?,?,?,?)', [quoteId, h.hotelName || '', h.city || '', h.category || '4 Star', h.roomType || 'Standard Room', h.comments || '', h.nights ?? 0, JSON.stringify(h.selectedNightIndices || []), i, h.mealPlan || '']));
 }
 async function saveItineraryDays(quoteId: string, itinerary: any[]) {
     if (!Array.isArray(itinerary))
@@ -54,6 +55,7 @@ async function saveItineraryDays(quoteId: string, itinerary: any[]) {
     });
 }
 export async function createQuote(leadId: string, data: any) {
+    data=reconcileQuoteStays(data);
     await assertTripEditable(leadId);
     const alternative = normalizeHotelAlternative(data.hotelAlternative);
     if (alternative && (!Number.isFinite(data.finalSellingPrice) || data.finalSellingPrice <= 0))
@@ -71,7 +73,7 @@ export async function createQuote(leadId: string, data: any) {
     const existingLead = await queryOne('SELECT id FROM leads WHERE id = ?', [leadId]);
     if (!existingLead)
         throw Object.assign(new Error('Lead not found.'), { status: 404 });
-    await runQuery('INSERT INTO quotes (id, lead_id, package_title, final_selling_price, visa_cost, flight_cost, land_package_cost, marketing_fees, discount_percentage, nights, hotels_not_included, flights_not_included, cabs_not_included, flight_details, cab_details, other_inclusions, other_exclusions, terms_and_conditions, use_default_tc, other_information, working_agent_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [quoteId, leadId, data.packageTitle || '', data.finalSellingPrice || 0, data.visaCost || 0, data.flightCost || 0, data.landPackageCost || 0, data.marketingFees || 0, data.discountPercentage || 0, data.nights || 6, data.hotelsNotIncluded ? 1 : 0, data.flightsNotIncluded ? 1 : 0, data.cabsNotIncluded ? 1 : 0, data.flightDetails || '', data.cabDetails || '', data.otherInclusions || '', data.otherExclusions || '', data.termsAndConditions || '', data.useDefaultTC ? 1 : 0, data.otherInformation || '', data.workingAgentId || '', data.createdAt || now]);
+    await runQuery('INSERT INTO quotes (id, lead_id, package_title, final_selling_price, visa_cost, flight_cost, land_package_cost, marketing_fees, discount_percentage, nights, hotels_not_included, flights_not_included, cabs_not_included, flight_details, cab_details, other_inclusions, other_exclusions, terms_and_conditions, use_default_tc, other_information, working_agent_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)', [quoteId, leadId, data.packageTitle || '', data.finalSellingPrice || 0, data.visaCost || 0, data.flightCost || 0, data.landPackageCost || 0, data.marketingFees || 0, data.discountPercentage || 0, data.nights ?? 6, data.hotelsNotIncluded ? 1 : 0, data.flightsNotIncluded ? 1 : 0, data.cabsNotIncluded ? 1 : 0, data.flightDetails || '', data.cabDetails || '', data.otherInclusions || '', data.otherExclusions || '', data.termsAndConditions || '', data.useDefaultTC ? 1 : 0, data.otherInformation || '', data.workingAgentId || '', data.createdAt || now]);
     if (Object.prototype.hasOwnProperty.call(data, 'hotelAlternative'))
         await runQuery('UPDATE quotes SET hotel_alternative = ? WHERE id = ?', [alternative ? JSON.stringify(alternative) : null, quoteId]);
     if (data.hotels)
@@ -123,6 +125,7 @@ export async function updateQuote(leadId: string, quoteId: string, data: any, ac
     return await getLeadById(leadId);
 }
 async function updateQuoteDetails(leadId: string, quoteId: string, data: any) {
+    data=reconcileQuoteStays(data);
     const runQuery = async (sql: string, params: any[]) => await getDb().run(sql, params);
     const alternative = normalizeHotelAlternative(data.hotelAlternative);
     if (alternative && (!Number.isFinite(data.finalSellingPrice) || data.finalSellingPrice <= 0))
@@ -133,7 +136,7 @@ async function updateQuoteDetails(leadId: string, quoteId: string, data: any) {
     if (!existingQuote) {
         return await createQuote(leadId, { ...data, id: quoteId });
     }
-    await runQuery('UPDATE quotes SET package_title=?, final_selling_price=?, visa_cost=?, flight_cost=?, land_package_cost=?, marketing_fees=?, discount_percentage=?, nights=?, hotels_not_included=?, flights_not_included=?, cabs_not_included=?, flight_details=?, cab_details=?, other_inclusions=?, other_exclusions=?, terms_and_conditions=?, use_default_tc=?, other_information=?, working_agent_id=? WHERE id=? AND lead_id=?', [data.packageTitle || '', data.finalSellingPrice || 0, data.visaCost || 0, data.flightCost || 0, data.landPackageCost || 0, data.marketingFees || 0, data.discountPercentage || 0, data.nights || 6, data.hotelsNotIncluded ? 1 : 0, data.flightsNotIncluded ? 1 : 0, data.cabsNotIncluded ? 1 : 0, data.flightDetails || '', data.cabDetails || '', data.otherInclusions || '', data.otherExclusions || '', data.termsAndConditions || '', data.useDefaultTC ? 1 : 0, data.otherInformation || '', data.workingAgentId || '', quoteId, leadId]);
+    await runQuery('UPDATE quotes SET package_title=?, final_selling_price=?, visa_cost=?, flight_cost=?, land_package_cost=?, marketing_fees=?, discount_percentage=?, nights=?, hotels_not_included=?, flights_not_included=?, cabs_not_included=?, flight_details=?, cab_details=?, other_inclusions=?, other_exclusions=?, terms_and_conditions=?, use_default_tc=?, other_information=?, working_agent_id=? WHERE id=? AND lead_id=?', [data.packageTitle || '', data.finalSellingPrice || 0, data.visaCost || 0, data.flightCost || 0, data.landPackageCost || 0, data.marketingFees || 0, data.discountPercentage || 0, data.nights ?? 6, data.hotelsNotIncluded ? 1 : 0, data.flightsNotIncluded ? 1 : 0, data.cabsNotIncluded ? 1 : 0, data.flightDetails || '', data.cabDetails || '', data.otherInclusions || '', data.otherExclusions || '', data.termsAndConditions || '', data.useDefaultTC ? 1 : 0, data.otherInformation || '', data.workingAgentId || '', quoteId, leadId]);
     if (Object.prototype.hasOwnProperty.call(data, 'hotelAlternative'))
         await runQuery('UPDATE quotes SET hotel_alternative = ? WHERE id = ?', [alternative ? JSON.stringify(alternative) : null, quoteId]);
     if (data.hotels)

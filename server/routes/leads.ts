@@ -95,7 +95,7 @@ router.patch('/:id/reassign', async (req: Request, res: Response) => {
 });
 router.delete('/:id', async (req: Request, res: Response) => {
     try {
-        if (!await deleteLead(req.params.id as string))
+        if (!await deleteLead(req.params.id as string, res.locals.user?.id || 'system'))
             return res.status(404).json({ error: 'Lead not found' });
         res.json({ success: true });
     }

@@ -1010,16 +1010,11 @@ const App: React.FC = () => {
       if (proposalLead?.id === leadId || proposalLead?.tripId === leadTripId) setProposalLead(null);
       if (quotingLead?.id === leadId || quotingLead?.tripId === leadTripId) setQuotingLead(null);
       showToast(`Lead #${leadTripId} (${leadName}) was deleted successfully.`, 'success');
+      setLeadToDelete(null);
     } catch (err) {
-      console.warn('Backend delete lead note:', err);
-      setLeads(prev => prev.filter(l => l.id !== leadId && l.tripId !== leadTripId));
-      if (selectedLead?.id === leadId) setSelectedLead(null);
-      if (proposalLead?.id === leadId) setProposalLead(null);
-      if (quotingLead?.id === leadId) setQuotingLead(null);
-      showToast(`Lead #${leadTripId} removed from active list.`, 'success');
+      showToast((err as Error).message || 'Lead deletion failed. No lead has been removed from this list.', 'error');
     } finally {
       setIsDeletingLead(false);
-      setLeadToDelete(null);
     }
   };
 

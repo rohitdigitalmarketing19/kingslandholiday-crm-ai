@@ -1,3 +1,4 @@
+import {reconcileQuoteStays} from '../utils/quoteStayPlan';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Image as ImageIcon, X, Upload, Search, Trash2 } from 'lucide-react';
 import { Lead, QuoteData, HotelEntry, InclusionEntry } from '../types';
@@ -193,17 +194,11 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   const [quote, setQuote] = useState<QuoteData>(() => {
     const existingQuote = lead.quotes?.find(q => q.id === editQuoteId);
     if (existingQuote) {
-      const fixedHotels = existingQuote.hotels.map(h => {
-        if (!h.selectedNightIndices || h.selectedNightIndices.length === 0) {
-          return { ...h, selectedNightIndices: Array.from({length: h.nights}, (_, i) => i) };
-        }
-        return h;
-      });
-      return { ...existingQuote, hotels: fixedHotels };
+      return reconcileQuoteStays(existingQuote);
     }
 
     const quoteCount = (lead.quotes?.length || 0) + 1;
-    return {
+    return reconcileQuoteStays({
       id: `quote-${Date.now()}`,
       packageTitle: `${lead.destination} Option ${quoteCount}`,
       finalSellingPrice: 0,
@@ -237,7 +232,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
       otherInformation: '',
       workingAgentId: lead.assignedTo || '',
       createdAt: new Date().toISOString()
-    };
+    });
   });
 
   const [savedTemplates, setSavedTemplates] = useState<any[]>([]);
@@ -367,7 +362,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
   const handleHotelChange = (index: number, field: keyof HotelEntry, value: any) => {
     const newHotels = [...quote.hotels];
-    newHotels[index] = { ...newHotels[index], [field]: value };
+    newHotels[index] = { ...newHotels[index], [field]: value, ...(field==='selectedNightIndices'?{nights:value.length}:{}) };
     setQuote({ ...quote, hotels: newHotels });
   };
 
@@ -384,21 +379,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
         ...prev.itinerary,
         { day: prev.itinerary.length + 1, title: `Day ${prev.itinerary.length + 1}`, description: '' }
       ];
-      const newNights = Math.max(1, newItin.length - 1);
-      
-      const newHotels = prev.hotels.map((h, idx) => {
-        if (idx === 0 && h.nights) {
-          return { ...h, nights: newNights };
-        }
-        return h;
-      });
-
-      return {
-        ...prev,
-        nights: newNights,
-        itinerary: newItin,
-        hotels: newHotels
-      };
+      return reconcileQuoteStays({...prev,itinerary:newItin},prev.nights);
     });
   };
 
@@ -410,21 +391,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
     setQuote(prev => {
       const filtered = prev.itinerary.filter((_, i) => i !== indexToRemove);
       const renumbered = filtered.map((d, i) => ({ ...d, day: i + 1 }));
-      const newNights = Math.max(1, renumbered.length - 1);
-
-      const newHotels = prev.hotels.map((h, idx) => {
-        if (idx === 0 && h.nights) {
-          return { ...h, nights: newNights };
-        }
-        return h;
-      });
-
-      return {
-        ...prev,
-        nights: newNights,
-        itinerary: renumbered,
-        hotels: newHotels
-      };
+      return reconcileQuoteStays({...prev,itinerary:renumbered},prev.nights,indexToRemove);
     });
   };
 
@@ -433,12 +400,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
     try {
       const itin = await generateItinerary(lead);
       const newItin = itin.days.map(d => ({ day: d.day, title: d.title, description: d.description }));
-      const newNights = Math.max(1, newItin.length - 1);
-      setQuote(prev => ({
-        ...prev,
-        nights: newNights,
-        itinerary: newItin
-      }));
+      setQuote(prev => reconcileQuoteStays({...prev,itinerary:newItin},prev.nights));
     } catch (e) {
       console.error(e);
       alert("AI Generation failed.");
@@ -556,7 +518,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                           type="button"
                           onClick={() => {
                             const tData = res.quoteData;
-                            setQuote(prev => ({
+                            setQuote(prev => reconcileQuoteStays({
                               ...prev,
                               packageTitle: tData.packageTitle || prev.packageTitle,
                               nights: tData.nights || prev.nights,
@@ -587,7 +549,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                             type="button"
                             onClick={() => {
                               const tData = res.quoteData;
-                              setQuote(prev => ({
+                              setQuote(prev => reconcileQuoteStays({
                                 ...prev,
                                 packageTitle: tData.packageTitle || prev.packageTitle,
                                 nights: tData.nights || prev.nights,
@@ -874,7 +836,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                <div>
                   <SectionHeader title="Day-wise Itinerary" icon="🗺️" />
                   <span className="text-xs font-semibold text-brand-ink bg-brand-soft px-3 py-1 rounded-lg uppercase tracking-wider mt-1 inline-block">
-                    {quote.nights || Math.max(1, quote.itinerary.length - 1)} Nights / {quote.itinerary.length} Days (Auto-Updated)
+                    {quote.nights ?? Math.max(0, quote.itinerary.length - 1)} Nights / {quote.itinerary.length} Days (Auto-Updated)
                   </span>
                </div>
                <div className="flex flex-wrap gap-3">

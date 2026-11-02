@@ -103,7 +103,7 @@ export async function apiAuthorization(req: Request, res: Response, next: NextFu
         if (route === '/leads' && req.method === 'POST')
             req.body.assignedTo = owners[owners.length - 1];
         const leadMatch = route.match(/^\/leads\/([^/]+)/);
-        let lead = leadMatch ? await queryOne('SELECT * FROM leads WHERE id=?', [decodeURIComponent(leadMatch[1])]) : null;
+        let lead = leadMatch ? await queryOne('SELECT * FROM leads WHERE id=? OR trip_id=?', [decodeURIComponent(leadMatch[1]),decodeURIComponent(leadMatch[1])]) : null;
         if (route.startsWith('/payments')) {
             const key = route.split('/')[3] || req.body?.payKey || req.body?.id;
             const request = key ? await queryOne('SELECT lead_id FROM payment_installments WHERE id=? OR pay_key=? UNION SELECT lead_id FROM payment_links WHERE id=? OR pay_key=? UNION SELECT lead_id FROM payment_submissions WHERE id=?', [key, key, key, key, key]) : null;

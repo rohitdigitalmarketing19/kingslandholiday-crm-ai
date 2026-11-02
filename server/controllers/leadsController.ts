@@ -1,3 +1,4 @@
+import {initializeLeadFileCleanup,cleanupDeletedLeadFiles} from '../services/leadFileCleanup';
 import {asyncMap} from '../utils/asyncCollections';
 import { assertTripEditable } from '../services/tripEditing';
 import crypto from 'crypto';
@@ -261,32 +262,55 @@ export async function updateLeadTravelers(id: string, adults: number, children: 
     await runQuery(`UPDATE leads SET ${fields.join(', ')} WHERE id = ?`, params);
     return await getLeadById(id);
 }
-export async function deleteLead(id: string) {
-    if (await queryOne('SELECT lead_id FROM booking_snapshots WHERE lead_id=?', [id]) || await queryOne('SELECT id FROM receipt_events WHERE lead_id=?', [id]))
-        throw Object.assign(new Error('Booked or paid leads cannot be deleted. Use cancellation to preserve history.'), { status: 409 });
-    const target = await queryOne('SELECT id, trip_id FROM leads WHERE id = ? OR trip_id = ?', [id, id]);
-    const leadId = target ? target.id : id;
-    const tripId = target ? target.trip_id : id;
-    await runQuery('DELETE FROM quote_inclusions WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
-    await runQuery('DELETE FROM quote_hotels WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
-    await runQuery('DELETE FROM quote_itinerary_days WHERE quote_id IN (SELECT id FROM quotes WHERE lead_id = ? OR lead_id = ?)', [leadId, tripId]);
-    await runQuery('DELETE FROM quotes WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
-    await runQuery('DELETE FROM lead_notes WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
-    await runQuery('DELETE FROM payment_installments WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
-    await runQuery('DELETE FROM payment_links WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
-    await runQuery('DELETE FROM payment_submissions WHERE lead_id = ? OR lead_id = ?', [leadId, tripId]);
-    // Clean ops tables completely using possible resolved customer IDs
-    const possibleCustIds = [leadId, tripId, `cust-${leadId}`, `cust-${tripId}`].filter(Boolean);
-    if (possibleCustIds.length > 0) {
-        const placeHolders = possibleCustIds.map(() => '?').join(',');
-        await runQuery(`DELETE FROM ops_customer_installments WHERE customer_id IN (${placeHolders})`, possibleCustIds);
-        await runQuery(`DELETE FROM ops_vouchers WHERE customer_id IN (${placeHolders})`, possibleCustIds);
-        await runQuery(`DELETE FROM ops_daily_activities WHERE itinerary_id IN (SELECT id FROM ops_itineraries WHERE customer_id IN (${placeHolders}))`, possibleCustIds);
-        await runQuery(`DELETE FROM ops_itineraries WHERE customer_id IN (${placeHolders})`, possibleCustIds);
-        await runQuery(`DELETE FROM ops_customers WHERE id IN (${placeHolders}) OR booking_id IN (${placeHolders})`, [...possibleCustIds, ...possibleCustIds]);
-    }
-    const res = await runQuery('DELETE FROM leads WHERE id = ? OR trip_id = ?', [leadId, tripId]);
-    return res.changes > 0 || !!target;
+export async function deleteLead(id: string, actor='system') {
+    await initializeLeadFileCleanup();
+    const deleted=await withDbPersistenceBatch(async () => {
+        const db=getDb();
+        await db.run('BEGIN');
+        try {
+            const target=await queryOne('SELECT id,trip_id FROM leads WHERE id=?',[id]) || await queryOne('SELECT id,trip_id FROM leads WHERE trip_id=?',[id]);
+            if(!target){await db.run('COMMIT');return false;}
+            const aliases=[...new Set([target.id,target.trip_id].filter(Boolean))];
+            const marks=aliases.map(()=>'?').join(',');
+            const owned='lead_id IN ('+marks+')';
+            const customers=await queryAll('SELECT id,hotel_payment_amount,cab_payment_amount FROM ops_customers WHERE booking_id IN ('+marks+') OR id IN ('+aliases.map(()=>'?').concat(aliases.map(()=>'?')).join(',')+')',[...aliases,...aliases,...aliases.map(x=>'cust-'+x)]);
+            const customerIds=customers.map(c=>c.id);
+            const blocked=await queryOne('SELECT lead_id FROM booking_snapshots WHERE '+owned,aliases)
+                || await queryOne('SELECT id FROM receipt_events WHERE '+owned,aliases)
+                || await queryOne('SELECT id FROM payment_links WHERE '+owned+" AND (paid_amount>0 OR lower(status)='paid')",aliases)
+                || await queryOne('SELECT id FROM payment_installments WHERE '+owned+" AND (paid_amount>0 OR lower(payment_status)='paid')",aliases)
+                || await queryOne('SELECT id FROM payment_submissions WHERE '+owned+" AND lower(verification_status)='approved'",aliases)
+                || await queryOne('SELECT order_id FROM razorpay_orders WHERE pay_key IN (SELECT pay_key FROM payment_links WHERE '+owned+') OR pay_key IN (SELECT pay_key FROM payment_installments WHERE '+owned+')',[...aliases,...aliases]);
+            let operationsPaid=customers.some(c=>Number(c.hotel_payment_amount)>0||Number(c.cab_payment_amount)>0);
+            if(customerIds.length){
+                const cm=customerIds.map(()=>'?').join(',');
+                operationsPaid=operationsPaid||!!await queryOne('SELECT id FROM ops_customer_installments WHERE customer_id IN ('+cm+") AND lower(status)='paid'",customerIds)
+                    ||!!await queryOne('SELECT id FROM ops_vouchers WHERE customer_id IN ('+cm+') AND paid_amount>0',customerIds);
+            }
+            if(blocked||operationsPaid)throw Object.assign(new Error('Booked leads and leads with payment history cannot be deleted. Use cancellation to preserve history.'),{status:409});
+            for(const table of ['quote_inclusions','quote_hotels','quote_itinerary_days'])
+                await runQuery('DELETE FROM '+table+' WHERE quote_id IN (SELECT id FROM quotes WHERE '+owned+')',aliases);
+            for(const doc of await queryAll('SELECT stored_path FROM client_documents WHERE '+owned,aliases))
+                await runQuery('INSERT INTO crm_lead_file_cleanup(id,stored_path) VALUES(?,?)',[crypto.randomUUID(),doc.stored_path]);
+            for(const table of ['client_document_audit_logs','client_documents','client_detail_links','lead_travellers','quotes','lead_notes','payment_submissions','payment_installments','payment_links'])
+                await runQuery('DELETE FROM '+table+' WHERE '+owned,aliases);
+            if(customerIds.length){
+                const cm=customerIds.map(()=>'?').join(',');
+                await runQuery('DELETE FROM ops_daily_activities WHERE itinerary_id IN (SELECT id FROM ops_itineraries WHERE customer_id IN ('+cm+'))',customerIds);
+                for(const table of ['ops_customer_installments','ops_vouchers','ops_itineraries'])await runQuery('DELETE FROM '+table+' WHERE customer_id IN ('+cm+')',customerIds);
+                await runQuery('DELETE FROM ops_customers WHERE id IN ('+cm+')',customerIds);
+            }
+            const events=await queryAll("SELECT id,after_json FROM workflow_events WHERE event='Lead created'");
+            for(const event of events){let leadId;try{leadId=JSON.parse(event.after_json).leadId;}catch{}if(aliases.includes(leadId))await runQuery('DELETE FROM workflow_events WHERE id=?',[event.id]);}
+            await runQuery('DELETE FROM workflow_events WHERE parent_id IN ('+marks+')',aliases);
+            await runQuery('DELETE FROM leads WHERE id=?',[target.id]);
+            await runQuery('INSERT INTO workflow_events(id,parent_id,event,before_json,after_json,actor,created_at) VALUES(?,?,?,?,?,?,?)',[crypto.randomUUID(),'lead-deletions','Lead deleted','{}',JSON.stringify({deletedLeadId:target.id}),actor,new Date().toISOString()]);
+            await db.run('COMMIT');
+            return true;
+        } catch(error){await db.run('ROLLBACK');throw error;}
+    });
+    if(deleted)await cleanupDeletedLeadFiles().catch(error=>console.error('Lead file cleanup pending',error));
+    return deleted;
 }
 export async function reassignLead(id: string, assignedTo: string) {
     await runQuery('UPDATE leads SET assigned_to = ? WHERE id = ?', [assignedTo, id]);

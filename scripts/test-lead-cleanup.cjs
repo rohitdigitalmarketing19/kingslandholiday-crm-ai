@@ -1,0 +1,43 @@
+const fs=require('fs'),path=require('path'),os=require('os'),assert=require('assert/strict');
+(async()=>{
+if(process.env.MYSQL_TEST_CONFIG){Object.assign(process.env,JSON.parse(fs.readFileSync(process.env.MYSQL_TEST_CONFIG,'utf8')));if(process.env.MYSQL_HOST!=='127.0.0.1'||process.env.MYSQL_DATABASE!=='crm_migration_cleanup')throw Error('Isolated cleanup database required');}else process.env.DB_CLIENT='sqlite';for(const k of Object.keys(process.env))if(k.startsWith('SUPABASE')||k.startsWith('NEXT_PUBLIC_SUPABASE'))delete process.env[k];
+const runtime=fs.mkdtempSync(path.join(os.tmpdir(),'crm-delete-'));process.chdir(runtime);process.env.DATABASE_PATH=path.join(runtime,'test.db');process.env.BACKUP_PATH=path.join(runtime,'backups');
+const db=require('../server/db/connection.ts');await db.initDb();await require('../server/db/schema.ts').initializeDatabase();
+const mysql=require('../server/db/mysql.ts');
+await (mysql.mysqlEnabled()?mysql.withMysqlConnection(run):run());await mysql.closeMysql();
+async function run(){
+const leads=require('../server/controllers/leadsController.ts'),quotes=require('../server/controllers/quotesController.ts');
+const stay=require('../utils/quoteStayPlan.ts');
+let q={nights:4,itinerary:[1,2,3,4,5],hotels:[{nights:4,selectedNightIndices:[0,1,2,3]}]};
+q=stay.reconcileQuoteStays({...q,itinerary:[1,2,3,4]},4,1);assert.deepEqual(q.hotels[0].selectedNightIndices,[0,1,2]);assert.equal(q.hotels[0].nights,3);
+q=stay.reconcileQuoteStays({...q,itinerary:[1,2,3,4,5]},3);assert.equal(q.hotels[0].nights,4);
+q=stay.reconcileQuoteStays({...q,itinerary:[1]},4);assert.equal(q.nights,0);assert.equal(q.hotels[0].nights,0);
+const split=stay.fitHotelNights([{nights:2,selectedNightIndices:[0,1]},{nights:2,selectedNightIndices:[2,3]}],3,4,1);assert.deepEqual(split.map(h=>h.selectedNightIndices),[[0],[1,2]]);
+for(const id of ['delete-me','keep-me','rollback'])await leads.createLead({id,tripId:'TRIP-'+id,name:id});
+await quotes.createQuote('delete-me',{id:'qa-delete',itinerary:[{day:1},{day:2}],nights:6,hotels:[{nights:6,selectedNightIndices:[0,1,2,3,4,5]}]});
+assert.equal((await db.queryOne('SELECT nights FROM quotes WHERE id=?',['qa-delete'])).nights,1);
+assert.equal((await db.queryOne('SELECT nights FROM quote_hotels WHERE quote_id=?',['qa-delete'])).nights,1);
+await db.runQuery('INSERT INTO lead_notes(id,lead_id,text,timestamp) VALUES(?,?,?,?)',['note','delete-me','note','now']);
+await db.runQuery('INSERT INTO ops_customers(id,booking_id,name) VALUES(?,?,?)',['custom-ops','TRIP-delete-me','QA']);
+await db.runQuery('INSERT INTO ops_itineraries(id,booking_id,customer_id) VALUES(?,?,?)',['it','TRIP-delete-me','custom-ops']);
+await db.runQuery('INSERT INTO ops_daily_activities(id,itinerary_id,day_number) VALUES(?,?,?)',['act','it',1]);
+await db.runQuery('INSERT INTO client_detail_links(id,lead_id,token) VALUES(?,?,?)',['link','delete-me','token']);
+await db.runQuery('INSERT INTO lead_travellers(id,lead_id,type,name) VALUES(?,?,?,?)',['trav','delete-me','Adult','test']);
+fs.mkdirSync(path.join(runtime,'storage','client-documents'),{recursive:true});fs.writeFileSync(path.join(runtime,'storage','client-documents','qa-file'),'fixture');
+await db.runQuery('INSERT INTO client_documents(id,lead_id,doc_type,original_filename,stored_path,mime_type,size_bytes,uploaded_by) VALUES(?,?,?,?,?,?,?,?)',['doc','delete-me','ID','test','qa-file','text/plain',7,'qa']);
+await db.runQuery('INSERT INTO client_document_audit_logs(id,document_id,lead_id,action) VALUES(?,?,?,?)',['audit','doc','delete-me','upload']);
+await db.runQuery("INSERT INTO workflow_events VALUES(?,?,?,?,?,?,?)",['wf','lead-create:qa:1','Lead created','{}',JSON.stringify({leadId:'delete-me'}),'qa','now']);
+await db.runQuery(mysql.mysqlEnabled()?"CREATE TRIGGER fail_delete BEFORE DELETE ON leads FOR EACH ROW BEGIN IF OLD.id='rollback' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Injected failure'; END IF; END":"CREATE TRIGGER fail_delete BEFORE DELETE ON leads WHEN OLD.id='rollback' BEGIN SELECT RAISE(ABORT,'Injected failure'); END");
+await db.runQuery('INSERT INTO lead_notes(id,lead_id,text,timestamp) VALUES(?,?,?,?)',['rollback-note','rollback','keep','now']);
+await assert.rejects(()=>leads.deleteLead('rollback'),/Injected failure/);assert.ok(await db.queryOne('SELECT id FROM lead_notes WHERE id=?',['rollback-note']));
+assert.equal(await leads.deleteLead('TRIP-delete-me'),true);
+for(const table of ['quotes','quote_hotels','lead_travellers','client_detail_links','client_documents','client_document_audit_logs','ops_customers','ops_itineraries','ops_daily_activities'])assert.equal((await db.queryOne('SELECT COUNT(*) AS n FROM '+table)).n,0,table);
+assert.equal((await db.queryOne("SELECT COUNT(*) AS n FROM workflow_events WHERE parent_id!='lead-deletions'")).n,0);assert.ok(await leads.getLeadById('keep-me'));assert.equal(fs.existsSync(path.join(runtime,'storage','client-documents','qa-file')),false);
+assert.equal(await leads.deleteLead('missing'),false);
+await quotes.createQuote('keep-me',{id:'protected-quote',finalSellingPrice:1000});
+await require('../server/services/bookingAcceptance.ts').acceptBookingQuote('keep-me','protected-quote','qa');
+await assert.rejects(()=>leads.deleteLead('TRIP-keep-me'),e=>e.status===409);assert.ok(await leads.getLeadById('keep-me'));
+assert.equal((await db.queryOne('SELECT COUNT(*) AS n FROM crm_lead_file_cleanup')).n,0);
+console.log('PASS hotel duration, split/middle-day removal, zero nights, server normalization, dependent cleanup, document files, unrelated lead preservation, rollback, trip aliases');
+}
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,4 +1,5 @@
-import { mysqlEnabled, mysqlRequestScope } from './db/mysql';
+import {initializeLeadFileCleanup,cleanupDeletedLeadFiles} from './services/leadFileCleanup';
+import { mysqlEnabled, mysqlRequestScope, withMysqlConnection } from './db/mysql';
 import { asyncRouter } from './utils/asyncRouter';
 import b2bDataRouter from './routes/b2bData';
 import publicDataEntryRouter from './routes/publicDataEntry';
@@ -99,6 +100,12 @@ app.use(errorHandler);
 // Bind before cloud restore/migrations so managed hosting sees listen() promptly.
 // API readiness remains gated until the complete migration transaction succeeds.
 app.listen(PORT, '0.0.0.0', () => console.log(`CRM listening on port ${PORT}; database status: ${startupState}`));
-databaseReady = initDb().then(async () => { await initializeDatabase(); startupState = 'ready'; console.log('CRM database ready.'); });
+databaseReady = initDb().then(async () => {
+    await initializeDatabase();
+    const cleanup = async () => { await initializeLeadFileCleanup(); await cleanupDeletedLeadFiles(); };
+    await (mysqlEnabled() ? withMysqlConnection(cleanup) : cleanup());
+    startupState = 'ready';
+    console.log('CRM database ready.');
+});
 databaseReady.catch(error => { startupState = 'failed'; console.error('Failed to initialize CRM database:', error); });
 export default app;
