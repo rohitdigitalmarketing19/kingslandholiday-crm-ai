@@ -1,7 +1,8 @@
+import {asyncRouter} from '../utils/asyncRouter';
 import { Router, Request, Response } from 'express';
 import { analyzeLeadInquiry, generateItinerary, draftFollowUpEmail } from '../controllers/aiController';
 
-const router = Router();
+const router = asyncRouter(Router());
 
 router.post('/analyze-lead', async (req: Request, res: Response) => {
   try {

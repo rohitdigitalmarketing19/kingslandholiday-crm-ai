@@ -1,3 +1,4 @@
+import {asyncRouter} from '../utils/asyncRouter';
 import { Router } from 'express';
 import multer from 'multer';
 import {
@@ -10,7 +11,7 @@ import {
   updateDocument
 } from '../controllers/clientDocumentsController';
 
-const router = Router({ mergeParams: true });
+const router = asyncRouter(Router({ mergeParams: true }));
 
 // Setup multer memory storage with 10 MB limit per file (up to 10 files per request)
 const upload = multer({

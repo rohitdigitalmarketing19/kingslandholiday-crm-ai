@@ -1,0 +1,5636 @@
+[
+  {
+    "name": "hotel_rates",
+    "sql": "CREATE TABLE hotel_rates (id TEXT PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, category TEXT NOT NULL, seasonal_paise INTEGER NOT NULL CHECK(seasonal_paise >= 0), blackout_paise INTEGER NOT NULL CHECK(blackout_paise >= 0), blackout_dates TEXT NOT NULL DEFAULT '[]', pdf_name TEXT NOT NULL DEFAULT '', pdf_data TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, updated_by TEXT NOT NULL, deleted_at TEXT NOT NULL DEFAULT '', off_season_paise INTEGER DEFAULT NULL CHECK(off_season_paise IS NULL OR off_season_paise >= 0), off_season_start_date TEXT NOT NULL DEFAULT '', season_start_date TEXT NOT NULL DEFAULT '', contact_number TEXT NOT NULL DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "category",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "seasonal_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "blackout_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "blackout_dates",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "pdf_name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "pdf_data",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "updated_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "updated_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "deleted_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "off_season_paise",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "off_season_start_date",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "season_start_date",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "contact_number",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_hotel_rates_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "hotel_rate_history",
+    "sql": "CREATE TABLE hotel_rate_history (id TEXT PRIMARY KEY, hotel_id TEXT NOT NULL REFERENCES hotel_rates(id), actor TEXT NOT NULL, created_at TEXT NOT NULL, before_data TEXT NOT NULL, after_data TEXT NOT NULL)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "hotel_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "before_data",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "after_data",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "hotel_rates",
+        "from": "hotel_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_hotel_rate_history_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "agents",
+    "sql": "CREATE TABLE agents (id TEXT PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL DEFAULT '[]', avatar TEXT DEFAULT '', phone TEXT DEFAULT '', email TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "specialty",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "avatar",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_agents_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "leads",
+    "sql": "CREATE TABLE leads (id TEXT PRIMARY KEY, trip_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, phone TEXT DEFAULT '', email TEXT DEFAULT '', raw_inquiry TEXT DEFAULT '', summary TEXT DEFAULT '', score INTEGER DEFAULT 50, intent TEXT DEFAULT 'Information Seeking', destination TEXT DEFAULT '', budget_tier TEXT DEFAULT 'Mid', assigned_to TEXT DEFAULT '', source TEXT DEFAULT 'Website Form', status TEXT DEFAULT 'New', travel_date TEXT DEFAULT '', duration_days INTEGER DEFAULT 7, adults INTEGER DEFAULT 2, children INTEGER DEFAULT 0, child_ages TEXT DEFAULT '[]', other_info TEXT DEFAULT '', include_stay TEXT DEFAULT 'Yes', include_flight TEXT DEFAULT 'No', include_cab TEXT DEFAULT 'Yes', hotel_category TEXT DEFAULT '4/3 Star', english_driver INTEGER DEFAULT 1, created_at TEXT NOT NULL DEFAULT (datetime('now')), last_follow_up TEXT NOT NULL DEFAULT (datetime('now')), postponed_date TEXT DEFAULT '', postponed_reason TEXT DEFAULT '', follow_up_date TEXT DEFAULT '', follow_up_time TEXT DEFAULT '', follow_up_type TEXT DEFAULT 'Call', follow_up_note TEXT DEFAULT '', follow_up_completed INTEGER DEFAULT 0, accounts_remarks TEXT DEFAULT '', review_requested_at TEXT DEFAULT '', review_channel TEXT DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "trip_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "raw_inquiry",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "summary",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "score",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "50",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "intent",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Information Seeking'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "budget_tier",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Mid'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "assigned_to",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "source",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Website Form'",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'New'",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "travel_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "duration_days",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "7",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "adults",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "2",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "children",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "child_ages",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "other_info",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "include_stay",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Yes'",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "include_flight",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'No'",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "include_cab",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Yes'",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "hotel_category",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'4/3 Star'",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "english_driver",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "last_follow_up",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 27,
+        "name": "postponed_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 28,
+        "name": "postponed_reason",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 29,
+        "name": "follow_up_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 30,
+        "name": "follow_up_time",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 31,
+        "name": "follow_up_type",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Call'",
+        "pk": 0
+      },
+      {
+        "cid": 32,
+        "name": "follow_up_note",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 33,
+        "name": "follow_up_completed",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 34,
+        "name": "accounts_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 35,
+        "name": "review_requested_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 36,
+        "name": "review_channel",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_leads_trip_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "trip_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_leads_assigned_to",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 11,
+            "name": "assigned_to"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "idx_leads_status",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 13,
+            "name": "status"
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_leads_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "trip_id"
+          }
+        ]
+      },
+      {
+        "seq": 4,
+        "name": "sqlite_autoindex_leads_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quotes",
+    "sql": "CREATE TABLE quotes (id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, package_title TEXT DEFAULT '', final_selling_price REAL DEFAULT 0, visa_cost REAL DEFAULT 0, flight_cost REAL DEFAULT 0, land_package_cost REAL DEFAULT 0, marketing_fees REAL DEFAULT 0, discount_percentage REAL DEFAULT 0, nights INTEGER DEFAULT 6, hotels_not_included INTEGER DEFAULT 0, flights_not_included INTEGER DEFAULT 0, cabs_not_included INTEGER DEFAULT 0, flight_details TEXT DEFAULT '', cab_details TEXT DEFAULT '', other_inclusions TEXT DEFAULT '', other_exclusions TEXT DEFAULT '', terms_and_conditions TEXT DEFAULT '', use_default_tc INTEGER DEFAULT 1, other_information TEXT DEFAULT '', working_agent_id TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), hotel_alternative TEXT DEFAULT NULL, cover_image TEXT DEFAULT '', day_images TEXT DEFAULT '[]', theme_override_id TEXT DEFAULT NULL, badge TEXT DEFAULT '', show_detailed_itinerary INTEGER DEFAULT 1, FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "package_title",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "final_selling_price",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "visa_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "flight_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "land_package_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "marketing_fees",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "discount_percentage",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "nights",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "6",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "hotels_not_included",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "flights_not_included",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "cabs_not_included",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "flight_details",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "cab_details",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "other_inclusions",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "other_exclusions",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "terms_and_conditions",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "use_default_tc",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "other_information",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "working_agent_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "hotel_alternative",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "cover_image",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "day_images",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "theme_override_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "badge",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 27,
+        "name": "show_detailed_itinerary",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_quotes_lead_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_quotes_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quote_hotels",
+    "sql": "CREATE TABLE quote_hotels (id INTEGER PRIMARY KEY AUTOINCREMENT, quote_id TEXT NOT NULL, hotel_name TEXT DEFAULT '', city TEXT DEFAULT '', category TEXT DEFAULT '4 Star', room_type TEXT DEFAULT 'Standard Room', comments TEXT DEFAULT '', nights INTEGER DEFAULT 1, selected_night_indices TEXT DEFAULT '[]', sort_order INTEGER DEFAULT 0, meal_plan TEXT DEFAULT '', FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "quote_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "hotel_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "category",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'4 Star'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "room_type",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Standard Room'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "comments",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "nights",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "selected_night_indices",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "sort_order",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "meal_plan",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "quotes",
+        "from": "quote_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_quote_hotels_quote_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "quote_id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quote_inclusions",
+    "sql": "CREATE TABLE quote_inclusions (id INTEGER PRIMARY KEY AUTOINCREMENT, quote_id TEXT NOT NULL, category TEXT NOT NULL, sub_category TEXT DEFAULT NULL, included INTEGER DEFAULT 0, comments TEXT DEFAULT '', FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "quote_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "category",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "sub_category",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "included",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "comments",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "quotes",
+        "from": "quote_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_quote_inclusions_quote_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "quote_id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "quote_itinerary_days",
+    "sql": "CREATE TABLE quote_itinerary_days (id INTEGER PRIMARY KEY AUTOINCREMENT, quote_id TEXT NOT NULL, day_number INTEGER NOT NULL, title TEXT DEFAULT '', description TEXT DEFAULT '', image_url TEXT DEFAULT '', FOREIGN KEY (quote_id) REFERENCES quotes(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "quote_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "day_number",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "image_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "quotes",
+        "from": "quote_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_quote_itinerary_quote_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "quote_id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "lead_notes",
+    "sql": "CREATE TABLE lead_notes (id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, text TEXT NOT NULL, type TEXT DEFAULT 'Note', timestamp TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "text",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "type",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Note'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "timestamp",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_lead_notes_lead_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_lead_notes_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "itinerary_templates",
+    "sql": "CREATE TABLE itinerary_templates (id TEXT PRIMARY KEY, title TEXT NOT NULL, destination TEXT NOT NULL, nights INTEGER DEFAULT 6, template_data TEXT DEFAULT '{}', created_at TEXT NOT NULL DEFAULT (datetime('now')), theme_override_id TEXT DEFAULT NULL, badge TEXT DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "nights",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "6",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "template_data",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "theme_override_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "badge",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_itinerary_templates_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "payment_links",
+    "sql": "CREATE TABLE payment_links (id TEXT PRIMARY KEY, pay_key TEXT NOT NULL UNIQUE, lead_id TEXT DEFAULT '', package_name TEXT DEFAULT '', amount REAL DEFAULT 0, gst REAL DEFAULT 0, fee REAL DEFAULT 0, discount REAL DEFAULT 0, net_amount REAL DEFAULT 0, customer_name TEXT DEFAULT '', customer_phone TEXT DEFAULT '', duration TEXT DEFAULT '', hotels TEXT DEFAULT '', travelers TEXT DEFAULT '', status TEXT DEFAULT 'Pending', created_at TEXT NOT NULL DEFAULT (datetime('now')), destination TEXT DEFAULT '', travel_date TEXT DEFAULT '', adults INTEGER DEFAULT 2, children INTEGER DEFAULT 0, customer_email TEXT DEFAULT '', transaction_ref TEXT DEFAULT '', payment_mode TEXT DEFAULT '', paid_amount REAL DEFAULT 0, paid_at TEXT DEFAULT '', comments TEXT DEFAULT '', notes TEXT DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "pay_key",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "package_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "gst",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "fee",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "discount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "net_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "customer_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "customer_phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "duration",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "hotels",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "travelers",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "travel_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "adults",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "2",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "children",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "customer_email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "transaction_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "paid_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "paid_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "comments",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_payment_links_pay_key",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "pay_key"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_payment_links_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "pay_key"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_payment_links_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "payment_submissions",
+    "sql": "CREATE TABLE payment_submissions (id TEXT PRIMARY KEY, pay_key TEXT DEFAULT '', lead_id TEXT DEFAULT '', customer_name TEXT DEFAULT '', mobile TEXT DEFAULT '', package_name TEXT DEFAULT '', amount_paid REAL DEFAULT 0, utr_number TEXT DEFAULT '', payment_mode TEXT DEFAULT 'UPI', receipt_url TEXT DEFAULT '', verification_status TEXT DEFAULT 'Pending Review', created_at TEXT NOT NULL DEFAULT (datetime('now')), comments TEXT DEFAULT '', notes TEXT DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "pay_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "customer_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "mobile",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "package_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "amount_paid",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "utr_number",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'UPI'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "receipt_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "verification_status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending Review'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "comments",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_payment_submissions_lead_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_payment_submissions_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "payment_settings",
+    "sql": "CREATE TABLE payment_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, key_id TEXT DEFAULT '', key_secret TEXT DEFAULT '', upi_id TEXT DEFAULT '', upi_payee TEXT DEFAULT '', bank_name TEXT DEFAULT '', bank_acc_num TEXT DEFAULT '', bank_ifsc TEXT DEFAULT '', bank_branch TEXT DEFAULT '', bank_acc_name TEXT DEFAULT '', support_phone TEXT DEFAULT '', card_fee_percentage REAL DEFAULT 2.5)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "key_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "key_secret",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "upi_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "upi_payee",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "bank_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "bank_acc_num",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "bank_ifsc",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "bank_branch",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "bank_acc_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "support_phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "card_fee_percentage",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "2.5",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": []
+  },
+  {
+    "name": "payment_installments",
+    "sql": "CREATE TABLE payment_installments (id TEXT PRIMARY KEY, lead_id TEXT NOT NULL, title TEXT NOT NULL, amount REAL DEFAULT 0, due_date TEXT DEFAULT '', payment_condition TEXT DEFAULT '', payment_status TEXT DEFAULT 'Pending', paid_amount REAL DEFAULT 0, pay_key TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), paid_at TEXT DEFAULT '', payment_mode TEXT DEFAULT '', transaction_ref TEXT DEFAULT '', comments TEXT DEFAULT '', notes TEXT DEFAULT '', FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "due_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "payment_condition",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "payment_status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "paid_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "pay_key",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "paid_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "transaction_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "comments",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_payment_installments_lead_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_payment_installments_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ops_customers",
+    "sql": "CREATE TABLE ops_customers (id TEXT PRIMARY KEY, booking_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, email TEXT DEFAULT '', phone TEXT DEFAULT '', destination TEXT DEFAULT '', start_date TEXT DEFAULT '', end_date TEXT DEFAULT '', pax_adults INTEGER DEFAULT 2, pax_children INTEGER DEFAULT 0, total_amount REAL DEFAULT 0, currency TEXT DEFAULT 'INR', assigned_ops_manager TEXT DEFAULT '', status TEXT DEFAULT 'Upcoming', notes TEXT DEFAULT '', special_requests TEXT DEFAULT '', emergency_contact TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), driver_name TEXT DEFAULT '', driver_phone TEXT DEFAULT '', cab_model TEXT DEFAULT '', cab_number TEXT DEFAULT '', cab_pickup_location TEXT DEFAULT '', hotel_total_cost REAL DEFAULT 0, hotel_payment_status TEXT DEFAULT 'Pending', hotel_payment_amount REAL DEFAULT 0, hotel_payment_date TEXT DEFAULT '', hotel_payment_mode TEXT DEFAULT '', hotel_payment_ref TEXT DEFAULT '', hotel_payment_remarks TEXT DEFAULT '', cab_total_cost REAL DEFAULT 0, cab_payment_status TEXT DEFAULT 'Pending', cab_payment_amount REAL DEFAULT 0, cab_payment_date TEXT DEFAULT '', cab_payment_mode TEXT DEFAULT '', cab_payment_ref TEXT DEFAULT '', cab_payment_remarks TEXT DEFAULT '', ops_remarks TEXT DEFAULT '', hotel_payments_json TEXT DEFAULT '[]', accounts_remarks TEXT DEFAULT '', review_requested_at TEXT DEFAULT '', review_channel TEXT DEFAULT '', cab_payment_logs_json TEXT DEFAULT '[]')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "booking_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "start_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "end_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "pax_adults",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "2",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "pax_children",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "total_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "currency",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'INR'",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "assigned_ops_manager",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Upcoming'",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "special_requests",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "emergency_contact",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "driver_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "driver_phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "cab_model",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "cab_number",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "cab_pickup_location",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "hotel_total_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "hotel_payment_status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "hotel_payment_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "hotel_payment_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 27,
+        "name": "hotel_payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 28,
+        "name": "hotel_payment_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 29,
+        "name": "hotel_payment_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 30,
+        "name": "cab_total_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 31,
+        "name": "cab_payment_status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 32,
+        "name": "cab_payment_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 33,
+        "name": "cab_payment_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 34,
+        "name": "cab_payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 35,
+        "name": "cab_payment_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 36,
+        "name": "cab_payment_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 37,
+        "name": "ops_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 38,
+        "name": "hotel_payments_json",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 39,
+        "name": "accounts_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 40,
+        "name": "review_requested_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 41,
+        "name": "review_channel",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 42,
+        "name": "cab_payment_logs_json",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_ops_customers_status",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 13,
+            "name": "status"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_ops_customers_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "booking_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_ops_customers_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ops_customer_installments",
+    "sql": "CREATE TABLE ops_customer_installments (id TEXT PRIMARY KEY, customer_id TEXT NOT NULL, installment_number INTEGER NOT NULL, title TEXT NOT NULL, amount REAL DEFAULT 0, due_date TEXT DEFAULT '', status TEXT DEFAULT 'Pending', paid_at TEXT DEFAULT '', payment_mode TEXT DEFAULT '', transaction_ref TEXT DEFAULT '', notes TEXT DEFAULT '', FOREIGN KEY (customer_id) REFERENCES ops_customers(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "customer_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "installment_number",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "due_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "paid_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "transaction_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "ops_customers",
+        "from": "customer_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_ops_customer_installments_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ops_vouchers",
+    "sql": "CREATE TABLE ops_vouchers (id TEXT PRIMARY KEY, booking_id TEXT NOT NULL, customer_id TEXT NOT NULL, customer_name TEXT DEFAULT '', hotel_name TEXT DEFAULT '', city TEXT DEFAULT '', check_in TEXT DEFAULT '', check_out TEXT DEFAULT '', nights INTEGER DEFAULT 1, room_type TEXT DEFAULT '', meal_plan TEXT DEFAULT '', supplier_name TEXT DEFAULT '', confirmation_number TEXT DEFAULT '', status TEXT DEFAULT 'Pending', due_date TEXT DEFAULT '', file_url TEXT DEFAULT '', file_name TEXT DEFAULT '', uploaded_at TEXT DEFAULT '', uploaded_by TEXT DEFAULT '', urgency TEXT DEFAULT 'Medium', created_at TEXT NOT NULL DEFAULT (datetime('now')), total_cost REAL DEFAULT 0, paid_amount REAL DEFAULT 0, paid_at TEXT DEFAULT '', payment_mode TEXT DEFAULT '', payment_ref TEXT DEFAULT '', payment_remarks TEXT DEFAULT '', payment_status TEXT DEFAULT 'Pending', payment_logs_json TEXT DEFAULT '[]', FOREIGN KEY (customer_id) REFERENCES ops_customers(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "booking_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "customer_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "customer_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "hotel_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "check_in",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "check_out",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "nights",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "room_type",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "meal_plan",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "supplier_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "confirmation_number",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "due_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "file_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "file_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "uploaded_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "uploaded_by",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "urgency",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Medium'",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "total_cost",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "paid_amount",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "paid_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "payment_mode",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "payment_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "payment_remarks",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 27,
+        "name": "payment_status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 28,
+        "name": "payment_logs_json",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "ops_customers",
+        "from": "customer_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_ops_vouchers_customer",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "customer_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_ops_vouchers_status",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 13,
+            "name": "status"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_ops_vouchers_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ops_itineraries",
+    "sql": "CREATE TABLE ops_itineraries (id TEXT PRIMARY KEY, booking_id TEXT NOT NULL UNIQUE, customer_id TEXT NOT NULL, customer_name TEXT DEFAULT '', destination TEXT DEFAULT '', start_date TEXT DEFAULT '', end_date TEXT DEFAULT '', readiness_air_tickets INTEGER DEFAULT 0, readiness_hotel_vouchers INTEGER DEFAULT 0, readiness_cab_assigned INTEGER DEFAULT 0, readiness_briefing_completed INTEGER DEFAULT 0, feedback_score INTEGER DEFAULT 0, feedback_comment TEXT DEFAULT '', review_collected INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')), FOREIGN KEY (customer_id) REFERENCES ops_customers(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "booking_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "customer_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "customer_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "destination",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "start_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "end_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "readiness_air_tickets",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "readiness_hotel_vouchers",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "readiness_cab_assigned",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "readiness_briefing_completed",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "feedback_score",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "feedback_comment",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "review_collected",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "ops_customers",
+        "from": "customer_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_ops_itineraries_customer",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "customer_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_ops_itineraries_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "booking_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_ops_itineraries_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ops_daily_activities",
+    "sql": "CREATE TABLE ops_daily_activities (id TEXT PRIMARY KEY, itinerary_id TEXT NOT NULL, day_number INTEGER NOT NULL, day_date TEXT DEFAULT '', day_title TEXT DEFAULT '', time_slot TEXT DEFAULT '', title TEXT DEFAULT '', description TEXT DEFAULT '', location TEXT DEFAULT '', driver_name TEXT DEFAULT '', driver_phone TEXT DEFAULT '', cab_model TEXT DEFAULT '', cab_number TEXT DEFAULT '', guide_name TEXT DEFAULT '', guide_phone TEXT DEFAULT '', voucher_ref TEXT DEFAULT '', status TEXT DEFAULT 'Pending', notes TEXT DEFAULT '', FOREIGN KEY (itinerary_id) REFERENCES ops_itineraries(id) ON DELETE CASCADE)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "itinerary_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "day_number",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "day_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "day_title",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "time_slot",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "location",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "driver_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "driver_phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "cab_model",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "cab_number",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "guide_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "guide_phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "voucher_ref",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Pending'",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "notes",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "ops_itineraries",
+        "from": "itinerary_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_ops_activities_itinerary",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "itinerary_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_ops_daily_activities_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "users",
+    "sql": "CREATE TABLE users (id TEXT PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, phone TEXT DEFAULT '', role TEXT NOT NULL DEFAULT 'Sales', department TEXT DEFAULT 'Sales', status TEXT DEFAULT 'Active', permissions TEXT DEFAULT '[]', avatar TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')), access_level TEXT DEFAULT 'Editor', password TEXT DEFAULT 'kingsland123')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "role",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'Sales'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "department",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Sales'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Active'",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "permissions",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "avatar",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "access_level",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Editor'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "password",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'kingsland123'",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_users_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "email"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_users_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "b2b_contacts",
+    "sql": "CREATE TABLE b2b_contacts (\n    id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT NOT NULL,\n    city TEXT NOT NULL, state TEXT NOT NULL,\n    quality TEXT NOT NULL CHECK(quality IN ('Partner','Potential','Not Active')),\n    updated_at TEXT NOT NULL, updated_by TEXT NOT NULL, deleted_at TEXT NOT NULL DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "state",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "quality",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "updated_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "updated_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "deleted_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_b2b_contacts_quality",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 5,
+            "name": "quality"
+          },
+          {
+            "seqno": 1,
+            "cid": 8,
+            "name": "deleted_at"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_b2b_contacts_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "b2b_contact_history",
+    "sql": "CREATE TABLE b2b_contact_history (\n    id TEXT PRIMARY KEY, contact_id TEXT NOT NULL REFERENCES b2b_contacts(id),\n    actor TEXT NOT NULL, created_at TEXT NOT NULL, before_data TEXT NOT NULL, after_data TEXT NOT NULL)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "contact_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "before_data",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "after_data",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "b2b_contacts",
+        "from": "contact_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_b2b_contact_history_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "public_entry_submissions",
+    "sql": "CREATE TABLE public_entry_submissions (\n    request_id TEXT NOT NULL, kind TEXT NOT NULL, record_id TEXT NOT NULL, created_at TEXT NOT NULL,\n    PRIMARY KEY(request_id, kind))",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "request_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "kind",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 2
+      },
+      {
+        "cid": 2,
+        "name": "record_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_public_entry_submissions_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "request_id"
+          },
+          {
+            "seqno": 1,
+            "cid": 1,
+            "name": "kind"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "masters_data",
+    "sql": "CREATE TABLE masters_data (id TEXT PRIMARY KEY, category TEXT NOT NULL, name TEXT NOT NULL, code TEXT DEFAULT '', description TEXT DEFAULT '', is_enabled INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "category",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "code",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "description",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "is_enabled",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "sort_order",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_masters_category",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "category"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_masters_data_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "pdf_designs",
+    "sql": "CREATE TABLE pdf_designs (id TEXT PRIMARY KEY, title TEXT NOT NULL, theme_preset TEXT DEFAULT 'minimal_dark', primary_color TEXT DEFAULT '#c6f135', secondary_color TEXT DEFAULT '#161713', header_banner_url TEXT DEFAULT '', agency_stamp_url TEXT DEFAULT '', signature_url TEXT DEFAULT '', watermark_text TEXT DEFAULT 'KINGSLAND HOLIDAYS', font_family TEXT DEFAULT 'Inter', cover_style TEXT DEFAULT 'Modern Grid', is_active INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')), pdf_file_data TEXT DEFAULT '', page_count INTEGER DEFAULT 0, field_mappings TEXT DEFAULT '[]')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "theme_preset",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'minimal_dark'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "primary_color",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'#c6f135'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "secondary_color",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'#161713'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "header_banner_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "agency_stamp_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "signature_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "watermark_text",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'KINGSLAND HOLIDAYS'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "font_family",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Inter'",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "cover_style",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Modern Grid'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "is_active",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "pdf_file_data",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "page_count",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "field_mappings",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'[]'",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_pdf_designs_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "agency_settings",
+    "sql": "CREATE TABLE agency_settings (\n      id TEXT PRIMARY KEY DEFAULT 'default_agency_settings',\n      company_name TEXT DEFAULT 'Kingsland Holidays',\n      tagline TEXT DEFAULT 'Desire to travel',\n      phone TEXT DEFAULT '+91 6376983416',\n      email TEXT DEFAULT 'support@kingslandholiday.com',\n      website TEXT DEFAULT 'kingslandholiday.com',\n      gst_number TEXT DEFAULT '',\n      default_gst_percent REAL DEFAULT 5.00,\n      place_of_supply TEXT DEFAULT 'Rajasthan (08)',\n      address TEXT DEFAULT 'Plot No. 42, Kingsland Tower, MI Road, Jaipur, Rajasthan 302001',\n      intro_about TEXT DEFAULT 'Founded in 2010, we are a trusted travel agency committed to creating memorable journeys for our clients. We specialise in personalised holiday packages, guided tours, and unique travel experiences across India and abroad. Your satisfaction is our priority — let us turn your travel dreams into reality!',\n      established_year TEXT DEFAULT '2010',\n      rating REAL DEFAULT 4.8,\n      happy_customers TEXT DEFAULT '5000+',\n      logo_url TEXT DEFAULT '',\n      favicon_url TEXT DEFAULT '',\n      default_payment_terms TEXT DEFAULT '50% advance to confirm the booking, balance 15 days before travel.',\n      default_terms_conditions TEXT DEFAULT '1. Booking and Payment: All bookings are subject to availability and confirmation. Payment as per the payment schedule.\n2. Cancellation and Refunds: Cancellation charges apply as per the cancellation policy. Refunds, if applicable, are processed per our refund policy.\n3. Travel Documents: Guests must carry valid photo ID and any required permits. We are not liable for loss from inadequate or expired documents.\n4. Health and Safety: Participants are responsible for their health and safety and must comply with local laws and customs.\n5. Limitation of Liability: We act only as a booking agent for airlines, hotels, and operators, and are not liable for their acts or omissions. Our liability is limited to the amount paid for the booking.\n\nCancellation Policy (Land Package):\n- >30 days before travel: 25% cancellation fees\n- 16-30 days before travel: 40% cancellation fees\n- 7-15 days before travel: 55% cancellation fees\n- 3-6 days before travel: 70% cancellation fees\n- 0-2 days before travel / No Show: 100% cancellation fees\n- Non-refundable during peak periods (Diwali, Christmas, New Year, Long Weekends).',\n      updated_at TEXT NOT NULL DEFAULT (datetime('now'))\n    , trip_id_prefix TEXT DEFAULT 'KL-', trip_id_next_number INTEGER DEFAULT 1001, trip_id_digits INTEGER DEFAULT 4, smtp_host TEXT DEFAULT 'smtp.gmail.com', smtp_port INTEGER DEFAULT 587, smtp_user TEXT DEFAULT 'rohit.digitalmarketing19@gmail.com', smtp_pass TEXT DEFAULT '', smtp_from_name TEXT DEFAULT 'Kingsland Holidays')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'default_agency_settings'",
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "company_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Kingsland Holidays'",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "tagline",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Desire to travel'",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "phone",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'+91 6376983416'",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'support@kingslandholiday.com'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "website",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'kingslandholiday.com'",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "gst_number",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "default_gst_percent",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "5.00",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "place_of_supply",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Rajasthan (08)'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "address",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Plot No. 42, Kingsland Tower, MI Road, Jaipur, Rajasthan 302001'",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "intro_about",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Founded in 2010, we are a trusted travel agency committed to creating memorable journeys for our clients. We specialise in personalised holiday packages, guided tours, and unique travel experiences across India and abroad. Your satisfaction is our priority — let us turn your travel dreams into reality!'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "established_year",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'2010'",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "rating",
+        "type": "REAL",
+        "notnull": 0,
+        "dflt_value": "4.8",
+        "pk": 0
+      },
+      {
+        "cid": 13,
+        "name": "happy_customers",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'5000+'",
+        "pk": 0
+      },
+      {
+        "cid": 14,
+        "name": "logo_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 15,
+        "name": "favicon_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 16,
+        "name": "default_payment_terms",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'50% advance to confirm the booking, balance 15 days before travel.'",
+        "pk": 0
+      },
+      {
+        "cid": 17,
+        "name": "default_terms_conditions",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'1. Booking and Payment: All bookings are subject to availability and confirmation. Payment as per the payment schedule.\n2. Cancellation and Refunds: Cancellation charges apply as per the cancellation policy. Refunds, if applicable, are processed per our refund policy.\n3. Travel Documents: Guests must carry valid photo ID and any required permits. We are not liable for loss from inadequate or expired documents.\n4. Health and Safety: Participants are responsible for their health and safety and must comply with local laws and customs.\n5. Limitation of Liability: We act only as a booking agent for airlines, hotels, and operators, and are not liable for their acts or omissions. Our liability is limited to the amount paid for the booking.\n\nCancellation Policy (Land Package):\n- >30 days before travel: 25% cancellation fees\n- 16-30 days before travel: 40% cancellation fees\n- 7-15 days before travel: 55% cancellation fees\n- 3-6 days before travel: 70% cancellation fees\n- 0-2 days before travel / No Show: 100% cancellation fees\n- Non-refundable during peak periods (Diwali, Christmas, New Year, Long Weekends).'",
+        "pk": 0
+      },
+      {
+        "cid": 18,
+        "name": "updated_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 19,
+        "name": "trip_id_prefix",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'KL-'",
+        "pk": 0
+      },
+      {
+        "cid": 20,
+        "name": "trip_id_next_number",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1001",
+        "pk": 0
+      },
+      {
+        "cid": 21,
+        "name": "trip_id_digits",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "4",
+        "pk": 0
+      },
+      {
+        "cid": 22,
+        "name": "smtp_host",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'smtp.gmail.com'",
+        "pk": 0
+      },
+      {
+        "cid": 23,
+        "name": "smtp_port",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "587",
+        "pk": 0
+      },
+      {
+        "cid": 24,
+        "name": "smtp_user",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'rohit.digitalmarketing19@gmail.com'",
+        "pk": 0
+      },
+      {
+        "cid": 25,
+        "name": "smtp_pass",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 26,
+        "name": "smtp_from_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Kingsland Holidays'",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_agency_settings_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "destination_photos",
+    "sql": "CREATE TABLE destination_photos (id TEXT PRIMARY KEY, city TEXT NOT NULL, title TEXT DEFAULT '', image_url TEXT NOT NULL, tags TEXT DEFAULT '', is_default INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')), file_name TEXT NOT NULL DEFAULT '')",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "city",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "image_url",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "tags",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "is_default",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "file_name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_dest_photos_city",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "city"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_destination_photos_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "partner_brands",
+    "sql": "CREATE TABLE partner_brands (id TEXT PRIMARY KEY, category TEXT NOT NULL DEFAULT 'hotel', name TEXT NOT NULL, tagline TEXT DEFAULT '', brand_color TEXT DEFAULT '#b8860b', logo_url TEXT DEFAULT '', svg_icon TEXT DEFAULT '', is_active INTEGER DEFAULT 1, sort_order INTEGER DEFAULT 0, created_at TEXT NOT NULL DEFAULT (datetime('now')))",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "category",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'hotel'",
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "tagline",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "brand_color",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'#b8860b'",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "logo_url",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "svg_icon",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "is_active",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "sort_order",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_partner_brands_cat",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "category"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_partner_brands_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "pdf_themes",
+    "sql": "CREATE TABLE pdf_themes (\n      id TEXT PRIMARY KEY,\n      name TEXT NOT NULL,\n      festival TEXT DEFAULT '',\n      type TEXT NOT NULL,\n      file_path TEXT NOT NULL,\n      start_date TEXT DEFAULT '',\n      end_date TEXT DEFAULT '',\n      is_default INTEGER DEFAULT 0,\n      status TEXT DEFAULT 'active',\n      version TEXT DEFAULT '1.0.0',\n      meta TEXT DEFAULT '{}',\n      created_by TEXT DEFAULT 'Admin',\n      created_at TEXT NOT NULL DEFAULT (datetime('now'))\n    )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "festival",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "file_path",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "start_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "end_date",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "is_default",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'active'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "version",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'1.0.0'",
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "meta",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'{}'",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "created_by",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "'Admin'",
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_pdf_themes_dates",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 5,
+            "name": "start_date"
+          },
+          {
+            "seqno": 1,
+            "cid": 6,
+            "name": "end_date"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_pdf_themes_status",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 8,
+            "name": "status"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "idx_pdf_themes_festival",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "festival"
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_pdf_themes_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "client_documents",
+    "sql": "CREATE TABLE client_documents (\n      id TEXT PRIMARY KEY,\n      lead_id TEXT NOT NULL,\n      doc_type TEXT NOT NULL,\n      traveller_id TEXT DEFAULT NULL,\n      note TEXT DEFAULT '',\n      original_filename TEXT NOT NULL,\n      stored_path TEXT NOT NULL,\n      mime_type TEXT NOT NULL,\n      size_bytes INTEGER NOT NULL,\n      uploaded_by TEXT NOT NULL,\n      created_at TEXT NOT NULL DEFAULT (datetime('now')),\n      deleted_at TEXT DEFAULT NULL,\n      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE\n    )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "doc_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "traveller_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "note",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "original_filename",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "stored_path",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "mime_type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "size_bytes",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "uploaded_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "deleted_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_client_documents_deleted_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 11,
+            "name": "deleted_at"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_client_documents_lead_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_client_documents_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "client_document_audit_logs",
+    "sql": "CREATE TABLE client_document_audit_logs (\n      id TEXT PRIMARY KEY,\n      document_id TEXT NOT NULL,\n      lead_id TEXT NOT NULL,\n      action TEXT NOT NULL,\n      user_id TEXT DEFAULT '',\n      user_name TEXT DEFAULT '',\n      ip_address TEXT DEFAULT '',\n      user_agent TEXT DEFAULT '',\n      details TEXT DEFAULT '',\n      created_at TEXT NOT NULL DEFAULT (datetime('now'))\n    )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "document_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "action",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "user_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "user_name",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "ip_address",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "user_agent",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "details",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_client_doc_audit_doc",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "document_id"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_client_doc_audit_lead",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_client_document_audit_logs_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "client_detail_links",
+    "sql": "CREATE TABLE client_detail_links (\n      id TEXT PRIMARY KEY,\n      lead_id TEXT NOT NULL,\n      token TEXT NOT NULL UNIQUE,\n      is_active INTEGER DEFAULT 1,\n      expires_at TEXT DEFAULT NULL,\n      submitted_at TEXT DEFAULT NULL,\n      created_at TEXT NOT NULL DEFAULT (datetime('now')),\n      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE\n    )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "token",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "is_active",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "1",
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "expires_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "submitted_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_client_links_token",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "token"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_client_links_lead",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_client_detail_links_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 2,
+            "name": "token"
+          }
+        ]
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_client_detail_links_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "lead_travellers",
+    "sql": "CREATE TABLE lead_travellers (\n      id TEXT PRIMARY KEY,\n      lead_id TEXT NOT NULL,\n      type TEXT NOT NULL,\n      name TEXT NOT NULL,\n      mobile TEXT DEFAULT NULL,\n      email TEXT DEFAULT NULL,\n      is_primary INTEGER DEFAULT 0,\n      created_at TEXT NOT NULL DEFAULT (datetime('now')),\n      updated_at TEXT NOT NULL DEFAULT (datetime('now')),\n      FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE\n    )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "type",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "name",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "mobile",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "email",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": "NULL",
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "is_primary",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "updated_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "datetime('now')",
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_lead_travellers_mobile",
+        "unique": 1,
+        "origin": "c",
+        "partial": 1,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          },
+          {
+            "seqno": 1,
+            "cid": 4,
+            "name": "mobile"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "idx_lead_travellers_lead",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "lead_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_lead_travellers_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "workflow_events",
+    "sql": "CREATE TABLE workflow_events(id TEXT PRIMARY KEY,parent_id TEXT NOT NULL,event TEXT NOT NULL,before_json TEXT NOT NULL,after_json TEXT NOT NULL,actor TEXT NOT NULL,created_at TEXT NOT NULL)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "parent_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "event",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "before_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "after_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_workflow_events_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "auth_sessions",
+    "sql": "CREATE TABLE auth_sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at TEXT NOT NULL, created_at TEXT NOT NULL)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "token_hash",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "user_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "expires_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "users",
+        "from": "user_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "CASCADE",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_auth_sessions_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "token_hash"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "booking_snapshots",
+    "sql": "CREATE TABLE booking_snapshots (lead_id TEXT PRIMARY KEY REFERENCES leads(id), quote_id TEXT, total_paise INTEGER NOT NULL CHECK(total_paise >= 0), quote_json TEXT NOT NULL, accepted_by TEXT NOT NULL, accepted_at TEXT NOT NULL, legacy INTEGER NOT NULL DEFAULT 0, total_minor INTEGER, snapshot_json TEXT)",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "quote_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "total_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "quote_json",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "accepted_by",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "accepted_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "legacy",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": "0",
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "total_minor",
+        "type": "INTEGER",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "snapshot_json",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [
+      {
+        "id": 0,
+        "seq": 0,
+        "table": "leads",
+        "from": "lead_id",
+        "to": "id",
+        "on_update": "NO ACTION",
+        "on_delete": "NO ACTION",
+        "match": "NONE"
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_booking_snapshots_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "lead_id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "receipt_events",
+    "sql": "CREATE TABLE receipt_events (id TEXT PRIMARY KEY, request_key TEXT NOT NULL, lead_id TEXT NOT NULL DEFAULT '', amount_paise INTEGER NOT NULL, received_paise INTEGER NOT NULL, reference TEXT NOT NULL, actor TEXT NOT NULL, created_at TEXT NOT NULL, UNIQUE(request_key, reference))",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "request_key",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "lead_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "''",
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "amount_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "received_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "reference",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "actor",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "sqlite_autoindex_receipt_events_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "request_key"
+          },
+          {
+            "seqno": 1,
+            "cid": 5,
+            "name": "reference"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_receipt_events_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "id"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "razorpay_orders",
+    "sql": "CREATE TABLE razorpay_orders (\n    order_id TEXT PRIMARY KEY,pay_key TEXT NOT NULL,principal_paise INTEGER NOT NULL CHECK(principal_paise>0),fee_paise INTEGER NOT NULL CHECK(fee_paise>=0),total_paise INTEGER NOT NULL CHECK(total_paise=principal_paise+fee_paise),request_paise INTEGER NOT NULL,baseline_paid_paise INTEGER NOT NULL,key_id TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'created',payment_id TEXT UNIQUE,created_at TEXT NOT NULL,paid_at TEXT\n  )",
+    "columns": [
+      {
+        "cid": 0,
+        "name": "order_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "pay_key",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "principal_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "fee_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "total_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "request_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "baseline_paid_paise",
+        "type": "INTEGER",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "key_id",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": "'created'",
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "payment_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "paid_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "foreignKeys": [],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "razorpay_order_request",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 1,
+            "name": "pay_key"
+          },
+          {
+            "seqno": 1,
+            "cid": 10,
+            "name": "created_at"
+          }
+        ]
+      },
+      {
+        "seq": 1,
+        "name": "sqlite_autoindex_razorpay_orders_2",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 9,
+            "name": "payment_id"
+          }
+        ]
+      },
+      {
+        "seq": 2,
+        "name": "sqlite_autoindex_razorpay_orders_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          {
+            "seqno": 0,
+            "cid": 0,
+            "name": "order_id"
+          }
+        ]
+      }
+    ]
+  }
+]

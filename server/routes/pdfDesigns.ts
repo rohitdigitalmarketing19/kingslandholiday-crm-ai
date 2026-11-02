@@ -1,3 +1,4 @@
+import { asyncRouter } from '../utils/asyncRouter';
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import puppeteer from 'puppeteer-core';
@@ -5,202 +6,186 @@ import { renderProposalPdfPages } from '../services/proposalPdfPagination';
 import { v4 as uuidv4 } from 'uuid';
 import { queryAll, queryOne, runQuery } from '../db/connection';
 import { renderCompleteProposalHtml, fitProposalTermsSheets } from '../../services/quoteDesignRenderer';
-import {
-  getAllPdfDesigns,
-  getActivePdfDesign,
-  getPdfDesignById,
-  savePdfDesign,
-  setActivePdfDesign,
-  deactivatePdfDesign,
-  updateFieldMappings,
-  deletePdfDesign,
-} from '../controllers/pdfDesignsController';
-
-const router = Router();
-
-router.get('/', (_req: Request, res: Response) => {
-  try {
-    res.json(getAllPdfDesigns());
-  } catch (err: any) {
-    console.error('Error fetching PDF designs:', err);
-    res.status(500).json({ error: 'Failed to fetch PDF designs' });
-  }
-});
-
-router.get('/active', (_req: Request, res: Response) => {
-  try {
-    const design = getActivePdfDesign();
-    res.json(design || null);
-  } catch (err: any) {
-    console.error('Error fetching active PDF design:', err);
-    res.status(500).json({ error: 'Failed to fetch active PDF design' });
-  }
-});
-
-// PARTNER BRANDS (HOTEL & WORKING/TRAVEL PARTNERS)
-router.get('/partners/all', (_req: Request, res: Response) => {
-  try {
-    const partners = queryAll('SELECT * FROM partner_brands WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC');
-    res.json(partners);
-  } catch (err: any) {
-    console.error('Error fetching partner brands:', err);
-    res.status(500).json({ error: 'Failed to fetch partner brands' });
-  }
-});
-
-router.post('/partners', (req: Request, res: Response) => {
-  try {
-    const { name, category = 'hotel', tagline = '', brand_color = '#b8860b', logo_url = '', svg_icon = '' } = req.body;
-    if (!name) return res.status(400).json({ error: 'Partner name is required' });
-    const id = `partner-${uuidv4().slice(0, 8)}`;
-    runQuery(
-      `INSERT INTO partner_brands (id, category, name, tagline, brand_color, logo_url, svg_icon, is_active, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 99)`,
-      [id, category, name, tagline, brand_color, logo_url, svg_icon]
-    );
-    const created = queryOne('SELECT * FROM partner_brands WHERE id = ?', [id]);
-    res.status(201).json(created);
-  } catch (err: any) {
-    console.error('Error creating partner brand:', err);
-    res.status(500).json({ error: 'Failed to create partner brand' });
-  }
-});
-
-router.delete('/partners/:id', (req: Request, res: Response) => {
-  try {
-    runQuery('DELETE FROM partner_brands WHERE id = ?', [String(req.params.id)]);
-    res.json({ success: true, id: req.params.id });
-  } catch (err: any) {
-    console.error('Error deleting partner brand:', err);
-    res.status(500).json({ error: 'Failed to delete partner brand' });
-  }
-});
-
-// DESTINATION PHOTOS (BY CITY NAME, TITLE & TAGS)
-router.get('/photos/all', (req: Request, res: Response) => {
-  try {
-    const terms=String(req.query.search || req.query.city || '').toLowerCase().replace(/[-_]+/g,' ').trim().split(/\s+/).filter(Boolean);
-    const expression="REPLACE(REPLACE(LOWER(COALESCE(city,'') || ' ' || COALESCE(title,'') || ' ' || COALESCE(tags,'') || ' ' || COALESCE(file_name,'')),'-',' '),'_',' ')";
-    const where=terms.length?' WHERE '+terms.map(()=>expression+' LIKE ? ESCAPE CHAR(92)').join(' AND '):'';
-    const params=terms.map(word=>'%'+word.replace(/[\\%_]/g,char=>String.fromCharCode(92)+char)+'%');
-    const photos=queryAll('SELECT * FROM destination_photos'+where+' ORDER BY is_default DESC,created_at DESC',params);
-    res.json(photos);
-  } catch (err: any) {
-    console.error('Error fetching destination photos:', err);
-    res.status(500).json({ error: 'Failed to fetch destination photos' });
-  }
-});
-
-router.post('/photos', (req: Request, res: Response) => {
-  try {
-    let { city = '', title = '', image_url, tags = '', file_name = '', upload_id } = req.body;
-    if (!image_url) {
-      return res.status(400).json({ error: 'Image is required' });
+import { getAllPdfDesigns, getActivePdfDesign, getPdfDesignById, savePdfDesign, setActivePdfDesign, deactivatePdfDesign, updateFieldMappings, deletePdfDesign, } from '../controllers/pdfDesignsController';
+const router = asyncRouter(Router());
+router.get('/', async (_req: Request, res: Response) => {
+    try {
+        res.json(await getAllPdfDesigns());
     }
-    const cleanTitle = (title || '').trim();
-    const cleanCity = (city || '').trim();
-    const finalCity = cleanCity || cleanTitle || 'General';
-    const finalTitle = cleanTitle || cleanCity || 'Destination Photo';
-    const finalTags = (tags || '').trim() || `${finalCity} ${finalTitle}`;
-
-    const filename=String(file_name).split(String.fromCharCode(92)).pop()!.split('/').pop()!.slice(0,255);
-    if(upload_id!==undefined && !/^[a-f0-9-]{36}$/i.test(String(upload_id)))return res.status(400).json({error:'Invalid upload reference.'});
-    const id=upload_id?'photo-'+upload_id:`photo-${uuidv4()}`;
-    const existing=queryOne('SELECT * FROM destination_photos WHERE id=?',[id]);
-    if(existing)return res.json(existing);
-    runQuery(
-      `INSERT INTO destination_photos (id, city, title, image_url, tags, file_name, is_default)
-       VALUES (?, ?, ?, ?, ?, ?, 0)`,
-      [id, finalCity, finalTitle, image_url, finalTags, filename]
-    );
-    const created = queryOne('SELECT * FROM destination_photos WHERE id = ?', [id]);
-    res.status(201).json(created);
-  } catch (err: any) {
-    console.error('Error saving destination photo:', err);
-    res.status(500).json({ error: 'Failed to save destination photo' });
-  }
+    catch (err: any) {
+        console.error('Error fetching PDF designs:', err);
+        res.status(500).json({ error: 'Failed to fetch PDF designs' });
+    }
 });
-
-router.delete('/photos/:id', (req: Request, res: Response) => {
-  try {
-    runQuery('DELETE FROM destination_photos WHERE id = ?', [String(req.params.id)]);
-    res.json({ success: true, id: req.params.id });
-  } catch (err: any) {
-    console.error('Error deleting photo:', err);
-    res.status(500).json({ error: 'Failed to delete photo' });
-  }
+router.get('/active', async (_req: Request, res: Response) => {
+    try {
+        const design = await getActivePdfDesign();
+        res.json(design || null);
+    }
+    catch (err: any) {
+        console.error('Error fetching active PDF design:', err);
+        res.status(500).json({ error: 'Failed to fetch active PDF design' });
+    }
 });
-
-router.get('/:id', (req: Request, res: Response) => {
-  try {
-    const design = getPdfDesignById(String(req.params.id));
-    if (!design) return res.status(404).json({ error: 'Design not found' });
-    res.json(design);
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to fetch PDF design' });
-  }
+// PARTNER BRANDS (HOTEL & WORKING/TRAVEL PARTNERS)
+router.get('/partners/all', async (_req: Request, res: Response) => {
+    try {
+        const partners = await queryAll('SELECT * FROM partner_brands WHERE is_active = 1 ORDER BY sort_order ASC, created_at ASC');
+        res.json(partners);
+    }
+    catch (err: any) {
+        console.error('Error fetching partner brands:', err);
+        res.status(500).json({ error: 'Failed to fetch partner brands' });
+    }
 });
-
-router.post('/', (req: Request, res: Response) => {
-  try {
-    const design = savePdfDesign(req.body);
-    res.status(201).json(design);
-  } catch (err: any) {
-    console.error('Error saving PDF design:', err);
-    res.status(500).json({ error: 'Failed to save PDF design' });
-  }
+router.post('/partners', async (req: Request, res: Response) => {
+    try {
+        const { name, category = 'hotel', tagline = '', brand_color = '#b8860b', logo_url = '', svg_icon = '' } = req.body;
+        if (!name)
+            return res.status(400).json({ error: 'Partner name is required' });
+        const id = `partner-${uuidv4().slice(0, 8)}`;
+        await runQuery(`INSERT INTO partner_brands (id, category, name, tagline, brand_color, logo_url, svg_icon, is_active, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, 99)`, [id, category, name, tagline, brand_color, logo_url, svg_icon]);
+        const created = await queryOne('SELECT * FROM partner_brands WHERE id = ?', [id]);
+        res.status(201).json(created);
+    }
+    catch (err: any) {
+        console.error('Error creating partner brand:', err);
+        res.status(500).json({ error: 'Failed to create partner brand' });
+    }
 });
-
-router.patch('/:id/activate', (req: Request, res: Response) => {
-  try {
-    const design = setActivePdfDesign(String(req.params.id));
-    res.json(design);
-  } catch (err: any) {
-    console.error('Error activating PDF design:', err);
-    res.status(500).json({ error: 'Failed to activate PDF design' });
-  }
+router.delete('/partners/:id', async (req: Request, res: Response) => {
+    try {
+        await runQuery('DELETE FROM partner_brands WHERE id = ?', [String(req.params.id)]);
+        res.json({ success: true, id: req.params.id });
+    }
+    catch (err: any) {
+        console.error('Error deleting partner brand:', err);
+        res.status(500).json({ error: 'Failed to delete partner brand' });
+    }
 });
-
-router.patch('/:id/deactivate', (req: Request, res: Response) => {
-  try {
-    const design = deactivatePdfDesign(String(req.params.id));
-    res.json(design);
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to deactivate PDF design' });
-  }
+// DESTINATION PHOTOS (BY CITY NAME, TITLE & TAGS)
+router.get('/photos/all', async (req: Request, res: Response) => {
+    try {
+        const terms = String(req.query.search || req.query.city || '').toLowerCase().replace(/[-_]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+        const expression = "REPLACE(REPLACE(LOWER(COALESCE(city,'') || ' ' || COALESCE(title,'') || ' ' || COALESCE(tags,'') || ' ' || COALESCE(file_name,'')),'-',' '),'_',' ')";
+        const where = terms.length ? ' WHERE ' + terms.map(() => expression + ' LIKE ? ESCAPE CHAR(92)').join(' AND ') : '';
+        const params = terms.map(word => '%' + word.replace(/[\\%_]/g, char => String.fromCharCode(92) + char) + '%');
+        const photos = await queryAll('SELECT * FROM destination_photos' + where + ' ORDER BY is_default DESC,created_at DESC', params);
+        res.json(photos);
+    }
+    catch (err: any) {
+        console.error('Error fetching destination photos:', err);
+        res.status(500).json({ error: 'Failed to fetch destination photos' });
+    }
 });
-
-router.patch('/:id/mappings', (req: Request, res: Response) => {
-  try {
-    const { field_mappings } = req.body;
-    const design = updateFieldMappings(String(req.params.id), JSON.stringify(field_mappings || []));
-    res.json(design);
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to update field mappings' });
-  }
+router.post('/photos', async (req: Request, res: Response) => {
+    try {
+        let { city = '', title = '', image_url, tags = '', file_name = '', upload_id } = req.body;
+        if (!image_url) {
+            return res.status(400).json({ error: 'Image is required' });
+        }
+        const cleanTitle = (title || '').trim();
+        const cleanCity = (city || '').trim();
+        const finalCity = cleanCity || cleanTitle || 'General';
+        const finalTitle = cleanTitle || cleanCity || 'Destination Photo';
+        const finalTags = (tags || '').trim() || `${finalCity} ${finalTitle}`;
+        const filename = String(file_name).split(String.fromCharCode(92)).pop()!.split('/').pop()!.slice(0, 255);
+        if (upload_id !== undefined && !/^[a-f0-9-]{36}$/i.test(String(upload_id)))
+            return res.status(400).json({ error: 'Invalid upload reference.' });
+        const id = upload_id ? 'photo-' + upload_id : `photo-${uuidv4()}`;
+        const existing = await queryOne('SELECT * FROM destination_photos WHERE id=?', [id]);
+        if (existing)
+            return res.json(existing);
+        await runQuery(`INSERT INTO destination_photos (id, city, title, image_url, tags, file_name, is_default)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`, [id, finalCity, finalTitle, image_url, finalTags, filename]);
+        const created = await queryOne('SELECT * FROM destination_photos WHERE id = ?', [id]);
+        res.status(201).json(created);
+    }
+    catch (err: any) {
+        console.error('Error saving destination photo:', err);
+        res.status(500).json({ error: 'Failed to save destination photo' });
+    }
 });
-
-router.delete('/:id', (req: Request, res: Response) => {
-  try {
-    res.json(deletePdfDesign(String(req.params.id)));
-  } catch (err: any) {
-    console.error('Error deleting PDF design:', err);
-    res.status(500).json({ error: 'Failed to delete PDF design' });
-  }
+router.delete('/photos/:id', async (req: Request, res: Response) => {
+    try {
+        await runQuery('DELETE FROM destination_photos WHERE id = ?', [String(req.params.id)]);
+        res.json({ success: true, id: req.params.id });
+    }
+    catch (err: any) {
+        console.error('Error deleting photo:', err);
+        res.status(500).json({ error: 'Failed to delete photo' });
+    }
 });
-
+router.get('/:id', async (req: Request, res: Response) => {
+    try {
+        const design = await getPdfDesignById(String(req.params.id));
+        if (!design)
+            return res.status(404).json({ error: 'Design not found' });
+        res.json(design);
+    }
+    catch (err: any) {
+        res.status(500).json({ error: 'Failed to fetch PDF design' });
+    }
+});
+router.post('/', async (req: Request, res: Response) => {
+    try {
+        const design = await savePdfDesign(req.body);
+        res.status(201).json(design);
+    }
+    catch (err: any) {
+        console.error('Error saving PDF design:', err);
+        res.status(500).json({ error: 'Failed to save PDF design' });
+    }
+});
+router.patch('/:id/activate', async (req: Request, res: Response) => {
+    try {
+        const design = await setActivePdfDesign(String(req.params.id));
+        res.json(design);
+    }
+    catch (err: any) {
+        console.error('Error activating PDF design:', err);
+        res.status(500).json({ error: 'Failed to activate PDF design' });
+    }
+});
+router.patch('/:id/deactivate', async (req: Request, res: Response) => {
+    try {
+        const design = await deactivatePdfDesign(String(req.params.id));
+        res.json(design);
+    }
+    catch (err: any) {
+        res.status(500).json({ error: 'Failed to deactivate PDF design' });
+    }
+});
+router.patch('/:id/mappings', async (req: Request, res: Response) => {
+    try {
+        const { field_mappings } = req.body;
+        const design = await updateFieldMappings(String(req.params.id), JSON.stringify(field_mappings || []));
+        res.json(design);
+    }
+    catch (err: any) {
+        res.status(500).json({ error: 'Failed to update field mappings' });
+    }
+});
+router.delete('/:id', async (req: Request, res: Response) => {
+    try {
+        res.json(await deletePdfDesign(String(req.params.id)));
+    }
+    catch (err: any) {
+        console.error('Error deleting PDF design:', err);
+        res.status(500).json({ error: 'Failed to delete PDF design' });
+    }
+});
 // SERVER-SIDE CONTINUOUS CHROMIUM/PUPPETEER PDF RENDERER
 router.post('/render-pdf', async (req: Request, res: Response) => {
-  let browser: any = null;
-  try {
-    const { quoteData, designId = 'royal', partnerBrands, isB2B = false } = req.body;
-    if (!quoteData) {
-      return res.status(400).json({ error: 'quoteData is required' });
-    }
-
-    const htmlContent = renderCompleteProposalHtml(quoteData, designId, partnerBrands, isB2B);
-
-    const fullHtml = `
+    let browser: any = null;
+    try {
+        const { quoteData, designId = 'royal', partnerBrands, isB2B = false } = req.body;
+        if (!quoteData) {
+            return res.status(400).json({ error: 'quoteData is required' });
+        }
+        const htmlContent = renderCompleteProposalHtml(quoteData, designId, partnerBrands, isB2B);
+        const fullHtml = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -250,70 +235,63 @@ router.post('/render-pdf', async (req: Request, res: Response) => {
         </body>
       </html>
     `;
-
-    const CHROME_PATHS = [
-      process.env.CHROME_BIN,
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-      '/usr/bin/google-chrome',
-      '/usr/bin/chromium-browser',
-      '/usr/bin/chromium',
-    ].filter(Boolean) as string[];
-
-    const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
-    if (!executablePath) {
-      return res.status(500).json({ error: 'Chromium/Chrome binary not found on server' });
+        const CHROME_PATHS = [
+            process.env.CHROME_BIN,
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+            'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+            '/usr/bin/google-chrome',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/chromium',
+        ].filter(Boolean) as string[];
+        const executablePath = CHROME_PATHS.find(p => fs.existsSync(p));
+        if (!executablePath) {
+            return res.status(500).json({ error: 'Chromium/Chrome binary not found on server' });
+        }
+        browser = await puppeteer.launch({
+            executablePath,
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+        });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
+        await page.setContent(fullHtml, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        // Wait for fonts and all images to complete loading with safety timeout
+        await page.evaluate(async () => {
+            if ((document as any).fonts && (document as any).fonts.ready) {
+                try {
+                    await (document as any).fonts.ready;
+                }
+                catch (_) { }
+            }
+            const imgs = Array.from(document.querySelectorAll('img'));
+            await Promise.all(imgs.map(img => {
+                if (img.complete)
+                    return Promise.resolve();
+                return new Promise(resolve => {
+                    const timer = setTimeout(resolve, 2500);
+                    img.onload = () => { clearTimeout(timer); resolve(null); };
+                    img.onerror = () => { clearTimeout(timer); resolve(null); };
+                });
+            }));
+        });
+        await page.evaluate(fitProposalTermsSheets);
+        const pdfBuffer = await renderProposalPdfPages(page, fullHtml, htmlContent);
+        res.setHeader('Content-Type', 'application/pdf');
+        const clientName = (quoteData.client || 'Client').replace(/\s+/g, '-');
+        const ref = (quoteData.ref || 'Quote').replace(/\s+/g, '-');
+        res.setHeader('Content-Disposition', `attachment; filename="Kingsland-Proposal-${ref}-${clientName}.pdf"`);
+        res.send(Buffer.from(pdfBuffer));
     }
-
-    browser = await puppeteer.launch({
-      executablePath,
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    });
-
-    const page = await browser.newPage();
-    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
-    await page.setContent(fullHtml, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-    // Wait for fonts and all images to complete loading with safety timeout
-    await page.evaluate(async () => {
-      if ((document as any).fonts && (document as any).fonts.ready) {
-        try {
-          await (document as any).fonts.ready;
-        } catch (_) {}
-      }
-      const imgs = Array.from(document.querySelectorAll('img'));
-      await Promise.all(
-        imgs.map(img => {
-          if (img.complete) return Promise.resolve();
-          return new Promise(resolve => {
-            const timer = setTimeout(resolve, 2500);
-            img.onload = () => { clearTimeout(timer); resolve(null); };
-            img.onerror = () => { clearTimeout(timer); resolve(null); };
-          });
-        })
-      );
-    });
-
-    await page.evaluate(fitProposalTermsSheets);
-
-    const pdfBuffer = await renderProposalPdfPages(page, fullHtml, htmlContent);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    const clientName = (quoteData.client || 'Client').replace(/\s+/g, '-');
-    const ref = (quoteData.ref || 'Quote').replace(/\s+/g, '-');
-    res.setHeader('Content-Disposition', `attachment; filename="Kingsland-Proposal-${ref}-${clientName}.pdf"`);
-    res.send(Buffer.from(pdfBuffer));
-  } catch (err: any) {
-    console.error('Server PDF Generation Error:', err);
-    res.status(500).json({ error: err.message || 'Failed to render PDF' });
-  } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
+    catch (err: any) {
+        console.error('Server PDF Generation Error:', err);
+        res.status(500).json({ error: err.message || 'Failed to render PDF' });
     }
-  }
+    finally {
+        if (browser) {
+            await browser.close().catch(() => { });
+        }
+    }
 });
-
 export default router;

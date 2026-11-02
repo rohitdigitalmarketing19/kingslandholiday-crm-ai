@@ -1,3 +1,4 @@
+import {asyncRouter} from '../utils/asyncRouter';
 import { Router } from 'express';
 import multer from 'multer';
 import {
@@ -13,7 +14,7 @@ import {
   previewThemeHtml,
 } from '../controllers/pdfThemesController';
 
-const router = Router();
+const router = asyncRouter(Router());
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB max buffer

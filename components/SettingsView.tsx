@@ -1,3 +1,4 @@
+import {MysqlMigrationPanel} from './MysqlMigrationPanel';
 import React, { useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, 
@@ -769,7 +770,7 @@ Cancellation Policy (Land Package):
                   <span>Restore from Backup File</span>
                 </h4>
                 <p className="text-xs text-muted mt-1">
-                  Upload a previously downloaded <code className="text-warning-ink text-xs">.db</code> file to instantly restore all records and settings.
+                  Upload a CRM <code className="text-warning-ink text-xs">.db</code> backup (up to 100 MB). This replaces local records, users and settings with the backup. A snapshot of the current database is saved first.
                 </p>
               </div>
               <label className={`w-full py-2.5 bg-surface hover:bg-surface text-warning-ink font-bold text-sm rounded-lg border border-line transition-colors flex items-center justify-center gap-2 cursor-pointer text-center ${isRestoring ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -787,47 +788,25 @@ Cancellation Policy (Land Package):
                     // Reset input immediately so selecting the same file again always triggers onChange
                     const currentTarget = e.target;
                     
-                    if (!confirm(`Are you sure you want to restore database from "${file.name}"? This will update your active CRM records.`)) {
+                    if (!confirm(`Are you sure you want to restore database from "${file.name}"? This replaces ALL current records, users and settings with this backup. A snapshot will be saved first. You may need to sign in using an account from the backup.`)) {
                       currentTarget.value = '';
                       return;
                     }
 
+                    if(file.size>100*1024*1024){currentTarget.value='';alert('Backup exceeds the 100 MB upload limit.');return;}
                     setIsRestoring(true);
-                    const reader = new FileReader();
+                    try {
+                      const res=await fetch('/api/settings/backup/restore-upload',{
+                        method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/octet-stream'},body:file
+                      });
+                      const data=await res.json().catch(()=>({error:res.status===413?'Backup exceeds the server upload limit.':'Server returned an invalid response. Check that the local backend is running.'}));
+                      if(!res.ok)throw new Error(data.error || 'Restore failed.');
+                      localStorage.removeItem('kingsland_cached_leads');localStorage.removeItem('kingsland_cached_agents');
+                      alert('Database restored successfully. Sign in with an account from the imported backup if prompted.');
+                      window.location.reload();
+                    } catch(error:any){alert('Restore failed: '+error.message);}
+                    finally{setIsRestoring(false);currentTarget.value='';}
 
-                    reader.onerror = () => {
-                      setIsRestoring(false);
-                      currentTarget.value = '';
-                      alert('⚠️ Error reading backup file from disk.');
-                    };
-
-                    reader.onload = async () => {
-                      try {
-                        const base64 = reader.result as string;
-                        const res = await fetch('/api/settings/backup/restore-upload', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ fileData: base64 })
-                        });
-                        
-                        const data = await res.json();
-                        currentTarget.value = '';
-
-                        if (res.ok) {
-                          alert('✅ Database restored successfully! Reloading CRM now...');
-                          window.location.reload();
-                        } else {
-                          setIsRestoring(false);
-                          alert(`⚠️ Restore failed: ${data.error || 'Invalid database file'}`);
-                        }
-                      } catch (err: any) {
-                        setIsRestoring(false);
-                        currentTarget.value = '';
-                        alert(`⚠️ Restore error: ${err.message}`);
-                      }
-                    };
-
-                    reader.readAsDataURL(file);
                   }}
                 />
               </label>
@@ -835,6 +814,7 @@ Cancellation Policy (Land Package):
           </div>
         </div>
 
+        <MysqlMigrationPanel/>
         {/* Box 5: Defaults for Documents */}
         <div className="bg-surface border border-line rounded-xl p-5 md:p-6 space-y-4">
           <span className="text-sm font-bold text-content uppercase tracking-wider block">
