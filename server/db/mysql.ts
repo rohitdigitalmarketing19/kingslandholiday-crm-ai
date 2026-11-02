@@ -11,20 +11,21 @@ export function initMysql():Promise<void>{if(initialized)return Promise.resolve(
 async function connectMysql(){
  if(initialized)return;
  for(const name of ['MYSQL_HOST','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'])if(!process.env[name])throw new Error(name+' is required for MySQL.');
+ const host=(process.env.MYSQL_HOST || '').trim();if(!/^[a-zA-Z0-9._:-]+$/.test(host))throw Object.assign(new Error('Invalid MySQL hostname.'),{code:'MYSQL_HOST_INVALID'});
  const port=Number(process.env.MYSQL_PORT || 3306);if(!Number.isInteger(port)||port<1||port>65535)throw new Error('MYSQL_PORT is invalid.');
- pool=mysql.createPool({host:process.env.MYSQL_HOST,port,user:process.env.MYSQL_USER,password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE,connectionLimit:8,connectTimeout:10000,charset:'utf8mb4',decimalNumbers:true,dateStrings:true,multipleStatements:false,enableKeepAlive:true,...(process.env.MYSQL_SSL==='true'?{ssl:{rejectUnauthorized:true}}:{})});
- pool.on('connection',(connection:any)=>connection.query("SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,PIPES_AS_CONCAT'"));
- try{const c=await pool.getConnection();try{await c.ping();initialized=true;}finally{c.release();}}catch(error){await pool.end().catch(()=>{});throw error;}
+ pool=mysql.createPool({host,port,user:process.env.MYSQL_USER?.trim(),password:process.env.MYSQL_PASSWORD,database:process.env.MYSQL_DATABASE?.trim(),connectionLimit:8,connectTimeout:10000,charset:'utf8mb4',decimalNumbers:true,dateStrings:true,multipleStatements:false,enableKeepAlive:true,...(process.env.MYSQL_SSL==='true'?{ssl:{rejectUnauthorized:true}}:{})});
+
+ try{const c=await configuredConnection();try{await c.ping();initialized=true;}finally{c.release();}}catch(error){await pool.end().catch(()=>{});throw error;}
 }
 export async function withMysqlConnection<T>(work:()=>Promise<T>):Promise<T>{
  if(scope.getStore())return work();
- const connection=await pool.getConnection();
+ const connection=await configuredConnection();
  try{await lockWrites(connection);return await scope.run(connection,work);}finally{await connection.rollback().catch(()=>{});await unlockWrites(connection);connection.release();}
 }
 async function lockWrites(connection:PoolConnection){const [rows]:any=await connection.execute('SELECT GET_LOCK(?,30) AS acquired',['kingsland:'+process.env.MYSQL_DATABASE]);if(Number(rows[0].acquired)!==1)throw Object.assign(new Error('The database is busy. Please retry.'),{status:503});}
 async function unlockWrites(connection:PoolConnection){await connection.execute('SELECT RELEASE_LOCK(?)',['kingsland:'+process.env.MYSQL_DATABASE]).catch(()=>{});}
 export function mysqlRequestScope(req:any,res:any,next:any){
- pool.getConnection().then(async connection=>{
+ configuredConnection().then(async connection=>{
   let released=false,ended=false,locked=false;
   const release=()=>{if(released||!ended||res.locals.pendingAsyncHandlers>0)return;released=true;connection.rollback().catch(()=>{}).finally(async()=>{if(locked)await unlockWrites(connection);connection.release();});};
   res.locals.releaseMysqlScope=release;
@@ -111,3 +112,10 @@ export async function installMysqlBookingGuard(){
  await mysqlRun("CREATE TRIGGER protect_booking_snapshots_update BEFORE UPDATE ON booking_snapshots FOR EACH ROW BEGIN IF NOT(NEW.lead_id <=> OLD.lead_id) OR NOT(NEW.quote_id <=> OLD.quote_id) OR NOT(NEW.accepted_by <=> OLD.accepted_by) OR NOT(NEW.accepted_at <=> OLD.accepted_at) OR NOT(NEW.total_paise <=> NEW.total_minor) OR NOT(NEW.quote_json <=> NEW.snapshot_json) OR EXISTS (SELECT 1 FROM ops_customers c JOIN leads l ON c.id=CONCAT('cust-',l.id) OR c.booking_id=l.trip_id WHERE l.id=OLD.lead_id AND LOWER(c.status)='completed') OR NOT EXISTS (SELECT 1 FROM workflow_events e WHERE e.parent_id=OLD.lead_id AND e.event='Booking amended' AND e.before_json=OLD.quote_json AND e.after_json=NEW.quote_json AND ROUND(JSON_EXTRACT(e.after_json,'$.final_selling_price')*100)=NEW.total_paise) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='Booking changes require an audited revision before trip completion'; END IF; END");
 }
 export async function closeMysql(){await pool?.end();initialized=false;}
+
+const configuredConnections=new WeakSet<object>();
+async function configuredConnection():Promise<PoolConnection>{
+ const connection=await pool.getConnection();
+ try{if(!configuredConnections.has(connection)){await connection.query("SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION,NO_BACKSLASH_ESCAPES,PIPES_AS_CONCAT'");configuredConnections.add(connection);}return connection;}
+ catch(error:any){connection.release();throw Object.assign(error,{stage:'session'});}
+}

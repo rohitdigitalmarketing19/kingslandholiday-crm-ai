@@ -40,3 +40,5 @@ The initial integration checks ran on an isolated local MariaDB 10.4.32 server u
 - Browser checks: connection test, actual approximately 52 MB backup upload, verified counts, recovery downloads, unchanged active SQLite records, desktop/mobile render, no browser errors.
 
 MySQL integration scripts require `MYSQL_TEST_CONFIG` pointing to a private JSON file containing the test connection environment values and `CRM_TEST_BACKUP_PATH` pointing to the private fixture. They restrict the server to localhost and a disposable `crm_migration_*` database. Never point test scripts at the live database.
+
+Connection-test failures report a sanitized error code and targeted instructions. Authentication failures may include the connecting host reported by MySQL. Provider SQL, passwords and raw provider error messages are never returned. Network, login, database-name, DNS, TLS and session-configuration failures are distinguished.

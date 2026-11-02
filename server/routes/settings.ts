@@ -1,3 +1,4 @@
+import {mysqlConnectionDiagnostic} from '../db/mysqlConnectionDiagnostics';
 import {mysqlEnabled,initMysql,withMysqlConnection,mysqlQuery} from '../db/mysql';
 import {importSqliteIntoMysql,exportMysqlBackup,archiveMysqlBackup,listMysqlArchives,readMysqlArchive} from '../db/mysqlBackup';
 import { asyncRouter } from '../utils/asyncRouter';
@@ -10,7 +11,7 @@ import { initializeDatabase } from '../db/schema';
 const router = asyncRouter(express.Router());
 const mysqlWork=async<T>(work:()=>Promise<T>)=>{await initMysql();return withMysqlConnection(work);};
 router.get('/database',async(_req,res)=>res.json({active:mysqlEnabled()?'mysql':'sqlite',mysqlConfigured:['MYSQL_HOST','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'].every(k=>!!process.env[k])}));
-router.post('/database/mysql/test',async(_req,res)=>{try{await mysqlWork(async()=>{await mysqlQuery('SELECT 1 AS ready');});res.json({success:true});}catch{res.status(503).json({error:'MySQL connection failed. Check the five MYSQL variables and the hosting access rule.'});}});
+router.post('/database/mysql/test',async(_req,res)=>{try{await mysqlWork(async()=>{await mysqlQuery('SELECT 1 AS ready');});res.json({success:true});}catch(error:any){const diagnostic=mysqlConnectionDiagnostic(error);console.warn('MySQL connection test failed:',diagnostic.code);res.status(503).json(diagnostic);}});
 router.post('/database/mysql/import',express.raw({type:'application/octet-stream',limit:'100mb'}),async(req,res)=>{
  if(!Buffer.isBuffer(req.body))return res.status(400).json({error:'Choose a CRM .db backup.'});
  try{res.json(await mysqlWork(()=>importSqliteIntoMysql(req.body)));}catch(error:any){console.error('MySQL import failed:',error.code || error.message);res.status(error.status || 500).json({error:error.status?error.message:'MySQL import failed. Existing records were retained. Check the server log for the import stage.'});}
