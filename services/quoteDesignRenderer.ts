@@ -740,7 +740,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
 
   // Scaled-up bullet typography (12.5px, crisp high-contrast text, 1.48 line-height)
   const bulletItems = (arr: string[]) => arr.map(t => `
-    <div style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.48;color:${th.ink}">
+    <div style="display:flex;align-items:flex-start;gap:8px;font-size:16px;line-height:1.6;color:${th.ink}">
       <span style="color:${th.accent};font-size:13px;line-height:1.35;flex:none;margin-top:1px">●</span>
       <span style="flex:1">${e(t)}</span>
     </div>
@@ -749,9 +749,9 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   // Cancellation fees table with clean header & highlighted percentage badges
   const feeRows = DEFAULT_TERMS.fees.map((f, idx) => `
     <tr style="border-bottom:1px solid ${th.line};background:${idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)'}">
-      <td style="padding:5.5px 8px;font-size:12.5px;font-weight:600;color:${th.ink} !important">${e(f[0])}</td>
+      <td style="padding:5.5px 8px;font-size:15px;font-weight:600;color:${th.ink} !important">${e(f[0])}</td>
       <td style="padding:5.5px 8px;text-align:right">
-        <span style="display:inline-block;background:${th.bg};border:1px solid ${th.line};color:${th.ink} !important;font-weight:800;font-size:12px;padding:1px 7px;border-radius:6px;letter-spacing:0.3px">${e(f[1])}</span>
+        <span style="display:inline-block;background:${th.bg};border:1px solid ${th.line};color:${th.ink} !important;font-weight:800;font-size:15px;padding:1px 7px;border-radius:6px;letter-spacing:0.3px">${e(f[1])}</span>
       </td>
     </tr>
   `).join('');
@@ -762,7 +762,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
         <div style="width:24px;height:24px;border-radius:6px;background:${th.accent}1f;color:${th.accent};display:flex;align-items:center;justify-content:center;flex:none">
           ${ico(iconName, 14, 2.2)}
         </div>
-        <div style="font-family:${th.head};font-size:13.5px;font-weight:800;letter-spacing:0.5px;color:${th.ink};text-transform:uppercase">${e(title)}</div>
+        <div style="font-family:${th.head};font-size:17px;font-weight:800;letter-spacing:0.5px;color:${th.ink};text-transform:uppercase">${e(title)}</div>
       </div>
       ${tag ? `<span style="font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:${th.muted};background:${th.bg};border:1px solid ${th.line};padding:2px 6px;border-radius:4px">${e(tag)}</span>` : ''}
     </div>
@@ -836,7 +836,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
           <div style="background:${th.bg};border:1px dashed ${th.line};border-radius:6px;padding:6px 8px;margin-top:auto">
             <div style="display:flex;flex-direction:column;gap:3px">
               ${DEFAULT_TERMS.feeNotes.map(n => `
-                <div style="font-size:10.5px;line-height:1.32;color:${th.ink} !important;display:flex;align-items:flex-start;gap:5px">
+                <div style="font-size:14px;line-height:1.5;color:${th.ink} !important;display:flex;align-items:flex-start;gap:5px">
                   <span style="color:${th.accent} !important;flex:none;font-weight:bold">•</span>
                   <span style="color:${th.ink} !important">${e(n)}</span>
                 </div>
@@ -879,7 +879,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
           <div style="margin-top:auto;padding-top:8px">
             <div style="background:${th.accent}12;border:1px solid ${th.accent}33;border-radius:8px;padding:6px 9px;display:flex;align-items:center;gap:7px">
               <div style="color:${th.accent};flex:none">${ico('checkCircle', 14, 2)}</div>
-              <div style="font-size:10.8px;line-height:1.3;font-weight:600;color:${th.ink}">
+              <div style="font-size:14px;line-height:1.5;font-weight:600;color:${th.ink}">
                 Transparent pricing with zero hidden surcharges. All bookings guaranteed as per itinerary specifications.
               </div>
             </div>
@@ -2663,13 +2663,13 @@ export function renderContinuousItineraryTable(
               </div>` : ''}
 
             <div class="day-title-row" style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; break-inside: avoid; page-break-inside: avoid;">
-              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: ${th.ink}; font-family: ${th.head}; line-height: 1.3;">Day ${dayNum}: ${e(day.title)}</h3>
+              <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: ${th.ink}; font-family: ${th.head}; line-height: 1.4;">Day ${dayNum}: ${e(day.title)}</h3>
               ${day.location ? `<span style="font-size: 11px; font-weight: 700; color: ${th.accent}; text-transform: uppercase; letter-spacing: 0.5px; flex: none;">${e(day.location)}</span>` : ''}
             </div>
           </div>
 
           <!-- Day Text Body: can flow or start cleanly across page breaks -->
-          <div class="day-text" style="font-size: 12px; line-height: 1.6; color: ${th.muted}; orphans: 2; widows: 2; font-family: ${th.body}; margin: 0; break-inside: auto;">
+          <div class="day-text" style="font-size: 16px; line-height: 1.65; color: ${th.ink}; orphans: 2; widows: 2; font-family: ${th.body}; margin: 0; break-inside: auto;">
             ${day.text ? e(day.text).replace(/\n\n+/g, '</p><p style="margin: 8px 0 0 0; orphans: 2; widows: 2;">').replace(/\n/g, '<br/>') : ''}
           </div>
         </div>

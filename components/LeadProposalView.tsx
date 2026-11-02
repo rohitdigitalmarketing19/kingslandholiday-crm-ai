@@ -136,11 +136,11 @@ Pure Agent Declaration (Terms & Conditions):
     <div className="border border-[#D7E0EA] rounded-xl p-5 bg-surface space-y-4 text-sm">
       {sections.map((sec, sIdx) => (
         <div key={sIdx} className="space-y-1.5">
-          <h5 className="font-bold text-[#12233D] text-sm pb-1 border-b border-line flex items-center gap-1.5 uppercase tracking-wide">
+          <h5 className="font-bold text-[#12233D] text-base pb-1 border-b border-line flex items-center gap-1.5 uppercase tracking-wide">
             <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>
             {sec.title}
           </h5>
-          <ul className="text-xs text-secondary list-disc pl-5 space-y-1 leading-relaxed">
+          <ul className="text-base text-secondary list-disc pl-5 space-y-2 leading-7">
             {sec.items.map((it, iIdx) => (
               <li key={iIdx}>{it}</li>
             ))}
@@ -1845,7 +1845,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         </div>
                       </div>
 
-                      <div className="flex justify-center p-4 sm:p-8 bg-subtle rounded-xl border border-line overflow-x-auto shadow-inner">
+                      <div className="flex justify-start lg:justify-center p-4 sm:p-8 bg-subtle rounded-xl border border-line overflow-x-auto shadow-inner">
                         {currentQuoteDataModel && (
                           <ProposalPdfPreview
                             ref={pdfPreviewRef}
@@ -2029,15 +2029,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                          </h4>
                          <div className="space-y-4">
                            {currentQuote.itinerary.map((day, dIdx) => (
-                             <div key={dIdx} className="flex gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-all avoid-page-break">
+                             <div key={dIdx} className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 rounded-xl border border-slate-100 hover:border-slate-200 bg-white transition-all avoid-page-break">
                                <div className="shrink-0 w-16 font-bold text-sm" style={{ color: designColors.primary, fontFamily: designColors.fontFamily }}>
                                  Day {String(day.day || dIdx + 1).padStart(2, '0')}
                                </div>
                                <div className="space-y-1">
-                                 <h5 className="text-sm font-bold" style={{ color: designColors.secondary }}>
+                                 <h5 className="text-lg font-bold" style={{ color: designColors.secondary }}>
                                    {getCleanDayTitle(day, dIdx, currentQuote.itinerary.length, lead.destination)}
                                  </h5>
-                                 <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">{day.description}</p>
+                                 <p className="text-base text-slate-700 leading-7 whitespace-pre-wrap break-words">{day.description}</p>
                                </div>
                              </div>
                            ))}
