@@ -20,10 +20,12 @@ export async function fetchHotelRatePdf(id: string): Promise<Blob> {
 
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const customKey = typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key') : null;
+  const isAiRequest = /^\/ai(?:\/|$)/.test(url);
+  const customKey = isAiRequest && typeof window !== 'undefined' ? localStorage.getItem('gemini_api_key')?.trim() : null;
   const activeUserId = typeof window !== 'undefined' ? localStorage.getItem('kingsland_active_user_id') : null;
   const customHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
   if (customKey) {
+    if (/[\r\n]/.test(customKey) || customKey.length > 1024) throw new Error('The saved AI API key is invalid. Update it in AI settings.');
     customHeaders['x-gemini-api-key'] = customKey;
   }
   if (activeUserId) {

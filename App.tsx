@@ -159,6 +159,8 @@ const App: React.FC = () => {
     }
     return [];
   });
+  const [leadLoadError, setLeadLoadError] = useState('');
+  const [isLeadLoading, setIsLeadLoading] = useState(false);
   const [agents, setAgents] = useState<Agent[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -598,30 +600,30 @@ const App: React.FC = () => {
   // DATA FETCHING
   // ============================
   const loadLeads = useCallback(async () => {
+    setIsLeadLoading(true);
     try {
       const data = await api.fetchLeads();
-      const list = Array.isArray(data) ? data : [];
+      if (!Array.isArray(data)) throw new Error('The server returned an invalid lead list. Retry loading.');
+      setLeadLoadError('');
+      const list = data;
       setLeads(list);
       if (list.length > 0 && typeof window !== 'undefined') {
         try { localStorage.setItem('kingsland_cached_leads', JSON.stringify(list)); }
         catch { /* Browser cache is optional; retain the successful server response. */ }
       }
     } catch (err) {
-      console.warn('⚠️ Server offline or API failed:', err);
+      console.warn('Saved leads could not be loaded:', err);
+      setLeadLoadError((err as Error).message || 'The saved leads could not be loaded.');
+      if ([401,403].includes((err as any).status)) {localStorage.removeItem('kingsland_cached_leads');setLeads([]);return;}
       if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('kingsland_cached_leads');
         if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setLeads(parsed);
-              return;
-            }
-          } catch (_) {}
+          try {const parsed=JSON.parse(cached);if(Array.isArray(parsed)&&parsed.length>0){setLeads(parsed);return;}}
+          catch (_) {}
         }
       }
-      setLeads([]);
-    }
+      // A failed request is not an empty database. Keep already loaded records.
+    } finally {setIsLeadLoading(false);}
   }, []);
 
   const loadAgents = useCallback(async () => {
@@ -1608,6 +1610,8 @@ const App: React.FC = () => {
             </button>
           </div>
         </header>
+        {isLeadLoading && <div role="status" className="px-5 py-2 text-sm bg-brand-soft text-brand-ink">Loading saved leads…</div>}
+        {leadLoadError && <div role="alert" aria-label="Lead loading error" className="mx-5 mt-3 p-4 rounded-lg border border-danger-line bg-danger-soft text-danger-ink text-sm flex flex-wrap items-center justify-between gap-3"><span>Could not load saved leads. {leadLoadError}</span><button type="button" aria-label="Retry loading leads" disabled={isLeadLoading} onClick={loadLeads} className="px-3 py-2 rounded-lg border border-danger-line font-medium disabled:opacity-50">Retry</button></div>}
 
         <div className="flex-1 overflow-y-auto p-6 custom-scrollbar scroll-smooth">
           {view === 'Dashboard' && (
