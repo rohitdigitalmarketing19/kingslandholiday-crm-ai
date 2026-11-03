@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Car, 
   User, 
@@ -20,8 +20,8 @@ interface CabLogisticsModuleProps {
   vouchers?: HotelVoucher[];
   searchTerm: string;
   isReadOnly?: boolean;
-  onUpdateCustomer: (updatedCustomer: Customer) => void;
-  onUpdateVoucher?: (updatedVoucher: HotelVoucher) => void;
+  onUpdateCustomer: (updatedCustomer: Customer) => void | Promise<void>;
+  onUpdateVoucher?: (updatedVoucher: HotelVoucher) => void | Promise<void>;
   onOpenShareModal?: (shareText: string) => void;
 }
 
@@ -34,6 +34,12 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
   onUpdateVoucher,
 }) => {
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('all');
+  const [paymentSection,setPaymentSection]=useState<'hotels'|'cab'>('hotels');
+  const [saveError,setSaveError]=useState('');
+  const [saving,setSaving]=useState(false);
+  const savingRef=useRef(false);
+  const persist=async(work:()=>void|Promise<void>)=>{if(savingRef.current)return false;savingRef.current=true;setSaving(true);setSaveError('');try{await work();return true;}catch(error){setSaveError((error as Error).message||'Payment was not saved. Please retry.');return false;}finally{savingRef.current=false;setSaving(false);}};
+
 
   // Quick partial modal / inline states for Hotel
   const [activePartialHotelId, setActivePartialHotelId] = useState<string | null>(null);
@@ -92,40 +98,8 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
       alert('Access Restricted: You do not have permission to edit hotel records.');
       return;
     }
-    const cost = Number(tempVoucherCost) || 0;
-    try {
-      const res = await fetch(`/api/ops/vouchers/${v.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          totalCost: cost,
-          hotelName: tempVoucherName || v.hotelName,
-          roomType: tempVoucherRoomType || v.roomType,
-        })
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        if (onUpdateVoucher) onUpdateVoucher(updated);
-      } else {
-        const updatedV: HotelVoucher = {
-          ...v,
-          totalCost: cost,
-          hotelName: tempVoucherName || v.hotelName,
-          roomType: tempVoucherRoomType || v.roomType,
-        };
-        if (onUpdateVoucher) onUpdateVoucher(updatedV);
-      }
-    } catch (e) {
-      console.error('Failed to update voucher details:', e);
-      const updatedV: HotelVoucher = {
-        ...v,
-        totalCost: cost,
-        hotelName: tempVoucherName || v.hotelName,
-        roomType: tempVoucherRoomType || v.roomType,
-      };
-      if (onUpdateVoucher) onUpdateVoucher(updatedV);
-    }
-    setEditingVoucherId(null);
+    const cost=Number(tempVoucherCost)||0;
+    if(await persist(()=>onUpdateVoucher?.({...v,totalCost:cost,hotelName:tempVoucherName,roomType:tempVoucherRoomType})))setEditingVoucherId(null);
   };
 
   // --- Cab Inline Edit Handlers ---
@@ -140,7 +114,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
     setTempCabPickup(cust.cabPickupLocation || '');
   };
 
-  const handleSaveCabDetails = (cust: Customer) => {
+  const handleSaveCabDetails = async (cust: Customer) => {
     if (isReadOnly) {
       alert('Access Restricted: You do not have permission to edit cab records.');
       return;
@@ -159,8 +133,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
       cabPickupLocation: tempCabPickup,
       cabPaymentStatus: status,
     };
-    onUpdateCustomer(updated);
-    setEditingCabCustId(null);
+    if(await persist(()=>onUpdateCustomer(updated)))setEditingCabCustId(null);
   };
 
   // --- Remarks Inline Edit Handlers ---
@@ -170,74 +143,34 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
     setTempOpsRemarks(cust.opsRemarks || cust.specialRequests || '');
   };
 
-  const handleSaveRemarks = (cust: Customer) => {
+  const handleSaveRemarks = async (cust: Customer) => {
     if (isReadOnly) return;
     const updated: Customer = {
       ...cust,
       opsRemarks: tempOpsRemarks,
     };
-    onUpdateCustomer(updated);
-    setEditingRemarksCustId(null);
+    if(await persist(()=>onUpdateCustomer(updated)))setEditingRemarksCustId(null);
   };
 
   // --- Hotel Payment Actions ---
-  const handleHotelCompletePaymentDone = (cust: Customer, voucher: HotelVoucher, defaultCost: number) => {
-    const totalCost = voucher.totalCost || defaultCost || 12000;
-    const currentPaid = voucher.paidAmount || 0;
-    const remaining = Math.max(0, totalCost - currentPaid);
-    const partAmount = remaining > 0 ? remaining : totalCost;
-    const now = getNowFormatted();
-    const mode = voucher.paymentMode || 'UPI / Bank';
-    const ref = voucher.paymentRef || `UTR-${Math.floor(10000000 + Math.random() * 90000000)}`;
-
-    const prevLogs = Array.isArray(voucher.paymentLogs) ? voucher.paymentLogs : [];
-    const newLog = {
-      id: `hotel-part-${Date.now()}`,
-      amount: partAmount,
-      paidAt: now,
-      paymentMode: mode,
-      paymentRef: ref,
-      remarks: `100% full payment cleared to ${voucher.hotelName || 'hotel'}.`,
-    };
-
-    const updatedVoucher: HotelVoucher = {
-      ...voucher,
-      totalCost,
-      paidAmount: totalCost,
-      paymentStatus: 'Paid to Hotel',
-      paidAt: now,
-      paymentMode: mode,
-      paymentRef: ref,
-      paymentRemarks: `100% full payment cleared to ${voucher.hotelName || 'hotel'}.`,
-      paymentLogs: [...prevLogs, newLog],
-    };
-
-    if (onUpdateVoucher) {
-      onUpdateVoucher(updatedVoucher);
-    }
-
-    const custHotelTotal = Math.max(cust.hotelTotalCost || 0, totalCost);
-    const updatedCust: Customer = {
-      ...cust,
-      hotelTotalCost: custHotelTotal,
-      hotelPaymentAmount: Math.min(custHotelTotal, (cust.hotelPaymentAmount || 0) + partAmount),
-      hotelPaymentStatus: 'Paid to Hotel',
-      hotelPaymentDate: now,
-    };
-    onUpdateCustomer(updatedCust);
+  const handleHotelCompletePaymentDone=(cust:Customer,voucher:HotelVoucher,defaultCost:number)=>{
+    const remaining=(voucher.totalCost||defaultCost||0)-(voucher.paidAmount||0);
+    if(remaining<=0){setSaveError('Set the actual hotel cost before recording a payment.');return;}
+    setActivePartialHotelId(voucher.id);setPartialHotelAmount(remaining);setPartialHotelMode('UPI');setPartialHotelRef('');
   };
 
-  const handleSavePartialHotelPayment = (cust: Customer, voucher: HotelVoucher, defaultCost: number) => {
+  const handleSavePartialHotelPayment = async (cust: Customer, voucher: HotelVoucher, defaultCost: number) => {
     if (partialHotelAmount <= 0) {
       alert('Please enter a valid partial amount.');
       return;
     }
-    const totalCost = voucher.totalCost || defaultCost || 12000;
+    const totalCost = voucher.totalCost || defaultCost || 0;
     const currentPaid = voucher.paidAmount || 0;
+    if(!totalCost||partialHotelAmount>totalCost-currentPaid){setSaveError('Enter an amount within the remaining hotel balance.');return;}
     const newPaid = currentPaid + partialHotelAmount;
     const status = newPaid >= totalCost ? 'Paid to Hotel' : 'Partially Paid';
     const now = getNowFormatted();
-    const ref = partialHotelRef || `UTR-${Math.floor(10000000 + Math.random() * 90000000)}`;
+    const ref = partialHotelRef.trim();
 
     const prevLogs = Array.isArray(voucher.paymentLogs) ? voucher.paymentLogs : [];
     const newLog = {
@@ -261,19 +194,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
       paymentLogs: [...prevLogs, newLog],
     };
 
-    if (onUpdateVoucher) {
-      onUpdateVoucher(updatedVoucher);
-    }
-
-    const custHotelTotal = Math.max(cust.hotelTotalCost || 0, totalCost);
-    const updatedCust: Customer = {
-      ...cust,
-      hotelTotalCost: custHotelTotal,
-      hotelPaymentAmount: (cust.hotelPaymentAmount || 0) + partialHotelAmount,
-      hotelPaymentStatus: (cust.hotelPaymentAmount || 0) + partialHotelAmount >= custHotelTotal ? 'Paid to Hotel' : 'Partially Paid',
-      hotelPaymentDate: now,
-    };
-    onUpdateCustomer(updatedCust);
+    if(!await persist(()=>onUpdateVoucher?.(updatedVoucher)))return;
 
     setActivePartialHotelId(null);
     setPartialHotelAmount(0);
@@ -281,50 +202,24 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
   };
 
   // --- Cab Payment Actions ---
-  const handleCabCompletePaymentDone = (cust: Customer) => {
-    const totalCost = cust.cabTotalCost || Math.round((cust.totalAmount || 0) * 0.2) || 10000;
-    const currentPaid = cust.cabPaymentAmount || 0;
-    const remaining = Math.max(0, totalCost - currentPaid);
-    const partAmount = remaining > 0 ? remaining : totalCost;
-    const now = getNowFormatted();
-    const mode = cust.cabPaymentMode || 'UPI (PhonePe/GPay)';
-    const ref = cust.cabPaymentRef || `CAB-TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    const prevLogs = Array.isArray(cust.cabPaymentLogs) ? cust.cabPaymentLogs : [];
-    const newLog = {
-      id: `cab-part-${Date.now()}`,
-      amount: partAmount,
-      paidAt: now,
-      paymentMode: mode,
-      paymentRef: ref,
-      remarks: 'Full driver payment cleared by Operations.',
-    };
-
-    const updated: Customer = {
-      ...cust,
-      cabTotalCost: totalCost,
-      cabPaymentAmount: totalCost,
-      cabPaymentStatus: 'Paid to Driver',
-      cabPaymentDate: now,
-      cabPaymentMode: mode,
-      cabPaymentRef: ref,
-      cabPaymentRemarks: 'Full driver payment completed by Ops.',
-      cabPaymentLogs: [...prevLogs, newLog],
-    };
-    onUpdateCustomer(updated);
+  const handleCabCompletePaymentDone=(cust:Customer)=>{
+    const remaining=(cust.cabTotalCost||0)-(cust.cabPaymentAmount||0);
+    if(remaining<=0){setSaveError('Set the actual cab cost before recording a payment.');return;}
+    setActivePartialCabCustId(cust.id);setPartialCabAmount(remaining);setPartialCabMode('UPI');setPartialCabRef('');
   };
 
-  const handleSavePartialCabPayment = (cust: Customer) => {
+  const handleSavePartialCabPayment = async (cust: Customer) => {
     if (partialCabAmount <= 0) {
       alert('Please enter a valid partial payment amount.');
       return;
     }
-    const totalCost = cust.cabTotalCost || Math.round((cust.totalAmount || 0) * 0.2) || 10000;
+    const totalCost = cust.cabTotalCost || 0;
     const currentPaid = cust.cabPaymentAmount || 0;
+    if(!totalCost||partialCabAmount>totalCost-currentPaid){setSaveError('Enter an amount within the remaining cab balance.');return;}
     const newPaid = currentPaid + partialCabAmount;
     const status = newPaid >= totalCost ? 'Paid to Driver' : 'Partially Paid';
     const now = getNowFormatted();
-    const ref = partialCabRef || `CAB-ADV-${Math.floor(100000 + Math.random() * 90000)}`;
+    const ref = partialCabRef.trim();
 
     const prevLogs = Array.isArray(cust.cabPaymentLogs) ? cust.cabPaymentLogs : [];
     const newLog = {
@@ -347,7 +242,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
       cabPaymentRemarks: `Partial payment of ₹${partialCabAmount.toLocaleString('en-IN')} recorded on ${now}.`,
       cabPaymentLogs: [...prevLogs, newLog],
     };
-    onUpdateCustomer(updated);
+    if(!await persist(()=>onUpdateCustomer(updated)))return;
     setActivePartialCabCustId(null);
     setPartialCabAmount(0);
     setPartialCabRef('');
@@ -365,8 +260,12 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
     return matchesSearch && matchesFilter;
   });
 
+  const summary=filtered.reduce((sum,c)=>{const hotels=vouchers.filter(v=>v.customerId===c.id||v.bookingId===c.bookingId);sum.cost+=(hotels.length?hotels.reduce((n,v)=>n+(v.totalCost||0),0):c.hotelTotalCost||0)+(c.cabTotalCost||0);sum.paid+=(hotels.length?hotels.reduce((n,v)=>n+(v.paidAmount||0),0):c.hotelPaymentAmount||0)+(c.cabPaymentAmount||0);return sum;},{cost:0,paid:0});
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={saving}>
+      {saveError&&<div role="alert" className="p-4 rounded-xl border border-danger-line bg-danger-soft text-danger-ink">{saveError}</div>}
+      {saving&&<div role="status" className="text-sm text-brand-ink">Saving payment details…</div>}
+      <fieldset disabled={saving} className="space-y-6 min-w-0">
       
       {isReadOnly && (
         <div className="p-3.5 rounded-lg bg-warning-soft border border-warning-line text-warning-ink flex items-center justify-between text-sm">
@@ -383,37 +282,31 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
         <div>
           <div className="flex items-center gap-2 text-brand-ink font-semibold text-sm uppercase tracking-wider mb-1">
             <Building2 size={15} />
-            <span>Operations Logistics & Payouts</span>
+            <span>Supplier payments</span>
           </div>
-          <h2 className="text-lg font-semibold text-content">Hotel & Cab Driver Payment Management</h2>
+          <h2 className="text-lg font-semibold text-content">Hotel & cab payments</h2>
           <p className="text-sm text-secondary mt-0.5">
-            Manage individual hotel voucher payouts and driver logistics. Edit costs directly on cards, record partial advances or mark payments cleared.
+            Review supplier costs, record a payment, and track the remaining balance for each trip.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="px-3 py-2 rounded-lg bg-canvas border border-line text-center">
-            <span className="text-xs uppercase font-medium text-secondary block">Total Trips</span>
-            <span className="text-base font-semibold text-content tabular-nums">{customers.length}</span>
-          </div>
-          <div className="px-3 py-2 rounded-lg bg-success-soft border border-success-line text-center">
-            <span className="text-xs uppercase font-medium text-success-ink block">Active Logistics</span>
-            <span className="text-base font-semibold text-success-ink tabular-nums">
-              {customers.filter((c) => c.hotelPaymentStatus === 'Paid to Hotel' || c.cabPaymentStatus === 'Paid to Driver').length}
-            </span>
-          </div>
+        <div className="grid grid-cols-3 gap-3 w-full md:w-auto md:min-w-[360px]">
+          {[['Supplier cost',summary.cost],['Paid',summary.paid],['Remaining',Math.max(0,summary.cost-summary.paid)]].map(([label,amount])=><div key={label} className="p-3 rounded-xl bg-canvas border border-line"><span className="text-xs text-secondary block mb-1">{label}</span><span className="text-base font-semibold text-content tabular-nums">₹{Number(amount).toLocaleString('en-IN')}</span></div>)}
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Supplier payment section">
+        {(['hotels','cab'] as const).map(section=><button key={section} type="button" aria-pressed={paymentSection===section} onClick={()=>setPaymentSection(section)} className={`px-5 py-3 rounded-xl text-sm font-semibold border ${paymentSection===section?'bg-brand text-white border-brand':'bg-surface text-secondary border-line'}`}>{section==='hotels'?'Hotel payments':'Cab & driver payments'}</button>)}
+      </div>
       {/* Filter Bar */}
       <div className="p-3.5 rounded-lg bg-surface border border-line flex flex-wrap items-center justify-between gap-3 text-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center items-start gap-2 w-full sm:w-auto">
           <User size={15} className="text-muted" />
-          <span className="font-medium text-content">Filter by Trip:</span>
+          <span className="font-medium text-content whitespace-nowrap">Filter by trip:</span>
           <select
             value={selectedCustomerId}
             onChange={(e) => setSelectedCustomerId(e.target.value)}
-            className="px-2.5 py-1.5 rounded-md text-sm font-medium bg-canvas text-content border border-line focus:outline-none focus:ring-1 focus:ring-brand-line max-w-[280px]"
+            className="px-2.5 py-1.5 rounded-md text-sm font-medium bg-canvas text-content border border-line focus:outline-none focus:ring-1 focus:ring-brand-line w-full sm:w-auto sm:max-w-[360px]"
           >
             <option value="all">All Converted Trips ({customers.length})</option>
             {customers.map((c) => (
@@ -466,40 +359,40 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
             <div key={cust.id} className="bg-surface rounded-xl border border-line shadow-sm overflow-hidden">
               
               {/* Trip Header */}
-              <div className="p-4 bg-inverse text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="p-5 bg-canvas text-content border-b border-line flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 rounded bg-inverse text-brand-ink font-mono text-xs font-semibold border border-line">
+                    <span className="px-2 py-0.5 rounded bg-brand-soft text-brand-ink font-mono text-xs font-semibold border border-line">
                       {cust.bookingId}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-inverse text-slate-300 font-medium text-xs">
+                    <span className="px-2 py-0.5 rounded bg-subtle text-secondary font-medium text-xs">
                       {cust.destination}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-inverse text-success-ink font-medium text-xs flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded bg-success-soft text-success-ink font-medium text-xs flex items-center gap-1">
                       <Calendar size={12} />
                       {cust.startDate} to {cust.endDate}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-inverse text-slate-300 font-medium text-xs">
+                    <span className="px-2 py-0.5 rounded bg-subtle text-secondary font-medium text-xs">
                       {custVouchers.length} {custVouchers.length === 1 ? 'Hotel' : 'Hotels'}
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-content">
                     Guest: {cust.name} <span className="text-sm font-normal text-muted">({cust.paxAdults} Adults {cust.paxChildren > 0 ? `· ${cust.paxChildren} Child` : ''})</span>
                   </h3>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-300">
-                    Total Trip Amount: <strong className="font-mono text-white text-sm">₹{(cust.totalAmount || 0).toLocaleString('en-IN')}</strong>
+                  <span className="text-sm text-secondary">
+                    Total Trip Amount: <strong className="font-mono text-content text-sm">₹{(cust.totalAmount || 0).toLocaleString('en-IN')}</strong>
                   </span>
                 </div>
               </div>
 
               {/* Trip Body */}
-              <div className="p-5 space-y-5 bg-canvas/40">
+              <div className="p-3 sm:p-5 space-y-5 bg-canvas/40">
                 
                 {/* 1. HOTEL BREAKDOWN SECTION */}
-                <div className="p-4 rounded-lg bg-surface border border-line space-y-4">
+                <div hidden={paymentSection!=='hotels'} className="p-4 rounded-lg bg-surface border border-line space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-md bg-brand-soft text-brand-ink">
@@ -529,7 +422,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                   </div>
 
                   {/* Individual Hotel Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     {custVouchers.map((v, idx) => {
                       const hCost = v.totalCost || 0;
                       const hPaid = v.paidAmount || 0;
@@ -614,9 +507,9 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                             </div>
 
                             {/* Financial Metric Row */}
-                            <div className="grid grid-cols-3 gap-2 text-center mt-2.5">
+                            <div className="grid grid-cols-3 gap-4 text-left mt-4 border-y border-line py-4">
                               {/* Cost */}
-                              <div className="p-2 rounded-md bg-canvas border border-line">
+                              <div className="px-1">
                                 <span className="text-xs uppercase font-medium text-secondary block">Cost</span>
                                 {isEditing ? (
                                   <input
@@ -626,24 +519,24 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     className="w-full text-center px-1 py-0.5 text-sm font-mono font-semibold border border-brand-line rounded bg-surface mt-1 outline-none"
                                   />
                                 ) : (
-                                  <span className="font-semibold text-sm text-content font-mono block mt-0.5 tabular-nums">
+                                  <span className="font-semibold text-lg text-content font-mono block mt-1 tabular-nums">
                                     ₹{hCost.toLocaleString('en-IN')}
                                   </span>
                                 )}
                               </div>
 
                               {/* Paid */}
-                              <div className="p-2 rounded-md bg-success-soft border border-success-line">
+                              <div className="px-1">
                                 <span className="text-xs uppercase font-medium text-success-ink block">Paid</span>
-                                <span className="font-semibold text-sm text-success-ink font-mono block mt-0.5 tabular-nums">
+                                <span className="font-semibold text-lg text-success-ink font-mono block mt-1 tabular-nums">
                                   ₹{hPaid.toLocaleString('en-IN')}
                                 </span>
                               </div>
 
                               {/* Balance */}
-                              <div className="p-2 rounded-md bg-warning-soft border border-warning-line">
+                              <div className="px-1">
                                 <span className="text-xs uppercase font-medium text-warning-ink block">Balance</span>
-                                <span className="font-semibold text-sm text-warning-ink font-mono block mt-0.5 tabular-nums">
+                                <span className="font-semibold text-lg text-content font-mono block mt-1 tabular-nums">
                                   ₹{hRemaining.toLocaleString('en-IN')}
                                 </span>
                               </div>
@@ -670,6 +563,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                             )}
 
                             {/* Payment Metadata */}
+                            <details className="mt-3 group"><summary className="cursor-pointer text-sm font-medium text-brand-ink py-2">Payment history & references</summary>
                             <div className="mt-2.5 p-2 rounded-md bg-canvas border border-line text-xs space-y-1">
                               <div className="flex items-center justify-between text-secondary">
                                 <span className="text-muted">Paid Date:</span>
@@ -700,6 +594,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                 ))}
                               </div>
                             )}
+                            </details>
                           </div>
 
                           {/* Quick Payment Actions */}
@@ -713,7 +608,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     className="flex-1 py-1.5 px-3 rounded-lg bg-success-strong hover:bg-success-strong text-white font-medium text-sm flex items-center justify-center gap-1.5 transition-colors"
                                   >
                                     <Check size={14} />
-                                    <span>Payment Done</span>
+                                    <span>Record balance</span>
                                   </button>
 
                                   <button
@@ -730,13 +625,13 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     }}
                                     className="py-1.5 px-2.5 rounded-lg bg-subtle hover:bg-hover text-content font-medium text-sm transition-colors"
                                   >
-                                    <span>Partial</span>
+                                    <span>Record payment</span>
                                   </button>
                                 </div>
                               ) : (
                                 <div className="py-1.5 px-3 rounded-lg bg-success-soft border border-success-line text-center text-success-ink text-sm font-medium flex items-center justify-center gap-1.5">
                                   <CheckCircle2 size={14} className="text-success-ink" />
-                                  <span>100% Hotel Payment Cleared</span>
+                                  <span>Hotel payment complete</span>
                                 </div>
                               )}
                             </div>
@@ -746,7 +641,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                           {!isReadOnly && isPartialOpen && (
                             <div className="p-3 rounded-lg bg-canvas border border-line space-y-2 text-sm animate-in fade-in duration-150">
                               <div className="flex items-center justify-between font-medium text-content border-b border-line pb-1.5">
-                                <span>Record Partial Payment:</span>
+                                <span>Record hotel payment</span>
                                 <span className="font-mono text-warning-ink font-semibold">Due: ₹{hRemaining.toLocaleString('en-IN')}</span>
                               </div>
                               <div className="space-y-1.5">
@@ -790,7 +685,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     onClick={() => handleSavePartialHotelPayment(cust, v, hCost)}
                                     className="flex-1 py-1.5 rounded bg-success-strong hover:bg-success-strong text-white font-medium text-sm transition-colors"
                                   >
-                                    Confirm
+                                    Save payment
                                   </button>
                                   <button
                                     type="button"
@@ -811,7 +706,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                 </div>
 
                 {/* 2. CAB & DRIVER LOGISTICS & PAYOUTS */}
-                <div className="p-4 rounded-lg bg-surface border border-line space-y-4">
+                <div hidden={paymentSection!=='cab'} className="p-4 rounded-lg bg-surface border border-line space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line pb-3">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-md bg-success-soft text-success-ink">
@@ -965,20 +860,20 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                 className="w-full text-center px-1 py-0.5 text-sm font-mono font-semibold border border-brand-line rounded bg-surface mt-1 outline-none"
                               />
                             ) : (
-                              <span className="font-semibold text-sm text-content font-mono block mt-0.5 tabular-nums">
+                              <span className="font-semibold text-lg text-content font-mono block mt-1 tabular-nums">
                                 ₹{cabCost.toLocaleString('en-IN')}
                               </span>
                             )}
                           </div>
                           <div className="p-2 rounded-md bg-success-soft border border-success-line">
                             <span className="text-xs uppercase font-medium text-success-ink block">Paid</span>
-                            <span className="font-semibold text-sm text-success-ink font-mono block mt-0.5 tabular-nums">
+                            <span className="font-semibold text-lg text-success-ink font-mono block mt-1 tabular-nums">
                               ₹{cabPaid.toLocaleString('en-IN')}
                             </span>
                           </div>
                           <div className="p-2 rounded-md bg-warning-soft border border-warning-line">
                             <span className="text-xs uppercase font-medium text-warning-ink block">Balance</span>
-                            <span className="font-semibold text-sm text-warning-ink font-mono block mt-0.5 tabular-nums">
+                            <span className="font-semibold text-lg text-content font-mono block mt-1 tabular-nums">
                               ₹{cabRemaining.toLocaleString('en-IN')}
                             </span>
                           </div>
@@ -1036,7 +931,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                 className="flex-1 py-1.5 px-3 rounded-lg bg-success-strong hover:bg-success-strong text-white font-medium text-sm flex items-center justify-center gap-1.5 transition-colors"
                               >
                                 <Check size={14} />
-                                <span>Payment Done</span>
+                                <span>Record balance</span>
                               </button>
 
                               <button
@@ -1053,13 +948,13 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                 }}
                                 className="py-1.5 px-2.5 rounded-lg bg-subtle hover:bg-hover text-content font-medium text-sm transition-colors"
                               >
-                                <span>Partial</span>
+                                <span>Record payment</span>
                               </button>
                             </div>
                           ) : (
                             <div className="p-2 rounded-lg bg-success-soft border border-success-line text-center text-success-ink font-medium text-sm flex items-center justify-center gap-1.5">
                               <CheckCircle2 size={14} className="text-success-ink" />
-                              <span>100% Cab Payment Completed</span>
+                              <span>Cab payment complete</span>
                             </div>
                           )}
 
@@ -1067,7 +962,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                           {activePartialCabCustId === cust.id && (
                             <div className="p-3 rounded-lg bg-surface border border-line space-y-2 text-sm animate-in fade-in duration-150 mt-2">
                               <div className="flex items-center justify-between font-medium text-content border-b border-line pb-1.5">
-                                <span>Record Driver Partial Advance:</span>
+                                <span>Record cab payment</span>
                                 <span className="font-mono text-warning-ink font-semibold">Due: ₹{cabRemaining.toLocaleString('en-IN')}</span>
                               </div>
                               <div className="space-y-1.5">
@@ -1110,7 +1005,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
                                     onClick={() => handleSavePartialCabPayment(cust)}
                                     className="flex-1 py-1.5 rounded bg-success-strong hover:bg-success-strong text-white font-medium text-sm transition-colors"
                                   >
-                                    Confirm
+                                    Save payment
                                   </button>
                                   <button
                                     type="button"
@@ -1189,6 +1084,7 @@ export const CabLogisticsModule: React.FC<CabLogisticsModuleProps> = ({
         })}
       </div>
 
+      </fieldset>
     </div>
   );
 };

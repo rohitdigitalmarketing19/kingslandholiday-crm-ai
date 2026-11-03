@@ -14,7 +14,7 @@ interface GiveQuoteViewProps {
   allLeads: Lead[];
   editQuoteId: string | null;
   onClose: () => void;
-  onSave: (quote: QuoteData) => void;
+  onSave: (quote: QuoteData) => void | Promise<void>;
 }
 
 const DEFAULT_TERMS = `Terms & Conditions
@@ -334,6 +334,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
     const leadMatches = allLeads.flatMap(l => (l.quotes || []).map(q => ({
       id: `lead-quote-${q.id}`,
       isSavedTemplate: false,
+      sourceLeadId:l.imagesDeferred?l.id:undefined,
       tagText: `PAST QUOTE • ${l.tripId} (${l.name})`,
       titleText: q.packageTitle || l.destination,
       nights: q.nights,
@@ -347,6 +348,16 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
     return [...templateMatches, ...leadMatches].slice(0, 8);
   }, [allLeads, savedTemplates, itinerarySearch, searchMode]);
+
+  const [loadingTemplate,setLoadingTemplate]=useState(false);
+  const applyingTemplate=useRef(false);
+  const applySearchResult=async(res:any)=>{
+    if(applyingTemplate.current)return;applyingTemplate.current=true;setLoadingTemplate(true);
+    try{const full=res.sourceLeadId?await api.fetchLeadById(res.sourceLeadId):null;const tData=res.sourceLeadId?full?.quotes.find((q:QuoteData)=>q.id===res.quoteData.id):res.quoteData;
+      if(!tData)throw new Error('The selected itinerary could not be loaded.');
+      setQuote(prev=>reconcileQuoteStays({...prev,packageTitle:tData.packageTitle||prev.packageTitle,nights:tData.nights??prev.nights,itinerary:tData.itinerary?.length?tData.itinerary:prev.itinerary,hotels:tData.hotels?.length?tData.hotels:prev.hotels,inclusions:tData.inclusions||prev.inclusions,otherInclusions:tData.otherInclusions??prev.otherInclusions,otherExclusions:tData.otherExclusions??prev.otherExclusions,flightDetails:tData.flightDetails??prev.flightDetails,cabDetails:tData.cabDetails??prev.cabDetails,finalSellingPrice:tData.finalSellingPrice||prev.finalSellingPrice,visaCost:tData.visaCost||prev.visaCost,flightCost:tData.flightCost||prev.flightCost,landPackageCost:tData.landPackageCost||prev.landPackageCost,marketingFees:tData.marketingFees||prev.marketingFees,discountPercentage:tData.discountPercentage??prev.discountPercentage}));setItinerarySearch('');
+    }catch(error){alert((error as Error).message);}finally{applyingTemplate.current=false;setLoadingTemplate(false);}
+  };
 
   const handleUpdateInclusion = (category: keyof QuoteData['inclusions'], sub: string | null, val: boolean) => {
     setQuote(prev => {
@@ -441,13 +452,17 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
 
   const usedNightIndices = quote.hotels.flatMap(h => h.selectedNightIndices || []);
   const [saveError, setSaveError] = useState('');
-  const handleSaveQuote = () => {
+  const savingQuote=useRef(false);
+  const [isSavingQuote,setIsSavingQuote]=useState(false);
+  const handleSaveQuote = async () => {
+    if(savingQuote.current||applyingTemplate.current)return;
+    savingQuote.current=true;setIsSavingQuote(true);
     try {
       const hotelAlternative = normalizeHotelAlternative(quote.hotelAlternative);
       if (hotelAlternative && (!Number.isFinite(quote.finalSellingPrice) || quote.finalSellingPrice <= 0)) throw new Error('Enter a valid price for Hotel Option 1.');
       setSaveError('');
-      onSave({ ...quote, hotelAlternative });
-    } catch (error) { setSaveError(error instanceof Error ? error.message : 'Please check the hotel options.'); }
+      await onSave({ ...quote, hotelAlternative });
+    } catch (error) { setSaveError(error instanceof Error ? error.message : 'Please check the hotel options.'); } finally {savingQuote.current=false;setIsSavingQuote(false);}
   };
 
   return (
@@ -460,7 +475,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           </div>
           <div className="flex gap-4">
             <button onClick={onClose} className="px-6 py-3 text-muted font-semibold text-xs uppercase tracking-widest hover:text-content">Cancel</button>
-            <button onClick={handleSaveQuote} className="px-10 py-3 bg-brand text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-brand-line hover:bg-brand transition-all">Save Quotation</button>
+            <button disabled={isSavingQuote||loadingTemplate} onClick={handleSaveQuote} className="px-10 py-3 bg-brand text-white rounded-xl font-semibold text-xs uppercase tracking-widest shadow-sm shadow-brand-line hover:bg-brand transition-all disabled:opacity-60">{isSavingQuote?'Saving…':'Save Quotation'}</button>
           </div>
         </header>
 
@@ -491,7 +506,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
           <section className="bg-brand-soft/50 p-5 rounded-xl border border-brand-line/50 space-y-6">
              <div className="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
                 <div>
-                   <h4 className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Intelligent Library Search</h4>
+                   <h4 className="text-xs font-semibold text-brand-ink uppercase tracking-widest">Intelligent Library Search</h4>{loadingTemplate&&<p role="status" className="text-sm text-secondary">Loading itinerary images…</p>}
                    <p className="text-sm text-secondary font-medium">Search past quotations to use as templates</p>
                 </div>
                 <div className="flex bg-surface p-1 rounded-xl border border-line">
@@ -516,28 +531,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                       >
                         <button
                           type="button"
-                          onClick={() => {
-                            const tData = res.quoteData;
-                            setQuote(prev => reconcileQuoteStays({
-                              ...prev,
-                              packageTitle: tData.packageTitle || prev.packageTitle,
-                              nights: tData.nights || prev.nights,
-                              itinerary: (tData.itinerary && tData.itinerary.length > 0) ? tData.itinerary : prev.itinerary,
-                              hotels: (tData.hotels && tData.hotels.length > 0) ? tData.hotels : prev.hotels,
-                              inclusions: tData.inclusions || prev.inclusions,
-                              otherInclusions: tData.otherInclusions ?? prev.otherInclusions,
-                              otherExclusions: tData.otherExclusions ?? prev.otherExclusions,
-                              flightDetails: tData.flightDetails ?? prev.flightDetails,
-                              cabDetails: tData.cabDetails ?? prev.cabDetails,
-                              finalSellingPrice: tData.finalSellingPrice || prev.finalSellingPrice,
-                              visaCost: tData.visaCost || prev.visaCost,
-                              flightCost: tData.flightCost || prev.flightCost,
-                              landPackageCost: tData.landPackageCost || prev.landPackageCost,
-                              marketingFees: tData.marketingFees || prev.marketingFees,
-                              discountPercentage: tData.discountPercentage ?? prev.discountPercentage,
-                            }));
-                            setItinerarySearch('');
-                          }}
+                          disabled={loadingTemplate||isSavingQuote} onClick={()=>void applySearchResult(res)}
                           className="flex-1 text-left cursor-pointer"
                         >
                           <p className="text-xs font-semibold text-brand-ink uppercase tracking-widest mb-0.5">{res.tagText}</p>
@@ -547,28 +541,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
-                            onClick={() => {
-                              const tData = res.quoteData;
-                              setQuote(prev => reconcileQuoteStays({
-                                ...prev,
-                                packageTitle: tData.packageTitle || prev.packageTitle,
-                                nights: tData.nights || prev.nights,
-                                itinerary: (tData.itinerary && tData.itinerary.length > 0) ? tData.itinerary : prev.itinerary,
-                                hotels: (tData.hotels && tData.hotels.length > 0) ? tData.hotels : prev.hotels,
-                                inclusions: tData.inclusions || prev.inclusions,
-                                otherInclusions: tData.otherInclusions ?? prev.otherInclusions,
-                                otherExclusions: tData.otherExclusions ?? prev.otherExclusions,
-                                flightDetails: tData.flightDetails ?? prev.flightDetails,
-                                cabDetails: tData.cabDetails ?? prev.cabDetails,
-                                finalSellingPrice: tData.finalSellingPrice || prev.finalSellingPrice,
-                                visaCost: tData.visaCost || prev.visaCost,
-                                flightCost: tData.flightCost || prev.flightCost,
-                                landPackageCost: tData.landPackageCost || prev.landPackageCost,
-                                marketingFees: tData.marketingFees || prev.marketingFees,
-                                discountPercentage: tData.discountPercentage ?? prev.discountPercentage,
-                              }));
-                              setItinerarySearch('');
-                            }}
+                            disabled={loadingTemplate||isSavingQuote} onClick={()=>void applySearchResult(res)}
                             className="text-xs font-semibold bg-subtle text-secondary px-3 py-1.5 rounded-lg group-hover:bg-brand group-hover:text-white transition-all uppercase cursor-pointer"
                           >
                             Apply Template

@@ -60,7 +60,7 @@ export async function fetchLeads(filters?: {
   assignedTo?: string;
   search?: string;
 }) {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({includeImages:'false'});
   if (filters?.status) params.set('status', filters.status);
   if (filters?.assignedTo) params.set('assignedTo', filters.assignedTo);
   if (filters?.search) params.set('search', filters.search);

@@ -537,6 +537,18 @@ const App: React.FC = () => {
   const [editQuoteId, setEditQuoteId] = useState<string | null>(null);
 
   const [proposalLead, setProposalLead] = useState<Lead | null>(null);
+  const [openingDocument,setOpeningDocument]=useState(false);
+  const documentOpenRequest=useRef(0);
+  const openLeadDocument=async(lead:Lead,kind:'proposal'|'quote',quoteId:string|null=null)=>{
+    const request=++documentOpenRequest.current;setOpeningDocument(true);
+    try{const full=lead.imagesDeferred&&(kind==='proposal'||quoteId)?await api.fetchLeadById(lead.id):lead;if(request!==documentOpenRequest.current)return;
+      if(!full)throw new Error('Lead could not be loaded.');
+      if(kind==='proposal')setProposalLead(full);else{setQuotingLead(full);setEditQuoteId(quoteId);setProposalLead(null);}
+    }catch(error){if(request===documentOpenRequest.current)showToast((error as Error).message,'error');}
+    finally{if(request===documentOpenRequest.current)setOpeningDocument(false);}
+  };
+  const openProposal=(lead:Lead)=>{void openLeadDocument(lead,'proposal');};
+
 
   // Form State for Lead
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -908,13 +920,9 @@ const App: React.FC = () => {
       return;
     }
     try {
-      await api.updateLeadStatus(leadId, status, extraFields);
-      await loadLeads(); // Refresh leads
-      // Update proposal view if open
-      if (proposalLead && proposalLead.id === leadId) {
-        const updated = await api.fetchLeadById(leadId);
-        if (updated) setProposalLead(updated);
-      }
+      const updated=await api.updateLeadStatus(leadId,status,extraFields);
+      setLeads(prev=>prev.map(lead=>lead.id===updated.id?updated:lead));
+      if(proposalLead?.id===updated.id)setProposalLead(updated);
     } catch (err) {
       console.warn('Error updating status on server:', err);
       alert((err as Error).message || 'The status was not saved.');
@@ -949,8 +957,9 @@ const App: React.FC = () => {
     if (!quotingLead) return;
     try {
       const isUpdate = (quotingLead.quotes || []).some(q => q.id === quote.id);
-      await api.saveQuote(quotingLead.id, quote, isUpdate);
-      await loadLeads(); // Refresh leads
+      const updated=await api.saveQuote(quotingLead.id, quote, isUpdate);
+      setLeads(prev=>prev.map(lead=>lead.id===updated.id?updated:lead));
+      if(proposalLead?.id===updated.id)setProposalLead(updated);
       setQuotingLead(null);
       setEditQuoteId(null);
       alert(`✅ Package Quotation "${quote.packageTitle || 'Proposal'}" saved successfully!`);
@@ -2063,8 +2072,8 @@ const App: React.FC = () => {
                          <LeadCard
                            key={lead.id}
                            lead={lead}
-                           onClick={setQuotingLead}
-                           onViewProposal={setProposalLead}
+                           onClick={(lead)=>void openLeadDocument(lead,'quote')}
+                           onViewProposal={openProposal}
                            agentName={agents.find(a => a.id === lead.assignedTo)?.name}
                            showGiveQuote
                            displayIndex={unquotedLeads.length - unquotedLeads.indexOf(lead)}
@@ -2165,8 +2174,8 @@ const App: React.FC = () => {
                       <LeadCard
                         key={lead.id}
                         lead={lead}
-                        onClick={setQuotingLead}
-                        onViewProposal={setProposalLead}
+                        onClick={(lead)=>void openLeadDocument(lead,'quote')}
+                        onViewProposal={openProposal}
                         onDeleteLead={handleDeleteLead}
                         onOpenLeadDetails={(lead, tab) => {
                           setSelectedLead(lead);
@@ -2195,7 +2204,7 @@ const App: React.FC = () => {
                <FollowUpsView
                  leads={leads}
                  agents={agents}
-                 onOpenLead={(lead) => setProposalLead(lead)}
+                 onOpenLead={openProposal}
                  onCompleteFollowUp={async (leadId) => {
                    await handleUpdateLeadStatus(leadId, 'Follow-up', { followUpCompleted: true });
                  }}
@@ -2221,7 +2230,7 @@ const App: React.FC = () => {
                 onUpdateLead={(updated) => {
                   setLeads(prev => prev.map(l => l.id === updated.id ? updated : l));
                 }}
-                onViewProposal={(lead) => setProposalLead(lead)}
+                onViewProposal={openProposal}
               />
             </div>
           )}
@@ -2365,8 +2374,8 @@ const App: React.FC = () => {
                 leads={leads}
                 currentUser={currentUser}
                 onSelectLead={(lead) => setSelectedLead(lead)}
-                onViewProposal={(lead) => setProposalLead(lead)}
-                onNewQuote={(lead) => { setQuotingLead(lead); setEditQuoteId(null); }}
+                onViewProposal={openProposal}
+                onNewQuote={(lead)=>void openLeadDocument(lead,'quote')}
                 onUpdateLeadStatus={handleUpdateLeadStatus}
                 onReassignLead={async (leadId, agentId) => {
                   try {
@@ -2423,7 +2432,7 @@ const App: React.FC = () => {
                 leads={leads}
                 agents={agents}
                 defaultTab="documents"
-                onViewProposal={setProposalLead}
+                onViewProposal={openProposal}
               />
             </div>
           )}
@@ -2433,7 +2442,7 @@ const App: React.FC = () => {
                 leads={leads}
                 agents={agents}
                 defaultTab="client_details"
-                onViewProposal={setProposalLead}
+                onViewProposal={openProposal}
               />
             </div>
           )}
@@ -2441,7 +2450,8 @@ const App: React.FC = () => {
       </main>
 
 
-      {proposalLead && (<LeadProposalView lead={proposalLead} agentName={agents.find(a => a.id === proposalLead.assignedTo)?.name || 'Alex Thompson'} onClose={() => setProposalLead(null)} onUpdateStatus={handleUpdateLeadStatus} onAddNote={handleAddNote} onDeleteLead={handleDeleteLead} onEditQuote={(lead, qId) => { setQuotingLead(lead); setEditQuoteId(qId); setProposalLead(null); }} onNewQuote={(lead) => { setQuotingLead(lead); setEditQuoteId(null); setProposalLead(null); }} onDeleteQuote={(leadId, qId) => { handleDeleteQuote(leadId, qId); }} isReadOnly={currentUser.accessLevel === 'ViewOnly' || view === 'Accounts'} onUpdateLead={(updated) => { setProposalLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
+      {openingDocument&&<div className="fixed inset-0 z-[200] bg-inverse/40 flex items-center justify-center p-4"><div role="status" className="bg-surface border border-line rounded-xl shadow-xl p-6 text-content">Loading itinerary details…<button type="button" onClick={()=>{documentOpenRequest.current++;setOpeningDocument(false);}} className="ml-4 px-3 py-2 rounded-lg border border-line">Cancel</button></div></div>}
+      {proposalLead && (<LeadProposalView lead={proposalLead} agentName={agents.find(a => a.id === proposalLead.assignedTo)?.name || 'Alex Thompson'} onClose={() => setProposalLead(null)} onUpdateStatus={handleUpdateLeadStatus} onAddNote={handleAddNote} onDeleteLead={handleDeleteLead} onEditQuote={(lead,qId)=>void openLeadDocument(lead,'quote',qId)} onNewQuote={(lead)=>void openLeadDocument(lead,'quote')} onDeleteQuote={(leadId, qId) => { handleDeleteQuote(leadId, qId); }} isReadOnly={currentUser.accessLevel === 'ViewOnly' || view === 'Accounts'} onUpdateLead={(updated) => { setProposalLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
       {selectedLead && (<LeadDetails lead={selectedLead} initialTab={selectedLeadTab} agentName={agents.find(a => a.id === selectedLead.assignedTo)?.name || ''} onClose={() => { setSelectedLead(null); setSelectedLeadTab('overview'); }} onUpdateStatus={handleUpdateLeadStatus} onDeleteLead={handleDeleteLead} onUpdateLead={(updated) => { setSelectedLead(updated); setLeads(leads.map(l => l.id === updated.id ? updated : l)); }} />)}
       {quotingLead && (<GiveQuoteView lead={quotingLead} allLeads={leads} editQuoteId={editQuoteId} onClose={() => { setQuotingLead(null); setEditQuoteId(null); }} onSave={handleSaveQuote} />)}
       {/* ADD / EDIT SALES AGENT MODAL */}

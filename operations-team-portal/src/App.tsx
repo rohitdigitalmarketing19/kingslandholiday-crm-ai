@@ -64,6 +64,8 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
 
   // App Data State
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoadingData,setIsLoadingData]=useState(true);
+  const [loadError,setLoadError]=useState('');
   const [vouchers, setVouchers] = useState<HotelVoucher[]>([]);
   const [itineraries, setItineraries] = useState<TripItinerary[]>([]);
 
@@ -150,14 +152,25 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
     }
   };
 
+  // Payment changes update state only after one successful server write.
+  const persistPaymentCustomer=async(customer:Customer)=>{
+    const saved=await api.updateOpsCustomer(customer.id,customer);
+    setCustomers(previous=>{const next=previous.map(c=>c.id===saved.id?saved:c);saveCustomers(next);return next;});
+  };
+  const persistPaymentVoucher=async(voucher:HotelVoucher)=>{
+    const saved=await api.updateOpsVoucher(voucher.id,voucher);
+    const nextVouchers=vouchers.map(v=>v.id===saved.id?saved:v);
+    setVouchers(nextVouchers);saveVouchers(nextVouchers);
+    const related=nextVouchers.filter(v=>v.customerId===saved.customerId);
+    const cost=related.reduce((sum,v)=>sum+(v.totalCost||0),0),paid=related.reduce((sum,v)=>sum+(v.paidAmount||0),0);
+    setCustomers(previous=>{const next=previous.map((c):Customer=>c.id===saved.customerId?{...c,hotelTotalCost:cost,hotelPaymentAmount:paid,hotelPaymentStatus:cost>0&&paid>=cost?'Paid to Hotel':paid>0?'Partially Paid':'Pending'}:c);saveCustomers(next);return next;});
+  };
+
   // Initial Data Load from Backend API
   const loadData = async () => {
+    setIsLoadingData(true);setLoadError('');
     try {
-      const custs = await api.fetchOpsCustomers();
-      const [vouches, itins] = await Promise.all([
-        api.fetchOpsVouchers(custs),
-        api.fetchOpsItineraries(),
-      ]);
+      const [custs,vouches,itins]=await Promise.all([api.fetchOpsCustomers(),api.fetchOpsVouchers(),api.fetchOpsItineraries()]);
 
       setCustomers(custs);
       setVouchers(vouches);
@@ -168,7 +181,8 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
       }
     } catch (err) {
       console.error('Failed loading operations data:', err);
-    }
+      setLoadError((err as Error).message||'Operations data could not be loaded.');
+    } finally {setIsLoadingData(false);}
   };
 
   useEffect(() => {
@@ -413,6 +427,8 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
 
           <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
             
+            {isLoadingData&&<div role="status" className="rounded-xl p-4 bg-surface border border-line text-secondary">Loading operations data…</div>}
+            {loadError&&<div role="alert" className="rounded-xl p-4 bg-danger-soft border border-danger-line text-danger-ink flex items-center justify-between gap-3"><span>{loadError}</span><button type="button" onClick={loadData} className="px-4 py-2 rounded-lg bg-surface border border-line">Retry</button></div>}
             {/* 1. Customer Option */}
             {activeTab === 'customer' && (
               <CustomerModule
@@ -507,8 +523,8 @@ export default function App({ activeTab: externalActiveTab, onTabChange, hideSid
                 vouchers={vouchers}
                 searchTerm={searchTerm}
                 isReadOnly={isReadOnly}
-                onUpdateCustomer={handleUpdateSingleCustomer}
-                onUpdateVoucher={handleUpdateSingleVoucher}
+                onUpdateCustomer={persistPaymentCustomer}
+                onUpdateVoucher={persistPaymentVoucher}
                 onOpenShareModal={(msg) => {
                   setShareText(msg);
                   setIsShareModalOpen(true);

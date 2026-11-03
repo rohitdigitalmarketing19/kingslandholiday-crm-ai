@@ -8,53 +8,35 @@ import { withDbPersistenceBatch, getDb, saveDb, runQuery, queryAll, queryOne } f
 import { getLeadById } from './leadsController';
 import { syncConvertedLeadsToOps } from './opsController';
 import { generateNextTripId } from './settingsController';
-async function saveInclusions(quoteId: string, inclusions: any) {
-    if (!inclusions)
-        return;
-    await runQuery('DELETE FROM quote_inclusions WHERE quote_id = ?', [quoteId]);
-    if (inclusions.accommodation) {
-        for (const s of ['single', 'double', 'triple']) {
-            const e = inclusions.accommodation[s];
-            if (e)
-                await runQuery('INSERT INTO quote_inclusions (quote_id, category, sub_category, included, comments) VALUES (?,?,?,?,?)', [quoteId, 'accommodation', s, e.included ? 1 : 0, e.comments || '']);
-        }
-    }
-    if (inclusions.mealPlan) {
-        for (const s of ['breakfast', 'lunch', 'dinner']) {
-            const e = inclusions.mealPlan[s];
-            if (e)
-                await runQuery('INSERT INTO quote_inclusions (quote_id, category, sub_category, included, comments) VALUES (?,?,?,?,?)', [quoteId, 'mealPlan', s, e.included ? 1 : 0, e.comments || '']);
-        }
-    }
-    if (inclusions.transfer) {
-        for (const s of ['arrival', 'departure']) {
-            const e = inclusions.transfer[s];
-            if (e)
-                await runQuery('INSERT INTO quote_inclusions (quote_id, category, sub_category, included, comments) VALUES (?,?,?,?,?)', [quoteId, 'transfer', s, e.included ? 1 : 0, e.comments || '']);
-        }
-    }
-    for (const c of ['sightseeing', 'taxes', 'tollParking', 'tripSupplements']) {
-        const e = inclusions[c];
-        if (e)
-            await runQuery('INSERT INTO quote_inclusions (quote_id, category, sub_category, included, comments) VALUES (?,?,?,?,?)', [quoteId, c, null, e.included ? 1 : 0, e.comments || '']);
-    }
+async function insertRows(table:string,columns:string[],rows:any[][]){
+    // Keep image-bearing inserts below a conservative packet size.
+    let batch:any[][]=[],bytes=0;
+    const flush=async()=>{if(!batch.length)return;await runQuery('INSERT INTO '+table+' ('+columns.join(',')+') VALUES '+batch.map(()=> '('+columns.map(()=>'?').join(',')+')').join(','),batch.flat());batch=[];bytes=0;};
+    for(const row of rows){const size=Buffer.byteLength(JSON.stringify(row));if(batch.length&&(bytes+size>1000000||batch.length>=100))await flush();batch.push(row);bytes+=size;}
+    await flush();
 }
-async function saveHotels(quoteId: string, hotels: any[]) {
-    if (!Array.isArray(hotels))
-        return;
-    await runQuery('DELETE FROM quote_hotels WHERE quote_id = ?', [quoteId]);
-    await asyncForEach(hotels, async (h, i) => await runQuery('INSERT INTO quote_hotels (quote_id, hotel_name, city, category, room_type, comments, nights, selected_night_indices, sort_order, meal_plan) VALUES (?,?,?,?,?,?,?,?,?,?)', [quoteId, h.hotelName || '', h.city || '', h.category || '4 Star', h.roomType || 'Standard Room', h.comments || '', h.nights ?? 0, JSON.stringify(h.selectedNightIndices || []), i, h.mealPlan || '']));
+async function saveInclusions(quoteId:string,inclusions:any){
+    if(!inclusions)return;
+    await runQuery('DELETE FROM quote_inclusions WHERE quote_id=?',[quoteId]);
+    const rows:any[][]=[];
+    for(const [category,subs] of Object.entries({accommodation:['single','double','triple'],mealPlan:['breakfast','lunch','dinner'],transfer:['arrival','departure']}))
+        for(const sub of subs){const entry=inclusions[category]?.[sub];if(entry)rows.push([quoteId,category,sub,entry.included?1:0,entry.comments||'']);}
+    for(const category of ['sightseeing','taxes','tollParking','tripSupplements']){const entry=inclusions[category];if(entry)rows.push([quoteId,category,null,entry.included?1:0,entry.comments||'']);}
+    await insertRows('quote_inclusions',['quote_id','category','sub_category','included','comments'],rows);
 }
-async function saveItineraryDays(quoteId: string, itinerary: any[]) {
-    if (!Array.isArray(itinerary))
-        return;
-    await runQuery('DELETE FROM quote_itinerary_days WHERE quote_id = ?', [quoteId]);
-    await asyncForEach(itinerary, async (d) => {
-        const img = d.imageUrl || d.image_url || d.img || '';
-        await runQuery('INSERT INTO quote_itinerary_days (quote_id, day_number, title, description, image_url) VALUES (?,?,?,?,?)', [quoteId, d.day || 1, d.title || '', d.description || '', img]);
-    });
+async function saveHotels(quoteId:string,hotels:any[]){
+    if(!Array.isArray(hotels))return;
+    await runQuery('DELETE FROM quote_hotels WHERE quote_id=?',[quoteId]);
+    await insertRows('quote_hotels',['quote_id','hotel_name','city','category','room_type','comments','nights','selected_night_indices','sort_order','meal_plan'],hotels.map((h,i)=>[quoteId,h.hotelName||'',h.city||'',h.category||'4 Star',h.roomType||'Standard Room',h.comments||'',h.nights??0,JSON.stringify(h.selectedNightIndices||[]),i,h.mealPlan||'']));
 }
-export async function createQuote(leadId: string, data: any) {
+async function saveItineraryDays(quoteId:string,itinerary:any[]){
+    if(!Array.isArray(itinerary))return;
+    await runQuery('DELETE FROM quote_itinerary_days WHERE quote_id=?',[quoteId]);
+    await insertRows('quote_itinerary_days',['quote_id','day_number','title','description','image_url'],itinerary.map(d=>[quoteId,d.day||1,d.title||'',d.description||'',d.imageUrl||d.image_url||d.img||'']));
+}
+export async function createQuote(leadId: string,data:any){return withDbPersistenceBatch(()=>createQuoteRecord(leadId,data));}
+async function createQuoteRecord(leadId:string,data:any){
+    if(data.imagesDeferred)throw Object.assign(new Error('Load the full quotation before saving so its images are preserved.'),{status:400});
     data=reconcileQuoteStays(data);
     await assertTripEditable(leadId);
     const alternative = normalizeHotelAlternative(data.hotelAlternative);
@@ -86,10 +68,11 @@ export async function createQuote(leadId: string, data: any) {
     if (lead && (lead.status === 'New' || lead.status === 'Qualified')) {
         await runQuery('UPDATE leads SET status = ?, last_follow_up = ? WHERE id = ?', ['Itinerary Sent', now, leadId]);
     }
-    await syncConvertedLeadsToOps();
+    await syncConvertedLeadsToOps(leadId);
     return await getLeadById(leadId);
 }
 export async function updateQuote(leadId: string, quoteId: string, data: any, actor = 'system') {
+    if(data.imagesDeferred)throw Object.assign(new Error('Load the full quotation before saving so its images are preserved.'),{status:400});
     await assertTripEditable(leadId);
     const existing = await queryOne('SELECT lead_id FROM quotes WHERE id=?', [quoteId]);
     if (existing && existing.lead_id !== leadId)
@@ -121,7 +104,7 @@ export async function updateQuote(leadId: string, quoteId: string, data: any, ac
         }
     });
     saveDb();
-    await syncConvertedLeadsToOps();
+    await syncConvertedLeadsToOps(leadId);
     return await getLeadById(leadId);
 }
 async function updateQuoteDetails(leadId: string, quoteId: string, data: any) {

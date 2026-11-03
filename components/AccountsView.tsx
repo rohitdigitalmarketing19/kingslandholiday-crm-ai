@@ -464,9 +464,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
           cabPaymentRef: c.cabPaymentRef || 'UPI-DRIVER-982',
           cabPaymentRemarks: c.cabPaymentRemarks || '',
           cabPaymentLogs: cabLogs,
-          driverName: c.driverName || 'Assigned Driver',
+          driverName: c.driverName || '',
           driverPhone: c.driverPhone || '+91 98290 12345',
-          cabModel: c.cabModel || 'Toyota Innova Crysta',
+          cabModel: c.cabModel || '',
           cabNumber: c.cabNumber || 'RJ 14 CZ 9876',
 
           opsRemarks: c.opsRemarks || c.notes || '',
@@ -787,7 +787,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               <select
                 value={monthFilter}
                 onChange={(e) => setMonthFilter(e.target.value)}
-                className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
+                className="bg-canvas text-content text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-line rounded-md px-2 py-2 cursor-pointer [color-scheme:light] dark:[color-scheme:dark] [&>option]:bg-surface [&>option]:text-content"
               >
                 <option value="all">All Months ({availableMonths.length})</option>
                 {availableMonths.map((m) => (
@@ -803,7 +803,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({ leads, isReadOnly = 
               <select
                 value={destinationFilter}
                 onChange={(e) => setDestinationFilter(e.target.value)}
-                className="bg-transparent text-sm font-semibold focus:outline-none text-content cursor-pointer"
+                className="bg-canvas text-content text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-line rounded-md px-2 py-2 cursor-pointer [color-scheme:light] dark:[color-scheme:dark] [&>option]:bg-surface [&>option]:text-content"
               >
                 <option value="all">All Destinations ({uniqueDestinations.length})</option>
                 {uniqueDestinations.map((d) => (

@@ -4,7 +4,7 @@ import { getAllLeads, getLeadById, createLead, updateLeadStatus, deleteLead, upd
 const router = asyncRouter(Router());
 router.get('/', async (req: Request, res: Response) => {
     try {
-        res.json(await getAllLeads({ status: req.query.status as string, assignedTo: res.locals.allowedOwners || req.query.assignedTo as string, search: req.query.search as string }));
+        res.json(await getAllLeads({ includeImages:req.query.includeImages!=='false', status: req.query.status as string, assignedTo: res.locals.allowedOwners || req.query.assignedTo as string, search: req.query.search as string }));
     }
     catch (err) {
         console.error(err);

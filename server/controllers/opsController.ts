@@ -2,10 +2,10 @@ import {asyncMap} from '../utils/asyncCollections';
 import { randomUUID } from 'crypto';
 import { moneyPaise } from '../services/receipts';
 import { collectedPaise, recordReceipt } from '../services/receipts';
-import { runQuery, queryAll, queryOne } from '../db/connection';
+import { runQuery, queryAll, queryOne, getDb, withDbPersistenceBatch } from '../db/connection';
 import { INITIAL_CUSTOMERS, INITIAL_HOTEL_VOUCHERS, INITIAL_ITINERARIES } from '../../operations-team-portal/src/data/mockData';
 // --- Hydration Helpers ---
-async function hydrateCustomer(row: any): Promise<any> {
+async function hydrateCustomer(row: any, cache?: any): Promise<any> {
     if (!row)
         return null;
     const customer = {
@@ -68,9 +68,9 @@ async function hydrateCustomer(row: any): Promise<any> {
         createdAt: row.created_at,
         installments: [],
     };
-    const instRows = await queryAll('SELECT * FROM ops_customer_installments WHERE customer_id = ? ORDER BY installment_number ASC', [customer.id]) || [];
+    const instRows = cache ? cache.installments.get(customer.id) || [] : await queryAll('SELECT oi.*,pi.paid_amount AS source_paid FROM ops_customer_installments oi LEFT JOIN payment_installments pi ON pi.id=oi.id WHERE oi.customer_id=? ORDER BY oi.installment_number',[customer.id]);
     customer.installments = await asyncMap(instRows, async (inst: any) => ({
-        paidAmount: (await queryOne('SELECT paid_amount FROM payment_installments WHERE id=?', [inst.id]))?.paid_amount || 0,
+        paidAmount: Number(inst.source_paid || 0),
         id: inst.id,
         installmentNumber: inst.installment_number,
         title: inst.title,
@@ -82,8 +82,8 @@ async function hydrateCustomer(row: any): Promise<any> {
         transactionRef: inst.transaction_ref || undefined,
         notes: inst.notes || undefined,
     }));
-    const linkedLead = await queryOne('SELECT id FROM leads WHERE trip_id=? OR id=?', [customer.bookingId, customer.id.replace(/^cust-/, '')]);
-    (customer as any).receivedAmount = linkedLead ? await collectedPaise(linkedLead.id) / 100 : 0;
+    const linkedLead = cache ? cache.leads.get(customer.bookingId) || cache.leads.get(customer.id.replace(/^cust-/, '')) : await queryOne('SELECT id FROM leads WHERE trip_id=? OR id=?', [customer.bookingId, customer.id.replace(/^cust-/, '')]);
+    (customer as any).receivedAmount = linkedLead ? (cache ? (cache.collected.get(linkedLead.id)||0)+(linkedLead.trip_id!==linkedLead.id?(cache.collected.get(linkedLead.trip_id)||0):0) : await collectedPaise(linkedLead.id)/100) : 0;
     return customer;
 }
 function hydrateVoucher(row: any): any {
@@ -127,7 +127,7 @@ function hydrateVoucher(row: any): any {
         })(),
     };
 }
-async function hydrateItinerary(row: any): Promise<any> {
+async function hydrateItinerary(row: any, activities?: any[]): Promise<any> {
     if (!row)
         return null;
     const itinerary: any = {
@@ -149,7 +149,7 @@ async function hydrateItinerary(row: any): Promise<any> {
         reviewCollected: !!row.review_collected,
         days: [],
     };
-    const rawActivities = await queryAll('SELECT * FROM ops_daily_activities WHERE itinerary_id = ? ORDER BY day_number ASC, time_slot ASC', [row.id]);
+    const rawActivities = activities ?? await queryAll('SELECT * FROM ops_daily_activities WHERE itinerary_id = ? ORDER BY day_number ASC, time_slot ASC', [row.id]);
     // Group activities by day
     const daysMap = new Map<number, any>();
     for (const act of rawActivities) {
@@ -184,9 +184,9 @@ async function hydrateItinerary(row: any): Promise<any> {
     return itinerary;
 }
 // --- Sync Converted Leads into Operations Desk ---
-export async function syncConvertedLeadsToOps() {
+export async function syncConvertedLeadsToOps(leadId?: string, missingOnly=false) {
     // 1. Fetch all converted leads from CRM database
-    const convertedLeads = await queryAll("SELECT * FROM leads WHERE status IN ('Closed Won', 'CONVERTED', 'Won', 'Converted') OR LOWER(status) LIKE '%won%' OR LOWER(status) LIKE '%converted%'") || [];
+    const convertedLeads = await queryAll("SELECT * FROM leads WHERE (status IN ('Closed Won', 'CONVERTED', 'Won', 'Converted') OR LOWER(status) LIKE '%won%' OR LOWER(status) LIKE '%converted%')"+(leadId?' AND id=?':'')+(missingOnly?" AND NOT EXISTS (SELECT 1 FROM ops_customers c WHERE c.id='cust-' || leads.id OR c.booking_id=leads.trip_id)":''),leadId?[leadId]:[]) || [];
     console.log(`[OPS SYNC] Found ${convertedLeads.length} converted leads to sync`);
     // Reading/synchronizing operations must never erase booking or payment history.
     // Lead cancellation and archival require their own explicit lifecycle actions.
@@ -292,8 +292,6 @@ export async function syncConvertedLeadsToOps() {
                 }
             }
             // Clean up legacy auto-generated phantom milestones if they were never paid and have no explicit link
-            await runQuery("DELETE FROM payment_installments WHERE (id LIKE 'inst-%-1' OR id LIKE 'inst-%-2' OR id LIKE 'inst-%-3') AND payment_status != 'Paid' AND (pay_key = id OR pay_key = '' OR pay_key IS NULL)");
-            await runQuery("DELETE FROM ops_customer_installments WHERE (id LIKE 'inst-%-1' OR id LIKE 'inst-%-2' OR id LIKE 'inst-%-3') AND status != 'Paid'");
             dbInstallments = await queryAll("SELECT * FROM payment_installments WHERE lead_id = ? OR lead_id = ? ORDER BY created_at ASC", [lead.id, lead.trip_id || lead.id]) || [];
             if (dbInstallments.length > 0) {
                 // Rewrite ops_customer_installments cleanly matching the source of truth
@@ -393,10 +391,10 @@ export async function syncConvertedLeadsToOps() {
             // Delete orphaned vouchers
             if (currentVouchIds.length > 0) {
                 const placeholders = currentVouchIds.map(() => '?').join(',');
-                await runQuery(`DELETE FROM ops_vouchers WHERE customer_id = ? AND id NOT IN (${placeholders})`, [targetCustId, ...currentVouchIds]);
+                await runQuery(`DELETE FROM ops_vouchers WHERE customer_id = ? AND id NOT IN (${placeholders}) AND id LIKE ? AND COALESCE(paid_amount,0)=0 AND COALESCE(file_url,'')=''`, [targetCustId, ...currentVouchIds, 'vouch-'+lead.id+'-h%']);
             }
             else {
-                await runQuery(`DELETE FROM ops_vouchers WHERE customer_id = ?`, [targetCustId]);
+                await runQuery(`DELETE FROM ops_vouchers WHERE customer_id=? AND id LIKE ? AND COALESCE(paid_amount,0)=0 AND COALESCE(file_url,'')=''`,[targetCustId,'vouch-'+lead.id+'-h%']);
             }
             // --- Sync Itinerary & Daily Activities ---
             const existingItin = await queryOne("SELECT id FROM ops_itineraries WHERE customer_id = ?", [targetCustId]);
@@ -404,7 +402,7 @@ export async function syncConvertedLeadsToOps() {
             if (!existingItin) {
                 try {
                     await runQuery(`INSERT INTO ops_itineraries (id, booking_id, customer_id, customer_name, destination, start_date, end_date, readiness_air_tickets, readiness_hotel_vouchers, readiness_cab_assigned, readiness_briefing_completed, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [itinId, bookingId, targetCustId, name, destination, startDate, endDate, 0, 0, 1, 0, now]);
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [itinId, bookingId, targetCustId, name, destination, startDate, endDate, 0, 0, 0, 0, now]);
                 }
                 catch (itinErr: any) {
                     // If booking_id UNIQUE conflict, find existing and use its ID
@@ -460,7 +458,6 @@ export async function getAllOpsCustomers(filters?: {
     status?: string;
     search?: string;
 }) {
-    await syncConvertedLeadsToOps();
     let sql = 'SELECT * FROM ops_customers WHERE 1=1';
     const params: any[] = [];
     if (filters?.status) {
@@ -473,7 +470,14 @@ export async function getAllOpsCustomers(filters?: {
         params.push(term, term, term, term);
     }
     sql += ' ORDER BY created_at DESC';
-    return await asyncMap((await queryAll(sql, params)), async (r) => await hydrateCustomer(r));
+    const rows=await queryAll(sql,params);if(!rows.length)return [];
+    const ids=rows.map(r=>r.id),marks=ids.map(()=>'?').join(',');
+    const insts=await queryAll('SELECT oi.*,pi.paid_amount AS source_paid FROM ops_customer_installments oi LEFT JOIN payment_installments pi ON pi.id=oi.id WHERE oi.customer_id IN ('+marks+') ORDER BY oi.installment_number',ids);
+    const installments=new Map<string,any[]>();for(const inst of insts){const group=installments.get(inst.customer_id)||[];group.push(inst);installments.set(inst.customer_id,group);}
+    const leads=new Map();for(const lead of await queryAll('SELECT id,trip_id FROM leads')){leads.set(lead.id,lead);if(lead.trip_id)leads.set(lead.trip_id,lead);}
+    const totals=await queryAll(`SELECT lead_id,SUM(paid) AS total FROM (SELECT lead_id,paid_amount AS paid FROM payment_installments UNION ALL SELECT p.lead_id,p.paid_amount AS paid FROM payment_links p WHERE NOT EXISTS(SELECT 1 FROM payment_installments i WHERE (i.pay_key!='' AND i.pay_key=p.pay_key) OR i.id=p.id)) collected GROUP BY lead_id`);
+    const collected=new Map(totals.map(r=>[r.lead_id,Number(r.total||0)]));
+    return asyncMap(rows,r=>hydrateCustomer(r,{installments,leads,collected}));
 }
 export async function getOpsCustomerById(id: string) {
     if (!id)
@@ -660,7 +664,6 @@ export async function getAllOpsVouchers(filters?: {
     status?: string;
     search?: string;
 }) {
-    await syncConvertedLeadsToOps();
     let sql = 'SELECT * FROM ops_vouchers WHERE 1=1';
     const params: any[] = [];
     if (filters?.status) {
@@ -703,7 +706,10 @@ export async function createOpsVoucher(data: any) {
     const row = await queryOne('SELECT * FROM ops_vouchers WHERE id = ?', [id]);
     return hydrateVoucher(row);
 }
-export async function updateOpsVoucher(id: string, data: any, actor = 'system') {
+export async function updateOpsVoucher(id:string,data:any,actor='system'){
+    return withDbPersistenceBatch(async()=>{const db=getDb();await db.run('BEGIN');try{const result=await updateOpsVoucherRows(id,data,actor);await db.run('COMMIT');return result;}catch(error){await db.run('ROLLBACK');throw error;}});
+}
+async function updateOpsVoucherRows(id:string,data:any,actor:string){
     const previous = await queryOne('SELECT * FROM ops_vouchers WHERE id=?', [id]);
     if (!previous)
         return null;
@@ -754,6 +760,12 @@ export async function updateOpsVoucher(id: string, data: any, actor = 'system') 
         params.push(id);
         await runQuery(`UPDATE ops_vouchers SET ${fields.join(', ')} WHERE id = ?`, params);
     }
+    if(data.totalCost!==undefined||data.paidAmount!==undefined){
+        const totals=await queryOne('SELECT SUM(total_cost) AS cost,SUM(paid_amount) AS paid FROM ops_vouchers WHERE customer_id=?',[previous.customer_id]);
+        const totalCost=Number(totals.cost||0),paidAmount=Number(totals.paid||0);
+        const status=totalCost>0&&paidAmount>=totalCost?'Paid to Hotel':paidAmount>0?'Partially Paid':'Pending';
+        await runQuery('UPDATE ops_customers SET hotel_total_cost=?,hotel_payment_amount=?,hotel_payment_status=? WHERE id=?',[totalCost,paidAmount,status,previous.customer_id]);
+    }
     const row = await queryOne('SELECT * FROM ops_vouchers WHERE id = ?', [id]);
     return hydrateVoucher(row);
 }
@@ -777,9 +789,10 @@ export async function deleteOpsVoucher(id: string) {
 }
 // --- Itinerary & Activity Controllers ---
 export async function getAllOpsItineraries() {
-    await syncConvertedLeadsToOps();
     const rows = await queryAll('SELECT * FROM ops_itineraries ORDER BY created_at DESC');
-    return await asyncMap(rows, async (r) => await hydrateItinerary(r));
+    const activities=await queryAll('SELECT * FROM ops_daily_activities ORDER BY day_number,time_slot');
+    const groups=new Map<string,any[]>();for(const activity of activities){const group=groups.get(activity.itinerary_id)||[];group.push(activity);groups.set(activity.itinerary_id,group);}
+    return asyncMap(rows,r=>hydrateItinerary(r,groups.get(r.id)||[]));
 }
 export async function getOpsItineraryByBookingId(bookingId: string) {
     const row = await queryOne('SELECT * FROM ops_itineraries WHERE booking_id = ? OR customer_id = ?', [bookingId, bookingId]);

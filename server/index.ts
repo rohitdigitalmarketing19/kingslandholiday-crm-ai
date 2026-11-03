@@ -1,3 +1,4 @@
+import {syncConvertedLeadsToOps} from './controllers/opsController';
 import {initializeLeadFileCleanup,cleanupDeletedLeadFiles} from './services/leadFileCleanup';
 import { mysqlEnabled, mysqlRequestScope, withMysqlConnection } from './db/mysql';
 import { asyncRouter } from './utils/asyncRouter';
@@ -102,7 +103,7 @@ app.use(errorHandler);
 app.listen(PORT, '0.0.0.0', () => console.log(`CRM listening on port ${PORT}; database status: ${startupState}`));
 databaseReady = initDb().then(async () => {
     await initializeDatabase();
-    const cleanup = async () => { await initializeLeadFileCleanup(); await cleanupDeletedLeadFiles(); };
+    const cleanup = async () => { await initializeLeadFileCleanup(); await cleanupDeletedLeadFiles(); await syncConvertedLeadsToOps(undefined,true); };
     await (mysqlEnabled() ? withMysqlConnection(cleanup) : cleanup());
     startupState = 'ready';
     console.log('CRM database ready.');

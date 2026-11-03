@@ -6,6 +6,7 @@ import { normalizeHotelAlternative } from '../../utils/hotelOptions';
 import { getDb, withDbPersistenceBatch, runQuery, queryAll, queryOne } from '../db/connection';
 async function hydrateLead(row: any, cache?:any): Promise<any> {
     const lead: any = {
+        imagesDeferred: !!cache?.imagesDeferred,
         bookingTotal: cache ? (cache.booking.get(row.id) ?? null) : await (async () => { const b = await queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?', [row.id]); return b ? b.total_paise / 100 : null; })(),
         tripCompleted: cache ? cache.completed.has(row.id) : !!await queryOne("SELECT id FROM ops_customers WHERE (id=? OR booking_id=?) AND lower(status)='completed'", ['cust-' + row.id, row.trip_id]),
         id: row.id, tripId: row.trip_id, name: row.name, phone: row.phone || '', email: row.email || '',
@@ -40,10 +41,11 @@ async function hydrateLead(row: any, cache?:any): Promise<any> {
 }
 async function hydrateQuote(row: any, cache?:any): Promise<any> {
     const quote: any = {
+        imagesDeferred: !!cache?.imagesDeferred,
         id: row.id, packageTitle: row.package_title || '', finalSellingPrice: row.final_selling_price || 0,
         hotelAlternative: row.hotel_alternative ? normalizeHotelAlternative(JSON.parse(row.hotel_alternative)) : null,
         visaCost: row.visa_cost || 0, flightCost: row.flight_cost || 0, landPackageCost: row.land_package_cost || 0,
-        marketingFees: row.marketing_fees || 0, discountPercentage: row.discount_percentage || 0, nights: row.nights || 6,
+        marketingFees: row.marketing_fees || 0, discountPercentage: row.discount_percentage || 0, nights: row.nights ?? 6,
         hotelsNotIncluded: !!row.hotels_not_included, flightsNotIncluded: !!row.flights_not_included,
         cabsNotIncluded: !!row.cabs_not_included, flightDetails: row.flight_details || '', cabDetails: row.cab_details || '',
         otherInclusions: row.other_inclusions || '', otherExclusions: row.other_exclusions || '',
@@ -85,12 +87,15 @@ async function hydrateQuote(row: any, cache?:any): Promise<any> {
     return quote;
 }
 export async function getAllLeads(filters?: {
+    id?: string;
+    includeImages?: boolean;
     status?: string;
     assignedTo?: string | string[];
     search?: string;
 }) {
     let query = 'SELECT * FROM leads WHERE 1=1';
     const params: any[] = [];
+    if(filters?.id){query+=' AND id=?';params.push(filters.id);}
     if (filters?.status) {
         query += ' AND status = ?';
         params.push(filters.status);
@@ -114,18 +119,17 @@ export async function getAllLeads(filters?: {
     const group=(values:any[],key:string)=>{const map=new Map<string,any[]>();for(const value of values){const list=map.get(value[key]) || [];list.push(value);map.set(value[key],list);}return map;};
     const quoteRows=await queryAll('SELECT * FROM quotes WHERE lead_id IN ('+marks+') ORDER BY created_at',ids);
     const qids=quoteRows.map(q=>q.id),qm=qids.map(()=>'?').join(',');
-    const cache={booking:new Map((await queryAll('SELECT lead_id,total_paise FROM booking_snapshots WHERE lead_id IN ('+marks+')',ids)).map(b=>[b.lead_id,b.total_paise/100])),
+    const cache={imagesDeferred:filters?.includeImages===false,booking:new Map((await queryAll('SELECT lead_id,total_paise FROM booking_snapshots WHERE lead_id IN ('+marks+')',ids)).map(b=>[b.lead_id,b.total_paise/100])),
       completed:new Set((await queryAll("SELECT l.id FROM leads l JOIN ops_customers c ON c.id='cust-' || l.id OR c.booking_id=l.trip_id WHERE lower(c.status)='completed' AND l.id IN ("+marks+")",ids)).map(l=>l.id)),
       docs:new Map((await queryAll('SELECT lead_id,COUNT(*) AS count FROM client_documents WHERE deleted_at IS NULL AND lead_id IN ('+marks+') GROUP BY lead_id',ids)).map(r=>[r.lead_id,r.count])),
       notes:group(await queryAll('SELECT * FROM lead_notes WHERE lead_id IN ('+marks+') ORDER BY timestamp',ids),'lead_id'),quotes:group(quoteRows,'lead_id'),
       hotels:group(qids.length?await queryAll('SELECT * FROM quote_hotels WHERE quote_id IN ('+qm+') ORDER BY sort_order',qids):[],'quote_id'),
       inclusions:group(qids.length?await queryAll('SELECT * FROM quote_inclusions WHERE quote_id IN ('+qm+')',qids):[],'quote_id'),
-      days:group(qids.length?await queryAll('SELECT * FROM quote_itinerary_days WHERE quote_id IN ('+qm+') ORDER BY day_number',qids):[],'quote_id')};
+      days:group(qids.length?await queryAll((filters?.includeImages===false?"SELECT id,quote_id,day_number,title,description,'' AS image_url":'SELECT *')+' FROM quote_itinerary_days WHERE quote_id IN ('+qm+') ORDER BY day_number',qids):[],'quote_id')};
     return asyncMap(rows,(row:any)=>hydrateLead(row,cache));
 }
 export async function getLeadById(id: string) {
-    const row = await queryOne('SELECT * FROM leads WHERE id = ?', [id]);
-    return row ? await hydrateLead(row) : null;
+    return (await getAllLeads({id}))[0] || null;
 }
 import { generateNextTripId } from './settingsController';
 export async function createLead(data: any, actor = 'system') {
@@ -200,8 +204,8 @@ export async function updateLeadStatus(id: string, status: string, extra?: {
     else {
         result = await runQuery('UPDATE leads SET status = ?, last_follow_up = ? WHERE id = ?', [status, now, id]);
     }
-    if (status === 'Closed Won') {
-        await syncConvertedLeadsToOps();
+    if (['Closed Won','Won','Converted','CONVERTED'].includes(status)) {
+        await syncConvertedLeadsToOps(id);
     }
     return result.changes > 0 ? await getLeadById(id) : null;
 }
@@ -260,6 +264,7 @@ export async function updateLeadTravelers(id: string, adults: number, children: 
     }
     params.push(id);
     await runQuery(`UPDATE leads SET ${fields.join(', ')} WHERE id = ?`, params);
+    await syncConvertedLeadsToOps(id);
     return await getLeadById(id);
 }
 export async function deleteLead(id: string, actor='system') {

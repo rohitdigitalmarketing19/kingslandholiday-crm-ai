@@ -166,10 +166,10 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
             title: idx === 0 ? `Airport / Station Pickup & Hotel Transfer` : `Morning ${activeCustomer.destination} Sightseeing`,
             description: `Private cab pick-up from designated point. Guided tour and scenic drive.`,
             location: activeCustomer.destination,
-            driverName: idx % 2 === 0 ? (activeCustomer.driverName || 'Rajesh Sharma') : 'Suresh Kumar',
-            driverPhone: idx % 2 === 0 ? (activeCustomer.driverPhone || '+91 98290 12345') : '+91 98765 43210',
-            cabModel: idx % 2 === 0 ? (activeCustomer.cabModel || 'Toyota Innova Crysta') : 'Swift Dzire AC',
-            cabNumber: idx % 2 === 0 ? (activeCustomer.cabNumber || 'RJ 14 CZ 9876') : 'RJ 14 TA 5544',
+            driverName: activeCustomer.driverName || '',
+            driverPhone: activeCustomer.driverPhone || '',
+            cabModel: activeCustomer.cabModel || '',
+            cabNumber: activeCustomer.cabNumber || '',
             status: 'Pending'
           },
           {
@@ -186,10 +186,10 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
   const handleOpenEditDayDriver = (dayNum: number, currentRemark?: string, currentDriver?: string, currentPhone?: string, currentCab?: string, currentReg?: string) => {
     setEditingDayNum(dayNum);
     setDayDriverForm({
-      driverName: currentDriver || activeCustomer.driverName || 'Rajesh Sharma',
-      driverPhone: currentPhone || activeCustomer.driverPhone || '+91 98290 12345',
-      cabModel: currentCab || activeCustomer.cabModel || 'Toyota Innova Crysta',
-      cabNumber: currentReg || activeCustomer.cabNumber || 'RJ 14 CZ 9876',
+      driverName: currentDriver || activeCustomer.driverName || '',
+      driverPhone: currentPhone || activeCustomer.driverPhone || '',
+      cabModel: currentCab || activeCustomer.cabModel || '',
+      cabNumber: currentReg || activeCustomer.cabNumber || '',
       dayRemark: currentRemark || ''
     });
   };
@@ -497,10 +497,10 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
               </span>
             </div>
             <div className="text-lg font-semibold text-content">
-              ₹{(activeCustomer.cabTotalCost || activeCustomer.cabPaymentAmount || Math.round((activeCustomer.totalAmount || 0) * 0.2)).toLocaleString()}
+              ₹{(activeCustomer.cabTotalCost || 0).toLocaleString()}
             </div>
             <p className="text-xs text-secondary font-semibold">
-              Mode: {activeCustomer.cabPaymentMode || 'UPI / Cash'}
+              Mode: {activeCustomer.cabPaymentMode || 'Not recorded'}
               {activeCustomer.cabPaymentRef && ` • Ref: ${activeCustomer.cabPaymentRef}`}
             </p>
           </div>
@@ -514,7 +514,7 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
               <span className="text-xs uppercase font-bold text-brand-ink">Internal</span>
             </div>
             <p className="text-sm text-content font-medium italic line-clamp-3 leading-relaxed">
-              {activeCustomer.opsRemarks || activeCustomer.specialRequests || 'Operations briefing completed. Guest requested early check-in.'}
+              {activeCustomer.opsRemarks || activeCustomer.specialRequests || 'No operations remarks added.'}
             </p>
           </div>
 
@@ -546,6 +546,8 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
             >
               {/* DAY ACCORDION HEADER */}
               <div
+                role="button" tabIndex={0} aria-expanded={isExpanded}
+                onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDayAccordion(day.dayNumber);}}}
                 onClick={() => toggleDayAccordion(day.dayNumber)}
                 className="p-4 bg-gradient-to-r from-line via-line to-line text-white cursor-pointer flex flex-wrap items-center justify-between gap-3 hover:bg-inverse transition-colors"
               >
@@ -612,33 +614,15 @@ export const DayWiseTripModule: React.FC<DayWiseTripModuleProps> = ({
                             {act.description || `Sightseeing tour and local exploration.`}
                           </p>
 
-                          {/* ASSIGNED DRIVER & CAR FOR THIS SPECIFIC DAY / LEG */}
-                          <div className="mt-2 p-3 rounded-xl bg-success-soft/80 border border-success-line text-sm flex flex-wrap items-center justify-between gap-3">
-                            <div className="flex items-center gap-2 font-semibold text-success-ink">
-                              <Car className="w-4 h-4 text-success-ink" />
-                              <span>Day {day.dayNumber} Assigned Cab: <strong>{act.cabModel || activeCustomer.cabModel || 'Toyota Innova Crysta'}</strong> ({act.cabNumber || activeCustomer.cabNumber || 'RJ 14 CZ 9876'})</span>
+                          {/* Only actual saved assignments are displayed. */}
+                          <div className="mt-2 p-3 rounded-xl bg-canvas border border-line text-sm flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex flex-col gap-2">
+                              {(act.cabModel || act.cabNumber || activeCustomer.cabModel || activeCustomer.cabNumber) && <div className="flex items-center gap-2 text-content"><Car className="w-4 h-4 text-secondary" /><span>{act.cabModel || activeCustomer.cabModel}{(act.cabNumber || activeCustomer.cabNumber) && <span className="ml-2 font-mono text-secondary">{act.cabNumber || activeCustomer.cabNumber}</span>}</span></div>}
+                              {(act.driverName || activeCustomer.driverName) && <span className="text-content">Driver: <strong>{act.driverName || activeCustomer.driverName}</strong></span>}
+                              {(act.driverPhone || activeCustomer.driverPhone) && <a href={`tel:${act.driverPhone || activeCustomer.driverPhone}`} className="text-brand-ink flex items-center gap-2"><Phone className="w-3 h-3" />{act.driverPhone || activeCustomer.driverPhone}</a>}
+                              {![act.driverName,act.driverPhone,act.cabModel,act.cabNumber,activeCustomer.driverName,activeCustomer.driverPhone,activeCustomer.cabModel,activeCustomer.cabNumber].some(Boolean) && <span className="text-secondary">Driver and cab not assigned</span>}
                             </div>
-
-                            <div className="flex flex-wrap items-center gap-3">
-                              <div className="flex items-center gap-2 font-semibold text-content">
-                                <span>Driver: <strong>{act.driverName || activeCustomer.driverName || 'Rajesh Sharma'}</strong></span>
-                                <a
-                                  href={`tel:${act.driverPhone || activeCustomer.driverPhone || '+91 98290 12345'}`}
-                                  className="text-success-ink hover:underline flex items-center gap-1 font-mono font-bold"
-                                >
-                                  <Phone className="w-3 h-3" />
-                                  {act.driverPhone || activeCustomer.driverPhone || '+91 98290 12345'}
-                                </a>
-                              </div>
-
-                              <button
-                                onClick={() => handleOpenEditDayDriver(day.dayNumber, day.dayRemark, act.driverName, act.driverPhone, act.cabModel, act.cabNumber)}
-                                className="px-2.5 py-1 rounded-lg bg-success-strong hover:bg-success-strong text-white font-bold text-xs flex items-center gap-1 shadow-2xs"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit Day Remark & Driver</span>
-                              </button>
-                            </div>
+                            <button onClick={()=>handleOpenEditDayDriver(day.dayNumber,day.dayRemark,act.driverName,act.driverPhone,act.cabModel,act.cabNumber)} className="px-3 py-2 rounded-lg bg-surface border border-line text-brand-ink font-semibold text-sm flex items-center gap-2"><Edit3 className="w-3 h-3" />Edit day details</button>
                           </div>
 
                         </div>

@@ -18,6 +18,7 @@ export interface LeadNote {
 }
 
 export interface Lead {
+  imagesDeferred?: boolean;
   tripCompleted?: boolean;
   id: string;
   tripId: string; 
