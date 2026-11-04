@@ -563,7 +563,6 @@ const App: React.FC = () => {
   });
 
   const [previewAnalysis, setPreviewAnalysis] = useState<Partial<Lead> | null>(null);
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [agentFormData, setAgentFormData] = useState({
@@ -1832,7 +1831,7 @@ const App: React.FC = () => {
                       <label className="block text-xs font-medium text-secondary mb-1">Travel Date</label>
                       <div className="relative flex items-center">
                         <Calendar className="w-4 h-4 text-muted absolute left-3 pointer-events-none z-10" />
-                        <input type="date" min={todayStr} className="w-full bg-canvas border border-line rounded-lg pl-9 pr-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
+                        <input type="date" className="w-full bg-canvas border border-line rounded-lg pl-9 pr-3 py-2 text-sm text-content dark:text-zinc-100 font-medium outline-none focus:border-brand-line focus:bg-surface transition-all cursor-pointer" value={formData.travelDate} onChange={e => setFormData({...formData, travelDate: e.target.value})} />
                       </div>
                     </div>
 

@@ -1,3 +1,4 @@
+import { isConvertedLead } from '../utils/leadConversion';
 import { manualProposalTerms, PROPOSAL_TERM_SECTIONS } from '../utils/proposalTerms';
 import { quoteMealPlan } from '../utils/hotelOptions';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
@@ -51,7 +52,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
   const [pendingStatus, setPendingStatus] = useState<{ label: string; status: Lead['status']; color: string; bg: string } | null>(null);
 
-  const isConverted = lead?.status === 'Closed Won' || (lead?.status as any) === 'Converted';
+  const isConverted = isConvertedLead(lead?.status);
   const [leadViewTab, setLeadViewTab] = useState<'proposal' | 'documents' | 'client_details'>('proposal');
   const [docsCount, setDocsCount] = useState<number>(0);
   const [leadTravellers, setLeadTravellers] = useState<api.LeadTraveller[]>([]);
@@ -350,14 +351,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
             { title: '3rd Installment - Final Balance', amount: part3, dueDate: lead.travelDate || '', paymentCondition: '15 days before departure' },
           ];
           setLeadInstallments(newInsts);
-          if (hasOnlyZero && pkgPrice > 0) {
+          if (isConverted && hasOnlyZero && pkgPrice > 0) {
             api.saveInstallmentSchedule(lead.id, newInsts).catch(() => {});
           }
         }
       });
       api.fetchPaymentSettings().then(setPaymentSettings);
     }
-  }, [lead?.id, currentQuote?.finalSellingPrice]);
+  }, [lead?.id, currentQuote?.finalSellingPrice, isConverted]);
 
 
   const handlePresetEMISchedule = (ratio: '30-40-30' | '50-50') => {
@@ -382,6 +383,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   };
 
   const handleSaveInstallmentSchedule = async () => {
+    if (!isConverted) return;
     if (!lead?.id) return;
     setIsSavingInstallments(true);
     try {

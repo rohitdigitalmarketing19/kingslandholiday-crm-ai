@@ -56,6 +56,15 @@ const root = path.resolve(__dirname, '..');
         const quote = { id: 'qa-sec-quote', packageTitle: 'QA secure quote', finalSellingPrice: 10000, nights: 2 };
         await request('/leads/qa-sec/quotes', 'POST', quote, admin);
         await check('Conversion requires explicit acceptance even with a saved quote', async () => assert.equal((await request('/leads/qa-sec/status', 'PATCH', { status: 'Closed Won' }, admin)).status, 400));
+        await check('EMI creation is blocked for an unconverted lead with a priced quote', async () => {
+            const res = await request('/payments/installments', 'POST', {
+                leadId: 'QA-SEC',
+                installments: [{ title: 'Advance', amount: 10000, due_date: '2026-12-01' }]
+            }, admin);
+            assert.equal(res.status, 409);
+            assert.match(res.data.error, /only be created for converted leads/);
+            assert.equal(await db.queryOne("SELECT id FROM payment_installments WHERE lead_id='qa-sec'"), null);
+        });
         await check('Explicit acceptance converts and captures immutable total', async () => { assert.equal((await request('/leads/qa-sec/quotes/qa-sec-quote/accept', 'POST', {}, admin)).status, 200); assert.equal((await db.queryOne("SELECT total_paise FROM booking_snapshots WHERE lead_id='qa-sec'")).total_paise, 1000000); });
         await check('Accepted quote supports audited edits before completion and cannot be deleted', async () => { assert.equal((await request('/leads/qa-sec/quotes/qa-sec-quote', 'PUT', { ...quote, packageTitle:'Revised itinerary' }, admin)).status, 200); assert.ok(await db.queryOne("SELECT id FROM workflow_events WHERE parent_id='qa-sec' AND event='Quotation revised'")); assert.ok((await request('/leads/qa-sec/quotes/qa-sec-quote', 'DELETE', null, admin)).status >= 400); });
         await check('Creation payload cannot bypass conversion', async () => assert.equal((await request('/leads', 'POST', { id: 'qa-bypass', name: 'Bad', status: 'Closed Won' }, admin)).status, 400));

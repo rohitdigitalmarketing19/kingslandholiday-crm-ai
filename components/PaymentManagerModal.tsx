@@ -1,3 +1,4 @@
+import { isConvertedLead } from '../utils/leadConversion';
 import { PaymentWorkspace, PaymentLinksTable, PaymentReviewTable, money } from './PaymentWorkspace';
 import React, { useState, useEffect, useRef } from 'react';
 import { Lead } from '../types';
@@ -116,6 +117,8 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [targetLead, setTargetLead] = useState<Lead | null>(lead || null);
+  const emiLead = targetLead || lead;
+  const canCreateEmi = isConvertedLead(emiLead?.status);
   const [emiSearchQuery, setEmiSearchQuery] = useState<string>('');
   const [showPaidLinks, setShowPaidLinks] = useState<boolean>(false);
   const [showCreateChoiceModal, setShowCreateChoiceModal] = useState<boolean>(false);
@@ -295,6 +298,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   };
 
   const handleCreateInstallmentLink = async (indexToSave?: number) => {
+    if (!canCreateEmi) {
+      showLocalToast('EMI links can only be created for converted leads.', 'error');
+      return;
+    }
     const targetId = targetLead?.id || lead?.id;
     if (!targetId) {
       alert('Please select a Lead / Trip ID first to create installment links.');
@@ -369,6 +376,10 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
   };
 
   const handleSaveInstallments = async () => {
+    if (!canCreateEmi) {
+      showLocalToast('EMI links can only be created for converted leads.', 'error');
+      return;
+    }
     const targetId = targetLead?.id || lead?.id;
     if (!targetId) {
       alert('Please select a Lead / Trip ID first to attach the installment schedule.');
@@ -681,16 +692,16 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                        <span className="text-xs font-semibold text-brand-ink uppercase tracking-widest block mb-1">SEARCH CUSTOMER & TRIP ID</span>
-                       <h4 className="text-base font-semibold text-content">Choose a trip to manage installments</h4>
+                       <h4 className="text-base font-semibold text-content">Choose a converted lead to manage installments</h4>
                     </div>
                     <div className="w-full md:w-80">
                        <select 
-                         aria-label="Select customer or trip" value={selectedTripId} 
+                         aria-label="Select customer or trip" value={canCreateEmi ? selectedTripId : ''}
                          onChange={e => handleSelectTripId(e.target.value)}
                          className="w-full bg-canvas text-content border border-line rounded-xl px-4 py-2.5 text-sm font-bold outline-none"
                        >
                           <option value="">-- Select Trip ID / Customer --</option>
-                          {allLeads.filter(l=>!emiSearchQuery || `${l.name} ${l.tripId}`.toLowerCase().includes(emiSearchQuery.toLowerCase())).map(l => (
+                          {allLeads.filter(l => isConvertedLead(l.status) && (!emiSearchQuery || `${l.name} ${l.tripId}`.toLowerCase().includes(emiSearchQuery.toLowerCase()))).map(l => (
                             <option key={l.id} value={l.tripId}>{l.tripId} — {l.name} ({l.destination})</option>
                           ))}
                        </select>
@@ -712,6 +723,7 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                  </div>
               </div>
 
+              {canCreateEmi ? <>
               {/* Lead Selected Summary / Status Banner */}
               {targetLead ? (
                 <div className="p-5 bg-brand-soft border border-brand-line rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -1072,6 +1084,9 @@ const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                     <p className="text-sm text-secondary font-medium max-w-sm mx-auto">This lead does not have any installment milestones yet. Use the Auto-Split above or click "Add installment" to create a new payment schedule.</p>
                  </div>
                )}
+              </> : <p className="rounded-xl border border-line bg-canvas p-4 text-sm text-secondary">
+                Select a converted lead to create an EMI schedule.
+              </p>}
             </div>
           )}
 

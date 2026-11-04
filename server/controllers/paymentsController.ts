@@ -1,3 +1,4 @@
+import { isConvertedLead } from '../../utils/leadConversion';
 import { paymentExpiry, assertPaymentLinkActive } from '../services/paymentExpiry';
 import { recordReceipt, moneyPaise, collectedPaise } from '../services/receipts';
 import { randomBytes } from 'crypto';
@@ -342,6 +343,8 @@ async function saveInstallmentScheduleRows(leadId: string, installments: any[]) 
     const targetLeadId = lead?.id || leadId;
     if (!lead)
         throw Object.assign(new Error('Lead not found.'), { status: 404 });
+    if (!isConvertedLead(lead.status))
+        throw Object.assign(new Error('EMI links can only be created for converted leads.'), { status: 409 });
     const snapshot = await queryOne('SELECT total_paise FROM booking_snapshots WHERE lead_id=?', [targetLeadId]);
     const quote = await queryOne('SELECT final_selling_price FROM quotes WHERE lead_id=? ORDER BY created_at DESC LIMIT 1', [targetLeadId]);
     const cap = snapshot?.total_paise ?? (quote ? moneyPaise(quote.final_selling_price) : 0);
