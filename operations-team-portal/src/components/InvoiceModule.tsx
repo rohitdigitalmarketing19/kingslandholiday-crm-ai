@@ -409,7 +409,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     finalInstallments.filter(i => i.status === 'PAID').forEach(i => {
       payments.push({
         id: `pay-${i.id}`,
-        date: i.paidAt || 'Not recorded',
+        date: (i.paidAt || i.dueDate || new Date().toISOString()).split('T')[0],
         mode: i.paymentMode || 'UPI / QR Code',
         utrNumber: i.transactionRef || `CONFIRMED-${i.id}`,
         amount: i.amount,
@@ -2120,7 +2120,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                             <Calendar className="w-3 h-3 text-slate-500" />
                             <span>
                               {inst.status === 'PAID' ? 'Paid Date' : 'Due Date'}:{' '}
-                              <strong>{inst.status === 'PAID' ? (inst.paidAt || 'Not recorded') : (inst.dueDate || 'Not recorded')}</strong>
+                              <strong>{inst.status === 'PAID' ? ((inst.paidAt || inst.dueDate || 'Not recorded').split('T')[0]) : (inst.dueDate || 'Not recorded')}</strong>
                             </span>
                           </p>
                           {inst.status === 'PAID' && (

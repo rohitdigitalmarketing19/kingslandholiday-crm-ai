@@ -18,7 +18,7 @@ export async function collectedPaise(leadId: string): Promise<number> {
     return [...rows, ...links].reduce((sum, row) => sum + Math.round(Number(row.paid || 0) * 100), 0);
 }
 // API amount means cumulative amount verified for this request. Repeated confirmation is idempotent.
-export async function recordReceipt(key: string, amount: unknown, reference: string | undefined, mode: string | undefined, notes: string | undefined, actor: string, externalTransaction = false) {
+export async function recordReceipt(key: string, amount: unknown, reference: string | undefined, mode: string | undefined, notes: string | undefined, actor: string, externalTransaction = false, paidAtOverride?: string) {
     let inst = await queryOne(`SELECT * FROM payment_installments WHERE id=? OR (pay_key != '' AND pay_key=?)`, [key, key]);
     let link = await queryOne('SELECT * FROM payment_links WHERE id=? OR pay_key=?', [key, key]);
     if (!inst && link)
@@ -59,6 +59,8 @@ export async function recordReceipt(key: string, amount: unknown, reference: str
         throw fail('This payment would exceed the booking balance.', 409);
     const status = received === requested ? 'Paid' : 'Partial';
     const now = new Date().toISOString();
+    // Use user-specified paid date if provided, otherwise use current timestamp
+    const effectivePaidAt = paidAtOverride || now;
     const paymentMode = mode || 'Bank Transfer';
     const db = getDb();
     if (!externalTransaction)
@@ -70,11 +72,11 @@ export async function recordReceipt(key: string, amount: unknown, reference: str
             await db.run('INSERT INTO receipt_events(id,request_key,lead_id,amount_paise,received_paise,reference,actor,created_at) VALUES(?,?,?,?,?,?,?,?)', [randomUUID(), requestKey, lead?.id || '', delta, received, ref, actor, now]);
         const paid = received / 100;
         if (inst)
-            await db.run('UPDATE payment_installments SET payment_status=?,paid_amount=?,paid_at=?,payment_mode=?,transaction_ref=?,comments=?,notes=? WHERE id=?', [status, paid, now, paymentMode, ref, notes || inst.comments || '', notes || inst.notes || '', inst.id]);
+            await db.run('UPDATE payment_installments SET payment_status=?,paid_amount=?,paid_at=?,payment_mode=?,transaction_ref=?,comments=?,notes=? WHERE id=?', [status, paid, effectivePaidAt, paymentMode, ref, notes || inst.comments || '', notes || inst.notes || '', inst.id]);
         if (link)
-            await db.run('UPDATE payment_links SET status=?,paid_amount=?,paid_at=?,payment_mode=?,transaction_ref=?,comments=?,notes=? WHERE id=?', [status, paid, now, paymentMode, ref, notes || link.comments || '', notes || link.notes || '', link.id]);
+            await db.run('UPDATE payment_links SET status=?,paid_amount=?,paid_at=?,payment_mode=?,transaction_ref=?,comments=?,notes=? WHERE id=?', [status, paid, effectivePaidAt, paymentMode, ref, notes || link.comments || '', notes || link.notes || '', link.id]);
         if (inst)
-            await db.run('UPDATE ops_customer_installments SET status=?,paid_at=?,payment_mode=?,transaction_ref=? WHERE id=?', [status, now, paymentMode, ref, inst.id]);
+            await db.run('UPDATE ops_customer_installments SET status=?,paid_at=?,payment_mode=?,transaction_ref=? WHERE id=?', [status, effectivePaidAt, paymentMode, ref, inst.id]);
         if (delta > 0 && lead)
             await db.run('INSERT INTO lead_notes(id,lead_id,text,type,timestamp) VALUES(?,?,?,?,?)', [randomUUID(), lead.id, `Verified receipt: INR ${(delta / 100).toFixed(2)} via ${paymentMode}; reference ${ref}`, 'Action', now]);
         if (!externalTransaction) {

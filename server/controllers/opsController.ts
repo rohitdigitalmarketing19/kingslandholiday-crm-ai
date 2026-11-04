@@ -640,7 +640,7 @@ export async function recordOpsPayment(customerId: string, installmentId: string
     const row = await queryOne('SELECT * FROM ops_customer_installments WHERE id=? AND customer_id=?', [installmentId, cust.id]);
     if (!row)
         throw Object.assign(new Error('Installment does not belong to this customer.'), { status: 403 });
-    await recordReceipt(installmentId, details.paidAmount ?? details.amount, details.transactionRef, details.paymentMode, details.notes, actor);
+    await recordReceipt(installmentId, details.paidAmount ?? details.amount, details.transactionRef, details.paymentMode, details.notes, actor, false, details.paidAt);
     return await getOpsCustomerById(cust.id);
 }
 export async function updateOpsInstallment(customerId: string, installmentId: string, details: any, actor = 'system') {
