@@ -1,3 +1,4 @@
+import { PROPOSAL_TERM_SECTIONS, serializeProposalTerms, splitProposalTerms } from '../utils/proposalTerms';
 import {MysqlMigrationPanel} from './MysqlMigrationPanel';
 import React, { useState, useEffect } from 'react';
 import { 
@@ -835,20 +836,19 @@ Cancellation Policy (Land Package):
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-content mb-0.5">
-                Default terms & conditions
-              </label>
-              <span className="text-xs text-secondary block mb-1.5">
-                Printed on the proposal and invoice.
-              </span>
-              <textarea
-                rows={8}
-                value={formData.default_terms_conditions}
-                onChange={e => handleChange('default_terms_conditions', e.target.value)}
-                className="w-full bg-canvas border border-line/80 focus:border-brand-line rounded-xl px-4 py-2.5 text-sm text-content placeholder:text-secondary outline-none transition-all focus:ring-1 focus:ring-brand-line/30 resize-y font-mono text-xs leading-relaxed"
-              />
-            </div>
+            <fieldset className="space-y-4">
+              <legend className="text-sm font-bold text-content">Default proposal terms</legend>
+              <p className="text-xs text-secondary">Used in the proposal preview and PDF when no manual terms are entered.</p>
+              {PROPOSAL_TERM_SECTIONS.map(({ key, title }) => {
+                const sections = splitProposalTerms(formData.default_terms_conditions || '');
+                return <label key={key} className="block text-sm font-semibold text-content">
+                  {title}
+                  <textarea rows={4} value={sections[key]}
+                    onChange={event => handleChange('default_terms_conditions', serializeProposalTerms({ ...sections, [key]: event.target.value }))}
+                    className="mt-1 w-full rounded-xl border border-line bg-canvas px-4 py-2 text-sm text-content resize-y" />
+                </label>;
+              })}
+            </fieldset>
           </div>
         </div>
 

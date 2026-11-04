@@ -1,3 +1,4 @@
+import { manualProposalTerms } from '../utils/proposalTerms';
 import {reconcileQuoteStays} from '../utils/quoteStayPlan';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Image as ImageIcon, X, Upload, Search, Trash2 } from 'lucide-react';
@@ -16,53 +17,6 @@ interface GiveQuoteViewProps {
   onClose: () => void;
   onSave: (quote: QuoteData) => void | Promise<void>;
 }
-
-const DEFAULT_TERMS = `Terms & Conditions
-
-Cancellation Policy (for the land package):
-• More than 30 days before the starting date: 25% of the total land package cost will be cancellation fees.
-• Between 16-30 days before the starting date: 40% of the total land package cost will be cancellation fees.
-• Between 7-15 days before the starting date: 55% of the total land package cost will be cancellation fees.
-• Between 3-6 days before the starting date: 70% of the total land package cost will be cancellation fees.
-• Within 0-2 days before the starting date: 85% of the total land package cost will be cancellation fees.
-• In case of No Show: 100% of the total land package cost will be cancellation fees.
-• Peak Periods: No Refund & No Amendment allowed during the Diwali period, Christmas, New Year period, and Long weekends.
-• Note: Number of days for cancellation will be counted by first contact and check-in time and date. First contact is considered when you first email / WhatsApp our salesperson cancellation request.
-
-Cancellation Policy (for flights/trains):
-• For flights and trains, cancellation charges vary as per airlines / Railways / booking source policies. Cancellation charges will be according to that.
-
-Hotels & Accommodation Guidelines:
-• Most of the time hotels mentioned in this quote will be provided. In some cases, if the mentioned hotels are not available due to unforeseen reasons, similar hotels will be provided.
-• On 24th Dec - 31st Dec: Gala Dinner may be compulsory in some hotels (ranging from Rs. 1500 per person to Rs. 5000 per person or sometimes higher), payable directly to the hotel.
-• Standard Check-in time is 12:00 PM and Check-out time is 10:00 AM (varies as per hotel). Early check-in and/or late check-out is subject to availability and may be chargeable directly to the hotel.
-• Itinerary provided in this quote is indicative. It may change before or during the trip if required. No refund will be given in case of a missed itinerary.
-• Room Heater: Certain Hotels in Low Budget, Standard, Deluxe categories provide room heaters on request at extra charge. We do not include this cost; travelers settle directly before checkout (INR 250.00 to INR 500.00 per heater per room per night).
-
-Important Information & Permits:
-• All guests must carry valid Government Photo IDs (Passport / Driving License / Voter ID). PAN Card is NOT accepted as a valid photo/address ID.
-• Guests must carry 4 passport size photographs along with Photo-ID proof (Passport / DL / Voter ID & School ID for children) for Gangtok (Changu Lake / Baba Mandir) and North Sikkim (Lachung) permits.
-• Tsomgo Lake, Baba Mandir, Nathula Pass, Gurudongmar, Yumthang & Yumesamdong (Zero Point) depend heavily on weather conditions. In hilly areas, roads may be out of operation at the time of travel. Operational status will be updated during the pre-arrival briefing call.
-• Nathula Permit Formalities: Nathula Pass is an optional tour with supplement cost, applied 24 hours prior. Only 5% of vehicles get permits via government lottery. Once a permit is issued, there is no refund if Nathula Pass cannot be visited for any reason.
-• Himalayan Mountaineering Institute and Padmaja Naidu Himalayan Zoological Park remain closed on Thursday.
-• Toy Train Ride: A 2-hour journey starting from Darjeeling up to Ghoom Station and back, covering Batasia Loop, War Memorial & Ghoom Railway Museum. Cost of tickets and pickup-drop will be borne by the traveler.
-• The Tibetan Refugee Centre remains closed on Sunday.
-• Vehicle Capacity: Maximum capacity is 6 people (including children) as per Motor Vehicle Act.
-• Sector Allotment: In Sikkim and Darjeeling, vehicles are allotted per sector as per syndicate rules; a single vehicle cannot be used for the entire trip. Good vehicles and drivers are assured for each sector.
-• Point-to-Point Transfers: All vehicles assigned are on a point-to-point basis and not disposable. Air conditioning will not operate on uphill drives.
-• Parking & Entry: Due to parking scarcity, entry restrictions and specific timings apply in many areas.
-• Natural Diversions: Landslides are common in hilly areas. Guests must bear additional costs for any diversion/changes due to road blockage, landslide, or political unrest.
-• Local Syndicate Excursions: Excursions like Tshangu Lake, Nathula, and North Sikkim are controlled by local transport syndicates. Vehicles and drivers may change for transfers and sightseeing.
-• Restricted Area Security: Nathula is a restricted area and can be sealed without notice for security reasons. In such cases, tours operate only up to Tshangu Lake with no refund for unutilized services.
-• Payment Schedule: Payments must be cleared as per the payment schedule. Delayed installments attract late payment charges (5% of installment amount).
-
-Pure Agent Declaration (Terms & Conditions):
-• We provide our services strictly as a pure agent, and charge a service fee solely for planning, coordinating, and arranging the tour on behalf of the client.
-• All other travel-related services (transport, hotel booking, entry tickets, etc.) are arranged on behalf of the customer and recovered at actual cost.
-• As a pure agent: We do not intend to hold nor hold any title to the goods or services procured on behalf of the client.
-• We do not use such goods or services for our own interest or benefit.
-• We recover only the actual amount incurred for third-party services, in addition to our separately charged service fee.
-• All legal obligations are subject to Jaipur jurisdiction only.`;
 
 const PriceInput = ({ label, value, onChange, icon = "₹", colorClass = "text-content", disabled = false, placeholder = "0" }: { label: string, value: number, onChange: (v: number) => void, icon?: string, colorClass?: string, disabled?: boolean, placeholder?: string }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,7 +148,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
   const [quote, setQuote] = useState<QuoteData>(() => {
     const existingQuote = lead.quotes?.find(q => q.id === editQuoteId);
     if (existingQuote) {
-      return reconcileQuoteStays(existingQuote);
+      return reconcileQuoteStays({ ...existingQuote, termsAndConditions: manualProposalTerms(existingQuote.termsAndConditions) });
     }
 
     const quoteCount = (lead.quotes?.length || 0) + 1;
@@ -227,7 +181,7 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
       otherInclusions: 'Daily Water Bottle, Welcome Drink on Arrival',
       otherExclusions: 'Personal Expenses, Laundry, Telephone Calls, Tips to Driver',
       itinerary: Array.from({ length: (lead.durationDays || 7) }).map((_, i) => ({ day: i + 1, title: '', description: '' })),
-      termsAndConditions: DEFAULT_TERMS,
+      termsAndConditions: '',
       useDefaultTC: true,
       otherInformation: '',
       workingAgentId: lead.assignedTo || '',
@@ -796,9 +750,9 @@ const GiveQuoteView: React.FC<GiveQuoteViewProps> = ({ lead, allLeads, editQuote
                <textarea 
                  rows={3} 
                  className="w-full bg-canvas border border-line rounded-xl p-4 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-line resize-none"
-                 placeholder="Custom terms or cancellation policy lines..."
+                 placeholder="Leave blank to use the terms saved in Settings."
                  value={quote.termsAndConditions || ''}
-                 onChange={e => setQuote({...quote, termsAndConditions: e.target.value})}
+                 onChange={e => setQuote({...quote, termsAndConditions: e.target.value, useDefaultTC: !e.target.value.trim()})}
                />
             </div>
           </section>

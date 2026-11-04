@@ -1,3 +1,4 @@
+import { PROPOSAL_TERM_SECTIONS, splitProposalTerms } from '../utils/proposalTerms';
 import type { QuoteDataModel, HotelItemModel } from './quoteDesignRenderer';
 import { DEFAULT_TERMS } from './quoteDesignRenderer';
 
@@ -70,10 +71,15 @@ export async function generateB2BWord(quote: QuoteDataModel): Promise<Blob> {
     for (const line of day.text.split(/\r?\n/).filter(Boolean)) children.push(para(line));
   });
   children.push(heading('Terms and Cancellation Policy'));
-  if (quote.termsText && quote.termsText.trim().length >= 20) children.push(...quote.termsText.split(/\r?\n/).filter(Boolean).map(line => para(line)));
+  const customTerms = splitProposalTerms(quote.termsText);
+  if (Object.values(customTerms).some(content => content.trim())) {
+    for (const { key, title } of PROPOSAL_TERM_SECTIONS) {
+      if (customTerms[key].trim()) children.push(para(title, true), ...customTerms[key].split(/\r?\n/).map(line => para(line)));
+    }
+  }
   else {
     children.push(para('Cancellation charges', true), ...DEFAULT_TERMS.fees.map(row => para(`${row[0]}: ${row[1]}`)), ...DEFAULT_TERMS.feeNotes.map(line => para(line)));
-    for (const [title, items] of [['Hotels and accommodation', DEFAULT_TERMS.hotels], ['Important information', DEFAULT_TERMS.important], ['Pure agent declaration', DEFAULT_TERMS.agent]] as const) children.push(para(title, true), ...items.map(line => para(line)));
+    for (const [title, items] of [['Hotels & Flights', DEFAULT_TERMS.hotels], ['Important information', DEFAULT_TERMS.important], ['Pure agent declaration', DEFAULT_TERMS.agent]] as const) children.push(para(title, true), ...items.map(line => para(line)));
   }
   const doc = new Document({ creator: 'Travel quotation', title: quote.packageName, styles: { default: { document: { run: { font: 'Calibri', size: 22, color: navy }, paragraph: { spacing: { after: 100 } } } }, paragraphStyles: [{ id: 'Title', name: 'Title', basedOn: 'Normal', run: { size: 40, bold: true, color: '000000' } }] }, sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 900, bottom: 900, left: 900, right: 900 } } }, children }] });
   return Packer.toBlob(doc);

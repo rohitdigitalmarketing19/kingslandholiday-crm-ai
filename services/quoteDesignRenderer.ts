@@ -1,3 +1,4 @@
+import { PROPOSAL_TERM_SECTIONS, splitProposalTerms } from '../utils/proposalTerms';
 /**
  * Quote Design Renderer
  * Faithfully ports the 5 quote designs from Kingsland-Quote-Designs.html:
@@ -499,64 +500,6 @@ function renderIncExcGrid(
 /**
  * Parses dynamic or default terms into structured atomic sections.
  */
-function parseTermsSections(termsText?: string): Array<{ title: string; bullets?: string[]; isFees?: boolean }> {
-  if (!termsText || termsText.trim().length < 20) {
-    return [
-      { title: 'Cancellation policy · land package', isFees: true },
-      { title: 'Hotels & accommodation', bullets: DEFAULT_TERMS.hotels },
-      { title: 'Important information', bullets: DEFAULT_TERMS.important },
-      { title: 'Pure agent declaration', bullets: DEFAULT_TERMS.agent },
-    ];
-  }
-
-  const sections: Array<{ title: string; bullets?: string[]; isFees?: boolean }> = [];
-  let currentSection: { title: string; bullets: string[]; isFees?: boolean } = {
-    title: 'Standard Terms & Conditions',
-    bullets: [],
-  };
-
-  const rawLines = termsText.split('\n').map(l => l.trim()).filter(Boolean);
-
-  for (const line of rawLines) {
-    const lower = line.toLowerCase();
-    if (
-      lower.startsWith('cancellation policy') ||
-      lower.startsWith('hotels') ||
-      lower.startsWith('important') ||
-      lower.startsWith('pure agent') ||
-      lower.startsWith('payment schedule') ||
-      line.endsWith(':')
-    ) {
-      if (currentSection.bullets.length > 0 || currentSection.title !== 'Standard Terms & Conditions') {
-        sections.push(currentSection);
-      }
-      currentSection = {
-        title: line.replace(/:$/, ''),
-        bullets: [],
-        isFees: lower.startsWith('cancellation policy') && lower.includes('land'),
-      };
-    } else if (lower === 'terms & conditions' || lower === 'terms and conditions') {
-      // skip top header
-    } else {
-      const bullet = line.replace(/^[\u2022\u25cf\u25cb\u25aa\u25ab\u2023\u2219\*\-\+]\s*/, '').trim();
-      if (bullet) {
-        currentSection.bullets.push(bullet);
-      }
-    }
-  }
-
-  if (currentSection.bullets.length > 0) {
-    sections.push(currentSection);
-  }
-
-  return sections.length > 0 ? sections : [
-    { title: 'Cancellation policy · land package', isFees: true },
-    { title: 'Hotels & accommodation', bullets: DEFAULT_TERMS.hotels },
-    { title: 'Important information', bullets: DEFAULT_TERMS.important },
-    { title: 'Pure agent declaration', bullets: DEFAULT_TERMS.agent },
-  ];
-}
-
 export function renderTransitSection(Q: QuoteDataModel, themeKey = 'royal'): string {
   const hasFlight = Boolean(Q.flightDetails && Q.flightDetails.trim());
   const hasCab = Boolean(Q.cabDetails && Q.cabDetails.trim());
@@ -738,14 +681,6 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
   };
   const isB2BMode = Q.isB2B || (!adv.name && !adv.phones && !adv.email);
 
-  // Scaled-up bullet typography (12.5px, crisp high-contrast text, 1.48 line-height)
-  const bulletItems = (arr: string[]) => arr.map(t => `
-    <div style="display:flex;align-items:flex-start;gap:8px;font-size:16px;line-height:1.6;color:${th.ink}">
-      <span style="color:${th.accent};font-size:13px;line-height:1.35;flex:none;margin-top:1px">●</span>
-      <span style="flex:1">${e(t)}</span>
-    </div>
-  `).join('');
-
   // Cancellation fees table with clean header & highlighted percentage badges
   const feeRows = DEFAULT_TERMS.fees.map((f, idx) => `
     <tr style="border-bottom:1px solid ${th.line};background:${idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)'}">
@@ -768,57 +703,19 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
     </div>
   `;
 
-  // Check if custom terms were supplied
-  const hasCustomTerms = Boolean(Q.termsText && Q.termsText.trim().length >= 20);
-  const customSections = hasCustomTerms ? parseTermsSections(Q.termsText) : [];
-
-  let mainGridContent = '';
-
-  if (hasCustomTerms && customSections.length > 0) {
-    // Dynamic sections rendering in 2 balanced columns
-    const mid = Math.ceil(customSections.length / 2);
-    const col1 = customSections.slice(0, mid);
-    const col2 = customSections.slice(mid);
-
-    const renderCustomCol = (secs: typeof customSections) => secs.map(s => {
-      const isFees = s.isFees || s.title.toLowerCase().includes('cancellation');
-      return `
-        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;flex:1">
-          ${cardHeader(isFees ? 'shield' : 'fileText', s.title, isFees ? 'Policy' : 'Terms')}
-          ${isFees ? `
-            <table style="width:100%;border-collapse:collapse;margin-bottom:8px">
-              <thead>
-                <tr style="border-bottom:1.5px solid ${th.line};font-size:10.5px;text-transform:uppercase;letter-spacing:0.5px">
-                  <th style="text-align:left;padding:3px 8px;font-weight:700;color:${th.muted} !important">Notice Prior to Tour</th>
-                  <th style="text-align:right;padding:3px 8px;font-weight:700;color:${th.muted} !important">Deduction</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${feeRows}
-              </tbody>
-            </table>
-          ` : ''}
-          ${(s.bullets && s.bullets.length > 0) ? `
-            <div style="display:flex;flex-direction:column;gap:6.5px">
-              ${bulletItems(s.bullets)}
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }).join('');
-
-    mainGridContent = `
-      <div style="display:flex;flex-direction:column;gap:12px">${renderCustomCol(col1)}</div>
-      <div style="display:flex;flex-direction:column;gap:12px">${renderCustomCol(col2)}</div>
-    `;
-  } else {
-    // Standard structured 4-card layout
-    mainGridContent = `
-      <!-- COLUMN 1: Cancellation & Important Information -->
-      <div style="display:flex;flex-direction:column;gap:10px">
-        
-        <!-- Card 1: Cancellation Policy -->
-        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column">
+  const custom = splitProposalTerms(Q.termsText);
+  const hasCustom = Object.values(custom).some(content => content.trim());
+  const defaults = {
+    cancellation: '',
+    hotels: DEFAULT_TERMS.hotels.join('\n'),
+    important: DEFAULT_TERMS.important.join('\n'),
+    agent: (isB2BMode ? [
+      'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
+      'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
+      'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.',
+    ] : DEFAULT_TERMS.agent).join('\n'),
+  };
+  const cancellationTable = `<div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column">
           ${cardHeader('shield', 'Cancellation Policy', 'Land Package')}
           
           <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
@@ -843,51 +740,21 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
               `).join('')}
             </div>
           </div>
-        </div>
-
-        <!-- Card 2: Important Travel Information -->
-        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03)">
-          ${cardHeader('info', 'Important Information', 'Essential')}
-          <div style="display:flex;flex-direction:column;gap:5px">
-            ${bulletItems(DEFAULT_TERMS.important)}
-          </div>
-        </div>
-      </div>
-
-      <!-- COLUMN 2: Hotels & Pure Agent Declaration -->
-      <div style="display:flex;flex-direction:column;gap:10px">
-        
-        <!-- Card 3: Hotels & Accommodation -->
-        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03)">
-          ${cardHeader('bed', 'Hotels & Accommodation', 'Stay Rules')}
-          <div style="display:flex;flex-direction:column;gap:5.5px">
-            ${bulletItems(DEFAULT_TERMS.hotels)}
-          </div>
-        </div>
-
-        <!-- Card 4: Pure Agent Declaration -->
-        <div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column;flex:1">
-          ${cardHeader('fileText', 'Pure Agent Declaration', 'Statutory')}
-          <div style="display:flex;flex-direction:column;gap:5.5px">
-            ${bulletItems(isB2BMode ? [
-              'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
-              'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
-              'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.'
-            ] : DEFAULT_TERMS.agent)}
-          </div>
-
-          <div style="margin-top:auto;padding-top:8px">
-            <div style="background:${th.accent}12;border:1px solid ${th.accent}33;border-radius:8px;padding:6px 9px;display:flex;align-items:center;gap:7px">
-              <div style="color:${th.accent};flex:none">${ico('checkCircle', 14, 2)}</div>
-              <div style="font-size:14px;line-height:1.5;font-weight:600;color:${th.ink}">
-                Transparent pricing with zero hidden surcharges. All bookings guaranteed as per itinerary specifications.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </div>`;
+  const mainGridContent = PROPOSAL_TERM_SECTIONS.map(({ key, title }) => {
+    if (key === 'cancellation' && !hasCustom) return cancellationTable;
+    const content = (hasCustom ? custom : defaults)[key];
+    if (!content.trim()) return '';
+    const firstLineEnd = content.indexOf('\n');
+    const firstLine = firstLineEnd < 0 ? content : content.slice(0, firstLineEnd);
+    const remaining = firstLineEnd < 0 ? '' : content.slice(firstLineEnd);
+    return `
+      <section style="background:${th.card};border:1px solid ${th.line};border-radius:${th.radius};padding:12px 14px">
+        ${cardHeader(key === 'cancellation' ? 'shield' : 'fileText', title)}
+        <div style="font-size:16px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:${th.ink}"><span>${e(firstLine)}</span>${e(remaining)}</div>
+      </section>
     `;
-  }
+  }).join('');
 
   return `
     <div class="${continuous ? 'terms-flow' : 'sheet sheet-terms'}" data-design="${thKey}" style="${continuous ? 'width:100%;height:auto;padding:24px 0 0;display:block;box-sizing:border-box;position:relative;break-before:auto;page-break-before:auto;' : 'width:794px;height:1120px;max-height:1120px;padding:24px 38px 20px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;position:relative;overflow:hidden;margin:0 auto;page-break-before:always;break-before:page;page-break-after:avoid;break-after:avoid;'}background:${th.bg};color:${th.ink};font-family:${th.body};">

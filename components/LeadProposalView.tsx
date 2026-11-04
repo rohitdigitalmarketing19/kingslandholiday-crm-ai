@@ -1,3 +1,4 @@
+import { manualProposalTerms, PROPOSAL_TERM_SECTIONS, splitProposalTerms } from '../utils/proposalTerms';
 import { quoteMealPlan } from '../utils/hotelOptions';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Trash2, Palette, Sparkles, Check, Download, FileText, Users } from 'lucide-react';
@@ -32,124 +33,6 @@ interface LeadProposalViewProps {
 }
 
 const PASTEL_TAB_COLORS = ['#ff9d81', '#8ecae6', '#c9a4ff', '#8fd9a8', '#ffd166'];
-
-const StructuredTermsBlock: React.FC<{ termsText?: string; isPdf?: boolean }> = ({ termsText, isPdf = false }) => {
-  const content = (termsText && termsText.trim().length > 10) ? termsText : `Terms & Conditions
-
-Cancellation Policy (for the land package):
-• More than 30 days before the starting date: 25% of the total land package cost will be cancellation fees.
-• Between 16-30 days before the starting date: 40% of the total land package cost will be cancellation fees.
-• Between 7-15 days before the starting date: 55% of the total land package cost will be cancellation fees.
-• Between 3-6 days before the starting date: 70% of the total land package cost will be cancellation fees.
-• Within 0-2 days before the starting date: 85% of the total land package cost will be cancellation fees.
-• In case of No Show: 100% of the total land package cost will be cancellation fees.
-• Peak Periods: No Refund & No Amendment allowed during the Diwali period, Christmas, New Year period, and Long weekends.
-• Note: Number of days for cancellation will be counted by first contact and check-in time and date. First contact is considered when you first email / WhatsApp our salesperson cancellation request.
-
-Cancellation Policy (for flights/trains):
-• For flights and trains, cancellation charges vary as per airlines / Railways / booking source policies. Cancellation charges will be according to that.
-
-Hotels & Accommodation Guidelines:
-• Most of the time hotels mentioned in this quote will be provided. In some cases, if the mentioned hotels are not available due to unforeseen reasons, similar hotels will be provided.
-• On 24th Dec - 31st Dec: Gala Dinner may be compulsory in some hotels (ranging from Rs. 1500 per person to Rs. 5000 per person or sometimes higher), payable directly to the hotel.
-• Standard Check-in time is 12:00 PM and Check-out time is 10:00 AM (varies as per hotel). Early check-in and/or late check-out is subject to availability and may be chargeable directly to the hotel.
-• Itinerary provided in this quote is indicative. It may change before or during the trip if required. No refund will be given in case of a missed itinerary.
-• Room Heater: Certain Hotels in Low Budget, Standard, Deluxe categories provide room heaters on request at extra charge. We do not include this cost; travelers settle directly before checkout (INR 250.00 to INR 500.00 per heater per room per night).
-
-Important Information & Permits:
-• All guests must carry valid Government Photo IDs (Passport / Driving License / Voter ID). PAN Card is NOT accepted as valid address proof.
-• Guests must carry 4 passport size photographs along with Photo-ID proof (Passport / DL / Voter ID & School ID for children) for Gangtok (Changu Lake / Baba Mandir) and North Sikkim (Lachung) permits.
-• Tsomgo Lake, Baba Mandir, Nathula Pass, Gurudongmar, Yumthang & Yumesamdong (Zero Point) depend heavily on weather conditions. In hilly areas, roads may be out of operation at the time of travel. Operational status will be updated during the pre-arrival briefing call.
-• Nathula Permit Formalities: Nathula Pass is an optional tour with supplement cost, applied 24 hours prior. Only 5% of vehicles get permits via government lottery. Once a permit is issued, there is no refund if Nathula Pass cannot be visited for any reason.
-• Himalayan Mountaineering Institute and Padmaja Naidu Himalayan Zoological Park remain closed on Thursday.
-• Toy Train Ride: A 2-hour journey starting from Darjeeling up to Ghoom Station and back, covering Batasia Loop, War Memorial & Ghoom Railway Museum. Cost of tickets and pickup-drop will be borne by the traveler.
-• The Tibetan Refugee Centre remains closed on Sunday.
-• Vehicle Capacity: Maximum capacity is 6 people (including children) as per Motor Vehicle Act.
-• Sector Allotment: In Sikkim and Darjeeling, vehicles are allotted per sector as per syndicate rules; a single vehicle cannot be used for the entire trip. Good vehicles and drivers are assured for each sector.
-• Point-to-Point Transfers: All vehicles assigned are on a point-to-point basis and not disposable. Air conditioning will not operate on uphill drives.
-• Parking & Entry: Due to parking scarcity, entry restrictions and specific timings apply in many areas.
-• Natural Diversions: Landslides are common in hilly areas. Guests must bear additional costs for any diversion/changes due to road blockage, landslide, or political unrest.
-• Local Syndicate Excursions: Excursions like Tshangu Lake, Nathula, and North Sikkim are controlled by local transport syndicates. Vehicles and drivers may change for transfers and sightseeing.
-• Restricted Area Security: Nathula is a restricted area and can be sealed without notice for security reasons. In such cases, tours operate only up to Tshangu Lake with no refund for unutilized services.
-• Payment Schedule: Payments must be cleared as per the payment schedule. Delayed installments attract late payment charges (5% of installment amount).
-
-Pure Agent Declaration (Terms & Conditions):
-• We provide our services strictly as a pure agent, and charge a service fee solely for planning, coordinating, and arranging the tour on behalf of the client.
-• All other travel-related services (transport, hotel booking, entry tickets, etc.) are arranged on behalf of the customer and recovered at actual cost.
-• As a pure agent: We do not intend to hold nor hold any title to the goods or services procured on behalf of the client.
-• We do not use such goods or services for our own interest or benefit.
-• We recover only the actual amount incurred for third-party services, in addition to our separately charged service fee.
-• All legal obligations are subject to Jaipur jurisdiction only.`;
-
-  const sections: { title: string; items: string[] }[] = [];
-  let currentSection = { title: 'Standard Terms & Conditions', items: [] as string[] };
-
-  const rawLines = content.split('\n').map(l => l.trim()).filter(Boolean);
-
-  for (const line of rawLines) {
-    const lower = line.toLowerCase();
-    if (
-      lower.startsWith('cancellation policy') ||
-      lower.startsWith('hotels') ||
-      lower.startsWith('important') ||
-      lower.startsWith('pure agent') ||
-      lower.startsWith('payment schedule') ||
-      line.endsWith(':')
-    ) {
-      if (currentSection.items.length > 0 || currentSection.title !== 'Standard Terms & Conditions') {
-        sections.push(currentSection);
-      }
-      currentSection = { title: line.replace(/:$/, ''), items: [] };
-    } else if (lower === 'terms & conditions' || lower === 'terms and conditions') {
-      // Header skip
-    } else {
-      const cleanLine = line.replace(/^[•\-\*]\s*/, '').trim();
-      if (cleanLine) {
-        currentSection.items.push(cleanLine);
-      }
-    }
-  }
-  if (currentSection.items.length > 0) {
-    sections.push(currentSection);
-  }
-
-  if (isPdf) {
-    return (
-      <div className="terms-box" style={{ border: '1px solid #D7E0EA', borderRadius: '4px', padding: '10px 14px', fontSize: '9px', background: '#ffffff', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
-        {sections.map((sec, sIdx) => (
-          <div key={sIdx} style={{ marginBottom: sIdx === sections.length - 1 ? 0 : '8px' }}>
-            <div style={{ fontWeight: 700, color: '#12233D', fontSize: '10px', marginBottom: '3px', borderBottom: '1px solid #EEF2F6', paddingBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-              {sec.title}
-            </div>
-            <ul style={{ margin: '0', paddingLeft: '14px', listStyleType: 'disc', color: '#3d4f66', lineHeight: '1.45' }}>
-              {sec.items.map((it, iIdx) => (
-                <li key={iIdx} style={{ marginBottom: '2px' }}>{it}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="border border-[#D7E0EA] rounded-xl p-5 bg-surface space-y-4 text-sm">
-      {sections.map((sec, sIdx) => (
-        <div key={sIdx} className="space-y-1.5">
-          <h5 className="font-bold text-[#12233D] text-base pb-1 border-b border-line flex items-center gap-1.5 uppercase tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand"></span>
-            {sec.title}
-          </h5>
-          <ul className="text-base text-secondary list-disc pl-5 space-y-2 leading-7">
-            {sec.items.map((it, iIdx) => (
-              <li key={iIdx}>{it}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 const getCleanDayTitle = (day: any, dIdx: number, totalDays: number, destination?: string) => {
   const clean = (day.title || '').trim();
@@ -263,6 +146,9 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   
   const quotes = lead?.quotes || [];
   const currentQuote = quotes[activeQuoteIndex];
+  const [previewTerms, setPreviewTerms] = useState<Record<string, string>>({});
+  const manualTerms = currentQuote ? previewTerms[currentQuote.id] ?? manualProposalTerms(currentQuote.termsAndConditions) : '';
+
 
   // Payment & EMI State inside Lead Preview
   const [paymentMode, setPaymentMode] = useState<'Deposit' | 'Partial'>('Partial');
@@ -296,6 +182,15 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [uploadedThemes, setUploadedThemes] = useState<any[]>([]);
   // Agency / Company Profile Settings (for Company Logo on PDF)
   const [agencySettings, setAgencySettings] = useState<any>(null);
+  const effectiveTerms = manualTerms.trim() ? manualTerms : agencySettings?.default_terms_conditions || '';
+  const manualTermsInput = currentQuote && !isReadOnly && <label className="block rounded-xl border border-line bg-surface p-4 text-sm font-semibold text-content">
+    Manual terms for this preview
+    <textarea rows={5} value={manualTerms}
+      onChange={event => setPreviewTerms(previous => ({ ...previous, [currentQuote.id]: event.target.value }))}
+      placeholder="Leave blank to use the terms saved in Settings."
+      className="mt-2 block w-full rounded-lg border border-line bg-canvas p-3 text-sm font-normal text-content" />
+    <span className="mt-2 block text-xs font-normal text-secondary">Applies to this preview and its download. Use the four section names as headings to group your text. To save terms with the quotation, use Edit quotation.</span>
+  </label>;
 
   useEffect(() => {
     api.fetchAgencySettings().then(setAgencySettings).catch(() => {});
@@ -882,9 +777,10 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       included: incList,
       excluded: excList,
       note: currentQuote.otherInformation || '',
+      termsText: effectiveTerms,
       days: formattedDays
     };
-  }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign]);
+  }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign, effectiveTerms]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-inverse/40 backdrop-blur-xl flex flex-col justify-between">
@@ -1845,6 +1741,7 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                         </div>
                       </div>
 
+                      {manualTermsInput}
                       <div className="flex justify-start lg:justify-center p-4 sm:p-8 bg-subtle rounded-xl border border-line overflow-x-auto shadow-inner">
                         {currentQuoteDataModel && (
                           <ProposalPdfPreview
@@ -2107,7 +2004,14 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        <h4 className="text-base font-bold uppercase tracking-wider pb-2 border-b" style={{ color: designColors.secondary, borderColor: designColors.primary + '40', fontFamily: designColors.fontFamily }}>
                          Terms & Cancellation Policy
                        </h4>
-                       <StructuredTermsBlock termsText={currentQuote.termsAndConditions} isPdf={false} />
+                       {manualTermsInput}
+                       {PROPOSAL_TERM_SECTIONS.map(({ key, title }) => {
+                         const content = splitProposalTerms(effectiveTerms)[key];
+                         return content.trim() && <section key={key} className="rounded-xl border border-line p-4">
+                           <h5 className="font-bold text-content">{title}</h5>
+                           <div className="mt-2 whitespace-pre-wrap break-words text-base leading-7 text-content">{content}</div>
+                         </section>;
+                       })}
                      </div>
 
                      {/* Hotel Working Partners & Working Partners (Two Different Containers) */}
