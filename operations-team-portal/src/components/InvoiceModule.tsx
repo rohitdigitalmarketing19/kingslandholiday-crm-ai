@@ -369,13 +369,10 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
         {
           id: 'inst-1',
           num: 1,
-          title: 'Booking Advance Token (Confirmed)',
+          title: 'Booking Advance Token',
           amount: inst1Amt,
           dueDate: due1,
-          status: 'PAID',
-          paidAt: due1,
-          paymentMode: 'UPI / Online',
-          transactionRef: `UTR-${Math.floor(100000000000 + Math.random() * 900000000000)}`,
+          status: 'DUE NOW',
         },
         {
           id: 'inst-2',
@@ -412,7 +409,7 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     finalInstallments.filter(i => i.status === 'PAID').forEach(i => {
       payments.push({
         id: `pay-${i.id}`,
-        date: i.paidAt || new Date().toISOString().split('T')[0],
+        date: i.paidAt || 'Not recorded',
         mode: i.paymentMode || 'UPI / QR Code',
         utrNumber: i.transactionRef || `CONFIRMED-${i.id}`,
         amount: i.amount,
@@ -2121,11 +2118,14 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
                         <div className="pt-2 border-t border-slate-200/70 text-[10px] space-y-1">
                           <p className="text-slate-600 font-semibold flex items-center gap-1">
                             <Calendar className="w-3 h-3 text-slate-500" />
-                            <span>Due Date: <strong>{inst.dueDate}</strong></span>
+                            <span>
+                              {inst.status === 'PAID' ? 'Paid Date' : 'Due Date'}:{' '}
+                              <strong>{inst.status === 'PAID' ? (inst.paidAt || 'Not recorded') : (inst.dueDate || 'Not recorded')}</strong>
+                            </span>
                           </p>
                           {inst.status === 'PAID' && (
                             <div className="text-emerald-800 font-mono text-[9.5px] bg-emerald-100/80 px-2 py-1 rounded-lg">
-                              <span>✓ Paid: {inst.paidAt || 'Recorded'} • {inst.paymentMode || 'UPI'}</span>
+                              <span>✓ Paid • {inst.paymentMode || 'UPI'}</span>
                               {inst.transactionRef && (
                                 <span className="block truncate font-bold text-[9px] text-emerald-900 mt-0.5">Ref: {inst.transactionRef}</span>
                               )}
