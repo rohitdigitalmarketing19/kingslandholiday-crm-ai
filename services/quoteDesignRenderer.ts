@@ -72,6 +72,7 @@ export interface QuoteDataModel {
     img?: string;
   }>;
   termsText?: string;
+  settingsTerms?: string;
   logoUrl?: string;
   companyName?: string;
   isB2B?: boolean;
@@ -142,6 +143,28 @@ export const DEFAULT_TERMS = {
     'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
   ],
 };
+
+export function resolveProposalTerms(manual?: string, settings?: string, isB2BMode = false) {
+  const custom = splitProposalTerms(manual);
+  if (manual?.trim()) return custom;
+  const saved = splitProposalTerms(settings);
+  const defaults = {
+    cancellation: '',
+    hotels: DEFAULT_TERMS.hotels.join('\n'),
+    important: DEFAULT_TERMS.important.join('\n'),
+    agent: (isB2BMode ? [
+      'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
+      'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
+      'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.',
+    ] : DEFAULT_TERMS.agent).join('\n'),
+  };
+  return {
+    cancellation: saved.cancellation,
+    hotels: saved.hotels.trim() ? saved.hotels : defaults.hotels,
+    important: saved.important.trim() ? saved.important : defaults.important,
+    agent: saved.agent.trim() ? saved.agent : defaults.agent,
+  };
+}
 
 const e = (s: any) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -703,18 +726,7 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
     </div>
   `;
 
-  const custom = splitProposalTerms(Q.termsText);
-  const hasCustom = Object.values(custom).some(content => content.trim());
-  const defaults = {
-    cancellation: '',
-    hotels: DEFAULT_TERMS.hotels.join('\n'),
-    important: DEFAULT_TERMS.important.join('\n'),
-    agent: (isB2BMode ? [
-      'We provide services strictly as a pure agent for planning and coordinating tours on behalf of the customer.',
-      'Transport, hotel stays, and entry permits are procured on behalf of the guest and recovered at actuals.',
-      'All legal and statutory obligations subject to applicable travel laws and competent jurisdiction.',
-    ] : DEFAULT_TERMS.agent).join('\n'),
-  };
+  const terms = resolveProposalTerms(Q.termsText, Q.settingsTerms, Boolean(isB2BMode));
   const cancellationTable = `<div style="background:${th.card};border:1px solid ${th.cardBorder || th.line};border-radius:${th.radius};padding:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,0.03);display:flex;flex-direction:column">
           ${cardHeader('shield', 'Cancellation Policy', 'Land Package')}
           
@@ -742,8 +754,8 @@ export function renderTermsSheet(Q: QuoteDataModel, thKey = 'royal', customPartn
           </div>
         </div>`;
   const mainGridContent = PROPOSAL_TERM_SECTIONS.map(({ key, title }) => {
-    if (key === 'cancellation' && !hasCustom) return cancellationTable;
-    const content = (hasCustom ? custom : defaults)[key];
+    if (key === 'cancellation' && !Q.termsText?.trim() && !terms.cancellation.trim()) return cancellationTable;
+    const content = terms[key];
     if (!content.trim()) return '';
     const firstLineEnd = content.indexOf('\n');
     const firstLine = firstLineEnd < 0 ? content : content.slice(0, firstLineEnd);

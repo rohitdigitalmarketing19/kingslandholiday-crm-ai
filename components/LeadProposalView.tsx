@@ -1,10 +1,10 @@
-import { manualProposalTerms, PROPOSAL_TERM_SECTIONS, splitProposalTerms } from '../utils/proposalTerms';
+import { manualProposalTerms, PROPOSAL_TERM_SECTIONS } from '../utils/proposalTerms';
 import { quoteMealPlan } from '../utils/hotelOptions';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Trash2, Palette, Sparkles, Check, Download, FileText, Users } from 'lucide-react';
 import { Lead, LeadNote, QuoteData } from '../types';
 import * as api from '../services/apiService';
-import { QuoteDataModel, HotelItemModel, AVAILABLE_QUOTE_DESIGNS } from '../services/quoteDesignRenderer';
+import { QuoteDataModel, HotelItemModel, AVAILABLE_QUOTE_DESIGNS, resolveProposalTerms, DEFAULT_TERMS } from '../services/quoteDesignRenderer';
 import { PartnerBrand, HOTEL_PARTNERS, TRAVEL_PARTNERS, renderPartnerBadgeHtml } from '../utils/partnerLogos';
 import { ClientDocumentsSection } from './ClientDocumentsSection';
 import { ClientDetailsSection } from './ClientDetailsSection';
@@ -182,7 +182,8 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
   const [uploadedThemes, setUploadedThemes] = useState<any[]>([]);
   // Agency / Company Profile Settings (for Company Logo on PDF)
   const [agencySettings, setAgencySettings] = useState<any>(null);
-  const effectiveTerms = manualTerms.trim() ? manualTerms : agencySettings?.default_terms_conditions || '';
+  const settingsTerms = agencySettings?.default_terms_conditions || '';
+  const resolvedTerms = resolveProposalTerms(manualTerms, settingsTerms);
   const manualTermsInput = currentQuote && !isReadOnly && <label className="block rounded-xl border border-line bg-surface p-4 text-sm font-semibold text-content">
     Manual terms for this preview
     <textarea rows={5} value={manualTerms}
@@ -777,10 +778,11 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
       included: incList,
       excluded: excList,
       note: currentQuote.otherInformation || '',
-      termsText: effectiveTerms,
+      termsText: manualTerms,
+      settingsTerms,
       days: formattedDays
     };
-  }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign, effectiveTerms]);
+  }, [currentQuote, lead, agentName, pricingData, agencySettings, selectedDesign, manualTerms, settingsTerms]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-inverse/40 backdrop-blur-xl flex flex-col justify-between">
@@ -2006,7 +2008,9 @@ const LeadProposalView: React.FC<LeadProposalViewProps> = ({ lead, agentName, on
                        </h4>
                        {manualTermsInput}
                        {PROPOSAL_TERM_SECTIONS.map(({ key, title }) => {
-                         const content = splitProposalTerms(effectiveTerms)[key];
+                         const content = key === 'cancellation' && !manualTerms.trim() && !resolvedTerms.cancellation.trim()
+                           ? [...DEFAULT_TERMS.fees.map(([period, fee]) => period + ' · ' + fee), ...DEFAULT_TERMS.feeNotes].join('\n')
+                           : resolvedTerms[key];
                          return content.trim() && <section key={key} className="rounded-xl border border-line p-4">
                            <h5 className="font-bold text-content">{title}</h5>
                            <div className="mt-2 whitespace-pre-wrap break-words text-base leading-7 text-content">{content}</div>
