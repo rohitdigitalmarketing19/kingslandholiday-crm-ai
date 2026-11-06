@@ -406,7 +406,7 @@ export async function exportElementToPdf(
           pageCanvas.height = fullPageCanvasH;
 
           const ctx = pageCanvas.getContext('2d')!;
-          ctx.fillStyle = targetEndY >= canvas.height && pageBackground !== 'rgba(0, 0, 0, 0)' ? pageBackground : '#ffffff';
+          ctx.fillStyle = pageBackground !== 'rgba(0, 0, 0, 0)' ? pageBackground : '#ffffff';
           ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
           if (headerCanvas) ctx.drawImage(headerCanvas, 0, 0);
           ctx.drawImage(

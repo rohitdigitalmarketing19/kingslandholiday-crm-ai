@@ -77,6 +77,7 @@ export async function updateAgencySettings(data: {
 }) {
     const now = new Date().toISOString();
     const current = await getAgencySettings();
+    data = { ...current, ...Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined)) };
     const prefix = data.trip_id_prefix !== undefined ? data.trip_id_prefix.trim() : (current.trip_id_prefix || 'KL-');
     const nextNum = data.trip_id_next_number !== undefined ? Number(data.trip_id_next_number) : (current.trip_id_next_number || 1001);
     const digits = data.trip_id_digits !== undefined ? Number(data.trip_id_digits) : (current.trip_id_digits || 4);

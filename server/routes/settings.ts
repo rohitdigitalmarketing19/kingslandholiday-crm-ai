@@ -9,6 +9,10 @@ import { getAgencySettings, updateAgencySettings, testSmtpConnection } from '../
 import { dbPath, createBackupSnapshot, listBackupSnapshots, restoreDatabaseFromBuffer, restoreSnapshotByName } from '../db/connection';
 import { initializeDatabase } from '../db/schema';
 const router = asyncRouter(express.Router());
+router.use((_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+});
 const mysqlWork=async<T>(work:()=>Promise<T>)=>{await initMysql();return withMysqlConnection(work);};
 router.get('/database',async(_req,res)=>res.json({active:mysqlEnabled()?'mysql':'sqlite',mysqlConfigured:['MYSQL_HOST','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'].every(k=>!!process.env[k])}));
 router.post('/database/mysql/test',async(_req,res)=>{try{await mysqlWork(async()=>{await mysqlQuery('SELECT 1 AS ready');});res.json({success:true});}catch(error:any){const diagnostic=mysqlConnectionDiagnostic(error);console.warn('MySQL connection test failed:',diagnostic.code);res.status(503).json(diagnostic);}});

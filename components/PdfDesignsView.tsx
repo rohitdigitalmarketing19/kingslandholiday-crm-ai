@@ -351,11 +351,9 @@ export const PdfDesignsView: React.FC = () => {
   const handleSaveCompanyLogo = async () => {
     setIsSavingLogo(true);
     try {
-      const updated = {
-        ...(agencySettings || {}),
+      const updated = await api.updateAgencySettings({
         logo_url: tempLogoUrl.trim()
-      };
-      await api.updateAgencySettings(updated);
+      });
       setAgencySettings(updated);
       setIsLogoModalOpen(false);
       showMsg('✓ Company Logo saved successfully! It will now appear on all PDF proposals.');

@@ -691,7 +691,7 @@ export async function deleteDestinationPhoto(id: string): Promise<{ success: boo
 // ========================
 
 export async function fetchAgencySettings() {
-  return request<any>('/settings');
+  return request<any>('/settings', { cache: 'no-store' });
 }
 
 export async function updateAgencySettings(data: any) {
