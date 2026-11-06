@@ -81,7 +81,7 @@ export async function prepareProposalPages(source: HTMLElement): Promise<string>
             end=Math.min(...crossed.map(box=>box.top));
           }
           if (end<=start) throw new Error('Could not paginate proposal content');
-          const output=page(end===total && background!=='rgba(0, 0, 0, 0)' ? background : '#ffffff');
+          const output=page(background!=='rgba(0, 0, 0, 0)' ? background : '#ffffff');
           output.dataset.pageType='flow';output.dataset.flowStart=String(start);output.dataset.flowEnd=String(end);output.dataset.headerHeight=String(headerHeight);
           const repeated=document.createElement('div');
           repeated.className='proposal-page-header';
