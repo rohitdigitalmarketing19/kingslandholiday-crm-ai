@@ -6,7 +6,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { getAgencySettings, updateAgencySettings, testSmtpConnection } from '../controllers/settingsController';
-import { dbPath, createBackupSnapshot, listBackupSnapshots, restoreDatabaseFromBuffer, restoreSnapshotByName } from '../db/connection';
+import { queryOne, runQuery, dbPath, createBackupSnapshot, listBackupSnapshots, restoreDatabaseFromBuffer, restoreSnapshotByName } from '../db/connection';
 import { initializeDatabase } from '../db/schema';
 const router = asyncRouter(express.Router());
 router.use((_req, res, next) => {
@@ -14,6 +14,31 @@ router.use((_req, res, next) => {
     next();
 });
 const mysqlWork=async<T>(work:()=>Promise<T>)=>{await initMysql();return withMysqlConnection(work);};
+const invoiceFields = [
+    'companyLogo', 'companyName', 'companyGstin', 'companyPan', 'companyAddress',
+    'companyCity', 'companyPhone', 'companyEmail', 'companyWebsite',
+    'taxTermsText', 'pkgDescTermsText', 'pkgCustomerTermsText',
+];
+router.get('/invoices', async (_req, res) => {
+    const row = await queryOne('SELECT settings_json FROM invoice_settings WHERE id = 1');
+    res.json(row ? JSON.parse(row.settings_json) : null);
+});
+router.put('/invoices', async (req, res) => {
+    const settings = Object.fromEntries(invoiceFields.map(field => [field, req.body?.[field]]));
+    if (invoiceFields.some(field => typeof settings[field] !== 'string' ||
+        settings[field].length > (field === 'companyLogo' ? 5_000_000 : 20_000))) {
+        return res.status(400).json({ error: 'Invoice settings are invalid or exceed the size limit.' });
+    }
+    const logo = settings.companyLogo;
+    if (logo && !/^(https?:\/\/|data:image\/(png|jpeg|webp|gif|svg\+xml|avif|bmp|x-icon);base64,)/i.test(logo)) {
+        return res.status(400).json({ error: 'Use an HTTP image URL or upload an image for the logo.' });
+    }
+    await runQuery(
+        'INSERT INTO invoice_settings (id, settings_json) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET settings_json = excluded.settings_json',
+        [JSON.stringify(settings)],
+    );
+    res.json(settings);
+});
 router.get('/database',async(_req,res)=>res.json({active:mysqlEnabled()?'mysql':'sqlite',mysqlConfigured:['MYSQL_HOST','MYSQL_USER','MYSQL_PASSWORD','MYSQL_DATABASE'].every(k=>!!process.env[k])}));
 router.post('/database/mysql/test',async(_req,res)=>{try{await mysqlWork(async()=>{await mysqlQuery('SELECT 1 AS ready');});res.json({success:true});}catch(error:any){const diagnostic=mysqlConnectionDiagnostic(error);console.warn('MySQL connection test failed:',diagnostic.code);res.status(503).json(diagnostic);}});
 router.post('/database/mysql/import',express.raw({type:'application/octet-stream',limit:'100mb'}),async(req,res)=>{

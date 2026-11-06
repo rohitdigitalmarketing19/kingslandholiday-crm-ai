@@ -80,14 +80,14 @@ export async function apiAuthorization(req: Request, res: Response, next: NextFu
     if ((route === '/ops/reset' || req.method === 'DELETE' && route === '/payments/submissions') && !admin)
         return res.status(403).json({ error: 'Administrator access required.' });
     const templateUse = req.method === 'GET' && /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) || req.method === 'POST' && ['/pdf-themes/generate-pdf', '/pdf-themes/preview-html', '/pdf-designs/render-pdf'].includes(route);
-    if ((/^\/(users|hotel-rates|b2b-data)(\/|$)/.test(route) || /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) && !templateUse || route.startsWith('/settings') && (route !== '/settings' || req.method !== 'GET')) && !admin)
+    if ((/^\/(users|hotel-rates|b2b-data)(\/|$)/.test(route) || /^\/(masters|pdf-themes|pdf-designs)(\/|$)/.test(route) && !templateUse || route.startsWith('/settings') && (!['/settings', '/settings/invoices'].includes(route) || req.method !== 'GET')) && !admin)
         return res.status(403).json({ error: 'Administrator access required.' });
     let permissions: string[] = [];
     try {
         permissions = JSON.parse(user.permissions || '[]');
     }
     catch { }
-    const section = route.startsWith('/leads') ? ['Leads', 'New Inquiry', 'Follow-ups', 'Sales Desk', 'Operations', 'Accounts'] : route.startsWith('/ops') ? ['Operations', 'Accounts', 'HotelVouchers'] : route.startsWith('/payments') ? ['Payments', 'Operations', 'Accounts'] : route.startsWith('/agents') ? ['Sales Team', 'Leads', 'New Inquiry'] : route.startsWith('/templates') ? ['Saved Itinerary'] : ['Leads', 'New Inquiry', 'Saved Itinerary', 'Operations', 'Accounts'];
+    const section = route === '/settings/invoices' ? ['Invoices', 'Operations', 'Accounts'] : route.startsWith('/leads') ? ['Leads', 'New Inquiry', 'Follow-ups', 'Sales Desk', 'Operations', 'Accounts'] : route.startsWith('/ops') ? ['Operations', 'Accounts', 'HotelVouchers'] : route.startsWith('/payments') ? ['Payments', 'Operations', 'Accounts'] : route.startsWith('/agents') ? ['Sales Team', 'Leads', 'New Inquiry'] : route.startsWith('/templates') ? ['Saved Itinerary'] : ['Leads', 'New Inquiry', 'Saved Itinerary', 'Operations', 'Accounts'];
     if (!admin && !section.some(name => permissions.includes(name)))
         return res.status(403).json({ error: 'This account cannot access this desk.' });
     if (!admin && user.role === 'Accounts' && req.method !== 'GET' && !route.includes('/accounts') && !route.startsWith('/payments'))

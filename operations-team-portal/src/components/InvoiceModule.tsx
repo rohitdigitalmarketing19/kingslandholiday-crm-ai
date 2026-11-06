@@ -98,9 +98,18 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
   const printRef = useRef<HTMLDivElement>(null);
 
-  // Load Invoice Settings from localStorage
-  const savedSettingsStr = typeof window !== 'undefined' ? localStorage.getItem('kingsland_invoice_settings') : null;
-  const savedSettings = savedSettingsStr ? JSON.parse(savedSettingsStr) : null;
+  // Retain existing browser settings as a draft for the first shared save.
+  const [savedSettings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('kingsland_invoice_settings') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const [settingsStatus, setSettingsStatus] = useState<'loading' | 'ready' | 'unpublished' | 'error'>('loading');
+  const [settingsLoadAttempt, setSettingsLoadAttempt] = useState(0);
+  const savingSettings = useRef(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Company Legal & Registered Information State
   const [companyLogo, setCompanyLogo] = useState<string>(savedSettings?.companyLogo || '');
@@ -138,8 +147,41 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       : `1. Instalment Schedule: All instalments must be paid on or before the due date. Delay beyond 3 days without notice is considered a default.\n2. Cancellation Policy: 30+ days: 10%. 15–29 days: 25%. 7–14 days: 50%. Under 7 days: 100% non-refundable.\n3. Refund Policy: Approved refunds within 7–10 working days to original payment method.\n4. Payment Modes: UPI, NEFT/RTGS, bank transfer, credit/debit card. Cheques clear 5 days prior.\n5. Price Validity: Locked at booking; post-booking surcharges borne by traveller.\n6. Amendments: Subject to availability; ₹ 500–2,000 amendment fee per traveller.\n7. Force Majeure: Kingsland Holidays is not liable for delays due to disasters, strikes, or restrictions.\n8. Governing Law: Indian law; disputes under Jaipur, Rajasthan jurisdiction.`
   );
 
-  // Save Settings Function
-  const handleSaveSettings = () => {
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/settings/invoices', { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Invoice settings could not be loaded.');
+        return response.json();
+      })
+      .then(settings => {
+        if (controller.signal.aborted) return;
+        if (!settings) {
+          setSettingsStatus('unpublished');
+          return;
+        }
+        setCompanyLogo(settings.companyLogo);
+        setCompanyName(settings.companyName);
+        setCompanyGstin(settings.companyGstin);
+        setCompanyPan(settings.companyPan);
+        setCompanyAddress(settings.companyAddress);
+        setCompanyCity(settings.companyCity);
+        setCompanyPhone(settings.companyPhone);
+        setCompanyEmail(settings.companyEmail);
+        setCompanyWebsite(settings.companyWebsite);
+        setTaxTermsText(settings.taxTermsText);
+        setPkgDescTermsText(settings.pkgDescTermsText);
+        setPkgCustomerTermsText(settings.pkgCustomerTermsText);
+        setSettingsStatus('ready');
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSettingsStatus('error');
+      });
+    return () => controller.abort();
+  }, [settingsLoadAttempt]);
+
+  const handleSaveSettings = async () => {
+    if (savingSettings.current || settingsStatus === 'loading' || settingsStatus === 'error') return;
     if (isReadOnly) {
       alert('🚫 Access Restricted: You do not have permission to edit or save invoice settings. (View-Only Mode Enabled)');
       return;
@@ -157,13 +199,25 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
       taxTermsText,
       pkgDescTermsText,
       pkgCustomerTermsText,
-      // Backward compatibility
-      taxTerms: taxTermsText.split('\n').filter(Boolean),
-      pkgDescTerms: pkgDescTermsText.split('\n').filter(Boolean),
-      pkgCustomerTerms: pkgCustomerTermsText.split('\n').filter(Boolean),
     };
-    localStorage.setItem('kingsland_invoice_settings', JSON.stringify(settingsObj));
-    alert('✅ Company Details (Name, GST, PAN, Address) & Terms saved successfully!');
+    savingSettings.current = true;
+    setIsSavingSettings(true);
+    try {
+      const response = await fetch('/api/settings/invoices', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settingsObj),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Invoice settings could not be saved.');
+      setSettingsStatus('ready');
+      alert('Company details and terms were saved for all devices.');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Invoice settings could not be saved.');
+    } finally {
+      savingSettings.current = false;
+      setIsSavingSettings(false);
+    }
   };
 
   // Tax Mode State: 'cgst_sgst' vs 'igst'
@@ -574,8 +628,22 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
     }
   };
 
+  if (settingsStatus === 'loading') return <p role="status">Loading shared invoice settings…</p>;
+  if (settingsStatus === 'error') return (
+    <div role="alert">
+      Could not load shared invoice settings.{' '}
+      <button type="button" onClick={() => {
+        setSettingsStatus('loading');
+        setSettingsLoadAttempt(attempt => attempt + 1);
+      }}>Retry</button>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
+      {settingsStatus === 'unpublished' && (
+        <p role="status">Shared invoice settings have not been published. An admin can review the company details and save them for all devices.</p>
+      )}
 
       {/* Top Banner & Action Controls */}
       <div className="p-6 rounded-xl bg-inverse text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -767,11 +835,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
             </div>
 
             <button
-              onClick={handleSaveSettings}
+              onClick={handleSaveSettings} disabled={isSavingSettings}
               className="px-6 py-2.5 rounded-xl bg-brand hover:bg-brand text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all shrink-0"
             >
               <Save className="w-4 h-4" />
-              <span>Save Company Details & Terms</span>
+              <span>{isSavingSettings ? 'Saving…' : 'Save Company Details & Terms'}</span>
             </button>
           </div>
 
@@ -1022,11 +1090,11 @@ export const InvoiceModule: React.FC<InvoiceModuleProps> = ({
 
           <div className="flex justify-end pt-4 border-t border-line">
             <button
-              onClick={handleSaveSettings}
+              onClick={handleSaveSettings} disabled={isSavingSettings}
               className="px-8 py-3 rounded-xl bg-brand hover:bg-brand text-white font-semibold text-sm flex items-center gap-2 shadow-sm transition-all"
             >
               <Save className="w-4 h-4" />
-              <span>Save Company Details & Terms</span>
+              <span>{isSavingSettings ? 'Saving…' : 'Save Company Details & Terms'}</span>
             </button>
           </div>
 

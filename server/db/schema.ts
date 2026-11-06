@@ -23,6 +23,7 @@ export async function initializeDatabase(): Promise<void> {
 async function initializeDatabaseSchema(): Promise<void> {
     // sql.js doesn't support multiple statements in one exec, so we split them
     const statements = [
+        `CREATE TABLE IF NOT EXISTS invoice_settings (id INTEGER PRIMARY KEY, settings_json TEXT NOT NULL)`,
         `CREATE TABLE IF NOT EXISTS hotel_rates (id TEXT PRIMARY KEY, name TEXT NOT NULL, city TEXT NOT NULL, category TEXT NOT NULL, seasonal_paise INTEGER NOT NULL CHECK(seasonal_paise >= 0), blackout_paise INTEGER NOT NULL CHECK(blackout_paise >= 0), blackout_dates TEXT NOT NULL DEFAULT '[]', pdf_name TEXT NOT NULL DEFAULT '', pdf_data TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, updated_by TEXT NOT NULL)`,
         `CREATE TABLE IF NOT EXISTS hotel_rate_history (id TEXT PRIMARY KEY, hotel_id TEXT NOT NULL REFERENCES hotel_rates(id), actor TEXT NOT NULL, created_at TEXT NOT NULL, before_data TEXT NOT NULL, after_data TEXT NOT NULL)`,
         `CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT NOT NULL, specialty TEXT NOT NULL DEFAULT '[]', avatar TEXT DEFAULT '', phone TEXT DEFAULT '', email TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT (datetime('now')))`,
